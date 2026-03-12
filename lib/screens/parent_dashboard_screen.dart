@@ -61,7 +61,7 @@ String toArabicNumbers(int num) {
   const arabic = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
   return num.toString().replaceAllMapped(
     RegExp(r'\d'),
-        (m) => arabic[int.parse(m.group(0)!)],
+    (m) => arabic[int.parse(m.group(0)!)],
   );
 }
 
@@ -100,15 +100,21 @@ class ParentDashboardScreen extends StatelessWidget {
                         ),
                         ElevatedButton.icon(
                           onPressed: () => Navigator.pushNamed(
-                              context, '/parent/create-child'),
+                            context,
+                            '/parent/create-child',
+                          ),
                           icon: const Icon(Icons.add, size: 16),
-                          label: const Text('إضافة طفل',
-                              style: TextStyle(fontSize: 13)),
+                          label: const Text(
+                            'إضافة طفل',
+                            style: TextStyle(fontSize: 13),
+                          ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF511281),
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 8),
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
                             minimumSize: Size.zero,
                             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             shape: RoundedRectangleBorder(
@@ -123,7 +129,7 @@ class ParentDashboardScreen extends StatelessWidget {
 
                     // Children cards list
                     ...mockChildren.map(
-                          (child) => _buildChildCard(context, child),
+                      (child) => _buildChildCard(context, child),
                     ),
 
                     const SizedBox(height: 24),
@@ -133,7 +139,7 @@ class ParentDashboardScreen extends StatelessWidget {
                       height: 44,
                       child: ElevatedButton.icon(
                         onPressed: () =>
-                            Navigator.pushNamed(context, '/child/select'),
+                            Navigator.pushNamed(context, '/child/selection'),
                         icon: const Icon(Icons.person, size: 18),
                         label: const Text(
                           'التبديل إلى وضع الطفل',
@@ -142,8 +148,7 @@ class ParentDashboardScreen extends StatelessWidget {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFFF6969),
                           foregroundColor: Colors.white,
-                          padding:
-                          const EdgeInsets.symmetric(horizontal: 24),
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),
@@ -172,11 +177,7 @@ class ParentDashboardScreen extends StatelessWidget {
           end: Alignment.centerLeft,
         ),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black26,
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
+          BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 2)),
         ],
       ),
       child: SafeArea(
@@ -218,7 +219,10 @@ class ParentDashboardScreen extends StatelessWidget {
                   _headerIconButton(
                     icon: Icons.logout_rounded,
                     onTap: () => Navigator.pushNamedAndRemoveUntil(
-                        context, '/', (route) => false),
+                      context,
+                      '/',
+                      (route) => false,
+                    ),
                   ),
                 ],
               ),
@@ -229,8 +233,10 @@ class ParentDashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _headerIconButton(
-      {required IconData icon, required VoidCallback onTap}) {
+  Widget _headerIconButton({
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),
@@ -251,8 +257,11 @@ class ParentDashboardScreen extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: InkWell(
-        onTap: () =>
-            Navigator.pushNamed(context, '/parent/child/${child.id}'),
+        onTap: () => Navigator.pushNamed(
+          context,
+          '/parent/child-profile',
+          arguments: {'childId': child.id},
+        ),
         borderRadius: BorderRadius.circular(12),
         child: Container(
           decoration: BoxDecoration(
@@ -277,8 +286,7 @@ class ParentDashboardScreen extends StatelessWidget {
                 // Avatar + name + level
                 Row(
                   children: [
-                    Text(child.avatar,
-                        style: const TextStyle(fontSize: 32)),
+                    Text(child.avatar, style: const TextStyle(fontSize: 32)),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -295,7 +303,9 @@ class ParentDashboardScreen extends StatelessWidget {
                           Text(
                             child.level,
                             style: const TextStyle(
-                                fontSize: 12, color: Colors.grey),
+                              fontSize: 12,
+                              color: Colors.grey,
+                            ),
                           ),
                         ],
                       ),
@@ -303,10 +313,11 @@ class ParentDashboardScreen extends StatelessWidget {
                     // Last active badge
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
-                        color:
-                        const Color(0xFF511281).withOpacity(0.08),
+                        color: const Color(0xFF511281).withOpacity(0.08),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
@@ -328,9 +339,10 @@ class ParentDashboardScreen extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('التقدم',
-                            style:
-                            TextStyle(fontSize: 12, color: Colors.grey)),
+                        const Text(
+                          'التقدم',
+                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                        ),
                         Text(
                           '${toArabicNumbers(child.progress)}٪',
                           style: const TextStyle(
@@ -347,8 +359,9 @@ class ParentDashboardScreen extends StatelessWidget {
                       child: LinearProgressIndicator(
                         value: child.progress / 100,
                         minHeight: 6,
-                        backgroundColor:
-                        const Color(0xFF511281).withOpacity(0.12),
+                        backgroundColor: const Color(
+                          0xFF511281,
+                        ).withOpacity(0.12),
                         valueColor: const AlwaysStoppedAnimation<Color>(
                           Color(0xFF511281),
                         ),

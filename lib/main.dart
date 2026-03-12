@@ -5,6 +5,11 @@ import 'screens/parent_login_screen.dart';
 import 'screens/forgot_password_screen.dart';
 import 'screens/parent_dashboard_screen.dart';
 import 'screens/parent_settings_screen.dart';
+import 'screens/child_selection_screen.dart';
+import 'screens/child_home_screen.dart';
+import 'screens/create_child_profile_screen.dart';
+import 'screens/child_profile_management_screen.dart';
+import 'screens/edit_child_profile_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -58,6 +63,17 @@ class MyApp extends StatelessWidget {
         '/parent/forgot-password': (context) => const ForgotPasswordScreen(),
         '/parent/dashboard': (context) => const ParentDashboardScreen(),
         '/parent/settings': (context) => const ParentSettingsScreen(),
+        '/child/selection': (context) => const ChildSelectionScreen(),
+        '/child/home': (context) => const ChildHomeScreen(),
+        '/parent/create-child': (context) => const CreateChildProfileScreen(),
+        '/parent/child-profile': (context) {
+          final args = ModalRoute.of(context)!.settings.arguments as Map?;
+          return ChildProfileManagementScreen(childId: args?['childId']);
+        },
+        '/parent/child-profile/edit': (context) {
+          final args = ModalRoute.of(context)!.settings.arguments as Map?;
+          return EditChildProfileScreen(childId: args?['childId']);
+        },
       },
     );
   }
