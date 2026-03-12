@@ -10,6 +10,12 @@ import 'screens/child_home_screen.dart';
 import 'screens/create_child_profile_screen.dart';
 import 'screens/child_profile_management_screen.dart';
 import 'screens/edit_child_profile_screen.dart';
+import 'screens/exercises_screen.dart';
+import 'screens/letter_levels_screen.dart';
+import 'screens/exercise_mcq_screen.dart';
+import 'screens/exercise_listening_screen.dart';
+import 'screens/letter_introduction_screen.dart';
+import 'screens/exercise_recording_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -74,6 +80,23 @@ class MyApp extends StatelessWidget {
           final args = ModalRoute.of(context)!.settings.arguments as Map?;
           return EditChildProfileScreen(childId: args?['childId']);
         },
+        '/child/exercises': (context) => const ExercisesScreen(),
+        '/child/letter-levels': (context) {
+  final args = ModalRoute.of(context)!.settings.arguments as Map?;
+  return LetterLevelsScreen(letter: args?['letter'] ?? 'ض');
+},
+'/child/exercise/mcq': (context) => ExerciseMCQScreen(
+  letter: (ModalRoute.of(context)!.settings.arguments as Map?)?['letter'] ?? 'ض',
+),
+   '/child/exercise/listening': (context) => ExerciseListeningScreen(
+  letter: (ModalRoute.of(context)!.settings.arguments as Map?)?['letter'] ?? 'ض',
+),     
+'/child/letter-introduction': (context) => LetterIntroductionScreen(
+  letter: (ModalRoute.of(context)!.settings.arguments as Map?)?['letter'] ?? 'ض',
+),
+'/child/exercise/recording': (context) => ExerciseRecordingScreen(
+  letter: (ModalRoute.of(context)!.settings.arguments as Map?)?['letter'] ?? 'ض',
+),
       },
     );
   }
