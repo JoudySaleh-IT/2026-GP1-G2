@@ -6,8 +6,6 @@ import 'screens/forgot_password_screen.dart';
 import 'screens/parent_dashboard_screen.dart';
 import 'screens/parent_settings_screen.dart';
 
-
-
 void main() {
   runApp(const MyApp());
 }
@@ -28,10 +26,7 @@ class MyApp extends StatelessWidget {
       // This makes the entire app layout go right-to-left by default
       locale: const Locale('ar'),
       builder: (context, child) {
-        return Directionality(
-          textDirection: TextDirection.rtl,
-          child: child!,
-        );
+        return Directionality(textDirection: TextDirection.rtl, child: child!);
       },
 
       // ─── Global App Theme ────────────────────────────────────────
@@ -43,7 +38,8 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
 
         // Default font for Arabic text rendering
-        fontFamily: 'Tajawal', // See pubspec.yaml setup below if you want this font
+        fontFamily:
+            'Tajawal', // See pubspec.yaml setup below if you want this font
       ),
 
       // ─── Starting Screen ─────────────────────────────────────────
@@ -62,9 +58,6 @@ class MyApp extends StatelessWidget {
         '/parent/forgot-password': (context) => const ForgotPasswordScreen(),
         '/parent/dashboard': (context) => const ParentDashboardScreen(),
         '/parent/settings': (context) => const ParentSettingsScreen(),
-
-
-
       },
     );
   }
