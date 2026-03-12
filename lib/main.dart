@@ -3,6 +3,9 @@ import 'screens/splash_screen.dart';
 import 'screens/parent_register_screen.dart';
 import 'screens/parent_login_screen.dart';
 import 'screens/forgot_password_screen.dart';
+import 'screens/parent_dashboard_screen.dart';
+import 'screens/parent_settings_screen.dart';
+
 
 
 void main() {
@@ -57,6 +60,10 @@ class MyApp extends StatelessWidget {
         '/parent/register': (context) => const ParentRegisterScreen(),
         '/parent/login': (context) => const ParentLoginScreen(),
         '/parent/forgot-password': (context) => const ForgotPasswordScreen(),
+        '/parent/dashboard': (context) => const ParentDashboardScreen(),
+        '/parent/settings': (context) => const ParentSettingsScreen(),
+
+
 
       },
     );
