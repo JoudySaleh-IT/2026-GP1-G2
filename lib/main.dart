@@ -16,6 +16,10 @@ import 'screens/exercise_mcq_screen.dart';
 import 'screens/exercise_listening_screen.dart';
 import 'screens/letter_introduction_screen.dart';
 import 'screens/exercise_recording_screen.dart';
+import 'screens/placement_test_screen.dart';
+import 'screens/placement_result_screen.dart';
+import 'screens/leaderboard_screen.dart';
+
 
 void main() {
   runApp(const MyApp());
@@ -95,12 +99,33 @@ class MyApp extends StatelessWidget {
   letter: (ModalRoute.of(context)!.settings.arguments as Map?)?['letter'] ?? 'ض',
 ),
 '/child/exercise/recording': (context) => ExerciseRecordingScreen(
-  letter: (ModalRoute.of(context)!.settings.arguments as Map?)?['letter'] ?? 'ض',
-),
-      },
-    );
-  }
-}
+          letter: (ModalRoute.of(context)!.settings.arguments as Map?)?['letter'] ?? 'ض',
+        ),
+        '/child/placement-test': (context) => const PlacementTestScreen(),
+        '/child/placement-result': (context) {
+  final args = ModalRoute.of(context)!.settings.arguments as Map?;
+  final rawScores = args?['letterScores'] as List?;
+  return PlacementResultScreen(
+    score: args?['score'] ?? 72,
+    weakLetters: List<String>.from(args?['weakLetters'] ?? ['ق', 'ض', 'خ']),
+    strongLetters: List<String>.from(args?['strongLetters'] ?? ['س', 'ص', 'غ']),
+    letterScores: rawScores != null && rawScores.isNotEmpty
+        ? rawScores.map((e) => LetterScore(letter: e['letter'], score: e['score'])).toList()
+        : const [   // ← use defaults when PlacementTest doesn't send scores yet
+            LetterScore(letter: 'ق', score: 35),
+            LetterScore(letter: 'ض', score: 42),
+            LetterScore(letter: 'خ', score: 48),
+            LetterScore(letter: 'س', score: 81),
+            LetterScore(letter: 'ص', score: 76),
+            LetterScore(letter: 'غ', score: 79),
+          ],
+  );
+},
+'/child/leaderboard': (context) => const LeaderboardScreen(),
+      },   // ← closes routes: { }
+    );     // ← closes MaterialApp(
+  }        // ← closes build()
+}          // ← closes MyApp
 
 // ─── Temporary Placeholder Screen ──────────────────────────────────────────
 // This is just a stand-in screen so buttons don't crash the app.
