@@ -210,9 +210,10 @@ class _ParentRegisterScreenState extends State<ParentRegisterScreen> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               const Text(
-                                'لديك حساب بالفعل؟ ',
+                                'لديك حساب بالفعل؟',
                                 style: TextStyle(fontSize: 14, color: Colors.grey),
                               ),
+                              const SizedBox(width: 8), // 👈 مسافة بسيطة بين النص والرابط
                               GestureDetector(
                                 onTap: () => Navigator.pushNamed(context, '/parent/login'),
                                 child: const Text(
