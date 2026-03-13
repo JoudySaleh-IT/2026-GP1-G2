@@ -176,7 +176,7 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xFFFF6969), Color(0xFFF57799)],
+          colors: [Color(0xFF511281), Color(0xFF7A3FA8)],
           begin: Alignment.centerRight,
           end: Alignment.centerLeft,
         ),

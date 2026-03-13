@@ -52,7 +52,7 @@ class _ParentRegisterScreenState extends State<ParentRegisterScreen> {
                 Align(
                   alignment: Alignment.centerRight,
                   child: IconButton(
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () => Navigator.pushReplacementNamed(context, '/'),
                     icon: const Icon(Icons.arrow_back, color: Color(0xFF511281)),
                   ),
                 ),
@@ -215,14 +215,12 @@ class _ParentRegisterScreenState extends State<ParentRegisterScreen> {
                               ),
                               const SizedBox(width: 8), // 👈 مسافة بسيطة بين النص والرابط
                               GestureDetector(
-                                onTap: () => Navigator.pushNamed(context, '/parent/login'),
-                                child: const Text(
+onTap: () => Navigator.pushReplacementNamed(context, '/parent/login'),                                child: const Text(
                                   'تسجيل الدخول',
                                   style: TextStyle(
                                     fontSize: 14,
                                     color: Color(0xFF511281),
                                     fontWeight: FontWeight.w600,
-                                    decoration: TextDecoration.underline,
                                   ),
                                 ),
                               ),

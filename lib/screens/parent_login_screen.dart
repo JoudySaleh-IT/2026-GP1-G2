@@ -192,7 +192,6 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> {
                                     fontSize: 14,
                                     color: Color(0xFF511281),
                                     fontWeight: FontWeight.w600,
-                                    decoration: TextDecoration.underline,
                                   ),
                                 ),
                               ),
