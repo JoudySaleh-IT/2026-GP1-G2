@@ -220,45 +220,77 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
 
   // ── Header ────────────────────────────────────────────────────────────────
 
-  Widget _buildHeader() {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + 12,
-        bottom: 12,
-        right: 16,
-        left: 16,
+ // ✅ New _buildHeader() with back button
+Widget _buildHeader() {
+  return Container(
+    width: double.infinity,
+    padding: EdgeInsets.only(
+      top: MediaQuery.of(context).padding.top + 12,
+      bottom: 12,
+      right: 16,
+      left: 16,
+    ),
+    decoration: const BoxDecoration(
+      gradient: LinearGradient(
+        colors: [Color(0xFF511281), Color(0xFF7A3FA8)],
+        begin: Alignment.centerRight,
+        end: Alignment.centerLeft,
       ),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFF511281), Color(0xFF7A3FA8)],
-          begin: Alignment.centerRight,
-          end: Alignment.centerLeft,
-        ),
-        boxShadow: [
-          BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(0, 3)),
-        ],
-      ),
-      child: const Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'تمارين التسجيل الصوتي',
-            style: TextStyle(
+      boxShadow: [
+        BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(0, 3)),
+      ],
+    ),
+    child: Row(
+      textDirection: TextDirection.rtl,
+      children: [
+        // ── Back button — RIGHT side in RTL ──
+        InkWell(
+          onTap: () => Navigator.pushNamed(
+            context,
+            '/child/letter-levels',
+            arguments: {'letter': widget.letter},
+          ),
+          borderRadius: BorderRadius.circular(8),
+          child: Container(
+            width: 34,
+            height: 34,
+            alignment: Alignment.center,
+            child: const Icon(
+              Icons.arrow_back,
               color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
+              size: 25,
             ),
           ),
-          SizedBox(height: 2),
-          Text(
-            'سجل صوتك وحسن نطقك',
-            style: TextStyle(color: Colors.white70, fontSize: 12),
-          ),
-        ],
-      ),
-    );
-  }
+        ),
+        const SizedBox(width: 12),
+
+        // ── Title + subtitle ──
+        const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'تمارين التسجيل الصوتي',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'Tajawal',
+              ),
+            ),
+            SizedBox(height: 2),
+            Text(
+              'سجل صوتك وحسن نطقك',
+              style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 12,
+                  fontFamily: 'Tajawal'),
+            ),
+          ],
+        ),
+      ],
+    ),
+  );
+}
 
   // ── Main card ─────────────────────────────────────────────────────────────
 

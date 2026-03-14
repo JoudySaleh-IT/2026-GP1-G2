@@ -1,7 +1,6 @@
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 
-// ─── Sample Words per Letter ──────────────────────────────────────────────────
 const _sampleWords = {
   'ض': 'ضَبْع',
   'ح': 'حَمَام',
@@ -12,10 +11,9 @@ const _sampleWords = {
   'غ': 'غَزَال',
   'ظ': 'ظَبْي',
   'ط': 'طَاوُوس',
-  'س': 'سَمَك',
+  'س': 'َسَمَك',
 };
 
-// ─── Screen ──────────────────────────────────────────────────────────────────
 class LetterIntroductionScreen extends StatefulWidget {
   final String letter;
   const LetterIntroductionScreen({super.key, required this.letter});
@@ -81,10 +79,7 @@ class _LetterIntroductionScreenState extends State<LetterIntroductionScreen>
         backgroundColor: const Color(0xFFFCF9EA),
         body: Column(
           children: [
-            // ── Header ──────────────────────────────────────────
             _IntroHeader(letter: widget.letter),
-
-            // ── Content ─────────────────────────────────────────
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
@@ -106,7 +101,6 @@ class _LetterIntroductionScreenState extends State<LetterIntroductionScreen>
                   padding: const EdgeInsets.all(20),
                   child: Column(
                     children: [
-                      // ── Card title ─────────────────────────────
                       Text(
                         'مخرج الحرف ${widget.letter}',
                         style: const TextStyle(
@@ -116,8 +110,6 @@ class _LetterIntroductionScreenState extends State<LetterIntroductionScreen>
                         ),
                       ),
                       const SizedBox(height: 20),
-
-                      // ── Image placeholder ──────────────────────
                       Container(
                         width: double.infinity,
                         height: 220,
@@ -127,7 +119,6 @@ class _LetterIntroductionScreenState extends State<LetterIntroductionScreen>
                           border: Border.all(
                             color: const Color(0xFF511281).withOpacity(0.25),
                             width: 2,
-                            // dashed border simulation via custom painter
                           ),
                         ),
                         child: const _DashedBorderBox(
@@ -151,10 +142,7 @@ class _LetterIntroductionScreenState extends State<LetterIntroductionScreen>
                           ),
                         ),
                       ),
-
                       const SizedBox(height: 28),
-
-                      // ── Sample word ────────────────────────────
                       AnimatedBuilder(
                         animation: _bounceAnim,
                         builder: (_, child) => Transform.scale(
@@ -171,10 +159,7 @@ class _LetterIntroductionScreenState extends State<LetterIntroductionScreen>
                           ),
                         ),
                       ),
-
                       const SizedBox(height: 14),
-
-                      // ── Listen button ──────────────────────────
                       OutlinedButton.icon(
                         onPressed: _handlePlayAudio,
                         icon: Icon(
@@ -203,10 +188,7 @@ class _LetterIntroductionScreenState extends State<LetterIntroductionScreen>
                               horizontal: 20, vertical: 12),
                         ),
                       ),
-
                       const SizedBox(height: 28),
-
-                      // ── Start button ───────────────────────────
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
@@ -242,7 +224,6 @@ class _LetterIntroductionScreenState extends State<LetterIntroductionScreen>
   }
 }
 
-// ─── Header ───────────────────────────────────────────────────────────────────
 class _IntroHeader extends StatelessWidget {
   final String letter;
   const _IntroHeader({required this.letter});
@@ -269,16 +250,16 @@ class _IntroHeader extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // سهم الرجوع على اليمين - تم التغيير إلى arrow_back_ios_rounded
           Material(
             color: Colors.transparent,
             child: InkWell(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(8),
               onTap: () => Navigator.pop(context),
-              child: const Padding(
-                padding: EdgeInsets.all(8),
-                child: Icon(Icons.arrow_back_ios_rounded, // تم التغيير هنا
-                    color: Colors.white, size: 22),
+              child: Container(
+                width: 34,
+                height: 34,
+                child: const Icon(Icons.arrow_back,
+                    color: Colors.white, size: 25),
               ),
             ),
           ),
@@ -307,7 +288,6 @@ class _IntroHeader extends StatelessWidget {
   }
 }
 
-// ─── Dashed Border Box ────────────────────────────────────────────────────────
 class _DashedBorderBox extends StatelessWidget {
   final Widget child;
   const _DashedBorderBox({required this.child});

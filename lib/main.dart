@@ -21,6 +21,7 @@ import 'screens/placement_result_screen.dart';
 import 'screens/leaderboard_screen.dart';
 import 'screens/exercise_listening_result_screen.dart';
 import 'screens/exercise_recording_result_screen.dart';
+import 'screens/exercise_mcq_result_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -95,6 +96,16 @@ class MyApp extends StatelessWidget {
               (ModalRoute.of(context)!.settings.arguments as Map?)?['letter'] ??
               'ض',
         ),
+       '/child/exercise/mcq-result': (context) {
+  final args = ModalRoute.of(context)!.settings.arguments as Map;
+  return ExerciseMCQResultScreen(
+    score:     args['score'],
+    total:     args['total'],
+    answers:   List<Map<String, dynamic>>.from(args['answers']),
+    questions: List<Map<String, dynamic>>.from(args['questions']),
+    letter:    args['letter'] ?? 'ض',
+  );
+},
         '/child/exercise/listening': (context) => ExerciseListeningScreen(
           letter:
               (ModalRoute.of(context)!.settings.arguments as Map?)?['letter'] ??
