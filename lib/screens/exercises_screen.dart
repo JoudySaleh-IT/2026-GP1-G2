@@ -40,31 +40,61 @@ class ExercisesScreen extends StatelessWidget {
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
-                child: GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate:
-                      const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 14,
-                    mainAxisSpacing: 14,
-                    childAspectRatio: 0.88,
-                  ),
-                  itemCount: _letters.length,
-                  itemBuilder: (context, i) {
-                    final item = _letters[i];
-                    return _LetterCard(
-                      item: item,
-                      onTap: () => Navigator.pushNamed(
-                        context,
-                        '/child/letter-levels',
-                        arguments: {
-                          'letter': item.letter,
-                          'currentProgress': item.completed,
-                        },
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // ── Section title above grid ─────────────────────
+                    const SizedBox(width: double.infinity),
+                    const Center(
+                      child: Text(
+                        'هيا نتدرب!',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF511281),
+                        ),
                       ),
-                    );
-                  },
+                    ),
+                    const SizedBox(height: 2),
+                    const Center(
+                      child: Text(
+                        'اختر حرفاً للتمرن عليه',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF888888),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // ── Letters grid ─────────────────────────────────
+                    GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 14,
+                        mainAxisSpacing: 14,
+                        childAspectRatio: 0.88,
+                      ),
+                      itemCount: _letters.length,
+                      itemBuilder: (context, i) {
+                        final item = _letters[i];
+                        return _LetterCard(
+                          item: item,
+                          onTap: () => Navigator.pushNamed(
+                            context,
+                            '/child/letter-levels',
+                            arguments: {
+                              'letter': item.letter,
+                              'currentProgress': item.completed,
+                            },
+                          ),
+                        );
+                      },
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -103,19 +133,16 @@ class _ExercisesHeader extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Row 1: avatar + name/level ──────────────────────────
+          // ── Row 1: title + child name ────────────────────────────
           Row(
             children: [
-              // Avatar
-              const Text('🦁', style: TextStyle(fontSize: 30)),
-              const SizedBox(width: 10),
-              // Name + level
+              // Title + subtitle
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: const [
                     Text(
-                      'هيا نتدرب!',
+                      'أحمد',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 16,
@@ -124,20 +151,24 @@ class _ExercisesHeader extends StatelessWidget {
                     ),
                     SizedBox(height: 2),
                     Text(
-                      'اختر حرفاً للتمرن عليه',
+                      'المستوى: متوسط',
                       style: TextStyle(color: Colors.white70, fontSize: 12),
                     ),
                   ],
                 ),
               ),
+
             ],
           ),
 
           const SizedBox(height: 14),
 
-          // ── Row 2: stats badges ───────────────────────────────────
+          // ── Row 2: avatar + stats badges ─────────────────────────
           Row(
             children: [
+              // Avatar
+              const Text('🦁', style: TextStyle(fontSize: 28)),
+              const SizedBox(width: 8),
               _StatBadge(
                 icon: Icons.local_fire_department_rounded,
                 iconColor: const Color(0xFFFF6969),
