@@ -166,9 +166,9 @@ class _ProfileHeader extends StatelessWidget {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xFF6A3A9E), Color(0xFF511281)],
-          begin: Alignment.topRight,
-          end: Alignment.bottomLeft,
+          colors: [Color(0xFF511281), Color(0xFF7A3FA8)],
+          begin: Alignment.centerRight,
+          end: Alignment.centerLeft,
         ),
         boxShadow: [
           BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 2)),
@@ -183,7 +183,7 @@ class _ProfileHeader extends StatelessWidget {
       child: Row(
         children: [
           _HeaderIconBtn(
-            icon: Icons.arrow_forward,
+            icon: Icons.arrow_back,
             onTap: () => Navigator.pop(context),
           ),
           const SizedBox(width: 10),
@@ -236,11 +236,7 @@ class _HeaderIconBtn extends StatelessWidget {
     child: Container(
       width: 34,
       height: 34,
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Icon(icon, color: Colors.white, size: 18),
+      child: Icon(icon, color: Colors.white, size: 25),
     ),
   );
 }

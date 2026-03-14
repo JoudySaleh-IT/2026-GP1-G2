@@ -105,8 +105,9 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
       builder: (ctx) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
-          shape:
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: const Text(
             'تأكيد تسجيل الخروج',
             style: TextStyle(fontWeight: FontWeight.bold),
@@ -118,20 +119,23 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('إلغاء',
-                  style: TextStyle(color: Colors.grey)),
+              child: const Text('إلغاء', style: TextStyle(color: Colors.grey)),
             ),
             ElevatedButton(
               onPressed: () {
                 Navigator.pop(ctx);
                 Navigator.pushNamedAndRemoveUntil(
-                    context, '/', (route) => false);
+                  context,
+                  '/',
+                  (route) => false,
+                );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: _pink,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8)),
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
               child: const Text('تسجيل الخروج'),
             ),
@@ -151,17 +155,22 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
           children: [
             _buildHeader(context),
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    _buildProfileCard(),
-                    const SizedBox(height: 12),
-                    _buildPasswordCard(),
-                    const SizedBox(height: 12),
-                    _buildLogoutCard(),
-                    const SizedBox(height: 24),
-                  ],
+              child: ScrollConfiguration(
+                behavior: ScrollConfiguration.of(
+                  context,
+                ).copyWith(overscroll: false),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      _buildProfileCard(),
+                      const SizedBox(height: 12),
+                      _buildPasswordCard(),
+                      const SizedBox(height: 12),
+                      _buildLogoutCard(),
+                      const SizedBox(height: 24),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -181,7 +190,7 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
           end: Alignment.centerLeft,
         ),
         boxShadow: [
-          BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 2))
+          BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 2)),
         ],
       ),
       child: SafeArea(
@@ -190,23 +199,26 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
           child: Row(
             children: [
-              IconButton(
-                onPressed: () => Navigator.pop(context),
-                icon: const Icon(Icons.arrow_forward,
-                    color: Colors.white, size: 22),
+              _HeaderIconBtn(
+                icon: Icons.arrow_back,
+                onTap: () => Navigator.pop(context),
               ),
               const SizedBox(width: 4),
               const Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('الإعدادات',
-                      style: TextStyle(
-                          fontSize: 19,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white)),
-                  Text('إدارة الحساب والتفضيلات',
-                      style:
-                      TextStyle(fontSize: 12, color: Colors.white70)),
+                  Text(
+                    'الإعدادات',
+                    style: TextStyle(
+                      fontSize: 19,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  Text(
+                    'إدارة الحساب والتفضيلات',
+                    style: TextStyle(fontSize: 12, color: Colors.white70),
+                  ),
                 ],
               ),
             ],
@@ -229,14 +241,15 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
                 children: [
                   _iconCircle(Icons.person_outline),
                   const SizedBox(width: 10),
-                  const Text('تعديل الملف الشخصي',
-                      style: TextStyle(
-                          fontSize: 15, fontWeight: FontWeight.w600)),
+                  const Text(
+                    'تعديل الملف الشخصي',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                  ),
                 ],
               ),
               TextButton(
-                onPressed: () => setState(
-                        () => _showProfileForm = !_showProfileForm),
+                onPressed: () =>
+                    setState(() => _showProfileForm = !_showProfileForm),
                 child: Text(
                   _showProfileForm ? 'إلغاء' : 'تعديل',
                   style: const TextStyle(color: _pink, fontSize: 13),
@@ -257,8 +270,7 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
                 CircleAvatar(
                   radius: 36,
                   backgroundColor: Colors.grey.shade200,
-                  child: const Icon(Icons.person,
-                      size: 36, color: Colors.grey),
+                  child: const Icon(Icons.person, size: 36, color: Colors.grey),
                 ),
                 const SizedBox(width: 16),
                 // Upload button (placeholder — real file picking needs image_picker package)
@@ -268,17 +280,21 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text(
-                            'يحتاج رفع الصور إلى إضافة image_picker في pubspec.yaml'),
+                          'يحتاج رفع الصور إلى إضافة image_picker في pubspec.yaml',
+                        ),
                       ),
                     );
                   },
                   icon: const Icon(Icons.upload, size: 16, color: _pink),
-                  label: const Text('رفع صورة',
-                      style: TextStyle(color: Colors.black87, fontSize: 13)),
+                  label: const Text(
+                    'رفع صورة',
+                    style: TextStyle(color: Colors.black87, fontSize: 13),
+                  ),
                   style: OutlinedButton.styleFrom(
                     side: const BorderSide(color: Colors.grey),
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8)),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
                 ),
               ],
@@ -289,9 +305,10 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
             // Name field
             const Align(
               alignment: Alignment.centerRight,
-              child: Text('الاسم',
-                  style: TextStyle(
-                      fontSize: 13, fontWeight: FontWeight.w600)),
+              child: Text(
+                'الاسم',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+              ),
             ),
             const SizedBox(height: 6),
             TextField(
@@ -328,14 +345,15 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
                 children: [
                   _iconCircle(Icons.lock_outline),
                   const SizedBox(width: 10),
-                  const Text('تغيير كلمة المرور',
-                      style: TextStyle(
-                          fontSize: 15, fontWeight: FontWeight.w600)),
+                  const Text(
+                    'تغيير كلمة المرور',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                  ),
                 ],
               ),
               TextButton(
-                onPressed: () => setState(
-                        () => _showPasswordForm = !_showPasswordForm),
+                onPressed: () =>
+                    setState(() => _showPasswordForm = !_showPasswordForm),
                 child: Text(
                   _showPasswordForm ? 'إلغاء' : 'تغيير',
                   style: const TextStyle(color: _pink, fontSize: 13),
@@ -446,12 +464,12 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
         style: ElevatedButton.styleFrom(
           backgroundColor: _pink,
           foregroundColor: Colors.white,
-          shape:
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
-        child: Text(label,
-            style:
-            const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+        child: Text(
+          label,
+          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+        ),
       ),
     );
   }
@@ -468,8 +486,11 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
       textAlign: TextAlign.right,
       decoration: _inputDecoration(hint).copyWith(
         suffixIcon: IconButton(
-          icon: Icon(show ? Icons.visibility_off : Icons.visibility,
-              color: Colors.grey, size: 20),
+          icon: Icon(
+            show ? Icons.visibility_off : Icons.visibility,
+            color: Colors.grey,
+            size: 20,
+          ),
           onPressed: onToggle,
         ),
       ),
@@ -480,8 +501,7 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
     return InputDecoration(
       hintText: hint,
       hintStyle: const TextStyle(color: Colors.grey),
-      contentPadding:
-      const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
         borderSide: const BorderSide(color: Colors.grey),
@@ -501,9 +521,7 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: isError
-            ? Colors.red.shade50
-            : Colors.green.shade50,
+        color: isError ? Colors.red.shade50 : Colors.green.shade50,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -518,12 +536,30 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
             child: Text(
               message,
               style: TextStyle(
-                  fontSize: 13,
-                  color: isError ? Colors.red : Colors.green.shade700),
+                fontSize: 13,
+                color: isError ? Colors.red : Colors.green.shade700,
+              ),
             ),
           ),
         ],
       ),
     );
   }
+}
+
+class _HeaderIconBtn extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  const _HeaderIconBtn({required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) => InkWell(
+    onTap: onTap,
+    borderRadius: BorderRadius.circular(8),
+    child: Container(
+      width: 34,
+      height: 34,
+      child: Icon(icon, color: Colors.white, size: 25),
+    ),
+  );
 }

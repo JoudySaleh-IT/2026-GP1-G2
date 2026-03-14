@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
 
-// ─── Mock Progress Data ───────────────────────────────────────────────────────
 const _levelProgress = {
-  'ض': (mcq: true,  listening: true,  recording: false),
-  'خ': (mcq: true,  listening: true,  recording: true),
+  'ض': (mcq: true, listening: true, recording: false),
+  'خ': (mcq: true, listening: true, recording: true),
   'غ': (mcq: false, listening: false, recording: false),
-  'ص': (mcq: true,  listening: false, recording: false),
+  'ص': (mcq: true, listening: false, recording: false),
   'س': (mcq: false, listening: false, recording: false),
   'ق': (mcq: false, listening: false, recording: false),
 };
 
-// ─── Level Model ─────────────────────────────────────────────────────────────
 class _LevelInfo {
   final String id;
   final String title;
@@ -29,13 +27,13 @@ class _LevelInfo {
   });
 }
 
-// ─── Screen ──────────────────────────────────────────────────────────────────
 class LetterLevelsScreen extends StatelessWidget {
   final String letter;
   const LetterLevelsScreen({super.key, required this.letter});
 
   List<_LevelInfo> _buildLevels() {
-    final p = _levelProgress[letter] ??
+    final p =
+        _levelProgress[letter] ??
         (mcq: false, listening: false, recording: false);
     return [
       _LevelInfo(
@@ -85,7 +83,6 @@ class LetterLevelsScreen extends StatelessWidget {
               child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
                 child: Column(
-                  // crossAxisAlignment.start = RIGHT in RTL
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Center(
@@ -95,33 +92,35 @@ class LetterLevelsScreen extends StatelessWidget {
                           fontSize: 17,
                           fontWeight: FontWeight.w600,
                           color: Color(0xFF511281),
+                          fontFamily: 'Tajawal',
                         ),
                       ),
                     ),
                     const SizedBox(height: 24),
-                    ...levels.asMap().entries.map((entry) => Padding(
-                          padding: const EdgeInsets.only(bottom: 16),
-                          child: _LevelCard(
-                            level: entry.value,
-                            number: entry.key + 1,
-                            onTap: () {
-                              // Recording goes through intro first
-                              if (entry.value.id == 'recording') {
-                                Navigator.pushNamed(
-                                  context,
-                                  '/child/letter-introduction',
-                                  arguments: {'letter': letter},
-                                );
-                              } else {
-                                Navigator.pushNamed(
-                                  context,
-                                  '/child/exercise/${entry.value.id}',
-                                  arguments: {'letter': letter},
-                                );
-                              }
-                            },
-                          ),
-                        )),
+                    ...levels.asMap().entries.map(
+                      (entry) => Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: _LevelCard(
+                          level: entry.value,
+                          number: entry.key + 1,
+                          onTap: () {
+                            if (entry.value.id == 'recording') {
+                              Navigator.pushNamed(
+                                context,
+                                '/child/letter-introduction',
+                                arguments: {'letter': letter},
+                              );
+                            } else {
+                              Navigator.pushNamed(
+                                context,
+                                '/child/exercise/${entry.value.id}',
+                                arguments: {'letter': letter},
+                              );
+                            }
+                          },
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -133,8 +132,6 @@ class LetterLevelsScreen extends StatelessWidget {
   }
 }
 
-// ─── Header ──────────────────────────────────────────────────────────────────
-// RTL order (right → left): back arrow | letter | title+subtitle
 class _LetterLevelsHeader extends StatelessWidget {
   final String letter;
   final int completedCount;
@@ -151,9 +148,9 @@ class _LetterLevelsHeader extends StatelessWidget {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xFF6A3A9E), Color(0xFF511281)],
-          begin: Alignment.topRight,
-          end: Alignment.bottomLeft,
+          colors: [Color(0xFF511281), Color(0xFF7A3FA8)],
+          begin: Alignment.centerRight,
+          end: Alignment.centerLeft,
         ),
         boxShadow: [
           BoxShadow(
@@ -166,28 +163,18 @@ class _LetterLevelsHeader extends StatelessWidget {
         right: 16,
         left: 16,
       ),
-      // Explicit RTL so back arrow is on the RIGHT
       child: Directionality(
         textDirection: TextDirection.rtl,
         child: Row(
           children: [
-            // 1 — Back arrow (rightmost) - تم التغيير إلى arrow_back_ios_rounded
             Material(
               color: Colors.transparent,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(20),
-                onTap: () =>
-                    Navigator.pushNamed(context, '/child/exercises'),
-                child: const Padding(
-                  padding: EdgeInsets.all(8),
-                  child: Icon(Icons.arrow_back_ios_rounded, // تم التغيير هنا
-                      color: Colors.white, size: 22),
-                ),
+              child: _HeaderIconBtn(
+                icon: Icons.arrow_back,
+                onTap: () => Navigator.pushNamed(context, '/child/exercises'),
               ),
             ),
-            const SizedBox(width: 10),
-
-            // 2 — Large letter
+            const SizedBox(width: 12),
             Text(
               letter,
               style: const TextStyle(
@@ -198,8 +185,6 @@ class _LetterLevelsHeader extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 12),
-
-            // 3 — Title + subtitle (fills remaining space)
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -210,13 +195,17 @@ class _LetterLevelsHeader extends StatelessWidget {
                       color: Colors.white,
                       fontSize: 17,
                       fontWeight: FontWeight.w600,
+                      fontFamily: 'Tajawal',
                     ),
                   ),
                   const SizedBox(height: 3),
                   Text(
                     '$completedCount من $totalCount مستويات مكتملة',
                     style: const TextStyle(
-                        color: Colors.white70, fontSize: 12),
+                      color: Colors.white70,
+                      fontSize: 12,
+                      fontFamily: 'Tajawal',
+                    ),
                   ),
                 ],
               ),
@@ -228,8 +217,6 @@ class _LetterLevelsHeader extends StatelessWidget {
   }
 }
 
-// ─── Level Card ──────────────────────────────────────────────────────────────
-// RTL order (right → left): number badge | icon circle | title+desc | arrow
 class _LevelCard extends StatefulWidget {
   final _LevelInfo level;
   final int number;
@@ -254,9 +241,12 @@ class _LevelCardState extends State<_LevelCard>
   void initState() {
     super.initState();
     _ctrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 100));
-    _scale = Tween<double>(begin: 1.0, end: 0.96)
-        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
+      vsync: this,
+      duration: const Duration(milliseconds: 100),
+    );
+    _scale = Tween<double>(begin: 1.0, end: 0.96).animate(
+      CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
+    );
   }
 
   @override
@@ -290,93 +280,103 @@ class _LevelCardState extends State<_LevelCard>
             ),
             boxShadow: const [
               BoxShadow(
-                  color: Color(0x0D000000),
-                  blurRadius: 8,
-                  offset: Offset(0, 2)),
+                color: Color(0x0D000000),
+                blurRadius: 8,
+                offset: Offset(0, 2),
+              ),
             ],
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-          child: _buildRowContent(color),
+          padding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: color,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: color.withOpacity(0.35),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: Text(
+                    '${widget.number}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(widget.level.icon, color: color, size: 26),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.level.title,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF511281),
+                        fontFamily: 'Tajawal',
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      widget.level.description,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF888888),
+                        fontFamily: 'Tajawal',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.arrow_forward_ios_rounded,
+                color: Color(0xFFCCCCCC),
+                size: 18,
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
+}
 
-  Widget _buildRowContent(Color color) {
-    return Row(
-      children: [
-        // 1 — Number badge (rightmost in RTL)
-        Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: color.withOpacity(0.35),
-                blurRadius: 8,
-                offset: const Offset(0, 3),
-              ),
-            ],
-          ),
-          child: Center(
-            child: Text(
-              '${widget.number}',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(width: 12),
+class _HeaderIconBtn extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  const _HeaderIconBtn({required this.icon, required this.onTap});
 
-        // 2 — Icon circle
-        Container(
-          width: 52,
-          height: 52,
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.12),
-            shape: BoxShape.circle,
-          ),
-          child: Icon(widget.level.icon, color: color, size: 26),
-        ),
-        const SizedBox(width: 14),
-
-        // 3 — Title + description (expands)
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                widget.level.title,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF511281),
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                widget.level.description,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Color(0xFF888888),
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        // 4 — Arrow (leftmost in RTL)
-        const Icon(
-          Icons.arrow_forward_ios_rounded, // تم التغيير إلى arrow_forward_ios_rounded
-          color: Color(0xFFCCCCCC),
-          size: 18,
-        ),
-      ],
-    );
-  }
+  @override
+  Widget build(BuildContext context) => InkWell(
+    onTap: onTap,
+    borderRadius: BorderRadius.circular(8),
+    child: Container(
+      width: 34,
+      height: 34,
+      child: Icon(icon, color: Colors.white, size: 25),
+    ),
+  );
 }

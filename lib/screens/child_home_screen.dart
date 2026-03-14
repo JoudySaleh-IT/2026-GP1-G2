@@ -101,14 +101,102 @@ class _ChildHeader extends StatelessWidget {
     required this.level,
   });
 
+  void _showLogoutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (_) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: const Text(
+            'تسجيل الخروج',
+            style: TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF222222),
+            ),
+          ),
+          content: const Text(
+            'هل أنت متأكد من عودتك إلى وضع ولي الأمر؟',
+            style: TextStyle(fontSize: 13, color: Colors.grey),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              style: TextButton.styleFrom(
+                side: BorderSide(
+                  color: const Color(0xFF511281).withOpacity(0.2),
+                  width: 2,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+              ),
+              child: const Text(
+                'إلغاء',
+                style: TextStyle(color: Color(0xFF511281)),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context); // Close dialog
+                Navigator.pushNamedAndRemoveUntil(
+                  context,
+                  '/parent/dashboard',
+                  (route) => false,
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFFF6969),
+                foregroundColor: Colors.white,
+                elevation: 3,
+                shape: const StadiumBorder(),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 10,
+                ),
+              ),
+              child: const Text('تأكيد'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _headerIconButton({
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.15),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(icon, color: Colors.white, size: 18),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xFF6A3A9E), Color(0xFF511281)],
-          begin: Alignment.topRight,
-          end: Alignment.bottomLeft,
+          colors: [Color(0xFF511281), Color(0xFF7A3FA8)],
+          begin: Alignment.centerRight,
+          end: Alignment.centerLeft,
         ),
         boxShadow: [
           BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 2)),
@@ -122,22 +210,7 @@ class _ChildHeader extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // Back button
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(20),
-              onTap: () => Navigator.pushNamed(context, '/parent/dashboard'),
-              child: const Padding(
-                padding: EdgeInsets.all(8),
-                child: Icon(
-                  Icons.arrow_forward, // RTL back = arrow forward
-                  color: Colors.white,
-                  size: 22,
-                ),
-              ),
-            ),
-          ),
+          // Logout icon button with matching style
           const SizedBox(width: 12),
 
           // Avatar
@@ -145,22 +218,28 @@ class _ChildHeader extends StatelessWidget {
           const SizedBox(width: 10),
 
           // Name + level
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'مرحبا $name!',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'مرحبا $name!',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-              Text(
-                level,
-                style: const TextStyle(color: Colors.white70, fontSize: 12),
-              ),
-            ],
+                Text(
+                  level,
+                  style: const TextStyle(color: Colors.white70, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+          _headerIconButton(
+            icon: Icons.logout_rounded,
+            onTap: () => _showLogoutDialog(context),
           ),
         ],
       ),

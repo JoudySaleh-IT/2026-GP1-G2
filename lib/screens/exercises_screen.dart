@@ -16,12 +16,12 @@ class _LetterData {
 }
 
 const _letters = [
-  _LetterData(letter: 'ض', name: 'Dhad',  completed: 2, total: 5),
-  _LetterData(letter: 'خ', name: 'Khaa',  completed: 5, total: 5),
+  _LetterData(letter: 'ض', name: 'Dhad', completed: 2, total: 5),
+  _LetterData(letter: 'خ', name: 'Khaa', completed: 5, total: 5),
   _LetterData(letter: 'غ', name: 'Ghayn', completed: 0, total: 5),
-  _LetterData(letter: 'ص', name: 'Saad',  completed: 3, total: 5),
-  _LetterData(letter: 'س', name: 'Seen',  completed: 0, total: 5),
-  _LetterData(letter: 'ق', name: 'Qaf',   completed: 1, total: 5),
+  _LetterData(letter: 'ص', name: 'Saad', completed: 3, total: 5),
+  _LetterData(letter: 'س', name: 'Seen', completed: 0, total: 5),
+  _LetterData(letter: 'ق', name: 'Qaf', completed: 1, total: 5),
 ];
 
 // ─── Screen ──────────────────────────────────────────────────────────────────
@@ -38,40 +38,46 @@ class ExercisesScreen extends StatelessWidget {
           children: [
             _ExercisesHeader(),
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
-                child: GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate:
-                      const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 14,
-                    mainAxisSpacing: 14,
-                    childAspectRatio: 0.88,
+              child: ScrollConfiguration(
+                behavior: ScrollConfiguration.of(
+                  context,
+                ).copyWith(overscroll: false),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+                  child: GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 14,
+                          mainAxisSpacing: 14,
+                          childAspectRatio: 0.88,
+                        ),
+                    itemCount: _letters.length,
+                    itemBuilder: (context, i) {
+                      final item = _letters[i];
+                      return _LetterCard(
+                        item: item,
+                        onTap: () => Navigator.pushNamed(
+                          context,
+                          '/child/letter-levels',
+                          arguments: {
+                            'letter': item.letter,
+                            'currentProgress': item.completed,
+                          },
+                        ),
+                      );
+                    },
                   ),
-                  itemCount: _letters.length,
-                  itemBuilder: (context, i) {
-                    final item = _letters[i];
-                    return _LetterCard(
-                      item: item,
-                      onTap: () => Navigator.pushNamed(
-                        context,
-                        '/child/letter-levels',
-                        arguments: {
-                          'letter': item.letter,
-                          'currentProgress': item.completed,
-                        },
-                      ),
-                    );
-                  },
                 ),
               ),
             ),
           ],
         ),
-        bottomNavigationBar:
-            const _ChildBottomNav(currentRoute: '/child/exercises'),
+        bottomNavigationBar: const _ChildBottomNav(
+          currentRoute: '/child/exercises',
+        ),
       ),
     );
   }
@@ -87,13 +93,16 @@ class _ExercisesHeader extends StatelessWidget {
       child: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xFF6A3A9E), Color(0xFF511281)],
-            begin: Alignment.topRight,
-            end: Alignment.bottomLeft,
+            colors: [Color(0xFF511281), Color(0xFF7A3FA8)],
+            begin: Alignment.centerRight,
+            end: Alignment.centerLeft,
           ),
           boxShadow: [
             BoxShadow(
-                color: Colors.black26, blurRadius: 8, offset: Offset(0, 2)),
+              color: Colors.black26,
+              blurRadius: 8,
+              offset: Offset(0, 2),
+            ),
           ],
         ),
         padding: EdgeInsets.only(
@@ -105,18 +114,7 @@ class _ExercisesHeader extends StatelessWidget {
         child: Row(
           children: [
             // Back arrow — sits on the RIGHT in RTL
-            Material(
-              color: Colors.transparent,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(20),
-                onTap: () => Navigator.pushNamed(context, '/child/home'),
-                child: const Padding(
-                  padding: EdgeInsets.all(8),
-                  child: Icon(Icons.arrow_back_ios_rounded, // تم التغيير هنا
-                      color: Colors.white, size: 22),
-                ),
-              ),
-            ),
+            Material(color: Colors.transparent),
             const SizedBox(width: 12),
             // Title + subtitle — to the LEFT of the arrow in RTL
             const Column(
@@ -163,9 +161,13 @@ class _LetterCardState extends State<_LetterCard>
   void initState() {
     super.initState();
     _ctrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 100));
-    _scale = Tween<double>(begin: 1.0, end: 0.95)
-        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
+      vsync: this,
+      duration: const Duration(milliseconds: 100),
+    );
+    _scale = Tween<double>(
+      begin: 1.0,
+      end: 0.95,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
   }
 
   @override
@@ -181,8 +183,7 @@ class _LetterCardState extends State<_LetterCard>
 
     return AnimatedBuilder(
       animation: _scale,
-      builder: (_, child) =>
-          Transform.scale(scale: _scale.value, child: child),
+      builder: (_, child) => Transform.scale(scale: _scale.value, child: child),
       child: GestureDetector(
         onTapDown: (_) => _ctrl.forward(),
         onTapUp: (_) {
@@ -286,22 +287,22 @@ class _ChildBottomNav extends StatelessWidget {
       child: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xFF6A3A9E), Color(0xFF511281)],
-            begin: Alignment.topRight,
-            end: Alignment.bottomLeft,
+            colors: [Color(0xFF511281), Color(0xFF7A3FA8)],
+            begin: Alignment.centerRight,
+            end: Alignment.centerLeft,
           ),
           boxShadow: [
             BoxShadow(
-                color: Colors.black26,
-                blurRadius: 8,
-                offset: Offset(0, -2)),
+              color: Colors.black26,
+              blurRadius: 8,
+              offset: Offset(0, -2),
+            ),
           ],
         ),
         child: SafeArea(
           top: false,
           child: Padding(
-            padding:
-                const EdgeInsets.symmetric(vertical: 8, horizontal: 24),
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 24),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
@@ -309,15 +310,13 @@ class _ChildBottomNav extends StatelessWidget {
                   icon: Icons.menu_book_rounded,
                   label: 'التمارين',
                   isActive: currentRoute == '/child/exercises',
-                  onTap: () =>
-                      Navigator.pushNamed(context, '/child/exercises'),
+                  onTap: () => Navigator.pushNamed(context, '/child/exercises'),
                 ),
                 _NavItem(
                   icon: Icons.home_rounded,
                   label: 'الرئيسية',
                   isActive: currentRoute == '/child/home',
-                  onTap: () =>
-                      Navigator.pushNamed(context, '/child/home'),
+                  onTap: () => Navigator.pushNamed(context, '/child/home'),
                 ),
                 _NavItem(
                   icon: Icons.leaderboard_rounded,

@@ -20,7 +20,8 @@ import 'screens/placement_test_screen.dart';
 import 'screens/placement_result_screen.dart';
 import 'screens/leaderboard_screen.dart';
 import 'screens/exercise_listening_result_screen.dart';
-
+import 'screens/exercise_recording_result_screen.dart';
+import 'screens/exercise_mcq_result_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -87,48 +88,79 @@ class MyApp extends StatelessWidget {
         },
         '/child/exercises': (context) => const ExercisesScreen(),
         '/child/letter-levels': (context) {
-  final args = ModalRoute.of(context)!.settings.arguments as Map?;
-  return LetterLevelsScreen(letter: args?['letter'] ?? 'ض');
+          final args = ModalRoute.of(context)!.settings.arguments as Map?;
+          return LetterLevelsScreen(letter: args?['letter'] ?? 'ض');
+        },
+        '/child/exercise/mcq': (context) => ExerciseMCQScreen(
+          letter:
+              (ModalRoute.of(context)!.settings.arguments as Map?)?['letter'] ??
+              'ض',
+        ),
+       '/child/exercise/mcq-result': (context) {
+  final args = ModalRoute.of(context)!.settings.arguments as Map;
+  return ExerciseMCQResultScreen(
+    score:     args['score'],
+    total:     args['total'],
+    answers:   List<Map<String, dynamic>>.from(args['answers']),
+    questions: List<Map<String, dynamic>>.from(args['questions']),
+    letter:    args['letter'] ?? 'ض',
+  );
 },
-'/child/exercise/mcq': (context) => ExerciseMCQScreen(
-  letter: (ModalRoute.of(context)!.settings.arguments as Map?)?['letter'] ?? 'ض',
-),
-  '/child/exercise/listening': (context) => ExerciseListeningScreen(
-  letter: (ModalRoute.of(context)!.settings.arguments as Map?)?['letter'] ?? 'ض',
-), 
-'/child/letter-introduction': (context) => LetterIntroductionScreen(
-  letter: (ModalRoute.of(context)!.settings.arguments as Map?)?['letter'] ?? 'ض',
-),
-'/child/exercise/recording': (context) => ExerciseRecordingScreen(
-          letter: (ModalRoute.of(context)!.settings.arguments as Map?)?['letter'] ?? 'ض',
+        '/child/exercise/listening': (context) => ExerciseListeningScreen(
+          letter:
+              (ModalRoute.of(context)!.settings.arguments as Map?)?['letter'] ??
+              'ض',
+        ),
+        '/child/letter-introduction': (context) => LetterIntroductionScreen(
+          letter:
+              (ModalRoute.of(context)!.settings.arguments as Map?)?['letter'] ??
+              'ض',
+        ),
+        '/child/exercise/recording': (context) => ExerciseRecordingScreen(
+          letter:
+              (ModalRoute.of(context)!.settings.arguments as Map?)?['letter'] ??
+              'ض',
         ),
         '/child/placement-test': (context) => const PlacementTestScreen(),
         '/child/placement-result': (context) {
-  final args = ModalRoute.of(context)!.settings.arguments as Map?;
-  final rawScores = args?['letterScores'] as List?;
-  return PlacementResultScreen(
-    score: args?['score'] ?? 72,
-    weakLetters: List<String>.from(args?['weakLetters'] ?? ['ق', 'ض', 'خ']),
-    strongLetters: List<String>.from(args?['strongLetters'] ?? ['س', 'ص', 'غ']),
-    letterScores: rawScores != null && rawScores.isNotEmpty
-        ? rawScores.map((e) => LetterScore(letter: e['letter'], score: e['score'])).toList()
-        : const [   // ← use defaults when PlacementTest doesn't send scores yet
-            LetterScore(letter: 'ق', score: 35),
-            LetterScore(letter: 'ض', score: 42),
-            LetterScore(letter: 'خ', score: 48),
-            LetterScore(letter: 'س', score: 81),
-            LetterScore(letter: 'ص', score: 76),
-            LetterScore(letter: 'غ', score: 79),
-          ],
-  );
-},
-'/child/leaderboard': (context) => const LeaderboardScreen(),
-'/child/exercise-listening-result': (context) =>
-   const ExerciseListeningResultScreen(),
-      },   // ← closes routes: { }
-    );     // ← closes MaterialApp(
-  }        // ← closes build()
-}          // ← closes MyApp
+          final args = ModalRoute.of(context)!.settings.arguments as Map?;
+          final rawScores = args?['letterScores'] as List?;
+          return PlacementResultScreen(
+            score: args?['score'] ?? 72,
+            weakLetters: List<String>.from(
+              args?['weakLetters'] ?? ['ق', 'ض', 'خ'],
+            ),
+            strongLetters: List<String>.from(
+              args?['strongLetters'] ?? ['س', 'ص', 'غ'],
+            ),
+            letterScores: rawScores != null && rawScores.isNotEmpty
+                ? rawScores
+                      .map(
+                        (e) =>
+                            LetterScore(letter: e['letter'], score: e['score']),
+                      )
+                      .toList()
+                : const [
+                    // ← use defaults when PlacementTest doesn't send scores yet
+                    LetterScore(letter: 'ق', score: 35),
+                    LetterScore(letter: 'ض', score: 42),
+                    LetterScore(letter: 'خ', score: 48),
+                    LetterScore(letter: 'س', score: 81),
+                    LetterScore(letter: 'ص', score: 76),
+                    LetterScore(letter: 'غ', score: 79),
+                  ],
+          );
+        },
+        '/child/leaderboard': (context) => const LeaderboardScreen(),
+        '/child/exercise-listening-result': (context) =>
+            const ExerciseListeningResultScreen(),
+
+        '/child/exercise/recording-result': (context) =>
+            const ExerciseRecordingResultScreen(),
+      }, // ← closes routes: { }
+    ); // ← closes MaterialApp(
+  } // ← closes build()
+} // ← closes MyApp
 
 // ─── Temporary Placeholder Screen ──────────────────────────────────────────
 // This is just a stand-in screen so buttons don't crash the app.

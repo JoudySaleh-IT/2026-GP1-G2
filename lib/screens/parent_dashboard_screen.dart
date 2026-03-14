@@ -216,14 +216,79 @@ class ParentDashboardScreen extends StatelessWidget {
                         Navigator.pushNamed(context, '/parent/settings'),
                   ),
                   const SizedBox(width: 4),
-                  _headerIconButton(
-                    icon: Icons.logout_rounded,
-                    onTap: () => Navigator.pushNamedAndRemoveUntil(
-                      context,
-                      '/',
-                      (route) => false,
-                    ),
-                  ),
+                 // ✅ Fix
+_headerIconButton(
+  icon: Icons.logout_rounded,
+  onTap: () async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: const Text(
+          'تسجيل الخروج',
+          textAlign: TextAlign.right,
+          style: TextStyle(
+            fontFamily: 'Tajawal',
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF511281),
+          ),
+        ),
+        content: const Text(
+          'هل أنت متأكد من تسجيل الخروج؟',
+          textAlign: TextAlign.right,
+          style: TextStyle(
+            fontFamily: 'Tajawal',
+            fontSize: 15,
+            color: Color(0xFF444444),
+          ),
+        ),
+        actionsAlignment: MainAxisAlignment.start,
+        actions: [
+          // ── نعم ──
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFFF6969),
+              foregroundColor: Colors.white,
+              shape: const StadiumBorder(),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 24, vertical: 10),
+            ),
+            child: const Text(
+              'نعم',
+              style: TextStyle(fontFamily: 'Tajawal'),
+            ),
+          ),
+          // ── لا ──
+          OutlinedButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: const Color(0xFF511281),
+              side: const BorderSide(color: Color(0xFF511281)),
+              shape: const StadiumBorder(),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 24, vertical: 10),
+            ),
+            child: const Text(
+              'لا',
+              style: TextStyle(fontFamily: 'Tajawal'),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true && context.mounted) {
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        '/',
+        (route) => false,
+      );
+    }
+  },
+),
                 ],
               ),
             ],

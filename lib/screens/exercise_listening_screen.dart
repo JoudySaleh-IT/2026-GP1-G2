@@ -85,8 +85,10 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
       vsync: this,
       duration: const Duration(milliseconds: 800),
     );
-    _pulseAnim = Tween<double>(begin: 1.0, end: 1.12)
-        .animate(CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut));
+    _pulseAnim = Tween<double>(
+      begin: 1.0,
+      end: 1.12,
+    ).animate(CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut));
   }
 
   @override
@@ -173,9 +175,10 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
                     ),
                     boxShadow: const [
                       BoxShadow(
-                          color: Color(0x0D000000),
-                          blurRadius: 8,
-                          offset: Offset(0, 2)),
+                        color: Color(0x0D000000),
+                        blurRadius: 8,
+                        offset: Offset(0, 2),
+                      ),
                     ],
                   ),
                   child: Column(
@@ -196,10 +199,13 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
                             const SizedBox(height: 12),
                             Row(
                               children: [
-                                const Text('التقدم',
-                                    style: TextStyle(
-                                        fontSize: 12,
-                                        color: Color(0xFF888888))),
+                                const Text(
+                                  'التقدم',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Color(0xFF888888),
+                                  ),
+                                ),
                                 const Spacer(),
                                 Text(
                                   '${_currentIndex + 1}/${_listeningExercises.length}',
@@ -218,9 +224,9 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
                                 value: _progress,
                                 minHeight: 8,
                                 backgroundColor: const Color(0xFFEEEEEE),
-                                valueColor:
-                                    const AlwaysStoppedAnimation<Color>(
-                                        Color(0xFFFF6969)),
+                                valueColor: const AlwaysStoppedAnimation<Color>(
+                                  Color(0xFFFF6969),
+                                ),
                               ),
                             ),
                           ],
@@ -232,207 +238,228 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
 
                       // ── Scrollable body ───────────────────────────
                       Expanded(
-                        child: SingleChildScrollView(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Instruction
-                              Container(
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFFF6969)
-                                      .withOpacity(0.05),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: const Color(0xFFFF6969)
-                                        .withOpacity(0.2),
+                        child: ScrollConfiguration(
+                          behavior: ScrollConfiguration.of(
+                            context,
+                          ).copyWith(overscroll: false),
+                          child: SingleChildScrollView(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Instruction
+                                Container(
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: const Color(
+                                      0xFFFF6969,
+                                    ).withOpacity(0.05),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: const Color(
+                                        0xFFFF6969,
+                                      ).withOpacity(0.2),
+                                    ),
                                   ),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      width: 30,
-                                      height: 30,
-                                      decoration: const BoxDecoration(
-                                        color: Color(0xFFFF6969),
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: Center(
-                                        child: Text(
-                                          '${_currentIndex + 1}',
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.bold,
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 30,
+                                        height: 30,
+                                        decoration: const BoxDecoration(
+                                          color: Color(0xFFFF6969),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: Center(
+                                          child: Text(
+                                            '${_currentIndex + 1}',
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.bold,
+                                            ),
                                           ),
                                         ),
                                       ),
-                                    ),
-                                    const SizedBox(width: 10),
-                                    Expanded(
-                                      child: Text(
-                                        _exercise.instruction,
-                                        style: const TextStyle(
-                                          fontSize: 15,
-                                          color: Color(0xFF333333),
-                                          height: 1.5,
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: Text(
+                                          _exercise.instruction,
+                                          style: const TextStyle(
+                                            fontSize: 15,
+                                            color: Color(0xFF333333),
+                                            height: 1.5,
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-
-                              const SizedBox(height: 16),
-
-                              // Audio Player
-                              Container(
-                                width: double.infinity,
-                                padding: const EdgeInsets.symmetric(
-                                    vertical: 28, horizontal: 16),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(14),
-                                  border: Border.all(
-                                    color: const Color(0xFF511281)
-                                        .withOpacity(0.1),
-                                    width: 2,
+                                    ],
                                   ),
-                                  boxShadow: const [
-                                    BoxShadow(
+                                ),
+
+                                const SizedBox(height: 16),
+
+                                // Audio Player
+                                Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 28,
+                                    horizontal: 16,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(14),
+                                    border: Border.all(
+                                      color: const Color(
+                                        0xFF511281,
+                                      ).withOpacity(0.1),
+                                      width: 2,
+                                    ),
+                                    boxShadow: const [
+                                      BoxShadow(
                                         color: Color(0x0A000000),
                                         blurRadius: 6,
-                                        offset: Offset(0, 2)),
-                                  ],
-                                ),
-                                child: Column(
-                                  children: [
-                                    GestureDetector(
-                                      onTap: _handlePlay,
-                                      child: AnimatedBuilder(
-                                        animation: _pulseAnim,
-                                        builder: (_, child) => Transform.scale(
-                                          scale: _isPlaying
-                                              ? _pulseAnim.value
-                                              : 1.0,
-                                          child: child,
-                                        ),
-                                        child: Container(
-                                          width: 88,
-                                          height: 88,
-                                          decoration: BoxDecoration(
-                                            color: _playCount >= _maxPlays
-                                                ? const Color(0xFFCCCCCC)
-                                                : const Color(0xFFFF6969),
-                                            shape: BoxShape.circle,
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: (_playCount >= _maxPlays
-                                                        ? Colors.grey
-                                                        : const Color(
-                                                            0xFFFF6969))
-                                                    .withOpacity(0.4),
-                                                blurRadius: 16,
-                                                offset: const Offset(0, 4),
+                                        offset: Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      GestureDetector(
+                                        onTap: _handlePlay,
+                                        child: AnimatedBuilder(
+                                          animation: _pulseAnim,
+                                          builder: (_, child) =>
+                                              Transform.scale(
+                                                scale: _isPlaying
+                                                    ? _pulseAnim.value
+                                                    : 1.0,
+                                                child: child,
                                               ),
-                                            ],
-                                          ),
-                                          child: Icon(
-                                            _isPlaying
-                                                ? Icons.pause_rounded
-                                                : Icons.play_arrow_rounded,
-                                            color: Colors.white,
-                                            size: 48,
+                                          child: Container(
+                                            width: 88,
+                                            height: 88,
+                                            decoration: BoxDecoration(
+                                              color: _playCount >= _maxPlays
+                                                  ? const Color(0xFFCCCCCC)
+                                                  : const Color(0xFFFF6969),
+                                              shape: BoxShape.circle,
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color:
+                                                      (_playCount >= _maxPlays
+                                                              ? Colors.grey
+                                                              : const Color(
+                                                                  0xFFFF6969,
+                                                                ))
+                                                          .withOpacity(0.4),
+                                                  blurRadius: 16,
+                                                  offset: const Offset(0, 4),
+                                                ),
+                                              ],
+                                            ),
+                                            child: Icon(
+                                              _isPlaying
+                                                  ? Icons.pause_rounded
+                                                  : Icons.play_arrow_rounded,
+                                              color: Colors.white,
+                                              size: 48,
+                                            ),
                                           ),
                                         ),
                                       ),
-                                    ),
-                                    const SizedBox(height: 16),
-                                    Text(
-                                      _isPlaying
-                                          ? 'جاري التشغيل...'
-                                          : 'اضغط للتشغيل',
-                                      style: const TextStyle(
-                                        fontSize: 13,
-                                        color: Color(0xFF666666),
+                                      const SizedBox(height: 16),
+                                      Text(
+                                        _isPlaying
+                                            ? 'جاري التشغيل...'
+                                            : 'اضغط للتشغيل',
+                                        style: const TextStyle(
+                                          fontSize: 13,
+                                          color: Color(0xFF666666),
+                                        ),
                                       ),
-                                    ),
-                                    const SizedBox(height: 6),
-                                    Text(
-                                      'عدد مرات الاستماع المتبقية: ${_maxPlays - _playCount}/$_maxPlays',
-                                      style: const TextStyle(
-                                        fontSize: 11,
-                                        color: Color(0xFF999999),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        'عدد مرات الاستماع المتبقية: ${_maxPlays - _playCount}/$_maxPlays',
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                          color: Color(0xFF999999),
+                                        ),
                                       ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
-                              ),
 
-                              const SizedBox(height: 16),
+                                const SizedBox(height: 16),
 
-                              // Answer Grid
-                              GridView.count(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                crossAxisCount: 2,
-                                crossAxisSpacing: 12,
-                                mainAxisSpacing: 12,
-                                childAspectRatio: 1.4,
-                                children: _exercise.options
-                                    .map((opt) => _AnswerTile(
+                                // Answer Grid
+                                GridView.count(
+                                  shrinkWrap: true,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  crossAxisCount: 2,
+                                  crossAxisSpacing: 12,
+                                  mainAxisSpacing: 12,
+                                  childAspectRatio: 1.4,
+                                  children: _exercise.options
+                                      .map(
+                                        (opt) => _AnswerTile(
                                           text: opt,
                                           selectedAnswer: _selectedAnswer,
                                           correctAnswer:
                                               _exercise.correctAnswer,
                                           showFeedback: _showFeedback,
-                                          enabled: _playCount > 0 &&
-                                              !_showFeedback,
+                                          enabled:
+                                              _playCount > 0 && !_showFeedback,
                                           onTap: () => _handleAnswer(opt),
-                                        ))
-                                    .toList(),
-                              ),
+                                        ),
+                                      )
+                                      .toList(),
+                                ),
 
-                              const SizedBox(height: 12),
+                                const SizedBox(height: 12),
 
-                              // Play-first notice
-                              if (_playCount == 0 && !_showFeedback)
-                                Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: Colors.blue.withOpacity(0.07),
-                                    borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(
-                                        color: Colors.blue.withOpacity(0.25)),
-                                  ),
-                                  child: const Row(
-                                    children: [
-                                      Expanded(
-                                        child: Text(
-                                          'يرجى تشغيل الصوت قبل اختيار الإجابة',
-                                          style: TextStyle(
-                                            fontSize: 13,
-                                            color: Color(0xFF1565C0),
+                                // Play-first notice
+                                if (_playCount == 0 && !_showFeedback)
+                                  Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.blue.withOpacity(0.07),
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(
+                                        color: Colors.blue.withOpacity(0.25),
+                                      ),
+                                    ),
+                                    child: const Row(
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            'يرجى تشغيل الصوت قبل اختيار الإجابة',
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              color: Color(0xFF1565C0),
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                      SizedBox(width: 8),
-                                      Icon(Icons.volume_up_rounded,
-                                          color: Color(0xFF1565C0), size: 18),
-                                    ],
+                                        SizedBox(width: 8),
+                                        Icon(
+                                          Icons.volume_up_rounded,
+                                          color: Color(0xFF1565C0),
+                                          size: 18,
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                ),
 
-                              // Feedback banner
-                              if (_showFeedback) ...[
-                                const SizedBox(height: 4),
-                                _FeedbackBanner(
-                                  isCorrect: _selectedAnswer ==
-                                      _exercise.correctAnswer,
-                                ),
+                                // Feedback banner
+                                if (_showFeedback) ...[
+                                  const SizedBox(height: 4),
+                                  _FeedbackBanner(
+                                    isCorrect:
+                                        _selectedAnswer ==
+                                        _exercise.correctAnswer,
+                                  ),
+                                ],
                               ],
-                            ],
+                            ),
                           ),
                         ),
                       ),
@@ -454,22 +481,25 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
                               onPressed: _showFeedback ? _handleNext : null,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFFFF6969),
-                                disabledBackgroundColor:
-                                    const Color(0xFFFFB8B8),
+                                disabledBackgroundColor: const Color(
+                                  0xFFFFB8B8,
+                                ),
                                 foregroundColor: Colors.white,
                                 shape: const StadiumBorder(),
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 24, vertical: 12),
+                                  horizontal: 24,
+                                  vertical: 12,
+                                ),
                                 elevation: 3,
                               ),
                               child: Text(
-                                _currentIndex <
-                                        _listeningExercises.length - 1
+                                _currentIndex < _listeningExercises.length - 1
                                     ? 'التالي'
                                     : 'إنهاء',
                                 style: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600),
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ),
                           ],
@@ -497,13 +527,12 @@ class _ListeningHeader extends StatelessWidget {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xFF6A3A9E), Color(0xFF511281)],
-          begin: Alignment.topRight,
-          end: Alignment.bottomLeft,
+          colors: [Color(0xFF511281), Color(0xFF7A3FA8)],
+          begin: Alignment.centerRight,
+          end: Alignment.centerLeft,
         ),
         boxShadow: [
-          BoxShadow(
-              color: Colors.black26, blurRadius: 8, offset: Offset(0, 2)),
+          BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 2)),
         ],
       ),
       padding: EdgeInsets.only(
@@ -516,28 +545,28 @@ class _ListeningHeader extends StatelessWidget {
         children: [
           Material(
             color: Colors.transparent,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(20),
-              onTap: onBack,
-              child: const Padding(
-                padding: EdgeInsets.all(8),
-                child: Icon(Icons.arrow_back_ios_rounded,
-                    color: Colors.white, size: 22),
-              ),
+            child: _HeaderIconBtn(
+              icon: Icons.arrow_back,
+              onTap: () => Navigator.pop(context),
             ),
           ),
           const SizedBox(width: 12),
           const Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('تمارين الاستماع',
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 17,
-                      fontWeight: FontWeight.w600)),
+              Text(
+                'تمارين الاستماع',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
               SizedBox(height: 2),
-              Text('استمع واختر الإجابة الصحيحة',
-                  style: TextStyle(color: Colors.white70, fontSize: 12)),
+              Text(
+                'استمع واختر الإجابة الصحيحة',
+                style: TextStyle(color: Colors.white70, fontSize: 12),
+              ),
             ],
           ),
         ],
@@ -651,4 +680,21 @@ class _FeedbackBanner extends StatelessWidget {
       ),
     );
   }
+}
+
+class _HeaderIconBtn extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  const _HeaderIconBtn({required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) => InkWell(
+    onTap: onTap,
+    borderRadius: BorderRadius.circular(8),
+    child: Container(
+      width: 34,
+      height: 34,
+      child: Icon(icon, color: Colors.white, size: 25),
+    ),
+  );
 }
