@@ -1,0 +1,112 @@
+import { useNavigate, useLocation } from "react-router";
+import { Button } from "../components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import { ArrowLeft, Home } from "lucide-react";
+
+interface Answer {
+  selected: string;
+  correct: string;
+  instruction: string;
+}
+
+interface ResultState {
+  finalScore: number;
+  total: number;
+  answers: Answer[];
+}
+
+export function ExerciseListeningResult() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const state = location.state as ResultState | null;
+
+  if (!state) {
+    navigate("/child/home", { replace: true });
+    return null;
+  }
+
+  const { answers } = state;
+
+  return (
+    <div className="min-h-screen bg-[#FCF9EA]" dir="rtl">
+      {/* ── Header ─────────────────────────────────────────────────────── */}
+      <div
+        className="text-white p-4 shadow-lg sticky top-0 z-10"
+        style={{ background: "linear-gradient(145deg, #6A3A9E, #511281)" }}
+      >
+        <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate("/child/home")}
+            className="text-white hover:bg-white/20 h-9 w-9"
+          >
+            <ArrowLeft className="h-5 w-5 scale-x-[-1]" />
+          </Button>
+          <div>
+            <h1 className="text-xl">نتيجة تمرين الاستماع</h1>
+            <p className="text-xs text-white/90">ملخص أدائك</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="p-4 pb-24 max-w-2xl mx-auto space-y-4">
+
+        {/* ── Answers breakdown ─────────────────────────────────────────── */}
+        <Card className="bg-white border-2 border-[#511281]/10 shadow-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base text-gray-700">تفاصيل الإجابات</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {answers.map((ans, i) => {
+              const isCorrect = ans.selected === ans.correct;
+              return (
+                <div
+                  key={i}
+                  className={`p-3 rounded-lg border ${
+                    isCorrect
+                      ? "bg-green-50 border-green-200"
+                      : "bg-red-50 border-red-200"
+                  }`}
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <div
+                      className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold text-white ${
+                        isCorrect ? "bg-green-500" : "bg-red-500"
+                      }`}
+                    >
+                      {i + 1}
+                    </div>
+                    <p className="text-sm text-gray-700 font-medium">{ans.instruction}</p>
+                  </div>
+                  {!isCorrect && (
+                    <div className="mr-9 space-y-1 text-xs">
+                      <p className="text-red-600">
+                        <span className="font-semibold">إجابتك: </span>
+                        {ans.selected}
+                      </p>
+                      <p className="text-green-600">
+                        <span className="font-semibold">الإجابة الصحيحة: </span>
+                        {ans.correct}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
+
+        {/* ── Home button ───────────────────────────────────────────────── */}
+        <Button
+          onClick={() => navigate("/child/home")}
+          className="w-full bg-[#FF6969] text-white hover:bg-[#E05555] rounded-full shadow-md flex items-center justify-center gap-2"
+        >
+          <Home className="h-4 w-4" />
+          الرئيسية
+        </Button>
+
+      </div>
+    </div>
+  );
+}

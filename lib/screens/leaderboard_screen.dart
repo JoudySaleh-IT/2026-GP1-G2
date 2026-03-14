@@ -275,7 +275,7 @@ class LeaderboardScreen extends StatelessWidget {
             physics: const NeverScrollableScrollPhysics(),
             padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
             itemCount: _topPlayers.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 8),
+            separatorBuilder: (_, _) => const SizedBox(height: 8),
             itemBuilder: (context, index) =>
                 _buildPlayerRow(_topPlayers[index]),
           ),

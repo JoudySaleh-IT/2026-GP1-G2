@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-// ─── Mock Exercises ───────────────────────────────────────────────────────────
+// ─── Model ────────────────────────────────────────────────────────────────────
 class _Exercise {
   final String instruction;
   final String audioDescription;
@@ -67,6 +67,9 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
   bool _isPlaying = false;
   int _playCount = 0;
 
+  // ── 1. LIST TO TRACK ALL ANSWERS ─────────────────────────────────────────
+  final List<Map<String, String>> _answers = [];
+
   late AnimationController _pulseCtrl;
   late Animation<double> _pulseAnim;
 
@@ -81,10 +84,9 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
     _pulseCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
-    )..repeat(reverse: true);
+    );
     _pulseAnim = Tween<double>(begin: 1.0, end: 1.12)
         .animate(CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut));
-    _pulseCtrl.stop();
   }
 
   @override
@@ -100,7 +102,6 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
       _playCount++;
     });
     _pulseCtrl.repeat(reverse: true);
-    // Simulate 2s audio
     Future.delayed(const Duration(seconds: 2), () {
       if (mounted) {
         setState(() => _isPlaying = false);
@@ -120,6 +121,13 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
   }
 
   void _handleNext() {
+    // ── 2. SAVE THIS ANSWER BEFORE MOVING ────────────────────────────────
+    _answers.add({
+      'selected': _selectedAnswer ?? '',
+      'correct': _exercise.correctAnswer,
+      'instruction': _exercise.instruction,
+    });
+
     if (_currentIndex < _listeningExercises.length - 1) {
       setState(() {
         _currentIndex++;
@@ -129,13 +137,14 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
         _isPlaying = false;
       });
     } else {
+      // ── 3. NAVIGATE TO RESULT SCREEN WITH ALL ANSWERS ─────────────────
       Navigator.pushNamed(
         context,
-        '/child/feedback',
+        '/child/exercise-listening-result',
         arguments: {
           'score': _score,
           'total': _listeningExercises.length,
-          'type': 'Listening',
+          'answers': List<Map<String, String>>.from(_answers),
           'letter': widget.letter,
         },
       );
@@ -150,10 +159,7 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
         backgroundColor: const Color(0xFFFCF9EA),
         body: Column(
           children: [
-            // ── Header ──────────────────────────────────────────
             _ListeningHeader(onBack: () => Navigator.pop(context)),
-
-            // ── Content ─────────────────────────────────────────
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
@@ -174,7 +180,7 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
                   ),
                   child: Column(
                     children: [
-                      // ── Progress ───────────────────────────────
+                      // ── Progress ─────────────────────────────────
                       Padding(
                         padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
                         child: Column(
@@ -224,14 +230,14 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
                       const SizedBox(height: 16),
                       const Divider(height: 1),
 
-                      // ── Scrollable Content ────────────────────
+                      // ── Scrollable body ───────────────────────────
                       Expanded(
                         child: SingleChildScrollView(
                           padding: const EdgeInsets.all(16),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // ── Instruction ────────────────────────
+                              // Instruction
                               Container(
                                 padding: const EdgeInsets.all(16),
                                 decoration: BoxDecoration(
@@ -245,7 +251,6 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
                                 ),
                                 child: Row(
                                   children: [
-                                    // الرقم على اليمين (لأن RTL)
                                     Container(
                                       width: 30,
                                       height: 30,
@@ -265,7 +270,6 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
                                       ),
                                     ),
                                     const SizedBox(width: 10),
-                                    // النص بعد الرقم
                                     Expanded(
                                       child: Text(
                                         _exercise.instruction,
@@ -282,7 +286,7 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
 
                               const SizedBox(height: 16),
 
-                              // ── Audio Player ───────────────────────
+                              // Audio Player
                               Container(
                                 width: double.infinity,
                                 padding: const EdgeInsets.symmetric(
@@ -304,7 +308,6 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
                                 ),
                                 child: Column(
                                   children: [
-                                    // Play button with pulse animation
                                     GestureDetector(
                                       onTap: _handlePlay,
                                       child: AnimatedBuilder(
@@ -369,7 +372,7 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
 
                               const SizedBox(height: 16),
 
-                              // ── 2×2 Answer Grid ────────────────────
+                              // Answer Grid
                               GridView.count(
                                 shrinkWrap: true,
                                 physics: const NeverScrollableScrollPhysics(),
@@ -393,7 +396,7 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
 
                               const SizedBox(height: 12),
 
-                              // ── "Play first" notice ────────────────
+                              // Play-first notice
                               if (_playCount == 0 && !_showFeedback)
                                 Container(
                                   padding: const EdgeInsets.all(12),
@@ -421,7 +424,7 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
                                   ),
                                 ),
 
-                              // ── Feedback banner ────────────────────
+                              // Feedback banner
                               if (_showFeedback) ...[
                                 const SizedBox(height: 4),
                                 _FeedbackBanner(
@@ -434,7 +437,7 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
                         ),
                       ),
 
-                      // ── Score + Next ───────────────────────────
+                      // ── Score + Next ──────────────────────────────
                       Padding(
                         padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
                         child: Row(
@@ -511,7 +514,6 @@ class _ListeningHeader extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // سهم الرجوع على اليمين (لأن RTL)
           Material(
             color: Colors.transparent,
             child: InkWell(
@@ -528,19 +530,14 @@ class _ListeningHeader extends StatelessWidget {
           const Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'تمارين الاستماع',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 17,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+              Text('تمارين الاستماع',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w600)),
               SizedBox(height: 2),
-              Text(
-                'استمع واختر الإجابة الصحيحة',
-                style: TextStyle(color: Colors.white70, fontSize: 12),
-              ),
+              Text('استمع واختر الإجابة الصحيحة',
+                  style: TextStyle(color: Colors.white70, fontSize: 12)),
             ],
           ),
         ],
@@ -549,7 +546,7 @@ class _ListeningHeader extends StatelessWidget {
   }
 }
 
-// ─── Answer Tile (2×2 grid) ───────────────────────────────────────────────────
+// ─── Answer Tile ──────────────────────────────────────────────────────────────
 class _AnswerTile extends StatelessWidget {
   final String text;
   final String? selectedAnswer;
@@ -648,9 +645,7 @@ class _FeedbackBanner extends StatelessWidget {
             : 'للأسف، استمع جيداً وحاول مرة أخرى!',
         style: TextStyle(
           fontSize: 13,
-          color: isCorrect
-              ? Colors.green.shade700
-              : Colors.orange.shade700,
+          color: isCorrect ? Colors.green.shade700 : Colors.orange.shade700,
           fontWeight: FontWeight.w500,
         ),
       ),

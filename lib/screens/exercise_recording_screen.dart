@@ -535,7 +535,7 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
                     fontWeight: FontWeight.w500)),
             const SizedBox(height: 6),
             Text(
-              '${_recordingTime}ث',
+              '$_recordingTimeث',
               style: const TextStyle(
                   fontSize: 22,
                   color: Colors.red,
