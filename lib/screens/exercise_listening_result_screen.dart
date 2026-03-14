@@ -6,7 +6,7 @@ class ExerciseListeningResultScreen extends StatelessWidget {
 
   String _resultMessage(int score, int total) {
     final ratio = score / total;
-    if (ratio == 1)   return 'ممتاز! أتقنت جميع الأسئلة! 🏆';
+    if (ratio == 1) return 'ممتاز! أتقنت جميع الأسئلة! 🏆';
     if (ratio >= 0.8) return 'رائع! أداء متميز جداً! 🌟';
     if (ratio >= 0.6) return 'جيد! يمكنك تحسين أدائك! 💪';
     return 'استمر في التدريب، ستتحسن! 🌱';
@@ -14,10 +14,10 @@ class ExerciseListeningResultScreen extends StatelessWidget {
 
   Color _resultColor(int score, int total) {
     final ratio = score / total;
-    if (ratio == 1)   return const Color(0xFFB45309); // amber
+    if (ratio == 1) return const Color(0xFFB45309); // amber
     if (ratio >= 0.8) return const Color(0xFF16A34A); // green
     if (ratio >= 0.6) return const Color(0xFF2563EB); // blue
-    return const Color(0xFFEA580C);                    // orange
+    return const Color(0xFFEA580C); // orange
   }
 
   @override
@@ -25,11 +25,12 @@ class ExerciseListeningResultScreen extends StatelessWidget {
     // ── Read arguments passed from ExerciseListeningScreen ─────────────────
     final args =
         ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
-    final int score    = args['score'] as int;
-    final int total    = args['total'] as int;
+    final int score = args['score'] as int;
+    final int total = args['total'] as int;
     final String letter = args['letter'] as String? ?? '';
-    final List<Map<String, String>> answers =
-        List<Map<String, String>>.from(args['answers'] as List);
+    final List<Map<String, String>> answers = List<Map<String, String>>.from(
+      args['answers'] as List,
+    );
 
     final int percentage = ((score / total) * 100).round();
 
@@ -59,9 +60,10 @@ class ExerciseListeningResultScreen extends StatelessWidget {
                         ),
                         boxShadow: const [
                           BoxShadow(
-                              color: Color(0x0D000000),
-                              blurRadius: 8,
-                              offset: Offset(0, 2)),
+                            color: Color(0x0D000000),
+                            blurRadius: 8,
+                            offset: Offset(0, 2),
+                          ),
                         ],
                       ),
                       clipBehavior: Clip.antiAlias,
@@ -71,7 +73,9 @@ class ExerciseListeningResultScreen extends StatelessWidget {
                           Container(
                             width: double.infinity,
                             padding: const EdgeInsets.symmetric(
-                                vertical: 28, horizontal: 16),
+                              vertical: 28,
+                              horizontal: 16,
+                            ),
                             decoration: const BoxDecoration(
                               gradient: LinearGradient(
                                 colors: [Color(0xFF6A3A9E), Color(0xFF511281)],
@@ -88,7 +92,8 @@ class ExerciseListeningResultScreen extends StatelessWidget {
                                     final filled = i < score;
                                     return Padding(
                                       padding: const EdgeInsets.symmetric(
-                                          horizontal: 3),
+                                        horizontal: 3,
+                                      ),
                                       child: Icon(
                                         Icons.star_rounded,
                                         size: 30,
@@ -116,8 +121,7 @@ class ExerciseListeningResultScreen extends StatelessWidget {
                                         text: '/$total',
                                         style: TextStyle(
                                           fontSize: 32,
-                                          color:
-                                              Colors.white.withOpacity(0.7),
+                                          color: Colors.white.withOpacity(0.7),
                                         ),
                                       ),
                                     ],
@@ -164,9 +168,10 @@ class ExerciseListeningResultScreen extends StatelessWidget {
                         ),
                         boxShadow: const [
                           BoxShadow(
-                              color: Color(0x0D000000),
-                              blurRadius: 8,
-                              offset: Offset(0, 2)),
+                            color: Color(0x0D000000),
+                            blurRadius: 8,
+                            offset: Offset(0, 2),
+                          ),
                         ],
                       ),
                       padding: const EdgeInsets.all(16),
@@ -185,8 +190,7 @@ class ExerciseListeningResultScreen extends StatelessWidget {
                           ...answers.asMap().entries.map((entry) {
                             final i = entry.key;
                             final ans = entry.value;
-                            final isCorrect =
-                                ans['selected'] == ans['correct'];
+                            final isCorrect = ans['selected'] == ans['correct'];
                             return Padding(
                               padding: const EdgeInsets.only(bottom: 10),
                               child: Container(
@@ -203,8 +207,7 @@ class ExerciseListeningResultScreen extends StatelessWidget {
                                   ),
                                 ),
                                 child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     // Question number + instruction
                                     Row(
@@ -247,7 +250,8 @@ class ExerciseListeningResultScreen extends StatelessWidget {
                                       const SizedBox(height: 8),
                                       Padding(
                                         padding: const EdgeInsets.only(
-                                            right: 34),
+                                          right: 34,
+                                        ),
                                         child: Column(
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,
@@ -285,12 +289,10 @@ class ExerciseListeningResultScreen extends StatelessWidget {
                     // ── Action buttons ───────────────────────────
                     Row(
                       children: [
-                        
                         // Home
                         Expanded(
                           child: ElevatedButton.icon(
-                            onPressed: () =>
-                                Navigator.pushNamedAndRemoveUntil(
+                            onPressed: () => Navigator.pushNamedAndRemoveUntil(
                               context,
                               '/child/home',
                               (r) => false,
@@ -301,8 +303,7 @@ class ExerciseListeningResultScreen extends StatelessWidget {
                               backgroundColor: const Color(0xFFFF6969),
                               foregroundColor: Colors.white,
                               shape: const StadiumBorder(),
-                              padding: const EdgeInsets.symmetric(
-                                  vertical: 14),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
                               elevation: 3,
                             ),
                           ),
@@ -335,8 +336,7 @@ class _ResultHeader extends StatelessWidget {
           end: Alignment.bottomLeft,
         ),
         boxShadow: [
-          BoxShadow(
-              color: Colors.black26, blurRadius: 8, offset: Offset(0, 2)),
+          BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 2)),
         ],
       ),
       padding: EdgeInsets.only(
@@ -354,8 +354,11 @@ class _ResultHeader extends StatelessWidget {
               onTap: onBack,
               child: const Padding(
                 padding: EdgeInsets.all(8),
-                child: Icon(Icons.arrow_back_ios_rounded,
-                    color: Colors.white, size: 22),
+                child: Icon(
+                  Icons.arrow_back_ios_rounded,
+                  color: Colors.white,
+                  size: 22,
+                ),
               ),
             ),
           ),
@@ -363,14 +366,19 @@ class _ResultHeader extends StatelessWidget {
           const Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('نتيجة تمرين الاستماع',
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 17,
-                      fontWeight: FontWeight.w600)),
+              Text(
+                'نتيجة تمرين الاستماع',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
               SizedBox(height: 2),
-              Text('ملخص أدائك',
-                  style: TextStyle(color: Colors.white70, fontSize: 12)),
+              Text(
+                'ملخص أدائك',
+                style: TextStyle(color: Colors.white70, fontSize: 12),
+              ),
             ],
           ),
         ],
