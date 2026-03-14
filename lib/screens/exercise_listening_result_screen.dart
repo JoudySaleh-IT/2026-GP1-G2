@@ -152,6 +152,11 @@ class ExerciseListeningResultScreen extends StatelessWidget {
 
                     const SizedBox(height: 16),
 
+                    // ── Points earned card ─────────────────────────────────
+                    _PointsCard(score: score, total: total),
+
+                    const SizedBox(height: 16),
+
                     // ── Answers breakdown ──────────────────────────────────
                     Container(
                       decoration: BoxDecoration(
@@ -314,6 +319,75 @@ class ExerciseListeningResultScreen extends StatelessWidget {
   }
 }
 
+// ─── Points Earned Card ───────────────────────────────────────────────────────
+class _PointsCard extends StatelessWidget {
+  final int score;
+  final int total;
+
+  const _PointsCard({required this.score, required this.total});
+
+  int get _earnedPoints {
+    final ratio = score / total;
+    if (ratio == 1)   return 1000;
+    if (ratio >= 0.8) return 800;
+    if (ratio >= 0.6) return 500;
+    return 200;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFF511281).withOpacity(0.1),
+          width: 2,
+        ),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0D000000),
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.trending_up_rounded,
+              color: Color(0xFFFF6969), size: 26),
+          const SizedBox(width: 10),
+          RichText(
+            text: TextSpan(
+              children: [
+                TextSpan(
+                  text: '+$_earnedPoints',
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF511281),
+                  ),
+                ),
+                const TextSpan(
+                  text: '  نقطة مكتسبة',
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: Color(0xFF555555),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 // ─── Header (no back button) ──────────────────────────────────────────────────
 class _ResultHeader extends StatelessWidget {
   const _ResultHeader();
@@ -321,6 +395,7 @@ class _ResultHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      width: double.infinity,
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [Color(0xFF511281), Color(0xFF7A3FA8)],
@@ -334,7 +409,7 @@ class _ResultHeader extends StatelessWidget {
       ),
       padding: EdgeInsets.only(
         top: MediaQuery.of(context).padding.top + 8,
-        bottom: 12,
+        bottom: 14,
         right: 16,
         left: 16,
       ),
