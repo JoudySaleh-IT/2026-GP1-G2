@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "816737402071",
+    "project_id": "faseh-98e8c",
+    "storage_bucket": "faseh-98e8c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:816737402071:android:13ae6e7137804fe1588492",
+        "android_client_info": {
+          "package_name": "com.example.faseh"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBDBuZzgHyHUyugWl_MCgrvcpB0KUxmNyI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
