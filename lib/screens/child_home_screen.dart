@@ -36,8 +36,10 @@ class ChildHomeScreen extends StatelessWidget {
                   children: [
                     // ── Placement test banner ──────────────────────────
                     _PlacementTestBanner(
-                      onTap: () =>
-                          Navigator.pushNamed(context, '/child/placement-test'),
+                      onTap: () => Navigator.pushNamed(
+                        context,
+                        '/child/placement-test',
+                      ),
                     ),
                     const SizedBox(height: 16),
 
@@ -104,88 +106,7 @@ class _ChildHeader extends StatelessWidget {
   void _showLogoutDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (_) => Directionality(
-        textDirection: TextDirection.rtl,
-        child: AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          title: const Text(
-            'تسجيل الخروج',
-            style: TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF222222),
-            ),
-          ),
-          content: const Text(
-            'هل أنت متأكد من عودتك إلى وضع ولي الأمر؟',
-            style: TextStyle(fontSize: 13, color: Colors.grey),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              style: TextButton.styleFrom(
-                side: BorderSide(
-                  color: const Color(0xFF511281).withOpacity(0.2),
-                  width: 2,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-              ),
-              child: const Text(
-                'إلغاء',
-                style: TextStyle(color: Color(0xFF511281)),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context); // Close dialog
-                Navigator.pushNamedAndRemoveUntil(
-                  context,
-                  '/parent/dashboard',
-                  (route) => false,
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFF6969),
-                foregroundColor: Colors.white,
-                elevation: 3,
-                shape: const StadiumBorder(),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 10,
-                ),
-              ),
-              child: const Text('تأكيد'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _headerIconButton({
-    required IconData icon,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        width: 36,
-        height: 36,
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.15),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Icon(icon, color: Colors.white, size: 18),
-      ),
+      builder: (_) => const _ParentPasswordDialog(),
     );
   }
 
@@ -210,9 +131,6 @@ class _ChildHeader extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // Logout icon button with matching style
-          const SizedBox(width: 12),
-
           // Avatar
           Text(avatar, style: const TextStyle(fontSize: 30)),
           const SizedBox(width: 10),
@@ -237,9 +155,186 @@ class _ChildHeader extends StatelessWidget {
               ],
             ),
           ),
-          _headerIconButton(
-            icon: Icons.logout_rounded,
+
+          // Logout icon button — left side in RTL
+          InkWell(
             onTap: () => _showLogoutDialog(context),
+            borderRadius: BorderRadius.circular(8),
+            child: Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.logout_rounded,
+                  color: Colors.white, size: 18),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Parent Password Dialog ───────────────────────────────────────────────────
+class _ParentPasswordDialog extends StatefulWidget {
+  const _ParentPasswordDialog();
+
+  @override
+  State<_ParentPasswordDialog> createState() => _ParentPasswordDialogState();
+}
+
+class _ParentPasswordDialogState extends State<_ParentPasswordDialog> {
+  final _controller = TextEditingController();
+  bool _obscure = true;
+  bool _hasError = false;
+  bool _loading = false;
+
+  // ── In a real app, validate against the stored parent password ────────────
+  static const String _mockParentPassword = '123456';
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    setState(() => _loading = true);
+
+    Future.delayed(const Duration(milliseconds: 600), () {
+      if (!mounted) return;
+      if (_controller.text == _mockParentPassword) {
+        Navigator.pop(context); // close dialog
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          '/parent/dashboard',
+          (route) => false,
+        );
+      } else {
+        setState(() {
+          _hasError = true;
+          _loading = false;
+          _controller.clear();
+        });
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+        title: Row(
+          children: const [
+            Icon(Icons.lock_rounded, color: Color(0xFF511281), size: 22),
+            SizedBox(width: 8),
+            Text(
+              'تحقق من الهوية',
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF222222),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'أدخل كلمة مرور ولي الأمر للعودة إلى حسابه',
+              style: TextStyle(fontSize: 13, color: Colors.grey),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _controller,
+              obscureText: _obscure,
+              textDirection: TextDirection.ltr,
+              onSubmitted: (_) => _submit(),
+              decoration: InputDecoration(
+                hintText: '••••••••',
+                hintStyle: const TextStyle(color: Colors.grey),
+                errorText: _hasError ? 'كلمة المرور غير صحيحة' : null,
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _obscure ? Icons.visibility : Icons.visibility_off,
+                    color: const Color(0xFF511281),
+                    size: 20,
+                  ),
+                  onPressed: () => setState(() => _obscure = !_obscure),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(
+                    color: const Color(0xFF511281).withOpacity(0.3),
+                    width: 1.5,
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(
+                      color: Color(0xFF511281), width: 1.5),
+                ),
+                errorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide:
+                      const BorderSide(color: Colors.red, width: 1.5),
+                ),
+                focusedErrorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide:
+                      const BorderSide(color: Colors.red, width: 1.5),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 14, vertical: 12),
+              ),
+            ),
+            const SizedBox(height: 4),
+          ],
+        ),
+        actions: [
+          // Cancel
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            style: TextButton.styleFrom(
+              side: BorderSide(
+                  color: const Color(0xFF511281).withOpacity(0.2), width: 1.5),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8)),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            ),
+            child: const Text('إلغاء',
+                style: TextStyle(color: Color(0xFF511281))),
+          ),
+          // Confirm
+          ElevatedButton(
+            onPressed: _loading ? null : _submit,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFFF6969),
+              foregroundColor: Colors.white,
+              elevation: 2,
+              shape: const StadiumBorder(),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            ),
+            child: _loading
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Text('تأكيد'),
           ),
         ],
       ),
@@ -268,10 +363,9 @@ class _PlacementTestBannerState extends State<_PlacementTestBanner>
       vsync: this,
       duration: const Duration(milliseconds: 100),
     );
-    _scale = Tween<double>(
-      begin: 1.0,
-      end: 0.97,
-    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
+    _scale = Tween<double>(begin: 1.0, end: 0.97).animate(
+      CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
+    );
   }
 
   @override
@@ -324,12 +418,19 @@ class _PlacementTestBannerState extends State<_PlacementTestBanner>
                   SizedBox(height: 4),
                   Text(
                     'استكشف مستواك اللغوي!',
-                    style: TextStyle(color: Colors.white, fontSize: 13),
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                    ),
                   ),
                 ],
               ),
               // Play icon
-              const Icon(Icons.play_circle_fill, color: Colors.white, size: 60),
+              const Icon(
+                Icons.play_circle_fill,
+                color: Colors.white,
+                size: 60,
+              ),
             ],
           ),
         ),
@@ -383,7 +484,10 @@ class _StatCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 2),
-          Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 10, color: Colors.grey),
+          ),
         ],
       ),
     );
@@ -504,13 +608,15 @@ class _ChildBottomNav extends StatelessWidget {
                   icon: Icons.menu_book_rounded,
                   label: 'التمارين',
                   isActive: currentRoute == '/child/exercises',
-                  onTap: () => Navigator.pushNamed(context, '/child/exercises'),
+                  onTap: () =>
+                      Navigator.pushNamed(context, '/child/exercises'),
                 ),
                 _NavItem(
                   icon: Icons.home_rounded,
                   label: 'الرئيسية',
                   isActive: currentRoute == '/child/home',
-                  onTap: () => Navigator.pushNamed(context, '/child/home'),
+                  onTap: () =>
+                      Navigator.pushNamed(context, '/child/home'),
                 ),
                 _NavItem(
                   icon: Icons.leaderboard_rounded,
@@ -553,7 +659,10 @@ class _NavItem extends StatelessWidget {
           children: [
             Icon(icon, color: color, size: 24),
             const SizedBox(height: 4),
-            Text(label, style: TextStyle(color: color, fontSize: 11)),
+            Text(
+              label,
+              style: TextStyle(color: color, fontSize: 11),
+            ),
           ],
         ),
       ),
