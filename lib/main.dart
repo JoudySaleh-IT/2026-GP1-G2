@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'screens/splash_screen.dart';
 import 'screens/parent_register_screen.dart';
@@ -24,6 +25,8 @@ import 'screens/exercise_recording_result_screen.dart';
 import 'screens/exercise_mcq_result_screen.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized(); // Ensures Flutter engine is initialized before runApp
+  Firebase.initializeApp();
   runApp(const MyApp());
 }
 
@@ -96,16 +99,16 @@ class MyApp extends StatelessWidget {
               (ModalRoute.of(context)!.settings.arguments as Map?)?['letter'] ??
               'ض',
         ),
-       '/child/exercise/mcq-result': (context) {
-  final args = ModalRoute.of(context)!.settings.arguments as Map;
-  return ExerciseMCQResultScreen(
-    score:     args['score'],
-    total:     args['total'],
-    answers:   List<Map<String, dynamic>>.from(args['answers']),
-    questions: List<Map<String, dynamic>>.from(args['questions']),
-    letter:    args['letter'] ?? 'ض',
-  );
-},
+        '/child/exercise/mcq-result': (context) {
+          final args = ModalRoute.of(context)!.settings.arguments as Map;
+          return ExerciseMCQResultScreen(
+            score: args['score'],
+            total: args['total'],
+            answers: List<Map<String, dynamic>>.from(args['answers']),
+            questions: List<Map<String, dynamic>>.from(args['questions']),
+            letter: args['letter'] ?? 'ض',
+          );
+        },
         '/child/exercise/listening': (context) => ExerciseListeningScreen(
           letter:
               (ModalRoute.of(context)!.settings.arguments as Map?)?['letter'] ??
