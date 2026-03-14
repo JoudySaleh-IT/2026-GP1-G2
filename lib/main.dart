@@ -93,11 +93,9 @@ class MyApp extends StatelessWidget {
 '/child/exercise/mcq': (context) => ExerciseMCQScreen(
   letter: (ModalRoute.of(context)!.settings.arguments as Map?)?['letter'] ?? 'ض',
 ),
-   '/child/exercise/listening': (context) => ExerciseListeningScreen(
+  '/child/exercise/listening': (context) => ExerciseListeningScreen(
   letter: (ModalRoute.of(context)!.settings.arguments as Map?)?['letter'] ?? 'ض',
-     return ExerciseListeningScreen(letter: args?['letter'] ?? '');
-
-),     
+), 
 '/child/letter-introduction': (context) => LetterIntroductionScreen(
   letter: (ModalRoute.of(context)!.settings.arguments as Map?)?['letter'] ?? 'ض',
 ),

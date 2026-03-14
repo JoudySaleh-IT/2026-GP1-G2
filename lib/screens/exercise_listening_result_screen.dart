@@ -285,29 +285,7 @@ class ExerciseListeningResultScreen extends StatelessWidget {
                     // ── Action buttons ───────────────────────────
                     Row(
                       children: [
-                        // Retry
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: () => Navigator.pushNamedAndRemoveUntil(
-                              context,
-                              '/child/exercise-listening',
-                              (r) => r.settings.name == '/child/home',
-                              arguments: {'letter': letter},
-                            ),
-                            icon: const Icon(Icons.refresh_rounded,
-                                size: 18),
-                            label: const Text('إعادة المحاولة'),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: const Color(0xFF511281),
-                              side: const BorderSide(
-                                  color: Color(0xFF511281), width: 1.5),
-                              shape: const StadiumBorder(),
-                              padding: const EdgeInsets.symmetric(
-                                  vertical: 14),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
+                        
                         // Home
                         Expanded(
                           child: ElevatedButton.icon(

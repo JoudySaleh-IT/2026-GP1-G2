@@ -21,7 +21,6 @@ class _PlacementWord {
   });
 }
  
-// ─── Placement Words Data ─────────────────────────────────────────────────────
 const List<_PlacementWord> _placementWords = [
   _PlacementWord(
     id: 1,
@@ -52,7 +51,7 @@ const List<_PlacementWord> _placementWords = [
   ),
 ];
  
-// ─── Placement Test Screen ────────────────────────────────────────────────────
+// ─── Screen ──────────────────────────────────────────────────────────────────
 class PlacementTestScreen extends StatefulWidget {
   const PlacementTestScreen({super.key});
  
@@ -62,18 +61,15 @@ class PlacementTestScreen extends StatefulWidget {
  
 class _PlacementTestScreenState extends State<PlacementTestScreen>
     with SingleTickerProviderStateMixin {
-  // ── Constants ──
   static const _purple = Color(0xFF511281);
   static const _coral = Color(0xFFFF6969);
   static const _bgColor = Color(0xFFFCF9EA);
  
-  // ── State ──
   int _currentIndex = 0;
   List<bool> _recorded = [false, false, false];
   bool _isRecording = false;
   bool _showNext = false;
  
-  // Animation controller for the recording pulse
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
  
@@ -84,7 +80,6 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
       vsync: this,
       duration: const Duration(milliseconds: 900),
     )..repeat(reverse: true);
- 
     _pulseAnimation = Tween<double>(begin: 1.0, end: 0.75).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
@@ -96,17 +91,14 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
     super.dispose();
   }
  
-  // ── Computed ──
   _PlacementWord get _currentWord => _placementWords[_currentIndex];
  
   double get _progress =>
       (_currentIndex + (_recorded[_currentIndex] ? 1 : 0)) /
       _placementWords.length;
  
-  // ── Handlers ──
   void _handleRecordToggle() {
     if (_isRecording) {
-      // Stop recording → mark as recorded
       final newRecorded = List<bool>.from(_recorded);
       newRecorded[_currentIndex] = true;
       setState(() {
@@ -117,7 +109,6 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
       _pulseController.stop();
       _pulseController.reset();
     } else {
-      // Start recording
       setState(() => _isRecording = true);
       _pulseController.repeat(reverse: true);
     }
@@ -131,7 +122,6 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
         _isRecording = false;
       });
     } else {
-      // Navigate to placement result screen
       Navigator.pushNamed(
         context,
         '/child/placement-result',
@@ -141,7 +131,6 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
   }
  
   void _playExample() {
-    // TODO: Implement TTS / audio playback for the current word
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('تشغيل: ${_currentWord.word}'),
@@ -151,40 +140,38 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
     );
   }
  
-  // ── Build ──
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: _bgColor,
-      body: Column(
-        children: [
-          _buildHeader(),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: _buildCard(),
+    // ✅ RTL wrapper
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        backgroundColor: _bgColor,
+        body: Column(
+          children: [
+            _buildHeader(),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: _buildCard(),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
  
-  // ── Header ──
   Widget _buildHeader() {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+          begin: Alignment.topRight, // ✅ RTL: start from right
+          end: Alignment.bottomLeft,
           colors: [Color(0xFF6A3A9E), _purple],
         ),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black26,
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
+          BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 2)),
         ],
       ),
       child: SafeArea(
@@ -193,10 +180,10 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           child: Row(
             children: [
-              // Back button (LTR arrow flipped for RTL)
+              // ✅ RTL: back arrow points forward (→) which is "back" in RTL
               IconButton(
                 onPressed: () => Navigator.pushNamed(context, '/child/home'),
-                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                icon: const Icon(Icons.arrow_forward, color: Colors.white),
                 style: IconButton.styleFrom(
                   backgroundColor: Colors.white12,
                   shape: RoundedRectangleBorder(
@@ -205,11 +192,9 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
                 ),
               ),
               const SizedBox(width: 12),
- 
-              // Title & subtitle
               Expanded(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+                  crossAxisAlignment: CrossAxisAlignment.start, // ✅ RTL: start = right
                   children: [
                     const Text(
                       'اختبار حرف ق',
@@ -238,7 +223,6 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
     );
   }
  
-  // ── Main Card ──
   Widget _buildCard() {
     return Container(
       decoration: BoxDecoration(
@@ -256,10 +240,7 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
       clipBehavior: Clip.antiAlias,
       child: Column(
         children: [
-          // Purple top accent bar
           Container(height: 6, color: _purple),
- 
-          // Card header
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
             child: Column(
@@ -279,8 +260,6 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
               ],
             ),
           ),
- 
-          // Card body
           Padding(
             padding: const EdgeInsets.all(20),
             child: _buildWordSection(),
@@ -290,7 +269,6 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
     );
   }
  
-  // ── Progress Bar ──
   Widget _buildProgressBar() {
     final percent = (_progress * 100).round();
     return Column(
@@ -298,19 +276,20 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
+            // ✅ RTL: percentage on right, label on left
+            Text(
+              'التقدم',
+              style: const TextStyle(
+                color: _purple,
+                fontSize: 13,
+                fontFamily: 'Tajawal',
+              ),
+            ),
             Text(
               '$percent%',
               style: const TextStyle(
                 color: _purple,
                 fontWeight: FontWeight.bold,
-                fontSize: 13,
-                fontFamily: 'Tajawal',
-              ),
-            ),
-            const Text(
-              'التقدم',
-              style: TextStyle(
-                color: _purple,
                 fontSize: 13,
                 fontFamily: 'Tajawal',
               ),
@@ -331,13 +310,12 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
     );
   }
  
-  // ── Word Section ──
   Widget _buildWordSection() {
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+          begin: Alignment.topRight, // ✅ RTL
+          end: Alignment.bottomLeft,
           colors: [
             _purple.withOpacity(0.05),
             _coral.withOpacity(0.05),
@@ -358,7 +336,6 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
     );
   }
  
-  // ── Word Display (image + arabic word + transliteration) ──
   Widget _buildWordDisplay() {
     return Container(
       decoration: BoxDecoration(
@@ -366,21 +343,14 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: _purple.withOpacity(0.1), width: 2),
         boxShadow: const [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
+          BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 2)),
         ],
       ),
       padding: const EdgeInsets.all(24),
       child: Column(
         children: [
-          // Image with glow effect
           _buildWordImage(),
           const SizedBox(height: 20),
- 
-          // Arabic word
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
             decoration: BoxDecoration(
@@ -404,11 +374,8 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
             ),
           ),
           const SizedBox(height: 12),
- 
-          // Transliteration
           Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
               color: Colors.grey.shade50,
               borderRadius: BorderRadius.circular(20),
@@ -429,12 +396,10 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
     );
   }
  
-  // ── Word Image ──
   Widget _buildWordImage() {
     return Stack(
       alignment: Alignment.center,
       children: [
-        // Glow behind image
         Container(
           width: 130,
           height: 130,
@@ -473,7 +438,6 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
     );
   }
  
-  // ── Listen Button ──
   Widget _buildListenButton() {
     return OutlinedButton.icon(
       onPressed: _playExample,
@@ -485,26 +449,19 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
       style: OutlinedButton.styleFrom(
         foregroundColor: _purple,
         side: const BorderSide(color: _purple, width: 2),
-        padding:
-            const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
     );
   }
  
-  // ── Recording Section ──
   Widget _buildRecordingSection() {
     return Column(
       children: [
-        // Record / Success state
         if (!_recorded[_currentIndex])
           _buildRecordButton()
         else
           _buildSuccessIndicator(),
- 
-        // Next button
         if (_showNext) ...[
           const SizedBox(height: 14),
           _buildNextButton(),
@@ -513,15 +470,12 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
     );
   }
  
-  // ── Record Button ──
   Widget _buildRecordButton() {
     if (_isRecording) {
       return AnimatedBuilder(
         animation: _pulseAnimation,
-        builder: (context, child) => Transform.scale(
-          scale: _pulseAnimation.value,
-          child: child,
-        ),
+        builder: (context, child) =>
+            Transform.scale(scale: _pulseAnimation.value, child: child),
         child: _recordButtonWidget(isRecording: true),
       );
     }
@@ -547,15 +501,12 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
           backgroundColor: isRecording ? _coral : _purple,
           foregroundColor: Colors.white,
           elevation: 4,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         ),
       ),
     );
   }
  
-  // ── Success Indicator ──
   Widget _buildSuccessIndicator() {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
@@ -567,8 +518,7 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.check_circle_rounded,
-              color: Colors.green.shade600, size: 26),
+          Icon(Icons.check_circle_rounded, color: Colors.green.shade600, size: 26),
           const SizedBox(width: 10),
           Text(
             'تم التسجيل بنجاح! 🎉',
@@ -584,7 +534,6 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
     );
   }
  
-  // ── Next / Results Button ──
   Widget _buildNextButton() {
     final isLast = _currentIndex == _placementWords.length - 1;
     return SizedBox(
@@ -597,9 +546,7 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
           foregroundColor: Colors.white,
           elevation: 5,
           shadowColor: _coral.withOpacity(0.4),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         ),
         child: Text(
           isLast ? '📊 عرض النتائج' : '➡️ الكلمة التالية',
