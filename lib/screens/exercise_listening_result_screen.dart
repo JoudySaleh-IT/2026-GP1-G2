@@ -40,7 +40,7 @@ class ExerciseListeningResultScreen extends StatelessWidget {
         body: Column(
           children: [
             // ── Header ────────────────────────────────────────────
-            _ResultHeader(onBack: () => Navigator.pop(context)),
+            _ResultHeader(),
 
             // ── Content ───────────────────────────────────────────
             Expanded(
@@ -285,7 +285,7 @@ class ExerciseListeningResultScreen extends StatelessWidget {
                     // ── Action buttons ───────────────────────────
                     Row(
                       children: [
-                        
+                       
                         // Home
                         Expanded(
                           child: ElevatedButton.icon(
@@ -322,8 +322,7 @@ class ExerciseListeningResultScreen extends StatelessWidget {
 
 // ─── Header ───────────────────────────────────────────────────────────────────
 class _ResultHeader extends StatelessWidget {
-  final VoidCallback onBack;
-  const _ResultHeader({required this.onBack});
+  const _ResultHeader();
 
   @override
   Widget build(BuildContext context) {
@@ -345,22 +344,9 @@ class _ResultHeader extends StatelessWidget {
         right: 16,
         left: 16,
       ),
-      child: Row(
+      child: const Row(
         children: [
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(20),
-              onTap: onBack,
-              child: const Padding(
-                padding: EdgeInsets.all(8),
-                child: Icon(Icons.arrow_back_ios_rounded,
-                    color: Colors.white, size: 22),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          const Column(
+          Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text('نتيجة تمرين الاستماع',
