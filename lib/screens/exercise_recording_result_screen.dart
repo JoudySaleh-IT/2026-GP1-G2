@@ -72,132 +72,140 @@ class ExerciseRecordingResultScreen extends StatelessWidget {
 
             // ── Scrollable content ────────────────────────────────────────────
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-                child: Column(
-                  children: [
-                    // ── Score hero card ────────────────────────────────────
-                    _buildScoreCard(pct: pct, stars: stars),
+              child: ScrollConfiguration(
+                behavior: ScrollConfiguration.of(
+                  context,
+                ).copyWith(overscroll: false),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                  child: Column(
+                    children: [
+                      // ── Score hero card ────────────────────────────────────
+                      _buildScoreCard(pct: pct, stars: stars),
 
-                    const SizedBox(height: 12),
+                      const SizedBox(height: 12),
 
-                    // ── Result message card ────────────────────────────────
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 16,
-                        horizontal: 20,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: const Color(0xFF511281).withOpacity(0.1),
-                          width: 2,
+                      // ── Result message card ────────────────────────────────
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 16,
+                          horizontal: 20,
                         ),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Color(0x0D000000),
-                            blurRadius: 8,
-                            offset: Offset(0, 2),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: const Color(0xFF511281).withOpacity(0.1),
+                            width: 2,
                           ),
-                        ],
-                      ),
-                      child: Text(
-                        _resultMessage(pct),
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w600,
-                          color: _resultColor(pct),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x0D000000),
+                              blurRadius: 8,
+                              offset: Offset(0, 2),
+                            ),
+                          ],
                         ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    // ── Earned points card (recording-only) ────────────────
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 16,
-                        horizontal: 20,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: const Color(0xFF511281).withOpacity(0.1),
-                          width: 2,
-                        ),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Color(0x0D000000),
-                            blurRadius: 8,
-                            offset: Offset(0, 2),
+                        child: Text(
+                          _resultMessage(pct),
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w600,
+                            color: _resultColor(pct),
                           ),
-                        ],
+                        ),
                       ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+
+                      const SizedBox(height: 12),
+
+                      // ── Earned points card (recording-only) ────────────────
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 16,
+                          horizontal: 20,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: const Color(0xFF511281).withOpacity(0.1),
+                            width: 2,
+                          ),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x0D000000),
+                              blurRadius: 8,
+                              offset: Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.trending_up_rounded,
+                              color: Color(0xFFFF6969),
+                              size: 28,
+                            ),
+                            const SizedBox(width: 10),
+                            Text(
+                              '+$pts',
+                              style: const TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF511281),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              'نقطة مكتسبة',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      // ── Details breakdown card ─────────────────────────────
+                      _buildDetailsCard(questions),
+
+                      const SizedBox(height: 20),
+
+                      // ── Home button ────────────────────────────────────────
+                      Row(
                         children: [
-                          const Icon(
-                            Icons.trending_up_rounded,
-                            color: Color(0xFFFF6969),
-                            size: 28,
-                          ),
-                          const SizedBox(width: 10),
-                          Text(
-                            '+$pts',
-                            style: const TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF511281),
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            'نقطة مكتسبة',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey.shade600,
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: () =>
+                                  Navigator.pushNamedAndRemoveUntil(
+                                    context,
+                                    '/child/home',
+                                    (r) => false,
+                                  ),
+                              icon: const Icon(Icons.home_rounded, size: 18),
+                              label: const Text('الرئيسية'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFFFF6969),
+                                foregroundColor: Colors.white,
+                                shape: const StadiumBorder(),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                ),
+                                elevation: 3,
+                              ),
                             ),
                           ),
                         ],
                       ),
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    // ── Details breakdown card ─────────────────────────────
-                    _buildDetailsCard(questions),
-
-                    const SizedBox(height: 20),
-
-                    // ── Home button ────────────────────────────────────────
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: () => Navigator.pushNamedAndRemoveUntil(
-                              context,
-                              '/child/home',
-                              (r) => false,
-                            ),
-                            icon: const Icon(Icons.home_rounded, size: 18),
-                            label: const Text('الرئيسية'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFFF6969),
-                              foregroundColor: Colors.white,
-                              shape: const StadiumBorder(),
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              elevation: 3,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -232,9 +240,9 @@ class ExerciseRecordingResultScreen extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 16),
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xFF6A3A9E), Color(0xFF511281)],
-            begin: Alignment.topRight,
-            end: Alignment.bottomLeft,
+            colors: [Color(0xFF511281), Color(0xFF7A3FA8)],
+            begin: Alignment.centerRight,
+            end: Alignment.centerLeft,
           ),
         ),
         child: Column(
@@ -441,9 +449,9 @@ class _RecordingResultHeader extends StatelessWidget {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xFF6A3A9E), Color(0xFF511281)],
-          begin: Alignment.topRight,
-          end: Alignment.bottomLeft,
+          colors: [Color(0xFF511281), Color(0xFF7A3FA8)],
+          begin: Alignment.centerRight,
+          end: Alignment.centerLeft,
         ),
         boxShadow: [
           BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 2)),
@@ -459,17 +467,9 @@ class _RecordingResultHeader extends StatelessWidget {
         children: [
           Material(
             color: Colors.transparent,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(20),
-              onTap: onBack,
-              child: const Padding(
-                padding: EdgeInsets.all(8),
-                child: Icon(
-                  Icons.arrow_back_ios_rounded,
-                  color: Colors.white,
-                  size: 22,
-                ),
-              ),
+            child: _HeaderIconBtn(
+              icon: Icons.arrow_back,
+              onTap: () => Navigator.pop(context),
             ),
           ),
           const SizedBox(width: 12),
@@ -508,3 +508,20 @@ const List<Map<String, dynamic>> _defaultQuestions = [
   {'questionText': 'عَيْن', 'score': 70},
   {'questionText': 'الطَّالِبُ يَدْرُسُ', 'score': 88},
 ];
+
+class _HeaderIconBtn extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  const _HeaderIconBtn({required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) => InkWell(
+    onTap: onTap,
+    borderRadius: BorderRadius.circular(8),
+    child: Container(
+      width: 34,
+      height: 34,
+      child: Icon(icon, color: Colors.white, size: 25),
+    ),
+  );
+}

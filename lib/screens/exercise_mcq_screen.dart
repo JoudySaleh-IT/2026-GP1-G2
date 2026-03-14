@@ -57,10 +57,16 @@ const List<_Question> _mcqQuestions = [
 // ─── Result Message ───────────────────────────────────────────────────────────
 ({String text, Color color}) _getResultMessage(int score, int total) {
   final ratio = score / total;
-  if (ratio == 1)   return (text: 'ممتاز! أتقنت جميع الأسئلة! 🏆', color: const Color(0xFFB45309));
-  if (ratio >= 0.8) return (text: 'رائع! أداء متميز جداً! 🌟',       color: const Color(0xFF16A34A));
-  if (ratio >= 0.6) return (text: 'جيد! يمكنك تحسين أدائك! 💪',      color: const Color(0xFF2563EB));
-  return                   (text: 'استمر في التدريب، ستتحسن! 🌱',      color: const Color(0xFFEA580C));
+  if (ratio == 1)
+    return (
+      text: 'ممتاز! أتقنت جميع الأسئلة! 🏆',
+      color: const Color(0xFFB45309),
+    );
+  if (ratio >= 0.8)
+    return (text: 'رائع! أداء متميز جداً! 🌟', color: const Color(0xFF16A34A));
+  if (ratio >= 0.6)
+    return (text: 'جيد! يمكنك تحسين أدائك! 💪', color: const Color(0xFF2563EB));
+  return (text: 'استمر في التدريب، ستتحسن! 🌱', color: const Color(0xFFEA580C));
 }
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
@@ -73,33 +79,36 @@ class ExerciseMCQScreen extends StatefulWidget {
 }
 
 class _ExerciseMCQScreenState extends State<ExerciseMCQScreen> {
-  int  _currentIndex  = 0;
+  int _currentIndex = 0;
   int? _selectedAnswer;
-  bool _showFeedback  = false;
-  int  _score         = 0;
-  bool _isFinished    = false;
+  bool _showFeedback = false;
+  int _score = 0;
+  bool _isFinished = false;
 
   final List<({int selected, int correct})> _answers = [];
 
   _Question get _question => _mcqQuestions[_currentIndex];
-  double    get _progress => (_currentIndex + 1) / _mcqQuestions.length;
+  double get _progress => (_currentIndex + 1) / _mcqQuestions.length;
 
   void _handleAnswer(int index) {
     if (_showFeedback) return;
     setState(() {
       _selectedAnswer = index;
-      _showFeedback   = true;
+      _showFeedback = true;
       if (index == _question.correctAnswer) _score++;
     });
   }
 
   void _handleNext() {
-    _answers.add((selected: _selectedAnswer!, correct: _question.correctAnswer));
+    _answers.add((
+      selected: _selectedAnswer!,
+      correct: _question.correctAnswer,
+    ));
     if (_currentIndex < _mcqQuestions.length - 1) {
       setState(() {
         _currentIndex++;
         _selectedAnswer = null;
-        _showFeedback   = false;
+        _showFeedback = false;
       });
     } else {
       setState(() => _isFinished = true);
@@ -119,7 +128,7 @@ class _ExerciseMCQScreenState extends State<ExerciseMCQScreen> {
 
   // ── Results scaffold ──────────────────────────────────────────────────────
   Widget _resultsScaffold() {
-    final result     = _getResultMessage(_score, _mcqQuestions.length);
+    final result = _getResultMessage(_score, _mcqQuestions.length);
     final percentage = (_score / _mcqQuestions.length * 100).round();
 
     return Scaffold(
@@ -135,42 +144,47 @@ class _ExerciseMCQScreenState extends State<ExerciseMCQScreen> {
 
           // Body
           Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // ── Score card ──
-                  _scoreCard(percentage, result),
-                  const SizedBox(height: 16),
+            child: ScrollConfiguration(
+              behavior: ScrollConfiguration.of(
+                context,
+              ).copyWith(overscroll: false),
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // ── Score card ──
+                    _scoreCard(percentage, result),
+                    const SizedBox(height: 16),
 
-                  // ── Breakdown ──
-                  _breakdownCard(),
-                  const SizedBox(height: 24),
+                    // ── Breakdown ──
+                    _breakdownCard(),
+                    const SizedBox(height: 24),
 
-                  // ── Home button ──
-                  SizedBox(
-                    height: 52,
-                    child: OutlinedButton.icon(
-                      onPressed: () =>
-                          Navigator.pushNamed(context, '/child/home'),
-                      icon: const Icon(Icons.home_rounded, size: 20),
-                      label: const Text(
-                        'الرئيسية',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontFamily: 'Tajawal',
-                          fontWeight: FontWeight.w600,
+                    // ── Home button ──
+                    SizedBox(
+                      height: 52,
+                      child: OutlinedButton.icon(
+                        onPressed: () =>
+                            Navigator.pushNamed(context, '/child/home'),
+                        icon: const Icon(Icons.home_rounded, size: 20),
+                        label: const Text(
+                          'الرئيسية',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontFamily: 'Tajawal',
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: _purple,
+                          side: const BorderSide(color: _purple, width: 2),
+                          shape: const StadiumBorder(),
                         ),
                       ),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: _purple,
-                        side: const BorderSide(color: _purple, width: 2),
-                        shape: const StadiumBorder(),
-                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -188,9 +202,10 @@ class _ExerciseMCQScreenState extends State<ExerciseMCQScreen> {
         border: Border.all(color: _purple.withOpacity(0.1), width: 2),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.07),
-              blurRadius: 10,
-              offset: const Offset(0, 3)),
+            color: Colors.black.withOpacity(0.07),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
         ],
       ),
       clipBehavior: Clip.antiAlias,
@@ -202,9 +217,9 @@ class _ExerciseMCQScreenState extends State<ExerciseMCQScreen> {
             padding: const EdgeInsets.symmetric(vertical: 30, horizontal: 20),
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [_purple2, _purple],
-                begin: Alignment.topRight,
-                end: Alignment.bottomLeft,
+                colors: [Color(0xFF511281), Color(0xFF7A3FA8)],
+                begin: Alignment.centerRight,
+                end: Alignment.centerLeft,
               ),
             ),
             child: Column(
@@ -291,179 +306,181 @@ class _ExerciseMCQScreenState extends State<ExerciseMCQScreen> {
 
   // ── Breakdown Card ──────────────────────────────────────────────────────────
   Widget _breakdownCard() {
-  return Container(
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(20),
-      border: Border.all(color: _purple.withOpacity(0.1), width: 2),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withOpacity(0.07),
-          blurRadius: 10,
-          offset: const Offset(0, 3),
-        ),
-      ],
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        const Padding(
-          padding: EdgeInsetsDirectional.fromSTEB(16, 16, 16, 10),
-          child: Text(
-            'تفاصيل الإجابات',
-            textAlign: TextAlign.right,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF333333),
-              fontFamily: 'Tajawal',
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _purple.withOpacity(0.1), width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.07),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Padding(
+            padding: EdgeInsetsDirectional.fromSTEB(16, 16, 16, 10),
+            child: Text(
+              'تفاصيل الإجابات',
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF333333),
+                fontFamily: 'Tajawal',
+              ),
             ),
           ),
-        ),
-        const Divider(height: 1, thickness: 1),
-        Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            children: List.generate(_mcqQuestions.length, (i) {
-              final ans = _answers[i];
-              final isCorrect = ans.selected == ans.correct;
-              // ── Get actual option text ──
-              final selectedText = _mcqQuestions[i].options[ans.selected];
-              final correctText  = _mcqQuestions[i].options[ans.correct];
+          const Divider(height: 1, thickness: 1),
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              children: List.generate(_mcqQuestions.length, (i) {
+                final ans = _answers[i];
+                final isCorrect = ans.selected == ans.correct;
+                // ── Get actual option text ──
+                final selectedText = _mcqQuestions[i].options[ans.selected];
+                final correctText = _mcqQuestions[i].options[ans.correct];
 
-              return Container(
-                margin: const EdgeInsets.only(bottom: 10),
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 12, vertical: 12),
-                decoration: BoxDecoration(
-                  color: isCorrect
-                      ? Colors.green.withOpacity(0.06)
-                      : Colors.red.withOpacity(0.06),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: isCorrect
-                        ? Colors.green.shade200
-                        : Colors.red.shade200,
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 12,
                   ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // ── Question row ──
-                    Row(
-                      textDirection: TextDirection.rtl,
-                      children: [
-                        // Number circle
-                        Container(
-                          width: 30,
-                          height: 30,
-                          decoration: BoxDecoration(
-                            color: isCorrect
-                                ? Colors.green.shade500
-                                : Colors.red.shade500,
-                            shape: BoxShape.circle,
+                  decoration: BoxDecoration(
+                    color: isCorrect
+                        ? Colors.green.withOpacity(0.06)
+                        : Colors.red.withOpacity(0.06),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isCorrect
+                          ? Colors.green.shade200
+                          : Colors.red.shade200,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // ── Question row ──
+                      Row(
+                        textDirection: TextDirection.rtl,
+                        children: [
+                          // Number circle
+                          Container(
+                            width: 30,
+                            height: 30,
+                            decoration: BoxDecoration(
+                              color: isCorrect
+                                  ? Colors.green.shade500
+                                  : Colors.red.shade500,
+                              shape: BoxShape.circle,
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              '${i + 1}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
-                          alignment: Alignment.center,
-                          child: Text(
-                            '${i + 1}',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
+                          const SizedBox(width: 10),
+                          // Question text
+                          Expanded(
+                            child: Text(
+                              _mcqQuestions[i].question,
+                              textAlign: TextAlign.right,
+                              textDirection: TextDirection.rtl,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF444444),
+                                fontFamily: 'Tajawal',
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      // ── Wrong answer details ──
+                      if (!isCorrect) ...[
+                        const SizedBox(height: 10),
+                        // User's wrong answer
+                        Padding(
+                          padding: const EdgeInsetsDirectional.only(start: 40),
+                          child: RichText(
+                            textDirection: TextDirection.rtl,
+                            text: TextSpan(
+                              children: [
+                                const TextSpan(
+                                  text: 'إجابتك: ',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFFDC2626),
+                                    fontFamily: 'Tajawal',
+                                  ),
+                                ),
+                                TextSpan(
+                                  text: selectedText,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Color(0xFFDC2626),
+                                    fontFamily: 'Tajawal',
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
-                        const SizedBox(width: 10),
-                        // Question text
-                        Expanded(
-                          child: Text(
-                            _mcqQuestions[i].question,
-                            textAlign: TextAlign.right,
+                        const SizedBox(height: 4),
+                        // Correct answer
+                        Padding(
+                          padding: const EdgeInsetsDirectional.only(start: 40),
+                          child: RichText(
                             textDirection: TextDirection.rtl,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF444444),
-                              fontFamily: 'Tajawal',
+                            text: TextSpan(
+                              children: [
+                                const TextSpan(
+                                  text: 'الإجابة الصحيحة: ',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF16A34A),
+                                    fontFamily: 'Tajawal',
+                                  ),
+                                ),
+                                TextSpan(
+                                  text: correctText,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Color(0xFF16A34A),
+                                    fontFamily: 'Tajawal',
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
                       ],
-                    ),
-
-                    // ── Wrong answer details ──
-                    if (!isCorrect) ...[
-                      const SizedBox(height: 10),
-                      // User's wrong answer
-                      Padding(
-                        padding: const EdgeInsetsDirectional.only(start: 40),
-                        child: RichText(
-                          textDirection: TextDirection.rtl,
-                          text: TextSpan(
-                            children: [
-                              const TextSpan(
-                                text: 'إجابتك: ',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFFDC2626),
-                                  fontFamily: 'Tajawal',
-                                ),
-                              ),
-                              TextSpan(
-                                text: selectedText,
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: Color(0xFFDC2626),
-                                  fontFamily: 'Tajawal',
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      // Correct answer
-                      Padding(
-                        padding: const EdgeInsetsDirectional.only(start: 40),
-                        child: RichText(
-                          textDirection: TextDirection.rtl,
-                          text: TextSpan(
-                            children: [
-                              const TextSpan(
-                                text: 'الإجابة الصحيحة: ',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF16A34A),
-                                  fontFamily: 'Tajawal',
-                                ),
-                              ),
-                              TextSpan(
-                                text: correctText,
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: Color(0xFF16A34A),
-                                  fontFamily: 'Tajawal',
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
                     ],
-                  ],
-                ),
-              );
-            }),
+                  ),
+                );
+              }),
+            ),
           ),
-        ),
-      ],
-    ),
-  );
-}
+        ],
+      ),
+    );
+  }
 
   // ════════════════════════════════════════════════════════════
   //  QUIZ SCREEN
@@ -488,13 +505,13 @@ class _ExerciseMCQScreenState extends State<ExerciseMCQScreen> {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                      color: _purple.withOpacity(0.1), width: 2),
+                  border: Border.all(color: _purple.withOpacity(0.1), width: 2),
                   boxShadow: [
                     BoxShadow(
-                        color: Colors.black.withOpacity(0.06),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2)),
+                      color: Colors.black.withOpacity(0.06),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
                   ],
                 ),
                 child: Column(
@@ -547,8 +564,9 @@ class _ExerciseMCQScreenState extends State<ExerciseMCQScreen> {
                               value: _progress,
                               minHeight: 8,
                               backgroundColor: const Color(0xFFEEEEEE),
-                              valueColor:
-                                  const AlwaysStoppedAnimation<Color>(_coral),
+                              valueColor: const AlwaysStoppedAnimation<Color>(
+                                _coral,
+                              ),
                             ),
                           ),
                         ],
@@ -571,17 +589,16 @@ class _ExerciseMCQScreenState extends State<ExerciseMCQScreen> {
                               color: _coral.withOpacity(0.05),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                  color: _coral.withOpacity(0.2)),
+                                color: _coral.withOpacity(0.2),
+                              ),
                             ),
                             child: Column(
-                              crossAxisAlignment:
-                                  CrossAxisAlignment.stretch,
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
                                 // Question number + text
                                 Row(
                                   textDirection: TextDirection.rtl,
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     // Number circle
                                     Container(
@@ -624,14 +641,14 @@ class _ExerciseMCQScreenState extends State<ExerciseMCQScreen> {
                                 Container(
                                   width: double.infinity,
                                   padding: const EdgeInsets.symmetric(
-                                      vertical: 16),
+                                    vertical: 16,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: Colors.white,
-                                    borderRadius:
-                                        BorderRadius.circular(10),
+                                    borderRadius: BorderRadius.circular(10),
                                     border: Border.all(
-                                        color:
-                                            _purple.withOpacity(0.1)),
+                                      color: _purple.withOpacity(0.1),
+                                    ),
                                   ),
                                   child: Text(
                                     _question.arabicText,
@@ -652,9 +669,10 @@ class _ExerciseMCQScreenState extends State<ExerciseMCQScreen> {
                                   child: OutlinedButton.icon(
                                     onPressed: () {},
                                     icon: const Icon(
-                                        Icons.volume_up_rounded,
-                                        size: 16,
-                                        color: _coral),
+                                      Icons.volume_up_rounded,
+                                      size: 16,
+                                      color: _coral,
+                                    ),
                                     label: const Text(
                                       'استمع إلى النطق',
                                       style: TextStyle(
@@ -664,16 +682,14 @@ class _ExerciseMCQScreenState extends State<ExerciseMCQScreen> {
                                       ),
                                     ),
                                     style: OutlinedButton.styleFrom(
-                                      side: const BorderSide(
-                                          color: _coral),
+                                      side: const BorderSide(color: _coral),
                                       shape: RoundedRectangleBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(8),
+                                        borderRadius: BorderRadius.circular(8),
                                       ),
-                                      padding:
-                                          const EdgeInsets.symmetric(
-                                              horizontal: 12,
-                                              vertical: 8),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 8,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -685,27 +701,25 @@ class _ExerciseMCQScreenState extends State<ExerciseMCQScreen> {
 
                           // Answer options
                           ..._question.options.asMap().entries.map(
-                                (e) => Padding(
-                                  padding:
-                                      const EdgeInsets.only(bottom: 10),
-                                  child: _AnswerOption(
-                                    text: e.value,
-                                    index: e.key,
-                                    selectedAnswer: _selectedAnswer,
-                                    correctAnswer:
-                                        _question.correctAnswer,
-                                    showFeedback: _showFeedback,
-                                    onTap: () => _handleAnswer(e.key),
-                                  ),
-                                ),
+                            (e) => Padding(
+                              padding: const EdgeInsets.only(bottom: 10),
+                              child: _AnswerOption(
+                                text: e.value,
+                                index: e.key,
+                                selectedAnswer: _selectedAnswer,
+                                correctAnswer: _question.correctAnswer,
+                                showFeedback: _showFeedback,
+                                onTap: () => _handleAnswer(e.key),
                               ),
+                            ),
+                          ),
 
                           // Feedback banner
                           if (_showFeedback) ...[
                             const SizedBox(height: 6),
                             _FeedbackBanner(
-                              isCorrect: _selectedAnswer ==
-                                  _question.correctAnswer,
+                              isCorrect:
+                                  _selectedAnswer == _question.correctAnswer,
                             ),
                           ],
                         ],
@@ -717,8 +731,7 @@ class _ExerciseMCQScreenState extends State<ExerciseMCQScreen> {
                       padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
                       child: Row(
                         textDirection: TextDirection.rtl,
-                        mainAxisAlignment:
-                            MainAxisAlignment.spaceBetween,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           // Score text — RIGHT side
                           Text(
@@ -732,16 +745,16 @@ class _ExerciseMCQScreenState extends State<ExerciseMCQScreen> {
 
                           // Next button — LEFT side
                           ElevatedButton(
-                            onPressed:
-                                _showFeedback ? _handleNext : null,
+                            onPressed: _showFeedback ? _handleNext : null,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: _coral,
-                              disabledBackgroundColor:
-                                  const Color(0xFFCCCCCC),
+                              disabledBackgroundColor: const Color(0xFFCCCCCC),
                               foregroundColor: Colors.white,
                               shape: const StadiumBorder(),
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 24, vertical: 12),
+                                horizontal: 24,
+                                vertical: 12,
+                              ),
                               elevation: 3,
                             ),
                             child: Text(
@@ -777,13 +790,12 @@ class _ExerciseMCQScreenState extends State<ExerciseMCQScreen> {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [_purple2, _purple],
-          begin: Alignment.topRight,
-          end: Alignment.bottomLeft,
+          colors: [Color(0xFF511281), Color(0xFF7A3FA8)],
+          begin: Alignment.centerRight,
+          end: Alignment.centerLeft,
         ),
         boxShadow: [
-          BoxShadow(
-              color: Colors.black26, blurRadius: 8, offset: Offset(0, 2)),
+          BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 2)),
         ],
       ),
       padding: EdgeInsets.only(
@@ -798,14 +810,9 @@ class _ExerciseMCQScreenState extends State<ExerciseMCQScreen> {
           // Back button — RIGHT side in RTL
           Material(
             color: Colors.transparent,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(20),
-              onTap: onBack,
-              child: const Padding(
-                padding: EdgeInsets.all(8),
-                child: Icon(Icons.arrow_back_ios_rounded,
-                    color: Colors.white, size: 22),
-              ),
+            child: _HeaderIconBtn(
+              icon: Icons.arrow_back,
+              onTap: () => Navigator.pop(context),
             ),
           ),
           const SizedBox(width: 12),
@@ -829,9 +836,10 @@ class _ExerciseMCQScreenState extends State<ExerciseMCQScreen> {
                 subtitle,
                 textDirection: TextDirection.rtl,
                 style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 12,
-                    fontFamily: 'Tajawal'),
+                  color: Colors.white70,
+                  fontSize: 12,
+                  fontFamily: 'Tajawal',
+                ),
               ),
             ],
           ),
@@ -861,10 +869,10 @@ class _AnswerOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isSelected  = selectedAnswer == index;
-    final isCorrect   = index == correctAnswer;
+    final isSelected = selectedAnswer == index;
+    final isCorrect = index == correctAnswer;
     final showCorrect = showFeedback && isCorrect;
-    final showWrong   = showFeedback && isSelected && !isCorrect;
+    final showWrong = showFeedback && isSelected && !isCorrect;
 
     Color borderColor;
     Color bgColor;
@@ -872,18 +880,18 @@ class _AnswerOption extends StatelessWidget {
 
     if (showCorrect) {
       borderColor = Colors.green;
-      bgColor     = Colors.green.withOpacity(0.07);
-      textColor   = Colors.green.shade700;
+      bgColor = Colors.green.withOpacity(0.07);
+      textColor = Colors.green.shade700;
     } else if (showWrong) {
       borderColor = Colors.red;
-      bgColor     = Colors.red.withOpacity(0.07);
-      textColor   = Colors.red.shade700;
+      bgColor = Colors.red.withOpacity(0.07);
+      textColor = Colors.red.shade700;
     } else if (isSelected) {
       borderColor = _coral;
-      bgColor     = _coral.withOpacity(0.08);
+      bgColor = _coral.withOpacity(0.08);
     } else {
       borderColor = _purple.withOpacity(0.1);
-      bgColor     = Colors.white;
+      bgColor = Colors.white;
     }
 
     return GestureDetector(
@@ -920,18 +928,20 @@ class _AnswerOption extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(4),
                 decoration: const BoxDecoration(
-                    color: Colors.green, shape: BoxShape.circle),
-                child: const Icon(Icons.check,
-                    color: Colors.white, size: 14),
+                  color: Colors.green,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.check, color: Colors.white, size: 14),
               ),
             ] else if (showWrong) ...[
               const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.all(4),
                 decoration: const BoxDecoration(
-                    color: Colors.red, shape: BoxShape.circle),
-                child: const Icon(Icons.close,
-                    color: Colors.white, size: 14),
+                  color: Colors.red,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.close, color: Colors.white, size: 14),
               ),
             ],
           ],
@@ -971,13 +981,28 @@ class _FeedbackBanner extends StatelessWidget {
         textDirection: TextDirection.rtl,
         style: TextStyle(
           fontSize: 13,
-          color: isCorrect
-              ? Colors.green.shade700
-              : Colors.orange.shade700,
+          color: isCorrect ? Colors.green.shade700 : Colors.orange.shade700,
           fontWeight: FontWeight.w500,
           fontFamily: 'Tajawal',
         ),
       ),
     );
   }
+}
+
+class _HeaderIconBtn extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  const _HeaderIconBtn({required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) => InkWell(
+    onTap: onTap,
+    borderRadius: BorderRadius.circular(8),
+    child: Container(
+      width: 34,
+      height: 34,
+      child: Icon(icon, color: Colors.white, size: 25),
+    ),
+  );
 }

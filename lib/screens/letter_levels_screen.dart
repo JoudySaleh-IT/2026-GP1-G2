@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 
 // ─── Mock Progress Data ───────────────────────────────────────────────────────
 const _levelProgress = {
-  'ض': (mcq: true,  listening: true,  recording: false),
-  'خ': (mcq: true,  listening: true,  recording: true),
+  'ض': (mcq: true, listening: true, recording: false),
+  'خ': (mcq: true, listening: true, recording: true),
   'غ': (mcq: false, listening: false, recording: false),
-  'ص': (mcq: true,  listening: false, recording: false),
+  'ص': (mcq: true, listening: false, recording: false),
   'س': (mcq: false, listening: false, recording: false),
   'ق': (mcq: false, listening: false, recording: false),
 };
@@ -35,7 +35,8 @@ class LetterLevelsScreen extends StatelessWidget {
   const LetterLevelsScreen({super.key, required this.letter});
 
   List<_LevelInfo> _buildLevels() {
-    final p = _levelProgress[letter] ??
+    final p =
+        _levelProgress[letter] ??
         (mcq: false, listening: false, recording: false);
     return [
       _LevelInfo(
@@ -99,29 +100,31 @@ class LetterLevelsScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 24),
-                    ...levels.asMap().entries.map((entry) => Padding(
-                          padding: const EdgeInsets.only(bottom: 16),
-                          child: _LevelCard(
-                            level: entry.value,
-                            number: entry.key + 1,
-                            onTap: () {
-                              // Recording goes through intro first
-                              if (entry.value.id == 'recording') {
-                                Navigator.pushNamed(
-                                  context,
-                                  '/child/letter-introduction',
-                                  arguments: {'letter': letter},
-                                );
-                              } else {
-                                Navigator.pushNamed(
-                                  context,
-                                  '/child/exercise/${entry.value.id}',
-                                  arguments: {'letter': letter},
-                                );
-                              }
-                            },
-                          ),
-                        )),
+                    ...levels.asMap().entries.map(
+                      (entry) => Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: _LevelCard(
+                          level: entry.value,
+                          number: entry.key + 1,
+                          onTap: () {
+                            // Recording goes through intro first
+                            if (entry.value.id == 'recording') {
+                              Navigator.pushNamed(
+                                context,
+                                '/child/letter-introduction',
+                                arguments: {'letter': letter},
+                              );
+                            } else {
+                              Navigator.pushNamed(
+                                context,
+                                '/child/exercise/${entry.value.id}',
+                                arguments: {'letter': letter},
+                              );
+                            }
+                          },
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -151,13 +154,12 @@ class _LetterLevelsHeader extends StatelessWidget {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xFF6A3A9E), Color(0xFF511281)],
-          begin: Alignment.topRight,
-          end: Alignment.bottomLeft,
+          colors: [Color(0xFF511281), Color(0xFF7A3FA8)],
+          begin: Alignment.centerRight,
+          end: Alignment.centerLeft,
         ),
         boxShadow: [
-          BoxShadow(
-              color: Colors.black26, blurRadius: 8, offset: Offset(0, 2)),
+          BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 2)),
         ],
       ),
       padding: EdgeInsets.only(
@@ -174,15 +176,9 @@ class _LetterLevelsHeader extends StatelessWidget {
             // 1 — Back arrow (rightmost) - تم التغيير إلى arrow_back_ios_rounded
             Material(
               color: Colors.transparent,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(20),
-                onTap: () =>
-                    Navigator.pushNamed(context, '/child/exercises'),
-                child: const Padding(
-                  padding: EdgeInsets.all(8),
-                  child: Icon(Icons.arrow_back_ios_rounded, // تم التغيير هنا
-                      color: Colors.white, size: 22),
-                ),
+              child: _HeaderIconBtn(
+                icon: Icons.arrow_back,
+                onTap: () => Navigator.pop(context),
               ),
             ),
             const SizedBox(width: 10),
@@ -215,8 +211,7 @@ class _LetterLevelsHeader extends StatelessWidget {
                   const SizedBox(height: 3),
                   Text(
                     '$completedCount من $totalCount مستويات مكتملة',
-                    style: const TextStyle(
-                        color: Colors.white70, fontSize: 12),
+                    style: const TextStyle(color: Colors.white70, fontSize: 12),
                   ),
                 ],
               ),
@@ -254,9 +249,13 @@ class _LevelCardState extends State<_LevelCard>
   void initState() {
     super.initState();
     _ctrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 100));
-    _scale = Tween<double>(begin: 1.0, end: 0.96)
-        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
+      vsync: this,
+      duration: const Duration(milliseconds: 100),
+    );
+    _scale = Tween<double>(
+      begin: 1.0,
+      end: 0.96,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
   }
 
   @override
@@ -271,8 +270,7 @@ class _LevelCardState extends State<_LevelCard>
 
     return AnimatedBuilder(
       animation: _scale,
-      builder: (_, child) =>
-          Transform.scale(scale: _scale.value, child: child),
+      builder: (_, child) => Transform.scale(scale: _scale.value, child: child),
       child: GestureDetector(
         onTapDown: (_) => _ctrl.forward(),
         onTapUp: (_) {
@@ -290,9 +288,10 @@ class _LevelCardState extends State<_LevelCard>
             ),
             boxShadow: const [
               BoxShadow(
-                  color: Color(0x0D000000),
-                  blurRadius: 8,
-                  offset: Offset(0, 2)),
+                color: Color(0x0D000000),
+                blurRadius: 8,
+                offset: Offset(0, 2),
+              ),
             ],
           ),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
@@ -361,10 +360,7 @@ class _LevelCardState extends State<_LevelCard>
               const SizedBox(height: 4),
               Text(
                 widget.level.description,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Color(0xFF888888),
-                ),
+                style: const TextStyle(fontSize: 12, color: Color(0xFF888888)),
               ),
             ],
           ),
@@ -372,11 +368,29 @@ class _LevelCardState extends State<_LevelCard>
 
         // 4 — Arrow (leftmost in RTL)
         const Icon(
-          Icons.arrow_forward_ios_rounded, // تم التغيير إلى arrow_forward_ios_rounded
+          Icons
+              .arrow_forward_ios_rounded, // تم التغيير إلى arrow_forward_ios_rounded
           color: Color(0xFFCCCCCC),
           size: 18,
         ),
       ],
     );
   }
+}
+
+class _HeaderIconBtn extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  const _HeaderIconBtn({required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) => InkWell(
+    onTap: onTap,
+    borderRadius: BorderRadius.circular(8),
+    child: Container(
+      width: 34,
+      height: 34,
+      child: Icon(icon, color: Colors.white, size: 25),
+    ),
+  );
 }
