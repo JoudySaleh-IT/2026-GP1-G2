@@ -85,17 +85,6 @@ class LetterLevelsScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Center(
-                      child: Text(
-                        'اختر مستوى للتمرن',
-                        style: TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF511281),
-                          fontFamily: 'Tajawal',
-                        ),
-                      ),
-                    ),
                     const SizedBox(height: 24),
                     ...levels.asMap().entries.map(
                       (entry) => Padding(
@@ -153,8 +142,7 @@ class _LetterLevelsHeader extends StatelessWidget {
           end: Alignment.centerLeft,
         ),
         boxShadow: [
-          BoxShadow(
-              color: Colors.black26, blurRadius: 8, offset: Offset(0, 2)),
+          BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 2)),
         ],
       ),
       padding: EdgeInsets.only(
@@ -244,9 +232,10 @@ class _LevelCardState extends State<_LevelCard>
       vsync: this,
       duration: const Duration(milliseconds: 100),
     );
-    _scale = Tween<double>(begin: 1.0, end: 0.96).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
-    );
+    _scale = Tween<double>(
+      begin: 1.0,
+      end: 0.96,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
   }
 
   @override
@@ -261,8 +250,7 @@ class _LevelCardState extends State<_LevelCard>
 
     return AnimatedBuilder(
       animation: _scale,
-      builder: (_, child) =>
-          Transform.scale(scale: _scale.value, child: child),
+      builder: (_, child) => Transform.scale(scale: _scale.value, child: child),
       child: GestureDetector(
         onTapDown: (_) => _ctrl.forward(),
         onTapUp: (_) {
@@ -286,8 +274,7 @@ class _LevelCardState extends State<_LevelCard>
               ),
             ],
           ),
-          padding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
           child: Row(
             children: [
               Container(
