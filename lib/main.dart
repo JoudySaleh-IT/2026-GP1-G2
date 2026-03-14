@@ -25,9 +25,9 @@ import 'screens/exercise_recording_result_screen.dart';
 
 import 'screens/exercise_mcq_result_screen.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized(); // Ensures Flutter engine is initialized before runApp
-  Firebase.initializeApp();
+  await Firebase.initializeApp();
   runApp(const MyApp());
 }
 
