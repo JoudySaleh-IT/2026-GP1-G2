@@ -19,6 +19,8 @@ import 'screens/exercise_recording_screen.dart';
 import 'screens/placement_test_screen.dart';
 import 'screens/placement_result_screen.dart';
 import 'screens/leaderboard_screen.dart';
+import 'screens/exercise_listening_result_screen.dart';
+
 
 void main() {
   runApp(const MyApp());
@@ -93,7 +95,7 @@ class MyApp extends StatelessWidget {
 ),
    '/child/exercise/listening': (context) => ExerciseListeningScreen(
   letter: (ModalRoute.of(context)!.settings.arguments as Map?)?['letter'] ?? 'ض',
-     // return ExerciseListeningScreen(letter: args?['letter'] ?? '');
+     return ExerciseListeningScreen(letter: args?['letter'] ?? '');
 
 ),     
 '/child/letter-introduction': (context) => LetterIntroductionScreen(
@@ -124,7 +126,7 @@ class MyApp extends StatelessWidget {
 },
 '/child/leaderboard': (context) => const LeaderboardScreen(),
 '/child/exercise-listening-result': (context) =>
-   // const ExerciseListeningResultScreen(),
+   const ExerciseListeningResultScreen(),
       },   // ← closes routes: { }
     );     // ← closes MaterialApp(
   }        // ← closes build()
