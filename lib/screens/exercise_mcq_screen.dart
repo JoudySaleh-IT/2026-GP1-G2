@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
 
+// ─── Constants ────────────────────────────────────────────────────────────────
+const _purple = Color(0xFF511281);
+const _purple2 = Color(0xFF6A3A9E);
+const _coral = Color(0xFFFF6969);
+const _bgColor = Color(0xFFFCF9EA);
+
 // ─── Mock Questions ───────────────────────────────────────────────────────────
 class _Question {
   final String question;
@@ -15,7 +21,7 @@ class _Question {
   });
 }
 
-const _mcqQuestions = [
+const List<_Question> _mcqQuestions = [
   _Question(
     question: "ما الحرف الذي يمثل صوت 'ذ' في كلمة 'this'؟",
     arabicText: 'ذ',
@@ -48,7 +54,34 @@ const _mcqQuestions = [
   ),
 ];
 
-// ─── Screen ──────────────────────────────────────────────────────────────────
+// ─── Result Message ───────────────────────────────────────────────────────────
+({String text, Color color}) _getResultMessage(int score, int total) {
+  final ratio = score / total;
+  if (ratio == 1) {
+    return (
+      text: 'ممتاز! أتقنت جميع الأسئلة! 🏆',
+      color: const Color(0xFFB45309),
+    );
+  }
+  if (ratio >= 0.8) {
+    return (
+      text: 'رائع! أداء متميز جداً! 🌟',
+      color: const Color(0xFF16A34A),
+    );
+  }
+  if (ratio >= 0.6) {
+    return (
+      text: 'جيد! يمكنك تحسين أدائك! 💪',
+      color: const Color(0xFF2563EB),
+    );
+  }
+  return (
+    text: 'استمر في التدريب، ستتحسن! 🌱',
+    color: const Color(0xFFEA580C),
+  );
+}
+
+// ─── Main Screen ──────────────────────────────────────────────────────────────
 class ExerciseMCQScreen extends StatefulWidget {
   final String letter;
   const ExerciseMCQScreen({super.key, required this.letter});
@@ -62,20 +95,31 @@ class _ExerciseMCQScreenState extends State<ExerciseMCQScreen> {
   int? _selectedAnswer;
   bool _showFeedback = false;
   int _score = 0;
+  bool _isFinished = false;
+
+  final List<({int selected, int correct})> _answers = [];
 
   _Question get _question => _mcqQuestions[_currentIndex];
   double get _progress => (_currentIndex + 1) / _mcqQuestions.length;
 
   void _handleAnswer(int index) {
     if (_showFeedback) return;
+
     setState(() {
       _selectedAnswer = index;
       _showFeedback = true;
-      if (index == _question.correctAnswer) _score++;
+      if (index == _question.correctAnswer) {
+        _score++;
+      }
     });
   }
 
   void _handleNext() {
+    _answers.add((
+      selected: _selectedAnswer!,
+      correct: _question.correctAnswer,
+    ));
+
     if (_currentIndex < _mcqQuestions.length - 1) {
       setState(() {
         _currentIndex++;
@@ -83,16 +127,9 @@ class _ExerciseMCQScreenState extends State<ExerciseMCQScreen> {
         _showFeedback = false;
       });
     } else {
-      Navigator.pushNamed(
-        context,
-        '/child/feedback',
-        arguments: {
-          'score': _score,
-          'total': _mcqQuestions.length,
-          'type': 'MCQ',
-          'letter': widget.letter,
-        },
-      );
+      setState(() {
+        _isFinished = true;
+      });
     }
   }
 
@@ -100,301 +137,585 @@ class _ExerciseMCQScreenState extends State<ExerciseMCQScreen> {
   Widget build(BuildContext context) {
     return Directionality(
       textDirection: TextDirection.rtl,
-      child: Scaffold(
-        backgroundColor: const Color(0xFFFCF9EA),
-        body: Column(
-          children: [
-            // ── Header ──────────────────────────────────────────
-            _MCQHeader(onBack: () => Navigator.pop(context)),
+      child: _isFinished ? _resultsScaffold() : _quizScaffold(),
+    );
+  }
 
-            // ── Scrollable content ───────────────────────────────
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: const Color(0xFF511281).withOpacity(0.1),
-                      width: 2,
+  // ── Results Scaffold ───────────────────────────────────────────────────────
+  Widget _resultsScaffold() {
+    final result = _getResultMessage(_score, _mcqQuestions.length);
+    final percentage = (_score / _mcqQuestions.length * 100).round();
+
+    return Scaffold(
+      backgroundColor: _bgColor,
+      body: Column(
+        children: [
+          _header(
+            title: 'نتيجة التمرين',
+            subtitle: 'ملخص أدائك',
+            onBack: () => Navigator.pop(context),
+          ),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsetsDirectional.fromSTEB(16, 20, 16, 32),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _scoreCard(percentage, result),
+                  const SizedBox(height: 16),
+                  _breakdownCard(),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    height: 52,
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        Navigator.pushNamed(context, '/child/home');
+                      },
+                      icon: const Icon(Icons.home_rounded, size: 20),
+                      label: const Text(
+                        'الرئيسية',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontFamily: 'Tajawal',
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: _purple,
+                        side: const BorderSide(color: _purple, width: 2),
+                        shape: const StadiumBorder(),
+                      ),
                     ),
-                    boxShadow: const [
-                      BoxShadow(
-                          color: Color(0x0D000000),
-                          blurRadius: 8,
-                          offset: Offset(0, 2)),
-                    ],
                   ),
-                  child: Column(
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Score Card ─────────────────────────────────────────────────────────────
+  Widget _scoreCard(int percentage, ({String text, Color color}) result) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _purple.withOpacity(0.1), width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.07),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 30, horizontal: 20),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [_purple2, _purple],
+                begin: Alignment.topRight,
+                end: Alignment.bottomLeft,
+              ),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(_mcqQuestions.length, (i) {
+                    final filled = i < _score;
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 3),
+                      child: Icon(
+                        filled
+                            ? Icons.star_rounded
+                            : Icons.star_outline_rounded,
+                        color:
+                            filled ? const Color(0xFFFFD700) : Colors.white30,
+                        size: 32,
+                      ),
+                    );
+                  }),
+                ),
+                const SizedBox(height: 16),
+                RichText(
+                  textDirection: TextDirection.ltr,
+                  text: TextSpan(
                     children: [
-                      // ── Progress header inside card ────────────
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
-                        child: Column(
-                          children: [
-                            Text(
-                              'تمرين ${_currentIndex + 1} من ${_mcqQuestions.length}',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF1A1A1A),
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            Row(
-                              children: [
-                                const Text('التقدم',
-                                    style: TextStyle(
-                                        fontSize: 12,
-                                        color: Color(0xFF888888))),
-                                const Spacer(),
-                                Text(
-                                  '${_currentIndex + 1}/${_mcqQuestions.length}',
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: Color(0xFFFF6969),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 6),
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(4),
-                              child: LinearProgressIndicator(
-                                value: _progress,
-                                minHeight: 8,
-                                backgroundColor: const Color(0xFFEEEEEE),
-                                valueColor:
-                                    const AlwaysStoppedAnimation<Color>(
-                                        Color(0xFFFF6969)),
-                              ),
-                            ),
-                          ],
+                      TextSpan(
+                        text: '$_score',
+                        style: const TextStyle(
+                          fontSize: 64,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          fontFamily: 'Tajawal',
                         ),
                       ),
-
-                      const SizedBox(height: 16),
-                      const Divider(height: 1),
-
-                      // ── Question body ──────────────────────────
-                      Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Question number + text
-                            Container(
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFFF6969)
-                                    .withOpacity(0.05),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: const Color(0xFFFF6969)
-                                      .withOpacity(0.2),
-                                ),
-                              ),
-                              child: Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      // Number circle - الآن على اليمين (لأن RTL)
-                                      Container(
-                                        width: 30,
-                                        height: 30,
-                                        decoration: const BoxDecoration(
-                                          color: Color(0xFFFF6969),
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: Center(
-                                          child: Text(
-                                            '${_currentIndex + 1}',
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 13,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 10),
-                                      Expanded(
-                                        child: Text(
-                                          _question.question,
-                                          style: const TextStyle(
-                                            fontSize: 14,
-                                            color: Color(0xFF333333),
-                                            height: 1.5,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 14),
-
-                                  // Arabic text display
-                                  Container(
-                                    width: double.infinity,
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 16),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius:
-                                          BorderRadius.circular(10),
-                                      border: Border.all(
-                                        color: const Color(0xFF511281)
-                                            .withOpacity(0.1),
-                                      ),
-                                    ),
-                                    child: Text(
-                                      _question.arabicText,
-                                      textAlign: TextAlign.center,
-                                      style: const TextStyle(
-                                        fontSize: 38,
-                                        color: Color(0xFF511281),
-                                        height: 1.2,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 12),
-
-                                  // Listen button
-                                  OutlinedButton.icon(
-                                    onPressed: () {},
-                                    icon: const Icon(Icons.volume_up_rounded,
-                                        size: 16,
-                                        color: Color(0xFFFF6969)),
-                                    label: const Text(
-                                      'استمع إلى النطق',
-                                      style: TextStyle(
-                                          color: Color(0xFFFF6969),
-                                          fontSize: 13),
-                                    ),
-                                    style: OutlinedButton.styleFrom(
-                                      side: const BorderSide(
-                                          color: Color(0xFFFF6969)),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(8),
-                                      ),
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 12, vertical: 8),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-
-                            const SizedBox(height: 16),
-
-                            // ── Answer options ─────────────────────
-                            ..._question.options
-                                .asMap()
-                                .entries
-                                .map((e) => Padding(
-                                      padding: const EdgeInsets.only(
-                                          bottom: 10),
-                                      child: _AnswerOption(
-                                        text: e.value,
-                                        index: e.key,
-                                        selectedAnswer: _selectedAnswer,
-                                        correctAnswer:
-                                            _question.correctAnswer,
-                                        showFeedback: _showFeedback,
-                                        onTap: () =>
-                                            _handleAnswer(e.key),
-                                      ),
-                                    )),
-
-                            // ── Feedback banner ────────────────────
-                            if (_showFeedback) ...[
-                              const SizedBox(height: 6),
-                              _FeedbackBanner(
-                                isCorrect: _selectedAnswer ==
-                                    _question.correctAnswer,
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-
-                      // ── Score + Next button ────────────────────
-                      Padding(
-                        padding:
-                            const EdgeInsets.fromLTRB(16, 0, 16, 20),
-                        child: Row(
-                          mainAxisAlignment:
-                              MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'النتيجة: $_score/${_currentIndex + (_showFeedback ? 1 : 0)}',
-                              style: const TextStyle(
-                                fontSize: 13,
-                                color: Color(0xFF888888),
-                              ),
-                            ),
-                            ElevatedButton(
-                              onPressed:
-                                  _showFeedback ? _handleNext : null,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor:
-                                    const Color(0xFFFF6969),
-                                disabledBackgroundColor:
-                                    const Color(0xFFCCCCCC),
-                                foregroundColor: Colors.white,
-                                shape: const StadiumBorder(),
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 24, vertical: 12),
-                                elevation: 3,
-                              ),
-                              child: Text(
-                                _currentIndex <
-                                        _mcqQuestions.length - 1
-                                    ? 'السؤال التالي'
-                                    : 'إنهاء',
-                                style: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600),
-                              ),
-                            ),
-                          ],
+                      TextSpan(
+                        text: '/${_mcqQuestions.length}',
+                        style: const TextStyle(
+                          fontSize: 32,
+                          color: Colors.white54,
+                          fontFamily: 'Tajawal',
                         ),
                       ),
                     ],
                   ),
                 ),
+                const SizedBox(height: 6),
+                Text(
+                  '$percentage% إجابات صحيحة',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 14,
+                    fontFamily: 'Tajawal',
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+            child: Text(
+              result.text,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: result.color,
+                fontFamily: 'Tajawal',
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
-}
 
-// ─── Header ───────────────────────────────────────────────────────────────────
-class _MCQHeader extends StatelessWidget {
-  final VoidCallback onBack;
-  const _MCQHeader({required this.onBack});
+  // ── Breakdown Card ─────────────────────────────────────────────────────────
+  Widget _breakdownCard() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _purple.withOpacity(0.1), width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.07),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Padding(
+            padding: EdgeInsetsDirectional.fromSTEB(16, 16, 16, 10),
+            child: Text(
+              'تفاصيل الإجابات',
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF333333),
+                fontFamily: 'Tajawal',
+              ),
+            ),
+          ),
+          const Divider(height: 1, thickness: 1),
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              children: List.generate(_mcqQuestions.length, (i) {
+                final ans = _answers[i];
+                final isCorrect = ans.selected == ans.correct;
 
-  @override
-  Widget build(BuildContext context) {
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isCorrect
+                        ? Colors.green.withOpacity(0.06)
+                        : Colors.red.withOpacity(0.06),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isCorrect
+                          ? Colors.green.shade200
+                          : Colors.red.shade200,
+                    ),
+                  ),
+                  child: Row(
+                    textDirection: TextDirection.rtl,
+                    children: [
+                      Container(
+                        width: 30,
+                        height: 30,
+                        decoration: BoxDecoration(
+                          color: isCorrect
+                              ? Colors.green.shade500
+                              : Colors.red.shade500,
+                          shape: BoxShape.circle,
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          '${i + 1}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          _mcqQuestions[i].question,
+                          textAlign: TextAlign.right,
+                          textDirection: TextDirection.rtl,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: Color(0xFF444444),
+                            fontFamily: 'Tajawal',
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Icon(
+                        isCorrect
+                            ? Icons.check_circle_rounded
+                            : Icons.cancel_rounded,
+                        color: isCorrect
+                            ? Colors.green.shade500
+                            : Colors.red.shade500,
+                        size: 22,
+                      ),
+                    ],
+                  ),
+                );
+              }),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Quiz Scaffold ──────────────────────────────────────────────────────────
+  Widget _quizScaffold() {
+    return Scaffold(
+      backgroundColor: _bgColor,
+      body: Column(
+        children: [
+          _header(
+            title: 'تمارين الاختيار من متعدد',
+            subtitle: 'اختر الإجابة الصحيحة',
+            onBack: () => Navigator.pop(context),
+          ),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsetsDirectional.fromSTEB(16, 16, 16, 32),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: _purple.withOpacity(0.1), width: 2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.06),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Padding(
+                      padding:
+                          const EdgeInsetsDirectional.fromSTEB(16, 20, 16, 0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            'تمرين ${_currentIndex + 1} من ${_mcqQuestions.length}',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF1A1A1A),
+                              fontFamily: 'Tajawal',
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            textDirection: TextDirection.rtl,
+                            children: [
+                              const Text(
+                                'التقدم',
+                                textAlign: TextAlign.right,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Color(0xFF888888),
+                                  fontFamily: 'Tajawal',
+                                ),
+                              ),
+                              const Spacer(),
+                              Text(
+                                '${_currentIndex + 1}/${_mcqQuestions.length}',
+                                textDirection: TextDirection.ltr,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: _coral,
+                                  fontFamily: 'Tajawal',
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(4),
+                            child: LinearProgressIndicator(
+                              value: _progress,
+                              minHeight: 8,
+                              backgroundColor: const Color(0xFFEEEEEE),
+                              valueColor:
+                                  const AlwaysStoppedAnimation<Color>(_coral),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Divider(height: 1, thickness: 1),
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: _coral.withOpacity(0.05),
+                              borderRadius: BorderRadius.circular(12),
+                              border:
+                                  Border.all(color: _coral.withOpacity(0.2)),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Row(
+                                  textDirection: TextDirection.rtl,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Container(
+                                      width: 30,
+                                      height: 30,
+                                      decoration: const BoxDecoration(
+                                        color: _coral,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      alignment: Alignment.center,
+                                      child: Text(
+                                        '${_currentIndex + 1}',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Text(
+                                        _question.question,
+                                        textAlign: TextAlign.right,
+                                        textDirection: TextDirection.rtl,
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          color: Color(0xFF333333),
+                                          height: 1.5,
+                                          fontFamily: 'Tajawal',
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 14),
+                                Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 16,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(
+                                      color: _purple.withOpacity(0.1),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    _question.arabicText,
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                      fontSize: 38,
+                                      color: _purple,
+                                      height: 1.2,
+                                      fontFamily: 'Tajawal',
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                Align(
+                                  alignment: Alignment.centerRight,
+                                  child: OutlinedButton.icon(
+                                    onPressed: () {},
+                                    icon: const Icon(
+                                      Icons.volume_up_rounded,
+                                      size: 16,
+                                      color: _coral,
+                                    ),
+                                    label: const Text(
+                                      'استمع إلى النطق',
+                                      style: TextStyle(
+                                        color: _coral,
+                                        fontSize: 13,
+                                        fontFamily: 'Tajawal',
+                                      ),
+                                    ),
+                                    style: OutlinedButton.styleFrom(
+                                      side:
+                                          const BorderSide(color: _coral),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(8),
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 8,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          ..._question.options.asMap().entries.map(
+                                (e) => Padding(
+                                  padding:
+                                      const EdgeInsets.only(bottom: 10),
+                                  child: _AnswerOption(
+                                    text: e.value,
+                                    index: e.key,
+                                    selectedAnswer: _selectedAnswer,
+                                    correctAnswer: _question.correctAnswer,
+                                    showFeedback: _showFeedback,
+                                    onTap: () => _handleAnswer(e.key),
+                                  ),
+                                ),
+                              ),
+                          if (_showFeedback) ...[
+                            const SizedBox(height: 6),
+                            _FeedbackBanner(
+                              isCorrect:
+                                  _selectedAnswer == _question.correctAnswer,
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding:
+                          const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 20),
+                      child: Row(
+                        textDirection: TextDirection.rtl,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'النتيجة: $_score/${_currentIndex + (_showFeedback ? 1 : 0)}',
+                              textAlign: TextAlign.right,
+                              textDirection: TextDirection.rtl,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: Color(0xFF888888),
+                                fontFamily: 'Tajawal',
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          ElevatedButton(
+                            onPressed: _showFeedback ? _handleNext : null,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: _coral,
+                              disabledBackgroundColor:
+                                  const Color(0xFFCCCCCC),
+                              foregroundColor: Colors.white,
+                              shape: const StadiumBorder(),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 12,
+                              ),
+                              elevation: 3,
+                            ),
+                            child: Text(
+                              _currentIndex < _mcqQuestions.length - 1
+                                  ? 'السؤال التالي'
+                                  : 'إنهاء',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                fontFamily: 'Tajawal',
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Shared Header ──────────────────────────────────────────────────────────
+  Widget _header({
+    required String title,
+    required String subtitle,
+    required VoidCallback onBack,
+  }) {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xFF6A3A9E), Color(0xFF511281)],
+          colors: [_purple2, _purple],
           begin: Alignment.topRight,
           end: Alignment.bottomLeft,
         ),
         boxShadow: [
           BoxShadow(
-              color: Colors.black26, blurRadius: 8, offset: Offset(0, 2)),
+            color: Colors.black26,
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
         ],
       ),
       padding: EdgeInsets.only(
@@ -404,8 +725,8 @@ class _MCQHeader extends StatelessWidget {
         left: 16,
       ),
       child: Row(
+        textDirection: TextDirection.rtl,
         children: [
-          // سهم الرجوع على اليمين - تم التغيير إلى arrow_back_ios_rounded
           Material(
             color: Colors.transparent,
             child: InkWell(
@@ -413,29 +734,43 @@ class _MCQHeader extends StatelessWidget {
               onTap: onBack,
               child: const Padding(
                 padding: EdgeInsets.all(8),
-                child: Icon(Icons.arrow_back_ios_rounded, // تم التغيير هنا
-                    color: Colors.white, size: 22),
+                child: Icon(
+                  Icons.arrow_back_ios_rounded,
+                  color: Colors.white,
+                  size: 22,
+                ),
               ),
             ),
           ),
           const SizedBox(width: 12),
-          const Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'تمارين الاختيار من متعدد',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 17,
-                  fontWeight: FontWeight.w600,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  textAlign: TextAlign.right,
+                  textDirection: TextDirection.rtl,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
+                    fontFamily: 'Tajawal',
+                  ),
                 ),
-              ),
-              SizedBox(height: 2),
-              Text(
-                'اختر الإجابة الصحيحة',
-                style: TextStyle(color: Colors.white70, fontSize: 12),
-              ),
-            ],
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  textAlign: TextAlign.right,
+                  textDirection: TextDirection.rtl,
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 12,
+                    fontFamily: 'Tajawal',
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -443,7 +778,7 @@ class _MCQHeader extends StatelessWidget {
   }
 }
 
-// ─── Answer Option ────────────────────────────────────────────────────────────
+// ─── Answer Option ───────────────────────────────────────────────────────────
 class _AnswerOption extends StatelessWidget {
   final String text;
   final int index;
@@ -481,10 +816,10 @@ class _AnswerOption extends StatelessWidget {
       bgColor = Colors.red.withOpacity(0.07);
       textColor = Colors.red.shade700;
     } else if (isSelected) {
-      borderColor = const Color(0xFFFF6969);
-      bgColor = const Color(0xFFFF6969).withOpacity(0.08);
+      borderColor = _coral;
+      bgColor = _coral.withOpacity(0.08);
     } else {
-      borderColor = const Color(0xFF511281).withOpacity(0.1);
+      borderColor = _purple.withOpacity(0.1);
       bgColor = Colors.white;
     }
 
@@ -499,39 +834,50 @@ class _AnswerOption extends StatelessWidget {
           border: Border.all(color: borderColor, width: 2),
         ),
         child: Row(
+          textDirection: TextDirection.rtl,
           children: [
-            // Text on the right (RTL)
             Expanded(
               child: Text(
                 text,
+                textAlign: TextAlign.right,
+                textDirection: TextDirection.rtl,
                 style: TextStyle(
                   fontSize: 14,
                   color: textColor,
                   fontWeight: FontWeight.w500,
+                  fontFamily: 'Tajawal',
                 ),
               ),
             ),
-            // Icon on the left (RTL)
-            if (showCorrect)
+            if (showCorrect) ...[
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.all(4),
                 decoration: const BoxDecoration(
                   color: Colors.green,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.check,
-                    color: Colors.white, size: 14),
-              )
-            else if (showWrong)
+                child: const Icon(
+                  Icons.check,
+                  color: Colors.white,
+                  size: 14,
+                ),
+              ),
+            ] else if (showWrong) ...[
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.all(4),
                 decoration: const BoxDecoration(
                   color: Colors.red,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.close,
-                    color: Colors.white, size: 14),
+                child: const Icon(
+                  Icons.close,
+                  color: Colors.white,
+                  size: 14,
+                ),
               ),
+            ],
           ],
         ),
       ),
@@ -539,7 +885,7 @@ class _AnswerOption extends StatelessWidget {
   }
 }
 
-// ─── Feedback Banner ──────────────────────────────────────────────────────────
+// ─── Feedback Banner ─────────────────────────────────────────────────────────
 class _FeedbackBanner extends StatelessWidget {
   final bool isCorrect;
   const _FeedbackBanner({required this.isCorrect});
@@ -548,6 +894,7 @@ class _FeedbackBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
+      width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: isCorrect
@@ -564,11 +911,14 @@ class _FeedbackBanner extends StatelessWidget {
         isCorrect
             ? 'أحسنت! إجابة صحيحة 🎉'
             : 'إجابة خاطئة. الإجابة الصحيحة مظللة. استمر في المحاولة!',
+        textAlign: TextAlign.right,
+        textDirection: TextDirection.rtl,
         style: TextStyle(
           fontSize: 13,
           color:
               isCorrect ? Colors.green.shade700 : Colors.orange.shade700,
           fontWeight: FontWeight.w500,
+          fontFamily: 'Tajawal',
         ),
       ),
     );
