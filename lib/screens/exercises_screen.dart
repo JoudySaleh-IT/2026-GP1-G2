@@ -43,29 +43,79 @@ class ExercisesScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // ── Section title above grid ─────────────────────
-                    const SizedBox(width: double.infinity),
-                    const Center(
-                      child: Text(
-                        'هيا نتدرب!',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF511281),
+                    // ── Child info card ───────────────────────────────
+                    Container(
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: const Color(0xFF511281).withOpacity(0.08),
+                          width: 1.5,
                         ),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x0F000000),
+                            blurRadius: 10,
+                            offset: Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 14),
+                      child: Row(
+                        children: [
+                          // Name + stats
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'أحمد',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF1A1A1A),
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  children: const [
+                                    Icon(Icons.emoji_events_rounded,
+                                        color: Color(0xFF511281), size: 16),
+                                    SizedBox(width: 4),
+                                    Text('الترتيب #12',
+                                        style: TextStyle(
+                                            fontSize: 12,
+                                            color: Color(0xFF555555))),
+                                    SizedBox(width: 12),
+                                    Icon(Icons.star_rounded,
+                                        color: Color(0xFFFBBF24), size: 16),
+                                    SizedBox(width: 4),
+                                    Text('1250 نقطة',
+                                        style: TextStyle(
+                                            fontSize: 12,
+                                            color: Color(0xFF555555))),
+                                    SizedBox(width: 12),
+                                    Icon(Icons.local_fire_department_rounded,
+                                        color: Color(0xFFFF6969), size: 16),
+                                    SizedBox(width: 4),
+                                    Text('7 يوم',
+                                        style: TextStyle(
+                                            fontSize: 12,
+                                            color: Color(0xFF555555))),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Avatar
+                          const Text('🦁', style: TextStyle(fontSize: 36)),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 2),
-                    const Center(
-                      child: Text(
-                        'اختر حرفاً للتمرن عليه',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Color(0xFF888888),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
+
+                    const SizedBox(height: 8),
 
                     // ── Letters grid ─────────────────────────────────
                     GridView.builder(
@@ -130,105 +180,42 @@ class _ExercisesHeader extends StatelessWidget {
         right: 16,
         left: 16,
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ── Row 1: title + child name ────────────────────────────
-          Row(
-            children: [
-              // Title + subtitle
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
-                    Text(
-                      'أحمد',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    SizedBox(height: 2),
-                    Text(
-                      'المستوى: متوسط',
-                      style: TextStyle(color: Colors.white70, fontSize: 12),
-                    ),
-                  ],
-                ),
-              ),
-
-            ],
-          ),
-
-          const SizedBox(height: 14),
-
-          // ── Row 2: avatar + stats badges ─────────────────────────
-          Row(
-            children: [
-              // Avatar
-              const Text('🦁', style: TextStyle(fontSize: 28)),
-              const SizedBox(width: 8),
-              _StatBadge(
-                icon: Icons.local_fire_department_rounded,
-                iconColor: const Color(0xFFFF6969),
-                label: '7 يوم',
-              ),
-              const SizedBox(width: 8),
-              _StatBadge(
-                icon: Icons.star_rounded,
-                iconColor: const Color(0xFFFBBF24),
-                label: '1250 نقطة',
-              ),
-              const SizedBox(width: 8),
-              _StatBadge(
-                icon: Icons.emoji_events_rounded,
-                iconColor: const Color(0xFFFBBF24),
-                label: '#12',
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─── Stat Badge ───────────────────────────────────────────────────────────────
-class _StatBadge extends StatelessWidget {
-  final IconData icon;
-  final Color iconColor;
-  final String label;
-
-  const _StatBadge({
-    required this.icon,
-    required this.iconColor,
-    required this.label,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.2),
-          width: 1,
-        ),
-      ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Icon(icon, color: iconColor, size: 15),
-          const SizedBox(width: 5),
-          Text(
-            label,
-            style: const TextStyle(
+          // Title + subtitle on the right (RTL)
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                Text(
+                  'هيا نتدرب!',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                SizedBox(height: 3),
+                Text(
+                  'اختر حرفاً للتمرن عليه',
+                  style: TextStyle(color: Colors.white70, fontSize: 13),
+                ),
+              ],
+            ),
+          ),
+          // Icon on the left (RTL)
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.15),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.menu_book_rounded,
               color: Colors.white,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
+              size: 22,
             ),
           ),
         ],
@@ -236,6 +223,7 @@ class _StatBadge extends StatelessWidget {
     );
   }
 }
+
 
 // ─── Letter Card ──────────────────────────────────────────────────────────────
 class _LetterCard extends StatefulWidget {
