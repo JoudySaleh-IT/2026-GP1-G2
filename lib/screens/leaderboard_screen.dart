@@ -30,16 +30,16 @@ const _currentUser = _Player(
 );
 
 const List<_Player> _topPlayers = [
-  _Player(rank: 1,  name: 'ليلى',  avatar: '🦄', points: 2850, streak: 25),
-  _Player(rank: 2,  name: 'عمر',   avatar: '🦅', points: 2640, streak: 18),
-  _Player(rank: 3,  name: 'زينب',  avatar: '🌟', points: 2420, streak: 22),
-  _Player(rank: 4,  name: 'يوسف',  avatar: '⚡', points: 2180, streak: 15),
-  _Player(rank: 5,  name: 'عائشة', avatar: '🎨', points: 2050, streak: 12),
-  _Player(rank: 6,  name: 'حسن',   avatar: '🚀', points: 1980, streak: 20),
-  _Player(rank: 7,  name: 'مريم',  avatar: '🌺', points: 1820, streak: 9),
-  _Player(rank: 8,  name: 'علي',   avatar: '🔥', points: 1750, streak: 14),
-  _Player(rank: 9,  name: 'نورا',  avatar: '🦋', points: 1650, streak: 11),
-  _Player(rank: 10, name: 'خالد',  avatar: '🎯', points: 1580, streak: 16),
+  _Player(rank: 1, name: 'ليلى', avatar: '🦄', points: 2850, streak: 25),
+  _Player(rank: 2, name: 'عمر', avatar: '🦅', points: 2640, streak: 18),
+  _Player(rank: 3, name: 'زينب', avatar: '🌟', points: 2420, streak: 22),
+  _Player(rank: 4, name: 'يوسف', avatar: '⚡', points: 2180, streak: 15),
+  _Player(rank: 5, name: 'عائشة', avatar: '🎨', points: 2050, streak: 12),
+  _Player(rank: 6, name: 'حسن', avatar: '🚀', points: 1980, streak: 20),
+  _Player(rank: 7, name: 'مريم', avatar: '🌺', points: 1820, streak: 9),
+  _Player(rank: 8, name: 'علي', avatar: '🔥', points: 1750, streak: 14),
+  _Player(rank: 9, name: 'نورا', avatar: '🦋', points: 1650, streak: 11),
+  _Player(rank: 10, name: 'خالد', avatar: '🎯', points: 1580, streak: 16),
 ];
 
 // ─── Leaderboard Screen ───────────────────────────────────────────────────────
@@ -62,20 +62,27 @@ class LeaderboardScreen extends StatelessWidget {
           children: [
             _buildHeader(context),
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
-                child: Column(
-                  children: [
-                    _buildCurrentUserCard(),
-                    const SizedBox(height: 16),
-                    _buildTopPlayersCard(),
-                  ],
+              child: ScrollConfiguration(
+                behavior: ScrollConfiguration.of(
+                  context,
+                ).copyWith(overscroll: false),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+                  child: Column(
+                    children: [
+                      _buildCurrentUserCard(),
+                      const SizedBox(height: 16),
+                      _buildTopPlayersCard(),
+                    ],
+                  ),
                 ),
               ),
             ),
           ],
         ),
-        bottomNavigationBar: const _ChildBottomNav(currentRoute: '/child/leaderboard'),
+        bottomNavigationBar: const _ChildBottomNav(
+          currentRoute: '/child/leaderboard',
+        ),
       ),
     );
   }
@@ -99,22 +106,12 @@ class LeaderboardScreen extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           child: Row(
             children: [
-              // Back button
-              IconButton(
-                onPressed: () => Navigator.pushNamed(context, '/child/home'),
-                icon: const Icon(Icons.arrow_back, color: Colors.white),
-                style: IconButton.styleFrom(
-                  backgroundColor: Colors.white12,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-
               // Trophy icon + title
-              const Icon(Icons.emoji_events_rounded,
-                  color: Colors.white, size: 26),
+              const Icon(
+                Icons.emoji_events_rounded,
+                color: Colors.white,
+                size: 26,
+              ),
               const SizedBox(width: 8),
               const Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -164,8 +161,7 @@ class LeaderboardScreen extends StatelessWidget {
       child: Row(
         children: [
           // Avatar
-          Text(_currentUser.avatar,
-              style: const TextStyle(fontSize: 48)),
+          Text(_currentUser.avatar, style: const TextStyle(fontSize: 48)),
           const SizedBox(width: 14),
 
           // Info
@@ -253,8 +249,11 @@ class LeaderboardScreen extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: Row(
               children: [
-                const Icon(Icons.emoji_events_rounded,
-                    color: _purple, size: 22),
+                const Icon(
+                  Icons.emoji_events_rounded,
+                  color: _purple,
+                  size: 22,
+                ),
                 const SizedBox(width: 8),
                 const Text(
                   'أفضل اللاعبين',
@@ -299,9 +298,7 @@ class LeaderboardScreen extends StatelessWidget {
         color: isTop3 ? null : Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isTop3
-              ? _purple.withOpacity(0.2)
-              : _purple.withOpacity(0.1),
+          color: isTop3 ? _purple.withOpacity(0.2) : _purple.withOpacity(0.1),
           width: 2,
         ),
         boxShadow: isTop3
@@ -344,8 +341,7 @@ class LeaderboardScreen extends StatelessWidget {
                 const SizedBox(height: 3),
                 Row(
                   children: [
-                    const Icon(Icons.star_rounded,
-                        size: 13, color: _coral),
+                    const Icon(Icons.star_rounded, size: 13, color: _coral),
                     const SizedBox(width: 3),
                     Text(
                       '${player.points} نقطة',
@@ -356,8 +352,11 @@ class LeaderboardScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 10),
-                    const Icon(Icons.local_fire_department_rounded,
-                        size: 13, color: _coral),
+                    const Icon(
+                      Icons.local_fire_department_rounded,
+                      size: 13,
+                      color: _coral,
+                    ),
                     const SizedBox(width: 3),
                     Text(
                       '${player.streak} يوم',
@@ -384,8 +383,8 @@ class LeaderboardScreen extends StatelessWidget {
       final List<Color> colors = rank == 1
           ? [const Color(0xFFFFD700), const Color(0xFFFFA500)]
           : rank == 2
-              ? [const Color(0xFFCDD5D8), const Color(0xFF9BA7AB)]
-              : [const Color(0xFFFF8C42), const Color(0xFFCC5500)];
+          ? [const Color(0xFFCDD5D8), const Color(0xFF9BA7AB)]
+          : [const Color(0xFFFF8C42), const Color(0xFFCC5500)];
 
       return Container(
         width: 36,
@@ -457,8 +456,7 @@ class _ChildBottomNav extends StatelessWidget {
         child: SafeArea(
           top: false,
           child: Padding(
-            padding:
-                const EdgeInsets.symmetric(vertical: 8, horizontal: 24),
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 24),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
@@ -466,15 +464,13 @@ class _ChildBottomNav extends StatelessWidget {
                   icon: Icons.menu_book_rounded,
                   label: 'التمارين',
                   isActive: currentRoute == '/child/exercises',
-                  onTap: () =>
-                      Navigator.pushNamed(context, '/child/exercises'),
+                  onTap: () => Navigator.pushNamed(context, '/child/exercises'),
                 ),
                 _NavItem(
                   icon: Icons.home_rounded,
                   label: 'الرئيسية',
                   isActive: currentRoute == '/child/home',
-                  onTap: () =>
-                      Navigator.pushNamed(context, '/child/home'),
+                  onTap: () => Navigator.pushNamed(context, '/child/home'),
                 ),
                 _NavItem(
                   icon: Icons.leaderboard_rounded,
@@ -519,8 +515,11 @@ class _NavItem extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               label,
-              style: TextStyle(color: color, fontSize: 11,
-                  fontFamily: 'Tajawal'),
+              style: TextStyle(
+                color: color,
+                fontSize: 11,
+                fontFamily: 'Tajawal',
+              ),
             ),
           ],
         ),

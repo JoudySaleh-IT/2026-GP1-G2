@@ -75,26 +75,34 @@ class PlacementResultScreen extends StatelessWidget {
         children: [
           // ── Decorative blurred bubbles ──
           _bubble(
-              top: 60,
-              left: 24,
-              size: 90,
-              color: const Color(0xFFFFB84D).withOpacity(0.22)),
+            top: 60,
+            left: 24,
+            size: 90,
+            color: const Color(0xFFFFB84D).withOpacity(0.22),
+          ),
           _bubble(
-              bottom: 100,
-              right: 24,
-              size: 110,
-              color: _purple2.withOpacity(0.15)),
+            bottom: 100,
+            right: 24,
+            size: 110,
+            color: _purple2.withOpacity(0.15),
+          ),
           _bubble(
-              top: 300,
-              right: 18,
-              size: 70,
-              color: _coral.withOpacity(0.15)),
+            top: 300,
+            right: 18,
+            size: 70,
+            color: _coral.withOpacity(0.15),
+          ),
 
           // ── Main content ──
           SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: _buildCard(context),
+            child: ScrollConfiguration(
+              behavior: ScrollConfiguration.of(
+                context,
+              ).copyWith(overscroll: false),
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: _buildCard(context),
+              ),
             ),
           ),
         ],
@@ -196,8 +204,11 @@ class PlacementResultScreen extends StatelessWidget {
                 ),
               ],
             ),
-            child: const Icon(Icons.auto_awesome_rounded,
-                color: Colors.white, size: 42),
+            child: const Icon(
+              Icons.auto_awesome_rounded,
+              color: Colors.white,
+              size: 42,
+            ),
           ),
           const SizedBox(height: 16),
           const Text(
@@ -391,8 +402,8 @@ class PlacementResultScreen extends StatelessWidget {
     required Color borderColor,
   }) {
     // Card width: screen - outer padding(32) - section padding(40) - 2 gaps(20)
-    final cardWidth = (MediaQuery.of(context).size.width - 32 - 40 - 20) / 3 - 2;
-
+    final cardWidth =
+        (MediaQuery.of(context).size.width - 32 - 40 - 20) / 3 - 2;
 
     return Wrap(
       spacing: 10,
@@ -413,8 +424,7 @@ class PlacementResultScreen extends StatelessWidget {
                 ),
               ],
             ),
-            padding:
-                const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -432,16 +442,15 @@ class PlacementResultScreen extends StatelessWidget {
                 // Letter name
                 Text(
                   _getLetterName(letter),
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.grey.shade500,
-                  ),
+                  style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
                 ),
                 const SizedBox(height: 8),
                 // Badge
                 Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 8, vertical: 4),
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: badgeBg,
                     borderRadius: BorderRadius.circular(20),
@@ -498,8 +507,8 @@ class PlacementResultScreen extends StatelessWidget {
     final String label = item.score >= 75
         ? 'أحسنت جدًا'
         : item.score >= 50
-            ? 'اقتربت أكثر'
-            : 'سنتدرب عليه';
+        ? 'اقتربت أكثر'
+        : 'سنتدرب عليه';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -518,8 +527,7 @@ class PlacementResultScreen extends StatelessWidget {
             decoration: BoxDecoration(
               color: _bgColor,
               borderRadius: BorderRadius.circular(14),
-              border:
-                  Border.all(color: _purple.withOpacity(0.2), width: 1.5),
+              border: Border.all(color: _purple.withOpacity(0.2), width: 1.5),
             ),
             alignment: Alignment.center,
             child: Text(
@@ -613,7 +621,10 @@ class PlacementResultScreen extends StatelessWidget {
           height: 56,
           child: OutlinedButton(
             onPressed: () => Navigator.pushNamedAndRemoveUntil(
-                context, '/child/home', (route) => false),
+              context,
+              '/child/home',
+              (route) => false,
+            ),
             style: OutlinedButton.styleFrom(
               foregroundColor: _purple,
               side: BorderSide(color: _purple.withOpacity(0.25), width: 2),
