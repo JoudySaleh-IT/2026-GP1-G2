@@ -103,23 +103,9 @@ class _ExercisesHeader extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Row 1: back button + avatar + name/level ──────────────
+          // ── Row 1: avatar + name/level ──────────────────────────
           Row(
             children: [
-              // Back arrow
-              Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(20),
-                  onTap: () => Navigator.pushNamed(context, '/child/home'),
-                  child: const Padding(
-                    padding: EdgeInsets.all(6),
-                    child: Icon(Icons.arrow_forward,
-                        color: Colors.white, size: 22),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
               // Avatar
               const Text('🦁', style: TextStyle(fontSize: 30)),
               const SizedBox(width: 10),
