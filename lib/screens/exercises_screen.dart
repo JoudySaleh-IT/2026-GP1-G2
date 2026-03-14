@@ -16,12 +16,12 @@ class _LetterData {
 }
 
 const _letters = [
-  _LetterData(letter: 'ض', name: 'Dhad', completed: 2, total: 5),
-  _LetterData(letter: 'خ', name: 'Khaa', completed: 5, total: 5),
+  _LetterData(letter: 'ض', name: 'Dhad',  completed: 2, total: 5),
+  _LetterData(letter: 'خ', name: 'Khaa',  completed: 5, total: 5),
   _LetterData(letter: 'غ', name: 'Ghayn', completed: 0, total: 5),
-  _LetterData(letter: 'ص', name: 'Saad', completed: 3, total: 5),
-  _LetterData(letter: 'س', name: 'Seen', completed: 0, total: 5),
-  _LetterData(letter: 'ق', name: 'Qaf', completed: 1, total: 5),
+  _LetterData(letter: 'ص', name: 'Saad',  completed: 3, total: 5),
+  _LetterData(letter: 'س', name: 'Seen',  completed: 0, total: 5),
+  _LetterData(letter: 'ق', name: 'Qaf',   completed: 1, total: 5),
 ];
 
 // ─── Screen ──────────────────────────────────────────────────────────────────
@@ -38,46 +38,70 @@ class ExercisesScreen extends StatelessWidget {
           children: [
             _ExercisesHeader(),
             Expanded(
-              child: ScrollConfiguration(
-                behavior: ScrollConfiguration.of(
-                  context,
-                ).copyWith(overscroll: false),
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
-                  child: GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          crossAxisSpacing: 14,
-                          mainAxisSpacing: 14,
-                          childAspectRatio: 0.88,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // ── Section title above grid ─────────────────────
+                    const SizedBox(width: double.infinity),
+                    const Center(
+                      child: Text(
+                        'هيا نتدرب!',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF511281),
                         ),
-                    itemCount: _letters.length,
-                    itemBuilder: (context, i) {
-                      final item = _letters[i];
-                      return _LetterCard(
-                        item: item,
-                        onTap: () => Navigator.pushNamed(
-                          context,
-                          '/child/letter-levels',
-                          arguments: {
-                            'letter': item.letter,
-                            'currentProgress': item.completed,
-                          },
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    const Center(
+                      child: Text(
+                        'اختر حرفاً للتمرن عليه',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF888888),
                         ),
-                      );
-                    },
-                  ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // ── Letters grid ─────────────────────────────────
+                    GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 14,
+                        mainAxisSpacing: 14,
+                        childAspectRatio: 0.88,
+                      ),
+                      itemCount: _letters.length,
+                      itemBuilder: (context, i) {
+                        final item = _letters[i];
+                        return _LetterCard(
+                          item: item,
+                          onTap: () => Navigator.pushNamed(
+                            context,
+                            '/child/letter-levels',
+                            arguments: {
+                              'letter': item.letter,
+                              'currentProgress': item.completed,
+                            },
+                          ),
+                        );
+                      },
+                    ),
+                  ],
                 ),
               ),
             ),
           ],
         ),
-        bottomNavigationBar: const _ChildBottomNav(
-          currentRoute: '/child/exercises',
-        ),
+        bottomNavigationBar:
+            const _ChildBottomNav(currentRoute: '/child/exercises'),
       ),
     );
   }
@@ -87,56 +111,127 @@ class ExercisesScreen extends StatelessWidget {
 class _ExercisesHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    // Wrap in RTL so back arrow sits on the right and title flows right→left
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF511281), Color(0xFF7A3FA8)],
-            begin: Alignment.centerRight,
-            end: Alignment.centerLeft,
+    return Container(
+      width: double.infinity,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xFF6A3A9E), Color(0xFF511281)],
+          begin: Alignment.topRight,
+          end: Alignment.bottomLeft,
+        ),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black26, blurRadius: 8, offset: Offset(0, 3)),
+        ],
+      ),
+      padding: EdgeInsets.only(
+        top: MediaQuery.of(context).padding.top + 10,
+        bottom: 16,
+        right: 16,
+        left: 16,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Row 1: title + child name ────────────────────────────
+          Row(
+            children: [
+              // Title + subtitle
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    Text(
+                      'أحمد',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      'المستوى: متوسط',
+                      style: TextStyle(color: Colors.white70, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+
+            ],
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black26,
-              blurRadius: 8,
-              offset: Offset(0, 2),
+
+          const SizedBox(height: 14),
+
+          // ── Row 2: avatar + stats badges ─────────────────────────
+          Row(
+            children: [
+              // Avatar
+              const Text('🦁', style: TextStyle(fontSize: 28)),
+              const SizedBox(width: 8),
+              _StatBadge(
+                icon: Icons.local_fire_department_rounded,
+                iconColor: const Color(0xFFFF6969),
+                label: '7 يوم',
+              ),
+              const SizedBox(width: 8),
+              _StatBadge(
+                icon: Icons.star_rounded,
+                iconColor: const Color(0xFFFBBF24),
+                label: '1250 نقطة',
+              ),
+              const SizedBox(width: 8),
+              _StatBadge(
+                icon: Icons.emoji_events_rounded,
+                iconColor: const Color(0xFFFBBF24),
+                label: '#12',
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Stat Badge ───────────────────────────────────────────────────────────────
+class _StatBadge extends StatelessWidget {
+  final IconData icon;
+  final Color iconColor;
+  final String label;
+
+  const _StatBadge({
+    required this.icon,
+    required this.iconColor,
+    required this.label,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.2),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: iconColor, size: 15),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
             ),
-          ],
-        ),
-        padding: EdgeInsets.only(
-          top: MediaQuery.of(context).padding.top + 8,
-          bottom: 12,
-          right: 16,
-          left: 16,
-        ),
-        child: Row(
-          children: [
-            // Back arrow — sits on the RIGHT in RTL
-            Material(color: Colors.transparent),
-            const SizedBox(width: 12),
-            // Title + subtitle — to the LEFT of the arrow in RTL
-            const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'هيا نتدرب!',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 17,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                SizedBox(height: 2),
-                Text(
-                  'اختر حرفاً للتمرن عليه',
-                  style: TextStyle(color: Colors.white70, fontSize: 12),
-                ),
-              ],
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -161,13 +256,9 @@ class _LetterCardState extends State<_LetterCard>
   void initState() {
     super.initState();
     _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 100),
-    );
-    _scale = Tween<double>(
-      begin: 1.0,
-      end: 0.95,
-    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
+        vsync: this, duration: const Duration(milliseconds: 100));
+    _scale = Tween<double>(begin: 1.0, end: 0.95)
+        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
   }
 
   @override
@@ -183,7 +274,8 @@ class _LetterCardState extends State<_LetterCard>
 
     return AnimatedBuilder(
       animation: _scale,
-      builder: (_, child) => Transform.scale(scale: _scale.value, child: child),
+      builder: (_, child) =>
+          Transform.scale(scale: _scale.value, child: child),
       child: GestureDetector(
         onTapDown: (_) => _ctrl.forward(),
         onTapUp: (_) {
@@ -287,22 +379,22 @@ class _ChildBottomNav extends StatelessWidget {
       child: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xFF511281), Color(0xFF7A3FA8)],
-            begin: Alignment.centerRight,
-            end: Alignment.centerLeft,
+            colors: [Color(0xFF6A3A9E), Color(0xFF511281)],
+            begin: Alignment.topRight,
+            end: Alignment.bottomLeft,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black26,
-              blurRadius: 8,
-              offset: Offset(0, -2),
-            ),
+                color: Colors.black26,
+                blurRadius: 8,
+                offset: Offset(0, -2)),
           ],
         ),
         child: SafeArea(
           top: false,
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 24),
+            padding:
+                const EdgeInsets.symmetric(vertical: 8, horizontal: 24),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
@@ -310,13 +402,15 @@ class _ChildBottomNav extends StatelessWidget {
                   icon: Icons.menu_book_rounded,
                   label: 'التمارين',
                   isActive: currentRoute == '/child/exercises',
-                  onTap: () => Navigator.pushNamed(context, '/child/exercises'),
+                  onTap: () =>
+                      Navigator.pushNamed(context, '/child/exercises'),
                 ),
                 _NavItem(
                   icon: Icons.home_rounded,
                   label: 'الرئيسية',
                   isActive: currentRoute == '/child/home',
-                  onTap: () => Navigator.pushNamed(context, '/child/home'),
+                  onTap: () =>
+                      Navigator.pushNamed(context, '/child/home'),
                 ),
                 _NavItem(
                   icon: Icons.leaderboard_rounded,
