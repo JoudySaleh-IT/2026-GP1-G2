@@ -183,7 +183,7 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
               // ✅ RTL: back arrow points forward (→) which is "back" in RTL
               IconButton(
                 onPressed: () => Navigator.pushNamed(context, '/child/home'),
-                icon: const Icon(Icons.arrow_forward, color: Colors.white),
+icon: const Icon(Icons.chevron_right, color: Colors.white, size: 28),
                 style: IconButton.styleFrom(
                   backgroundColor: Colors.white12,
                   shape: RoundedRectangleBorder(
