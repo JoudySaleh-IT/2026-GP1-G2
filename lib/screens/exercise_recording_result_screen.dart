@@ -7,20 +7,20 @@ import 'package:flutter/material.dart';
 class ExerciseRecordingResultScreen extends StatelessWidget {
   const ExerciseRecordingResultScreen({super.key});
 
-  // ── Helpers (mirrors listening result logic) ───────────────────────────────
+  // ── Helpers ────────────────────────────────────────────────────────────────
 
   String _resultMessage(int pct) {
     if (pct == 100) return 'ممتاز! أتقنت جميع التمارين! 🏆';
-    if (pct >= 80) return 'رائع! أداء متميز جداً! 🌟';
-    if (pct >= 60) return 'جيد! يمكنك تحسين أدائك! 💪';
+    if (pct >= 80)  return 'رائع! أداء متميز جداً! 🌟';
+    if (pct >= 60)  return 'جيد! يمكنك تحسين أدائك! 💪';
     return 'استمر في التدريب، ستتحسن! 🌱';
   }
 
   Color _resultColor(int pct) {
-    if (pct == 100) return const Color(0xFFB45309); // amber
-    if (pct >= 80) return const Color(0xFF16A34A); // green
-    if (pct >= 60) return const Color(0xFF2563EB); // blue
-    return const Color(0xFFEA580C); // orange
+    if (pct == 100) return const Color(0xFFB45309);
+    if (pct >= 80)  return const Color(0xFF16A34A);
+    if (pct >= 60)  return const Color(0xFF2563EB);
+    return const Color(0xFFEA580C);
   }
 
   Color _scoreColor(int s) {
@@ -43,17 +43,13 @@ class ExerciseRecordingResultScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final args = ModalRoute.of(context)?.settings.arguments as Map? ?? {};
 
-    final int score = args['score'] ?? 85;
-    final int total = args['total'] ?? 100;
+    final int score     = args['score'] ?? 85;
+    final int total     = args['total'] ?? 100;
     final List questions = args['questions'] ?? _defaultQuestions;
 
-    final int pct = ((score / total) * 100).round();
-    final int pts = score * 10;
-    final int stars = pct >= 90
-        ? 3
-        : pct >= 70
-        ? 2
-        : 1;
+    final int pct  = ((score / total) * 100).round();
+    final int pts  = score * 10;
+    final int stars = pct >= 90 ? 3 : pct >= 70 ? 2 : 1;
 
     return Directionality(
       textDirection: TextDirection.rtl,
@@ -62,13 +58,7 @@ class ExerciseRecordingResultScreen extends StatelessWidget {
         body: Column(
           children: [
             // ── Header ───────────────────────────────────────────────────────
-            _RecordingResultHeader(
-              onBack: () => Navigator.pushNamedAndRemoveUntil(
-                context,
-                '/child/exercises',
-                (r) => false,
-              ),
-            ),
+            const _RecordingResultHeader(),
 
             // ── Scrollable content ────────────────────────────────────────────
             Expanded(
@@ -80,53 +70,17 @@ class ExerciseRecordingResultScreen extends StatelessWidget {
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
                   child: Column(
                     children: [
-                      // ── Score hero card ────────────────────────────────────
-                      _buildScoreCard(pct: pct, stars: stars),
+                      // ── Score hero card ──────────────────────────────────
+                      _buildScoreCard(pct: pct, stars: stars, context: context),
+
 
                       const SizedBox(height: 12),
 
-                      // ── Result message card ────────────────────────────────
+                      // ── Earned points card ───────────────────────────────
                       Container(
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(
-                          vertical: 16,
-                          horizontal: 20,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: const Color(0xFF511281).withOpacity(0.1),
-                            width: 2,
-                          ),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Color(0x0D000000),
-                              blurRadius: 8,
-                              offset: Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Text(
-                          _resultMessage(pct),
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w600,
-                            color: _resultColor(pct),
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 12),
-
-                      // ── Earned points card (recording-only) ────────────────
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 16,
-                          horizontal: 20,
-                        ),
+                            vertical: 16, horizontal: 20),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(16),
@@ -145,11 +99,8 @@ class ExerciseRecordingResultScreen extends StatelessWidget {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(
-                              Icons.trending_up_rounded,
-                              color: Color(0xFFFF6969),
-                              size: 28,
-                            ),
+                            const Icon(Icons.trending_up_rounded,
+                                color: Color(0xFFFF6969), size: 28),
                             const SizedBox(width: 10),
                             Text(
                               '+$pts',
@@ -163,9 +114,7 @@ class ExerciseRecordingResultScreen extends StatelessWidget {
                             Text(
                               'نقطة مكتسبة',
                               style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey.shade600,
-                              ),
+                                  fontSize: 14, color: Colors.grey.shade600),
                             ),
                           ],
                         ),
@@ -173,31 +122,30 @@ class ExerciseRecordingResultScreen extends StatelessWidget {
 
                       const SizedBox(height: 12),
 
-                      // ── Details breakdown card ─────────────────────────────
+                      // ── Details breakdown card ───────────────────────────
                       _buildDetailsCard(questions),
 
                       const SizedBox(height: 20),
 
-                      // ── Home button ────────────────────────────────────────
+                      // ── Home button ──────────────────────────────────────
                       Row(
                         children: [
                           Expanded(
                             child: ElevatedButton.icon(
                               onPressed: () =>
                                   Navigator.pushNamedAndRemoveUntil(
-                                    context,
-                                    '/child/home',
-                                    (r) => false,
-                                  ),
+                                context,
+                                '/child/home',
+                                (r) => false,
+                              ),
                               icon: const Icon(Icons.home_rounded, size: 18),
                               label: const Text('الرئيسية'),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFFFF6969),
                                 foregroundColor: Colors.white,
                                 shape: const StadiumBorder(),
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 14,
-                                ),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 14),
                                 elevation: 3,
                               ),
                             ),
@@ -217,7 +165,7 @@ class ExerciseRecordingResultScreen extends StatelessWidget {
 
   // ── Score hero card ────────────────────────────────────────────────────────
 
-  Widget _buildScoreCard({required int pct, required int stars}) {
+  Widget _buildScoreCard({required int pct, required int stars, required BuildContext context}) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -235,72 +183,84 @@ class ExerciseRecordingResultScreen extends StatelessWidget {
         ],
       ),
       clipBehavior: Clip.antiAlias,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 16),
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF511281), Color(0xFF7A3FA8)],
-            begin: Alignment.centerRight,
-            end: Alignment.centerLeft,
+      child: Column(
+        children: [
+          // Purple gradient top
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 16),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF511281), Color(0xFF7A3FA8)],
+                begin: Alignment.centerRight,
+                end: Alignment.centerLeft,
+              ),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(3, (i) {
+                    final filled = i < stars;
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 3),
+                      child: Icon(
+                        Icons.star_rounded,
+                        size: 30,
+                        color: filled
+                            ? const Color(0xFFFBBF24)
+                            : Colors.white.withOpacity(0.3),
+                      ),
+                    );
+                  }),
+                ),
+                const SizedBox(height: 16),
+                RichText(
+                  text: TextSpan(
+                    children: [
+                      TextSpan(
+                        text: '$pct',
+                        style: const TextStyle(
+                          fontSize: 64,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      TextSpan(
+                        text: '%',
+                        style: TextStyle(
+                          fontSize: 32,
+                          color: Colors.white.withOpacity(0.7),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'متوسط درجات النطق',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.white.withOpacity(0.8),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-        child: Column(
-          children: [
-            // Stars row — gold filled, white empty (same as listening)
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(3, (i) {
-                final filled = i < stars;
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 3),
-                  child: Icon(
-                    Icons.star_rounded,
-                    size: 30,
-                    color: filled
-                        ? const Color(0xFFFBBF24)
-                        : Colors.white.withOpacity(0.3),
-                  ),
-                );
-              }),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Big percentage number
-            RichText(
-              text: TextSpan(
-                children: [
-                  TextSpan(
-                    text: '$pct',
-                    style: const TextStyle(
-                      fontSize: 64,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  TextSpan(
-                    text: '%',
-                    style: TextStyle(
-                      fontSize: 32,
-                      color: Colors.white.withOpacity(0.7),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 6),
-
-            Text(
-              'متوسط درجات النطق',
+          // Result message attached to bottom of card
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Text(
+              _resultMessage(pct),
+              textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 13,
-                color: Colors.white.withOpacity(0.8),
+                fontSize: 17,
+                fontWeight: FontWeight.w600,
+                color: _resultColor(pct),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -349,8 +309,8 @@ class ExerciseRecordingResultScreen extends StatelessWidget {
             )
           else
             ...questions.asMap().entries.map((entry) {
-              final idx = entry.key;
-              final q = entry.value as Map;
+              final idx  = entry.key;
+              final q    = entry.value as Map;
               final qTxt = q['questionText'] as String? ?? '';
               final qScr = q['score'] as int? ?? 0;
               final bool good = qScr >= 70;
@@ -372,7 +332,7 @@ class ExerciseRecordingResultScreen extends StatelessWidget {
                   ),
                   child: Row(
                     children: [
-                      // Numbered circle — green/red like listening
+                      // Numbered circle
                       Container(
                         width: 26,
                         height: 26,
@@ -392,7 +352,6 @@ class ExerciseRecordingResultScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 10),
-
                       // Exercise text
                       Expanded(
                         child: Text(
@@ -404,10 +363,8 @@ class ExerciseRecordingResultScreen extends StatelessWidget {
                           ),
                         ),
                       ),
-
                       const SizedBox(width: 10),
-
-                      // Score circle (kept from recording result)
+                      // Score circle
                       Container(
                         width: 48,
                         height: 48,
@@ -437,16 +394,16 @@ class ExerciseRecordingResultScreen extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Header — mirrors _ResultHeader from listening result
+// Header — no back button
 // ---------------------------------------------------------------------------
 
 class _RecordingResultHeader extends StatelessWidget {
-  final VoidCallback onBack;
-  const _RecordingResultHeader({required this.onBack});
+  const _RecordingResultHeader();
 
   @override
   Widget build(BuildContext context) {
     return Container(
+      width: double.infinity,
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [Color(0xFF511281), Color(0xFF7A3FA8)],
@@ -454,7 +411,8 @@ class _RecordingResultHeader extends StatelessWidget {
           end: Alignment.centerLeft,
         ),
         boxShadow: [
-          BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 2)),
+          BoxShadow(
+              color: Colors.black26, blurRadius: 8, offset: Offset(0, 2)),
         ],
       ),
       padding: EdgeInsets.only(
@@ -463,33 +421,21 @@ class _RecordingResultHeader extends StatelessWidget {
         right: 16,
         left: 16,
       ),
-      child: Row(
+      child: const Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Material(
-            color: Colors.transparent,
-            child: _HeaderIconBtn(
-              icon: Icons.arrow_back,
-              onTap: () => Navigator.pop(context),
+          Text(
+            'نتيجة تمرين التسجيل',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 17,
+              fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(width: 12),
-          const Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'نتيجة تمرين التسجيل',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 17,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              SizedBox(height: 2),
-              Text(
-                'ملخص أدائك',
-                style: TextStyle(color: Colors.white70, fontSize: 12),
-              ),
-            ],
+          SizedBox(height: 2),
+          Text(
+            'ملخص أدائك',
+            style: TextStyle(color: Colors.white70, fontSize: 12),
           ),
         ],
       ),
@@ -508,20 +454,3 @@ const List<Map<String, dynamic>> _defaultQuestions = [
   {'questionText': 'عَيْن', 'score': 70},
   {'questionText': 'الطَّالِبُ يَدْرُسُ', 'score': 88},
 ];
-
-class _HeaderIconBtn extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-  const _HeaderIconBtn({required this.icon, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) => InkWell(
-    onTap: onTap,
-    borderRadius: BorderRadius.circular(8),
-    child: Container(
-      width: 34,
-      height: 34,
-      child: Icon(icon, color: Colors.white, size: 25),
-    ),
-  );
-}
