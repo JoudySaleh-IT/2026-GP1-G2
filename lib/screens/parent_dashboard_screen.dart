@@ -72,6 +72,7 @@ class ParentDashboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    print('🔥 Building ParentDashboardScreen');
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(

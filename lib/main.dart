@@ -24,10 +24,12 @@ import 'screens/leaderboard_screen.dart';
 import 'screens/exercise_listening_result_screen.dart';
 import 'screens/exercise_recording_result_screen.dart';
 import 'screens/exercise_mcq_result_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized(); // Ensures Flutter engine is initialized before runApp
   await Firebase.initializeApp();
+  await FirebaseAuth.instance.signOut(); // force sign-out for testing
   runApp(MyApp());
 }
 

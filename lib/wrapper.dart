@@ -11,17 +11,19 @@ class Wrapper extends StatelessWidget {
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
-        // Waiting for Firebase to restore auth state
+        print(
+          '🔥 Wrapper build: connectionState = ${snapshot.connectionState}, hasData = ${snapshot.hasData}',
+        );
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
-          ); // simple loading while checking
+          );
         }
-        // User is logged in → show dashboard
         if (snapshot.hasData) {
+          print('🔥 User is logged in, showing dashboard');
           return ParentDashboardScreen();
         }
-        // User is NOT logged in → show your splash screen (landing page with buttons)
+        print('🔥 No user, showing splash');
         return SplashScreen();
       },
     );
