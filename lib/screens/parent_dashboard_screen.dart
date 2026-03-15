@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 // ── Mock Data Model ────────────────────────────────────────────────────────
 class ChildProfile {
@@ -287,11 +288,8 @@ class ParentDashboardScreen extends StatelessWidget {
                       );
 
                       if (confirm == true && context.mounted) {
-                        Navigator.pushNamedAndRemoveUntil(
-                          context,
-                          '/',
-                          (route) => false,
-                        );
+                        // Perform logout
+                        await FirebaseAuth.instance.signOut();
                       }
                     },
                   ),

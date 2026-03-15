@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class ParentLoginScreen extends StatefulWidget {
   const ParentLoginScreen({super.key});
@@ -20,11 +21,49 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> {
     super.dispose();
   }
 
-  void _handleSubmit() {
+  // Inside _ParentLoginScreenState:
+  void _handleSubmit() async {
     if (_formKey.currentState!.validate()) {
-      // Mock login — navigate to parent dashboard
-      Navigator.pushNamed(context, '/parent/dashboard');
+      setState(() {
+        // optionally clear previous error
+      });
+      try {
+        await FirebaseAuth.instance.signInWithEmailAndPassword(
+          email: _emailController.text.trim(),
+          password: _passwordController.text.trim(),
+        );
+        // On success, the StreamBuilder in Wrapper will automatically switch to dashboard.
+        // No need to manually navigate.
+      } on FirebaseAuthException catch (e) {
+        String message;
+        if (e.code == 'user-not-found') {
+          message = 'لا يوجد مستخدم بهذا البريد الإلكتروني';
+        } else if (e.code == 'wrong-password') {
+          message = 'كلمة المرور غير صحيحة';
+        } else {
+          message = 'حدث خطأ، حاول مرة أخرى';
+        }
+        _showErrorDialog(message);
+      } catch (e) {
+        _showErrorDialog('حدث خطأ غير متوقع');
+      }
     }
+  }
+
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('خطأ'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('حسناً'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -43,7 +82,10 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> {
                   alignment: Alignment.centerRight,
                   child: IconButton(
                     onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.arrow_back, color: Color(0xFF511281)),
+                    icon: const Icon(
+                      Icons.arrow_back,
+                      color: Color(0xFF511281),
+                    ),
                   ),
                 ),
 
@@ -74,7 +116,6 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-
                           // ── Card Header ────────────────────────
                           const Text(
                             'تسجيل دخول ولي الأمر',
@@ -102,8 +143,10 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> {
                             keyboardType: TextInputType.emailAddress,
                             textDirection: TextDirection.ltr,
                             validator: (v) {
-                              if (v == null || v.isEmpty) return 'الرجاء إدخال البريد الإلكتروني';
-                              if (!v.contains('@')) return 'البريد الإلكتروني غير صحيح';
+                              if (v == null || v.isEmpty)
+                                return 'الرجاء إدخال البريد الإلكتروني';
+                              if (!v.contains('@'))
+                                return 'البريد الإلكتروني غير صحيح';
                               return null;
                             },
                             decoration: _inputDecoration('parent@example.com'),
@@ -117,16 +160,20 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> {
                           TextFormField(
                             controller: _passwordController,
                             obscureText: !_showPassword,
-                            validator: (v) =>
-                            v == null || v.isEmpty ? 'الرجاء إدخال كلمة المرور' : null,
+                            validator: (v) => v == null || v.isEmpty
+                                ? 'الرجاء إدخال كلمة المرور'
+                                : null,
                             decoration: _inputDecoration('••••••••').copyWith(
                               suffixIcon: IconButton(
                                 icon: Icon(
-                                  _showPassword ? Icons.visibility_off : Icons.visibility,
+                                  _showPassword
+                                      ? Icons.visibility_off
+                                      : Icons.visibility,
                                   color: const Color(0xFF511281),
                                 ),
-                                onPressed: () =>
-                                    setState(() => _showPassword = !_showPassword),
+                                onPressed: () => setState(
+                                  () => _showPassword = !_showPassword,
+                                ),
                               ),
                             ),
                           ),
@@ -138,7 +185,9 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> {
                             alignment: Alignment.centerRight,
                             child: GestureDetector(
                               onTap: () => Navigator.pushNamed(
-                                  context, '/parent/forgot-password'),
+                                context,
+                                '/parent/forgot-password',
+                              ),
                               child: const Text(
                                 'نسيت كلمة المرور؟',
                                 style: TextStyle(
@@ -167,7 +216,9 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> {
                               child: const Text(
                                 'تسجيل الدخول',
                                 style: TextStyle(
-                                    fontSize: 16, fontWeight: FontWeight.w600),
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ),
                           ),
@@ -180,11 +231,16 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> {
                             children: [
                               const Text(
                                 'ليس لديك حساب؟ ',
-                                style: TextStyle(fontSize: 14, color: Colors.grey),
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey,
+                                ),
                               ),
                               GestureDetector(
                                 onTap: () => Navigator.pushNamed(
-                                    context, '/parent/register'),
+                                  context,
+                                  '/parent/register',
+                                ),
                                 child: const Text(
                                   'إنشاء حساب',
                                   style: TextStyle(
