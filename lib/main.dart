@@ -25,14 +25,20 @@ import 'screens/exercise_listening_result_screen.dart';
 import 'screens/exercise_recording_result_screen.dart';
 import 'screens/exercise_mcq_result_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'firebase_options.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized(); // Ensures Flutter engine is initialized before runApp
-  await Firebase.initializeApp();
-  await FirebaseAuth.instance.signOut(); // force sign-out for testing
+  WidgetsFlutterBinding.ensureInitialized(); 
+  
+  // 2. Add the DefaultFirebaseOptions here
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  
+  // Keep  testing sign-out 
+  await FirebaseAuth.instance.signOut(); 
   runApp(MyApp());
 }
-
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {

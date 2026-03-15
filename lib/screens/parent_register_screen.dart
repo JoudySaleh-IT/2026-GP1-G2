@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/auth_service.dart';
 
 class ParentRegisterScreen extends StatefulWidget {
   const ParentRegisterScreen({super.key});
@@ -10,19 +11,19 @@ class ParentRegisterScreen extends StatefulWidget {
 class _ParentRegisterScreenState extends State<ParentRegisterScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  // Controllers hold the text typed into each field
+  // ─── المتحكمات (Controllers) ───
   final _fullNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  
+  final AuthService _authService = AuthService();
 
-  // Toggles for showing/hiding passwords
   bool _showPassword = false;
   bool _showConfirmPassword = false;
 
   @override
   void dispose() {
-    // Always dispose controllers to free memory
     _fullNameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
@@ -30,10 +31,37 @@ class _ParentRegisterScreenState extends State<ParentRegisterScreen> {
     super.dispose();
   }
 
-  void _handleSubmit() {
+  // ─── دالة إرسال البيانات ───
+  void _handleSubmit() async {
     if (_formKey.currentState!.validate()) {
-      // Mock registration — navigate to create-child screen
-      Navigator.pushNamed(context, '/parent/create-child');
+      // 1. إظهار دائرة التحميل
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
+      );
+
+      // 2. استدعاء الـ Service (بدون رقم الجوال)
+      var user = await _authService.registerParent(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+        fullName: _fullNameController.text.trim(),
+      );
+
+      // 3. إغلاق دائرة التحميل
+      if (mounted) Navigator.pop(context);
+
+      if (user != null) {
+        // نجاح: الانتقال للشاشة التالية
+        if (mounted) Navigator.pushNamed(context, '/parent/create-child');
+      } else {
+        // فشل: إظهار رسالة خطأ
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('فشل التسجيل. يرجى التحقق من البيانات.')),
+          );
+        }
+      }
     }
   }
 
@@ -48,7 +76,6 @@ class _ParentRegisterScreenState extends State<ParentRegisterScreen> {
             padding: const EdgeInsets.all(24),
             child: Column(
               children: [
-                // ── Back Button Row ──────────────────────────────
                 Align(
                   alignment: Alignment.centerRight,
                   child: IconButton(
@@ -56,10 +83,8 @@ class _ParentRegisterScreenState extends State<ParentRegisterScreen> {
                     icon: const Icon(Icons.arrow_back, color: Color(0xFF511281)),
                   ),
                 ),
-
                 const SizedBox(height: 8),
 
-                // ── Card ─────────────────────────────────────────
                 Container(
                   width: double.infinity,
                   decoration: BoxDecoration(
@@ -84,8 +109,6 @@ class _ParentRegisterScreenState extends State<ParentRegisterScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-
-                          // ── Card Header ────────────────────────
                           const Text(
                             'تسجيل ولي الأمر',
                             textAlign: TextAlign.center,
@@ -99,27 +122,21 @@ class _ParentRegisterScreenState extends State<ParentRegisterScreen> {
                           const Text(
                             'أنشئ حسابك لإدارة ملفات أطفالك',
                             textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey,
-                            ),
+                            style: TextStyle(fontSize: 14, color: Colors.grey),
                           ),
-
                           const SizedBox(height: 28),
 
-                          // ── Full Name Field ────────────────────
+                          // ── الاسم الكامل ──
                           _buildLabel('الاسم الكامل'),
                           const SizedBox(height: 6),
                           _buildTextField(
                             controller: _fullNameController,
                             hint: 'أدخل اسمك الكامل',
-                            validator: (v) =>
-                            v == null || v.isEmpty ? 'الرجاء إدخال الاسم الكامل' : null,
+                            validator: (v) => v == null || v.isEmpty ? 'الرجاء إدخال الاسم الكامل' : null,
                           ),
-
                           const SizedBox(height: 16),
 
-                          // ── Email Field ────────────────────────
+                          // ── البريد الإلكتروني ──
                           _buildLabel('البريد الإلكتروني'),
                           const SizedBox(height: 6),
                           _buildTextField(
@@ -133,10 +150,9 @@ class _ParentRegisterScreenState extends State<ParentRegisterScreen> {
                               return null;
                             },
                           ),
-
                           const SizedBox(height: 16),
 
-                          // ── Password Field ─────────────────────
+                          // ── كلمة المرور ──
                           _buildLabel('كلمة المرور'),
                           const SizedBox(height: 6),
                           _buildTextField(
@@ -152,14 +168,16 @@ class _ParentRegisterScreenState extends State<ParentRegisterScreen> {
                             ),
                             validator: (v) {
                               if (v == null || v.isEmpty) return 'الرجاء إدخال كلمة المرور';
-                              if (v.length < 6) return 'كلمة المرور يجب أن تكون 6 أحرف على الأقل';
+                              if (v.length < 8) return 'يجب أن تكون 8 خانات على الأقل';
+                              if (!RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(v)) {
+                                return 'يجب أن تحتوي على رمز واحد على الأقل (@، #، !)';
+                              }
                               return null;
                             },
                           ),
-
                           const SizedBox(height: 16),
 
-                          // ── Confirm Password Field ─────────────
+                          // ── تأكيد كلمة المرور ──
                           _buildLabel('تأكيد كلمة المرور'),
                           const SizedBox(height: 6),
                           _buildTextField(
@@ -171,8 +189,7 @@ class _ParentRegisterScreenState extends State<ParentRegisterScreen> {
                                 _showConfirmPassword ? Icons.visibility_off : Icons.visibility,
                                 color: const Color(0xFF511281),
                               ),
-                              onPressed: () => setState(
-                                      () => _showConfirmPassword = !_showConfirmPassword),
+                              onPressed: () => setState(() => _showConfirmPassword = !_showConfirmPassword),
                             ),
                             validator: (v) {
                               if (v == null || v.isEmpty) return 'الرجاء تأكيد كلمة المرور';
@@ -180,10 +197,9 @@ class _ParentRegisterScreenState extends State<ParentRegisterScreen> {
                               return null;
                             },
                           ),
-
                           const SizedBox(height: 24),
 
-                          // ── Submit Button ──────────────────────
+                          // ── زر الإنشاء ──
                           SizedBox(
                             height: 48,
                             child: ElevatedButton(
@@ -191,37 +207,23 @@ class _ParentRegisterScreenState extends State<ParentRegisterScreen> {
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF511281),
                                 foregroundColor: Colors.white,
-                                elevation: 2,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                               ),
-                              child: const Text(
-                                'إنشاء حساب',
-                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                              ),
+                              child: const Text('إنشاء حساب', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                             ),
                           ),
-
                           const SizedBox(height: 16),
 
-                          // ── Login Link ─────────────────────────
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Text(
-                                'لديك حساب بالفعل؟',
-                                style: TextStyle(fontSize: 14, color: Colors.grey),
-                              ),
-                              const SizedBox(width: 8), // 👈 مسافة بسيطة بين النص والرابط
+                              const Text('لديك حساب بالفعل؟', style: TextStyle(fontSize: 14, color: Colors.grey)),
+                              const SizedBox(width: 8),
                               GestureDetector(
-onTap: () => Navigator.pushReplacementNamed(context, '/parent/login'),                                child: const Text(
+                                onTap: () => Navigator.pushReplacementNamed(context, '/parent/login'),
+                                child: const Text(
                                   'تسجيل الدخول',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Color(0xFF511281),
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                                  style: TextStyle(fontSize: 14, color: Color(0xFF511281), fontWeight: FontWeight.w600),
                                 ),
                               ),
                             ],
@@ -239,19 +241,10 @@ onTap: () => Navigator.pushReplacementNamed(context, '/parent/login'),          
     );
   }
 
-  // ── Reusable Label Widget ──────────────────────────────────────────────────
   Widget _buildLabel(String text) {
-    return Text(
-      text,
-      style: const TextStyle(
-        fontSize: 14,
-        fontWeight: FontWeight.w600,
-        color: Color(0xFF333333),
-      ),
-    );
+    return Text(text, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF333333)));
   }
 
-  // ── Reusable Text Field Widget ─────────────────────────────────────────────
   Widget _buildTextField({
     required TextEditingController controller,
     required String hint,
@@ -269,15 +262,11 @@ onTap: () => Navigator.pushReplacementNamed(context, '/parent/login'),          
       validator: validator,
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(color: Colors.grey),
         suffixIcon: suffixIcon,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(
-            color: const Color(0xFF511281).withOpacity(0.3),
-            width: 2,
-          ),
+          borderSide: BorderSide(color: const Color(0xFF511281).withOpacity(0.3), width: 2),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
