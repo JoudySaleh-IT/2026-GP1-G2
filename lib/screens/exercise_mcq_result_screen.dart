@@ -15,6 +15,15 @@ const _bgColor = Color(0xFFFCF9EA);
   return                   (text: 'استمر في التدريب، ستتحسن! 🌱',      color: const Color(0xFFEA580C));
 }
 
+// ─── Earned Points ────────────────────────────────────────────────────────────
+int _getEarnedPoints(int score, int total) {
+  final ratio = score / total;
+  if (ratio == 1)   return 1000;
+  if (ratio >= 0.8) return 800;
+  if (ratio >= 0.6) return 500;
+  return 200;
+}
+
 // ─── Screen ───────────────────────────────────────────────────────────────────
 class ExerciseMCQResultScreen extends StatelessWidget {
   final int score;
@@ -36,6 +45,7 @@ class ExerciseMCQResultScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final result     = _getResultMessage(score, total);
     final percentage = (score / total * 100).round();
+    final earnedPoints = _getEarnedPoints(score, total);
 
     return Directionality(
       textDirection: TextDirection.rtl,
@@ -52,6 +62,8 @@ class ExerciseMCQResultScreen extends StatelessWidget {
                   children: [
                     _buildScoreCard(percentage, result),
                     const SizedBox(height: 16),
+                    _buildPointsCard(earnedPoints),
+                    const SizedBox(height: 16),
                     _buildBreakdownCard(),
                     const SizedBox(height: 24),
                     _buildHomeButton(context),
@@ -66,59 +78,58 @@ class ExerciseMCQResultScreen extends StatelessWidget {
   }
 
   // ── Header ──────────────────────────────────────────────────────────────────
- // ── Header ──────────────────────────────────────────────────────────────────
-Widget _buildHeader(BuildContext context) {
-  return Container(
-    decoration: const BoxDecoration(
-      gradient: LinearGradient(
-        colors: [Color(0xFF511281), Color(0xFF7A3FA8)],
-        begin: Alignment.centerRight,
-        end: Alignment.centerLeft,
+  Widget _buildHeader(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xFF511281), Color(0xFF7A3FA8)],
+          begin: Alignment.centerRight,
+          end: Alignment.centerLeft,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black26,
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
       ),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black26,
-          blurRadius: 8,
-          offset: Offset(0, 2),
-        ),
-      ],
-    ),
-    padding: EdgeInsets.only(
-      top: MediaQuery.of(context).padding.top + 8,
-      bottom: 12,
-      right: 16,
-      left: 16,
-    ),
-    child: Row(
-      textDirection: TextDirection.rtl,
-      children: const [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'نتيجة التمرين',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 17,
-                fontWeight: FontWeight.w600,
-                fontFamily: 'Tajawal',
+      padding: EdgeInsets.only(
+        top: MediaQuery.of(context).padding.top + 8,
+        bottom: 12,
+        right: 16,
+        left: 16,
+      ),
+      child: Row(
+        textDirection: TextDirection.rtl,
+        children: const [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'نتيجة التمرين',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w600,
+                  fontFamily: 'Tajawal',
+                ),
               ),
-            ),
-            SizedBox(height: 2),
-            Text(
-              'ملخص أدائك',
-              style: TextStyle(
-                color: Colors.white70,
-                fontSize: 12,
-                fontFamily: 'Tajawal',
+              SizedBox(height: 2),
+              Text(
+                'ملخص أدائك',
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 12,
+                  fontFamily: 'Tajawal',
+                ),
               ),
-            ),
-          ],
-        ),
-      ],
-    ),
-  );
-}
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 
   // ── Score Card ──────────────────────────────────────────────────────────────
   Widget _buildScoreCard(
@@ -225,6 +236,64 @@ Widget _buildHeader(BuildContext context) {
                 color: result.color,
                 fontFamily: 'Tajawal',
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Points Card ─────────────────────────────────────────────────────────────
+  Widget _buildPointsCard(int earnedPoints) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _purple.withOpacity(0.1), width: 2),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withOpacity(0.07),
+              blurRadius: 10,
+              offset: const Offset(0, 3)),
+        ],
+      ),
+      padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: _coral.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.stars_rounded,
+                color: _coral, size: 28),
+          ),
+          const SizedBox(width: 12),
+          RichText(
+            text: TextSpan(
+              children: [
+                TextSpan(
+                  text: '+$earnedPoints',
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: _purple,
+                    fontFamily: 'Tajawal',
+                  ),
+                ),
+                const TextSpan(
+                  text: '  نقطة مكتسبة',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Color(0xFF555555),
+                    fontWeight: FontWeight.w500,
+                    fontFamily: 'Tajawal',
+                  ),
+                ),
+              ],
             ),
           ),
         ],
