@@ -111,18 +111,38 @@ class _ParentRegisterScreenState extends State<ParentRegisterScreen> {
                           const SizedBox(height: 28),
 
                           // ── الاسم الكامل (مع قيد الاسمين) ──
-                          _buildLabel('الاسم الكامل'),
-                          const SizedBox(height: 6),
-                          _buildTextField(
-                            controller: _fullNameController,
-                            hint: 'الاسم الأول والعائلة',
-                            validator: (v) {
-                              if (v == null || v.trim().isEmpty) return 'الرجاء إدخال الاسم الكامل';
-                              final words = v.trim().split(RegExp(r'\s+'));
-                              if (words.length < 2) return 'يرجى إدخال اسمين على الأقل (الأول والعائلة)';
-                              return null;
-                            },
-                          ),
+                // ── الاسم الكامل (يدعم العربية والإنجليزية) ──
+// ── الاسم الكامل (نسخة محسنة تدعم العربي والإنجليزي) ──
+_buildLabel('الاسم الكامل'),
+const SizedBox(height: 6),
+_buildTextField(
+  controller: _fullNameController,
+  hint: 'الاسم الأول والعائلة',
+  validator: (v) {
+    // 1. تنظيف المدخل من المسافات الزائدة
+    final val = v?.trim() ?? '';
+
+    if (val.isEmpty) {
+      return 'الرجاء إدخال الاسم الكامل';
+    }
+
+    // 2. التأكد من وجود اسمين على الأقل (نقسم النص ونتأكد من وجود كلمتين)
+    final parts = val.split(RegExp(r'\s+')).where((s) => s.isNotEmpty).toList();
+    if (parts.length < 2) {
+      return 'يرجى إدخال اسمين على الأقل (الأول والعائلة)';
+    }
+
+    // 3. التعبير النمطي الشامل (عربي + إنجليزي + مسافات)
+    // النطاق \u0600-\u06FF يغطي الحروف العربية كاملة
+    final nameRegExp = RegExp(r'^[a-zA-Z\s\u0600-\u06FF]+$');
+
+    if (!nameRegExp.hasMatch(val)) {
+      return 'يرجى استخدام الحروف فقط (عربي أو إنجليزي)';
+    }
+
+    return null; // كل شيء تمام
+  },
+),
                           const SizedBox(height: 16),
 
                           // ── البريد الإلكتروني (مع قيد RegEx) ──

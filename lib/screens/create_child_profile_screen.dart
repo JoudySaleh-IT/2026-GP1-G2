@@ -119,13 +119,30 @@ class _CreateChildProfileScreenState extends State<CreateChildProfileScreen> {
                         ),
                         const SizedBox(height: 24),
 
-                        const _FieldLabel('اسم الطفل'),
-                        const SizedBox(height: 6),
-                        TextFormField(
-                          controller: _nameController,
-                          decoration: _inputDecoration('أدخل اسم الطفل'),
-                          validator: (v) => (v == null || v.trim().isEmpty) ? 'يرجى إدخال اسم الطفل' : null,
-                        ),
+                        // ── حقل اسم الطفل (يدعم العربي والإنجليزي) ──
+const _FieldLabel('اسم الطفل'),
+const SizedBox(height: 6),
+TextFormField(
+  controller: _nameController,
+  decoration: _inputDecoration('أدخل اسم الطفل'),
+  validator: (v) {
+    final val = v?.trim() ?? '';
+    if (val.isEmpty) return 'يرجى إدخال اسم الطفل';
+
+    // التعبير النمطي: يسمح بحروف عربي، إنجليزي، ومسافات فقط
+    final nameRegExp = RegExp(r'^[a-zA-Z\s\u0600-\u06FF]+$');
+    
+    if (!nameRegExp.hasMatch(val)) {
+      return 'يجب أن يحتوي الاسم على حروف فقط (عربي أو إنجليزي)';
+    }
+    
+    if (val.length < 2) {
+      return 'الاسم قصير جداً';
+    }
+    
+    return null;
+  },
+),
                         const SizedBox(height: 16),
 
                         const _FieldLabel('العمر'),
