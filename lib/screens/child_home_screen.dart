@@ -71,9 +71,10 @@ class ChildHomeScreen extends StatelessWidget {
                       children: [
                         _PlacementTestBanner(
                           onTap: () => Navigator.pushNamed(
-                            context,
-                            '/child/placement-test',
-                          ),
+  context,
+  '/child/placement-test',
+  arguments: childId,
+),
                         ),
                         const SizedBox(height: 16),
 

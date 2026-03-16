@@ -44,7 +44,8 @@ const List<_Player> _topPlayers = [
 
 // ─── Leaderboard Screen ───────────────────────────────────────────────────────
 class LeaderboardScreen extends StatelessWidget {
-  const LeaderboardScreen({super.key});
+    final String childId;
+  const LeaderboardScreen({super.key, required this.childId});
 
   // ── Constants ──
   static const _purple = Color(0xFF511281);
@@ -80,7 +81,10 @@ class LeaderboardScreen extends StatelessWidget {
             ),
           ],
         ),
-        
+        bottomNavigationBar: _ChildBottomNav(
+    currentRoute: '/child/leaderboard',
+    childId: childId,
+  ),
       ),
     );
   }
@@ -430,7 +434,8 @@ class LeaderboardScreen extends StatelessWidget {
 // ─── Bottom Navigation Bar (shared style) ────────────────────────────────────
 class _ChildBottomNav extends StatelessWidget {
   final String currentRoute;
-  const _ChildBottomNav({required this.currentRoute});
+  final String childId;
+  const _ChildBottomNav({required this.currentRoute, required this.childId});
 
   @override
   Widget build(BuildContext context) {
@@ -459,24 +464,32 @@ class _ChildBottomNav extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 _NavItem(
-                  icon: Icons.menu_book_rounded,
-                  label: 'التمارين',
-                  isActive: currentRoute == '/child/exercises',
-                  onTap: () => Navigator.pushNamed(context, '/child/exercises'),
-                ),
-                _NavItem(
-                  icon: Icons.home_rounded,
-                  label: 'الرئيسية',
-                  isActive: currentRoute == '/child/home',
-                  onTap: () => Navigator.pushNamed(context, '/child/home'),
-                ),
-                _NavItem(
-                  icon: Icons.leaderboard_rounded,
-                  label: 'المتصدرون',
-                  isActive: currentRoute == '/child/leaderboard',
-                  onTap: () =>
-                      Navigator.pushNamed(context, '/child/leaderboard'),
-                ),
+  icon: Icons.menu_book_rounded,
+  label: 'التمارين',
+  isActive: currentRoute == '/child/exercises',
+  onTap: () => Navigator.pushNamed(
+    context, '/child/exercises',
+    arguments: childId, // ✅
+  ),
+),
+_NavItem(
+  icon: Icons.home_rounded,
+  label: 'الرئيسية',
+  isActive: currentRoute == '/child/home',
+  onTap: () => Navigator.pushNamed(
+    context, '/child/home',
+    arguments: childId, // ✅
+  ),
+),
+_NavItem(
+  icon: Icons.leaderboard_rounded,
+  label: 'المتصدرون',
+  isActive: currentRoute == '/child/leaderboard',
+  onTap: () => Navigator.pushNamed(
+    context, '/child/leaderboard',
+    arguments: childId, // ✅
+  ),
+),
               ],
             ),
           ),

@@ -53,7 +53,8 @@ const List<_PlacementWord> _placementWords = [
  
 // ─── Screen ──────────────────────────────────────────────────────────────────
 class PlacementTestScreen extends StatefulWidget {
-  const PlacementTestScreen({super.key});
+  final String childId;
+  const PlacementTestScreen({super.key, required this.childId});
  
   @override
   State<PlacementTestScreen> createState() => _PlacementTestScreenState();
@@ -123,10 +124,13 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
       });
     } else {
       Navigator.pushNamed(
-        context,
-        '/child/placement-result',
-        arguments: {'testedLetter': 'ق'},
-      );
+  context,
+  '/child/placement-result',
+  arguments: {
+    'testedLetter': 'ق',
+    'childId': widget.childId, // ✅
+  },
+);
     }
   }
  
@@ -182,7 +186,10 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
             children: [
               // ✅ RTL: back arrow points forward (→) which is "back" in RTL
               IconButton(
-                onPressed: () => Navigator.pushNamed(context, '/child/home'),
+                onPressed: () => Navigator.pushNamedAndRemoveUntil(
+  context, '/child/home', (route) => false,
+  arguments: widget.childId,
+),
 icon: const Icon(Icons.chevron_right, color: Colors.white, size: 28),
                 style: IconButton.styleFrom(
                   backgroundColor: Colors.white12,

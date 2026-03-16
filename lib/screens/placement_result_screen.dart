@@ -34,9 +34,11 @@ class PlacementResultScreen extends StatelessWidget {
   final List<String> weakLetters;
   final List<String> strongLetters;
   final List<LetterScore> letterScores;
+  final String childId;
 
-  const PlacementResultScreen({
-    super.key,
+const PlacementResultScreen({
+  super.key,
+  required this.childId, 
     this.score = 72,
     this.weakLetters = const ['ق', 'ض', 'خ'],
     this.strongLetters = const ['س', 'ص', 'غ'],
@@ -593,10 +595,10 @@ class PlacementResultScreen extends StatelessWidget {
           height: 56,
           child: ElevatedButton.icon(
             onPressed: () => Navigator.pushNamed(
-              context,
-              '/child/exercises',
-              arguments: {'weakLetters': weakLetters},
-            ),
+  context,
+  '/child/exercises',
+  arguments: childId, // ✅
+),
             icon: const Icon(Icons.menu_book_rounded, size: 22),
             label: const Text(
               'ابدأ التدريب',
@@ -621,10 +623,9 @@ class PlacementResultScreen extends StatelessWidget {
           height: 56,
           child: OutlinedButton(
             onPressed: () => Navigator.pushNamedAndRemoveUntil(
-              context,
-              '/child/home',
-              (route) => false,
-            ),
+  context, '/child/home', (route) => false,
+  arguments: childId, // ✅
+),
             style: OutlinedButton.styleFrom(
               foregroundColor: _purple,
               side: BorderSide(color: _purple.withOpacity(0.25), width: 2),

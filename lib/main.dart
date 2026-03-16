@@ -109,7 +109,15 @@ class MyApp extends StatelessWidget {
           final args = ModalRoute.of(context)!.settings.arguments as Map?;
           return EditChildProfileScreen(childId: args?['childId']);
         },
-        '/child/exercises': (context) => const ExercisesScreen(),
+'/child/exercises': (context) {
+  final args = ModalRoute.of(context)!.settings.arguments;
+  if (args == null || args is! String) {
+    return const Scaffold(
+      body: Center(child: Text("خطأ: لم يتم العثور على هوية الطفل")),
+    );
+  }
+  return ExercisesScreen(childId: args);
+},
         '/child/letter-levels': (context) {
           final args = ModalRoute.of(context)!.settings.arguments as Map?;
           return LetterLevelsScreen(letter: args?['letter'] ?? 'ض');
@@ -144,11 +152,21 @@ class MyApp extends StatelessWidget {
               (ModalRoute.of(context)!.settings.arguments as Map?)?['letter'] ??
               'ض',
         ),
-        '/child/placement-test': (context) => const PlacementTestScreen(),
-        '/child/placement-result': (context) {
-          final args = ModalRoute.of(context)!.settings.arguments as Map?;
+'/child/placement-test': (context) {
+  final args = ModalRoute.of(context)!.settings.arguments;
+  if (args == null || args is! String) {
+    return const Scaffold(
+      body: Center(child: Text("خطأ: لم يتم العثور على هوية الطفل")),
+    );
+  }
+  return PlacementTestScreen(childId: args);
+},       
+'/child/placement-result': (context) {
+
+  final args = ModalRoute.of(context)!.settings.arguments as Map?;
           final rawScores = args?['letterScores'] as List?;
           return PlacementResultScreen(
+            childId: args?['childId'] ?? '',
             score: args?['score'] ?? 72,
             weakLetters: List<String>.from(
               args?['weakLetters'] ?? ['ق', 'ض', 'خ'],
@@ -174,8 +192,15 @@ class MyApp extends StatelessWidget {
                   ],
           );
         },
-        '/child/leaderboard': (context) => const LeaderboardScreen(),
-        '/child/exercise-listening-result': (context) =>
+'/child/leaderboard': (context) {
+  final args = ModalRoute.of(context)!.settings.arguments;
+  if (args == null || args is! String) {
+    return const Scaffold(
+      body: Center(child: Text("خطأ: لم يتم العثور على هوية الطفل")),
+    );
+  }
+  return LeaderboardScreen(childId: args);
+},        '/child/exercise-listening-result': (context) =>
             const ExerciseListeningResultScreen(),
 
         '/child/exercise/recording-result': (context) =>

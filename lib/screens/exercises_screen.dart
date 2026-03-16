@@ -26,7 +26,8 @@ const _letters = [
 
 // ─── Screen ──────────────────────────────────────────────────────────────────
 class ExercisesScreen extends StatelessWidget {
-  const ExercisesScreen({super.key});
+    final String childId;
+  const ExercisesScreen({super.key, required this.childId});
 
   @override
   Widget build(BuildContext context) {
@@ -171,6 +172,10 @@ class ExercisesScreen extends StatelessWidget {
             ),
           ],
         ),
+        bottomNavigationBar: _ChildBottomNav(
+  currentRoute: '/child/exercises',
+  childId: childId,
+),
       ),
     );
   }
@@ -399,7 +404,9 @@ class _LetterCardState extends State<_LetterCard>
 // ─── Bottom Navigation Bar ────────────────────────────────────────────────────
 class _ChildBottomNav extends StatelessWidget {
   final String currentRoute;
-  const _ChildBottomNav({required this.currentRoute});
+  final String childId;
+  const _ChildBottomNav({required this.currentRoute, required this.childId});
+
 
   @override
   Widget build(BuildContext context) {
@@ -428,24 +435,32 @@ class _ChildBottomNav extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 _NavItem(
-                  icon: Icons.menu_book_rounded,
-                  label: 'التمارين',
-                  isActive: currentRoute == '/child/exercises',
-                  onTap: () => Navigator.pushNamed(context, '/child/exercises'),
-                ),
-                _NavItem(
-                  icon: Icons.home_rounded,
-                  label: 'الرئيسية',
-                  isActive: currentRoute == '/child/home',
-                  onTap: () => Navigator.pushNamed(context, '/child/home'),
-                ),
-                _NavItem(
-                  icon: Icons.leaderboard_rounded,
-                  label: 'المتصدرون',
-                  isActive: currentRoute == '/child/leaderboard',
-                  onTap: () =>
-                      Navigator.pushNamed(context, '/child/leaderboard'),
-                ),
+  icon: Icons.menu_book_rounded,
+  label: 'التمارين',
+  isActive: currentRoute == '/child/exercises',
+  onTap: () => Navigator.pushNamed(
+    context, '/child/exercises',
+    arguments: childId, // ✅
+  ),
+),
+_NavItem(
+  icon: Icons.home_rounded,
+  label: 'الرئيسية',
+  isActive: currentRoute == '/child/home',
+  onTap: () => Navigator.pushNamed(
+    context, '/child/home',
+    arguments: childId, // ✅
+  ),
+),
+_NavItem(
+  icon: Icons.leaderboard_rounded,
+  label: 'المتصدرون',
+  isActive: currentRoute == '/child/leaderboard',
+  onTap: () => Navigator.pushNamed(
+    context, '/child/leaderboard',
+    arguments: childId, // ✅
+  ),
+),
               ],
             ),
           ),
