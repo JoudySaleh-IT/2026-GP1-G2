@@ -115,7 +115,17 @@ class AuthService {
   Future<void> updatePassword(String newPassword) async {
     await _auth.currentUser!.updatePassword(newPassword);
   }
-
+// إرسال رابط إعادة تعيين كلمة المرور
+  Future<void> sendPasswordReset(String email) async {
+    try {
+      await _auth.sendPasswordResetEmail(email: email);
+    } on FirebaseAuthException catch (e) {
+      print("Error Code: ${e.code}");
+      rethrow; // نمرر الخطأ للـ UI للتعامل معه
+    } catch (e) {
+      throw Exception("حدث خطأ غير متوقع");
+    }
+  }
   
   /// --- منطق تسجيل الخروج ---
   Future<void> signOut() async {

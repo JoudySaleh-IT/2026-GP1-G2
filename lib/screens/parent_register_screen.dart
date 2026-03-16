@@ -11,7 +11,6 @@ class ParentRegisterScreen extends StatefulWidget {
 class _ParentRegisterScreenState extends State<ParentRegisterScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  // ─── المتحكمات (Controllers) ───
   final _fullNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -34,31 +33,27 @@ class _ParentRegisterScreenState extends State<ParentRegisterScreen> {
   // ─── دالة إرسال البيانات ───
   void _handleSubmit() async {
     if (_formKey.currentState!.validate()) {
-      // 1. إظهار دائرة التحميل
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (context) => const Center(child: CircularProgressIndicator()),
+        builder: (context) => const Center(child: CircularProgressIndicator(color: Color(0xFF511281))),
       );
 
-      // 2. استدعاء الـ Service (بدون رقم الجوال)
+      // استخدام trim() لضمان عدم وجود مسافات فارغة في البداية والنهاية
       var user = await _authService.registerParent(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
         fullName: _fullNameController.text.trim(),
       );
 
-      // 3. إغلاق دائرة التحميل
-      if (mounted) Navigator.pop(context);
+      if (mounted) Navigator.pop(context); // إغلاق التحميل
 
       if (user != null) {
-        // نجاح: الانتقال للشاشة التالية
         if (mounted) Navigator.pushNamed(context, '/parent/create-child');
       } else {
-        // فشل: إظهار رسالة خطأ
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('فشل التسجيل. يرجى التحقق من البيانات.')),
+            const SnackBar(content: Text('فشل التسجيل. ربما البريد مستخدم مسبقاً.')),
           );
         }
       }
@@ -90,16 +85,9 @@ class _ParentRegisterScreenState extends State<ParentRegisterScreen> {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: const Color(0xFF511281).withOpacity(0.1),
-                      width: 2,
-                    ),
+                    border: Border.all(color: const Color(0xFF511281).withOpacity(0.1), width: 2),
                     boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.08),
-                        blurRadius: 16,
-                        offset: const Offset(0, 4),
-                      ),
+                      BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 16, offset: const Offset(0, 4)),
                     ],
                   ),
                   child: Padding(
@@ -112,11 +100,7 @@ class _ParentRegisterScreenState extends State<ParentRegisterScreen> {
                           const Text(
                             'تسجيل ولي الأمر',
                             textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF511281),
-                            ),
+                            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF511281)),
                           ),
                           const SizedBox(height: 8),
                           const Text(
@@ -126,17 +110,22 @@ class _ParentRegisterScreenState extends State<ParentRegisterScreen> {
                           ),
                           const SizedBox(height: 28),
 
-                          // ── الاسم الكامل ──
+                          // ── الاسم الكامل (مع قيد الاسمين) ──
                           _buildLabel('الاسم الكامل'),
                           const SizedBox(height: 6),
                           _buildTextField(
                             controller: _fullNameController,
-                            hint: 'أدخل اسمك الكامل',
-                            validator: (v) => v == null || v.isEmpty ? 'الرجاء إدخال الاسم الكامل' : null,
+                            hint: 'الاسم الأول والعائلة',
+                            validator: (v) {
+                              if (v == null || v.trim().isEmpty) return 'الرجاء إدخال الاسم الكامل';
+                              final words = v.trim().split(RegExp(r'\s+'));
+                              if (words.length < 2) return 'يرجى إدخال اسمين على الأقل (الأول والعائلة)';
+                              return null;
+                            },
                           ),
                           const SizedBox(height: 16),
 
-                          // ── البريد الإلكتروني ──
+                          // ── البريد الإلكتروني (مع قيد RegEx) ──
                           _buildLabel('البريد الإلكتروني'),
                           const SizedBox(height: 6),
                           _buildTextField(
@@ -146,7 +135,8 @@ class _ParentRegisterScreenState extends State<ParentRegisterScreen> {
                             textDirection: TextDirection.ltr,
                             validator: (v) {
                               if (v == null || v.isEmpty) return 'الرجاء إدخال البريد الإلكتروني';
-                              if (!v.contains('@')) return 'البريد الإلكتروني غير صحيح';
+                              final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                              if (!emailRegex.hasMatch(v.trim())) return 'صيغة البريد الإلكتروني غير صحيحة';
                               return null;
                             },
                           ),
@@ -160,18 +150,13 @@ class _ParentRegisterScreenState extends State<ParentRegisterScreen> {
                             hint: '••••••••',
                             obscure: !_showPassword,
                             suffixIcon: IconButton(
-                              icon: Icon(
-                                _showPassword ? Icons.visibility_off : Icons.visibility,
-                                color: const Color(0xFF511281),
-                              ),
+                              icon: Icon(_showPassword ? Icons.visibility_off : Icons.visibility, color: const Color(0xFF511281)),
                               onPressed: () => setState(() => _showPassword = !_showPassword),
                             ),
                             validator: (v) {
                               if (v == null || v.isEmpty) return 'الرجاء إدخال كلمة المرور';
                               if (v.length < 8) return 'يجب أن تكون 8 خانات على الأقل';
-                              if (!RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(v)) {
-                                return 'يجب أن تحتوي على رمز واحد على الأقل (@، #، !)';
-                              }
+                              if (!RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(v)) return 'يجب أن تحتوي على رمز واحد على الأقل (@، #، !)';
                               return null;
                             },
                           ),
@@ -185,10 +170,7 @@ class _ParentRegisterScreenState extends State<ParentRegisterScreen> {
                             hint: '••••••••',
                             obscure: !_showConfirmPassword,
                             suffixIcon: IconButton(
-                              icon: Icon(
-                                _showConfirmPassword ? Icons.visibility_off : Icons.visibility,
-                                color: const Color(0xFF511281),
-                              ),
+                              icon: Icon(_showConfirmPassword ? Icons.visibility_off : Icons.visibility, color: const Color(0xFF511281)),
                               onPressed: () => setState(() => _showConfirmPassword = !_showConfirmPassword),
                             ),
                             validator: (v) {
@@ -199,7 +181,6 @@ class _ParentRegisterScreenState extends State<ParentRegisterScreen> {
                           ),
                           const SizedBox(height: 24),
 
-                          // ── زر الإنشاء ──
                           SizedBox(
                             height: 48,
                             child: ElevatedButton(
@@ -241,6 +222,7 @@ class _ParentRegisterScreenState extends State<ParentRegisterScreen> {
     );
   }
 
+  // --- Widgets مساعدة ---
   Widget _buildLabel(String text) {
     return Text(text, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF333333)));
   }
