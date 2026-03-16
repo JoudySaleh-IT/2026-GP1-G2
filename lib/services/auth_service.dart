@@ -19,7 +19,7 @@ class AuthService {
         email: email,
         password: password,
       );
-      
+
       User? user = result.user;
 
       // الخطوة ب: إذا تم إنشاء المستخدم بنجاح، احفظ بياناته الإضافية في Firestore
@@ -28,12 +28,12 @@ class AuthService {
           'uid': user.uid,
           'fullName': fullName,
           'email': email,
-          'role': 'parent', 
-          'createdAt': FieldValue.serverTimestamp(), // وقت إنشاء الحساب تلقائياً
+          'role': 'parent',
+          'createdAt':
+              FieldValue.serverTimestamp(), // وقت إنشاء الحساب تلقائياً
         });
       }
       return user;
-
     } on FirebaseAuthException catch (e) {
       // التعامل مع أخطاء Firebase المعروفة
       if (e.code == 'email-already-in-use') {
@@ -47,6 +47,7 @@ class AuthService {
       return null;
     }
   }
+
   // دالة تسجيل الدخول
   Future<User?> loginParent(String email, String password) async {
     try {
@@ -64,7 +65,7 @@ class AuthService {
       return null;
     }
   }
-// --- منطق التعامل مع ملفات الأطفال ---
+  // --- منطق التعامل مع ملفات الأطفال ---
 
   // 1. الدالة المسؤولة عن إضافة طفل جديد مع التحقق من القيد
   Future<bool> createChildProfile({
@@ -115,7 +116,8 @@ class AuthService {
   Future<void> updatePassword(String newPassword) async {
     await _auth.currentUser!.updatePassword(newPassword);
   }
-// إرسال رابط إعادة تعيين كلمة المرور
+
+  // إرسال رابط إعادة تعيين كلمة المرور
   Future<void> sendPasswordReset(String email) async {
     try {
       await _auth.sendPasswordResetEmail(email: email);
@@ -126,7 +128,7 @@ class AuthService {
       throw Exception("حدث خطأ غير متوقع");
     }
   }
-  
+
   /// --- منطق تسجيل الخروج ---
   Future<void> signOut() async {
     await _auth.signOut();
@@ -134,4 +136,51 @@ class AuthService {
 
   /// --- الحصول على المستخدم الحالي ---
   User? get currentUser => _auth.currentUser;
+
+  // تحديث بيانات الطفل في Firestore
+  Future<void> updateChildProfile({
+    required String childId,
+    required String name,
+    required int age,
+    required String gradeLevel,
+    required String avatar,
+  }) async {
+    try {
+      await _db.collection('children').doc(childId).update({
+        'name': name,
+        'age': age,
+        'gradeLevel': gradeLevel,
+        'avatar': avatar,
+        'updatedAt':
+            FieldValue.serverTimestamp(), // اختياري: لتسجيل وقت التحديث
+      });
+    } catch (e) {
+      print("Error updating child: $e");
+      throw Exception("فشل في تحديث بيانات الطفل");
+    }
+  }
+
+  // دالة حذف ملف الطفل نهائياً
+  Future<void> deleteChild(String childId) async {
+    await _db.collection('children').doc(childId).delete();
+  }
+
+  // دالة لجلب الـ ID الخاص بأول طفل لهذا الأب
+  Future<String?> getFirstChildId() async {
+    try {
+      String parentId = _auth.currentUser!.uid;
+      var snapshot = await _db
+          .collection('children')
+          .where('parentId', isEqualTo: parentId)
+          .limit(1) // نكتفي بأول واحد
+          .get();
+
+      if (snapshot.docs.isNotEmpty) {
+        return snapshot.docs.first.id;
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
 }

@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../services/auth_service.dart';
+import 'edit_child_profile_screen.dart';
 
 // ─── Mock Data ────────────────────────────────────────────────────────────────
 class _WeekDay {
@@ -36,6 +40,8 @@ class ChildProfileManagementScreen extends StatefulWidget {
 
 class _ChildProfileManagementScreenState
     extends State<ChildProfileManagementScreen> {
+  final AuthService _authService = AuthService();
+
   void _confirmDelete() {
     showDialog(
       context: context,
@@ -79,23 +85,25 @@ class _ChildProfileManagementScreenState
               ),
             ),
             ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-                Navigator.pushNamedAndRemoveUntil(
-                  context,
-                  '/parent/dashboard',
-                  (route) => false,
-                );
+              onPressed: () async {
+                try {
+                  await _authService.deleteChild(widget.childId!); // حذف حقيقي
+                  if (mounted) {
+                    Navigator.pop(context); // إغلاق الديالوج
+                    Navigator.pushNamedAndRemoveUntil(
+                      context,
+                      '/parent/dashboard',
+                      (route) => false,
+                    );
+                  }
+                } catch (e) {
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(const SnackBar(content: Text('فشل الحذف')));
+                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFFF6969),
-                foregroundColor: Colors.white,
-                elevation: 3,
-                shape: const StadiumBorder(),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 10,
-                ),
               ),
               child: const Text('حذف'),
             ),
@@ -106,51 +114,87 @@ class _ChildProfileManagementScreenState
   }
 
   @override
+  @override
   Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: Scaffold(
-        backgroundColor: const Color(0xFFFCF9EA),
-        body: Column(
-          children: [
-            _ProfileHeader(childId: widget.childId, onDelete: _confirmDelete),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    // ── التمارين ──────────────────────────────────────
-                    _StatCard(
-                      icon: Icons.menu_book_rounded,
-                      title: 'التمارين',
-                      value: '$_exercisesCompleted',
-                      subtitle: 'تم إكمالها',
-                    ),
-                    const SizedBox(height: 12),
-
-                    // ── سلسلة الأيام ──────────────────────────────────
-                    _StatCard(
-                      icon: Icons.emoji_events_rounded,
-                      title: 'سلسلة الأيام',
-                      value: '$_streak أيام',
-                      subtitle: 'السلسلة الحالية',
-                    ),
-                    const SizedBox(height: 12),
-
-                    // ── التقدم ────────────────────────────────────────
-                    _ProgressCard(progress: _progress),
-                    const SizedBox(height: 16),
-
-                    // ── النشاط الأسبوعي ───────────────────────────────
-                    _WeeklyChartCard(weeklyData: _weeklyData),
-                    const SizedBox(height: 16),
-                  ],
-                ),
-              ),
+    // نستخدم StreamBuilder لمراقبة وثيقة الطفل في Firestore لحظة بلحظة
+    return StreamBuilder<DocumentSnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('children')
+          .doc(widget.childId)
+          .snapshots(),
+      builder: (context, snapshot) {
+        // 1. حالة الانتظار: إذا كانت البيانات لا تزال تحمل
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(color: Color(0xFF511281)),
             ),
-          ],
-        ),
-      ),
+          );
+        }
+
+        // 2. حالة الخطأ أو عدم وجود بيانات
+        if (!snapshot.hasData || !snapshot.data!.exists) {
+          return const Scaffold(
+            body: Center(child: Text("لم يتم العثور على بيانات الطفل")),
+          );
+        }
+
+        // 3. استخراج البيانات الحقيقية من snapshot
+        var data = snapshot.data!.data() as Map<String, dynamic>;
+
+        return Directionality(
+          textDirection: TextDirection.rtl,
+          child: Scaffold(
+            backgroundColor: const Color(0xFFFCF9EA),
+            body: Column(
+              children: [
+                // الهيدر الآن يأخذ البيانات من Firestore مباشرة
+                _ProfileHeader(
+                  childId: widget.childId,
+                  onDelete: _confirmDelete,
+                  name: data['name'] ?? 'بدون اسم',
+                  avatar: data['avatar'] ?? '🦁',
+                  age: data['age'] ?? 0,
+                ),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      children: [
+                        // التمارين: نأخذ القيمة من الحقل 'progress' أو أي حقل مخصص للتمارين
+                        _StatCard(
+                          icon: Icons.menu_book_rounded,
+                          title: 'التمارين',
+                          value: '${data['completedExercises'] ?? 0}',
+                          subtitle: 'تم إكمالها',
+                        ),
+                        const SizedBox(height: 12),
+
+                        // سلسلة الأيام
+                        _StatCard(
+                          icon: Icons.emoji_events_rounded,
+                          title: 'سلسلة الأيام',
+                          value: '${data['streak'] ?? 0} أيام',
+                          subtitle: 'السلسلة الحالية',
+                        ),
+                        const SizedBox(height: 12),
+
+                        // بطاقة التقدم تأخذ النسبة من Firestore
+                        _ProgressCard(progress: data['progress'] ?? 0),
+                        const SizedBox(height: 16),
+
+                        // النشاط الأسبوعي (هذا الجزء يحتاج مصفوفة بيانات، يمكنك تركها حالياً أو جلبها من Firestore)
+                        _WeeklyChartCard(weeklyData: _weeklyData),
+                        const SizedBox(height: 16),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -159,7 +203,18 @@ class _ChildProfileManagementScreenState
 class _ProfileHeader extends StatelessWidget {
   final String? childId;
   final VoidCallback onDelete;
-  const _ProfileHeader({required this.childId, required this.onDelete});
+  // أضفنا هذه المتغيرات لاستقبال البيانات الحقيقية
+  final String name;
+  final String avatar;
+  final int age;
+
+  const _ProfileHeader({
+    required this.childId,
+    required this.onDelete,
+    required this.name,
+    required this.avatar,
+    required this.age,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -187,36 +242,45 @@ class _ProfileHeader extends StatelessWidget {
             onTap: () => Navigator.pop(context),
           ),
           const SizedBox(width: 10),
-          Text(_avatar, style: const TextStyle(fontSize: 36)),
+          // نستخدم الـ avatar القادم من Firestore
+          Text(avatar, style: const TextStyle(fontSize: 36)),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // نستخدم الـ name القادم من Firestore
                 Text(
-                  _name,
+                  name,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
+                // نستخدم الـ age والـ level القادمين من Firestore
                 Text(
-                  '$_age سنوات • المستوى $_level',
+                  '$age سنوات ',
                   style: const TextStyle(color: Colors.white70, fontSize: 11),
                 ),
               ],
             ),
           ),
+          // زر التعديل
           _HeaderIconBtn(
             icon: Icons.edit_outlined,
-            onTap: () => Navigator.pushNamed(
-              context,
-              '/parent/child-profile/edit',
-              arguments: {'childId': childId ?? '1'},
-            ),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      EditChildProfileScreen(childId: childId ?? ''),
+                ),
+              );
+            },
           ),
           const SizedBox(width: 4),
+          // زر الحذف
           _HeaderIconBtn(icon: Icons.delete_outline_rounded, onTap: onDelete),
         ],
       ),

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 // ─── Mock Data ───────────────────────────────────────────────────────────────
 const _mockChild = (
@@ -13,80 +15,116 @@ const _mockChild = (
 );
 
 // ─── Screen ──────────────────────────────────────────────────────────────────
+
 class ChildHomeScreen extends StatelessWidget {
-  const ChildHomeScreen({super.key});
+  final String childId; // ✅ أضيفي هذا المتغير
+
+  const ChildHomeScreen({
+    super.key,
+    required this.childId,
+  }); // ✅ تحديث الـ Constructor
 
   @override
   Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: Scaffold(
-        backgroundColor: const Color(0xFFFCF9EA),
-        body: Column(
-          children: [
-            _ChildHeader(
-              name: _mockChild.name,
-              avatar: _mockChild.avatar,
-              level: _mockChild.level,
+    return StreamBuilder<DocumentSnapshot>(
+      // ✅ نراقب بيانات الطفل في Firestore لحظة بلحظة
+      stream: FirebaseFirestore.instance
+          .collection('children')
+          .doc(childId)
+          .snapshots(),
+      builder: (context, snapshot) {
+        // حالة الانتظار
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(color: Color(0xFF511281)),
             ),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
-                child: Column(
-                  children: [
-                    // ── Placement test banner ──────────────────────────
-                    _PlacementTestBanner(
-                      onTap: () => Navigator.pushNamed(
-                        context,
-                        '/child/placement-test',
-                      ),
-                    ),
-                    const SizedBox(height: 16),
+          );
+        }
 
-                    // ── Stats row ──────────────────────────────────────
-                    Row(
+        // في حال عدم وجود بيانات
+        if (!snapshot.hasData || !snapshot.data!.exists) {
+          return const Scaffold(
+            body: Center(child: Text("عذراً، لم يتم العثور على البيانات")),
+          );
+        }
+
+        // استخراج البيانات الحقيقية
+        var data = snapshot.data!.data() as Map<String, dynamic>;
+
+        return Directionality(
+          textDirection: TextDirection.rtl,
+          child: Scaffold(
+            backgroundColor: const Color(0xFFFCF9EA),
+            body: Column(
+              children: [
+                // ✅ الهيدر ببيانات حقيقية
+                _ChildHeader(
+                  name: data['name'] ?? 'بطل فصيح',
+                  avatar: data['avatar'] ?? '🦁',
+                  level: data['gradeLevel'] ?? 'مبتدئ',
+                ),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+                    child: Column(
                       children: [
-                        Expanded(
-                          child: _StatCard(
-                            icon: Icons.local_fire_department,
-                            value: _mockChild.streak.toString(),
-                            label: 'المواظبة',
+                        _PlacementTestBanner(
+                          onTap: () => Navigator.pushNamed(
+                            context,
+                            '/child/placement-test',
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: _StatCard(
-                            icon: Icons.star,
-                            value: _mockChild.points.toString(),
-                            label: 'النقاط',
-                          ),
+                        const SizedBox(height: 16),
+
+                        // ── Stats row ببيانات حقيقية ──────────────────────
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _StatCard(
+                                icon: Icons.local_fire_department,
+                                value: (data['streak'] ?? 0).toString(),
+                                label: 'المواظبة',
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _StatCard(
+                                icon: Icons.star,
+                                value: (data['points'] ?? 0).toString(),
+                                label: 'النقاط',
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _StatCard(
+                                icon: Icons.emoji_events,
+                                value: '#${data['rank'] ?? '-'}',
+                                label: 'الترتيب',
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: _StatCard(
-                            icon: Icons.emoji_events,
-                            value: '#${_mockChild.rank}',
-                            label: 'الترتيب',
-                          ),
+                        const SizedBox(height: 12),
+
+                        // ✅ هدف اليوم ببيانات حقيقية
+                        _TodayGoalCard(
+                          done: data['todayExercises'] ?? 0,
+                          goal: data['todayGoal'] ?? 5, // افتراضي 5 لو مش موجود
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
-
-                    // ── Today's goal card ──────────────────────────────
-                    _TodayGoalCard(
-                      done: _mockChild.todayExercises,
-                      goal: _mockChild.todayGoal,
-                    ),
-                  ],
+                  ),
                 ),
-              ),
+              ],
             ),
-          ],
-        ),
-        // ── Bottom navigation bar ──────────────────────────────────────
-        bottomNavigationBar: const _ChildBottomNav(currentRoute: '/child/home'),
-      ),
+            bottomNavigationBar: _ChildBottomNav(
+              currentRoute: '/child/home',
+              childId: childId, // مرري الـ ID للناف بار إذا كنتِ تحتاجينه
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -104,10 +142,7 @@ class _ChildHeader extends StatelessWidget {
   });
 
   void _showLogoutDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (_) => const _ParentPasswordDialog(),
-    );
+    showDialog(context: context, builder: (_) => const _ParentPasswordDialog());
   }
 
   @override
@@ -167,8 +202,11 @@ class _ChildHeader extends StatelessWidget {
                 color: Colors.white.withOpacity(0.15),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(Icons.logout_rounded,
-                  color: Colors.white, size: 18),
+              child: const Icon(
+                Icons.logout_rounded,
+                color: Colors.white,
+                size: 18,
+              ),
             ),
           ),
         ],
@@ -280,20 +318,22 @@ class _ParentPasswordDialogState extends State<_ParentPasswordDialog> {
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
                   borderSide: const BorderSide(
-                      color: Color(0xFF511281), width: 1.5),
+                    color: Color(0xFF511281),
+                    width: 1.5,
+                  ),
                 ),
                 errorBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
-                  borderSide:
-                      const BorderSide(color: Colors.red, width: 1.5),
+                  borderSide: const BorderSide(color: Colors.red, width: 1.5),
                 ),
                 focusedErrorBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
-                  borderSide:
-                      const BorderSide(color: Colors.red, width: 1.5),
+                  borderSide: const BorderSide(color: Colors.red, width: 1.5),
                 ),
                 contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 14, vertical: 12),
+                  horizontal: 14,
+                  vertical: 12,
+                ),
               ),
             ),
             const SizedBox(height: 4),
@@ -305,14 +345,18 @@ class _ParentPasswordDialogState extends State<_ParentPasswordDialog> {
             onPressed: () => Navigator.pop(context),
             style: TextButton.styleFrom(
               side: BorderSide(
-                  color: const Color(0xFF511281).withOpacity(0.2), width: 1.5),
+                color: const Color(0xFF511281).withOpacity(0.2),
+                width: 1.5,
+              ),
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             ),
-            child: const Text('إلغاء',
-                style: TextStyle(color: Color(0xFF511281))),
+            child: const Text(
+              'إلغاء',
+              style: TextStyle(color: Color(0xFF511281)),
+            ),
           ),
           // Confirm
           ElevatedButton(
@@ -322,8 +366,7 @@ class _ParentPasswordDialogState extends State<_ParentPasswordDialog> {
               foregroundColor: Colors.white,
               elevation: 2,
               shape: const StadiumBorder(),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             ),
             child: _loading
                 ? const SizedBox(
@@ -363,9 +406,10 @@ class _PlacementTestBannerState extends State<_PlacementTestBanner>
       vsync: this,
       duration: const Duration(milliseconds: 100),
     );
-    _scale = Tween<double>(begin: 1.0, end: 0.97).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
-    );
+    _scale = Tween<double>(
+      begin: 1.0,
+      end: 0.97,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
   }
 
   @override
@@ -418,19 +462,12 @@ class _PlacementTestBannerState extends State<_PlacementTestBanner>
                   SizedBox(height: 4),
                   Text(
                     'استكشف مستواك اللغوي!',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 13,
-                    ),
+                    style: TextStyle(color: Colors.white, fontSize: 13),
                   ),
                 ],
               ),
               // Play icon
-              const Icon(
-                Icons.play_circle_fill,
-                color: Colors.white,
-                size: 60,
-              ),
+              const Icon(Icons.play_circle_fill, color: Colors.white, size: 60),
             ],
           ),
         ),
@@ -484,10 +521,7 @@ class _StatCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 2),
-          Text(
-            label,
-            style: const TextStyle(fontSize: 10, color: Colors.grey),
-          ),
+          Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
         ],
       ),
     );
@@ -573,15 +607,19 @@ class _TodayGoalCard extends StatelessWidget {
   }
 }
 
-// ─── Bottom Navigation Bar ────────────────────────────────────────────────────
 class _ChildBottomNav extends StatelessWidget {
   final String currentRoute;
-  const _ChildBottomNav({required this.currentRoute});
+  final String childId; // ✅ 1. أضفنا هذا السطر لتعريف المتغير داخل الكلاس
+
+  const _ChildBottomNav({
+    required this.currentRoute,
+    required this.childId, // ✅ 2. أضفناه هنا ليكون مطلوباً عند استدعاء الكلاس
+  });
 
   @override
   Widget build(BuildContext context) {
     return Directionality(
-      textDirection: TextDirection.ltr, // nav items always LTR
+      textDirection: TextDirection.ltr,
       child: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -608,22 +646,31 @@ class _ChildBottomNav extends StatelessWidget {
                   icon: Icons.menu_book_rounded,
                   label: 'التمارين',
                   isActive: currentRoute == '/child/exercises',
-                  onTap: () =>
-                      Navigator.pushNamed(context, '/child/exercises'),
+                  onTap: () => Navigator.pushNamed(
+                    context,
+                    '/child/exercises',
+                    arguments: childId, // ✅ 3. نمرر الـ ID لصفحة التمارين
+                  ),
                 ),
                 _NavItem(
                   icon: Icons.home_rounded,
                   label: 'الرئيسية',
                   isActive: currentRoute == '/child/home',
-                  onTap: () =>
-                      Navigator.pushNamed(context, '/child/home'),
+                  onTap: () => Navigator.pushNamed(
+                    context,
+                    '/child/home',
+                    arguments: childId, // ✅ نمرره لصفحة الرئيسية أيضاً
+                  ),
                 ),
                 _NavItem(
                   icon: Icons.leaderboard_rounded,
                   label: 'المتصدرون',
                   isActive: currentRoute == '/child/leaderboard',
-                  onTap: () =>
-                      Navigator.pushNamed(context, '/child/leaderboard'),
+                  onTap: () => Navigator.pushNamed(
+                    context,
+                    '/child/leaderboard',
+                    arguments: childId, // ✅ نمرره لصفحة المتصدرين
+                  ),
                 ),
               ],
             ),
@@ -659,10 +706,7 @@ class _NavItem extends StatelessWidget {
           children: [
             Icon(icon, color: color, size: 24),
             const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(color: color, fontSize: 11),
-            ),
+            Text(label, style: TextStyle(color: color, fontSize: 11)),
           ],
         ),
       ),

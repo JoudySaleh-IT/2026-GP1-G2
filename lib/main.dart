@@ -28,17 +28,16 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized(); 
-  
+  WidgetsFlutterBinding.ensureInitialized();
+
   // 2. Add the DefaultFirebaseOptions here
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-  
-  // Keep  testing sign-out 
-  await FirebaseAuth.instance.signOut(); 
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // Keep  testing sign-out
+  await FirebaseAuth.instance.signOut();
   runApp(MyApp());
 }
+
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -88,7 +87,19 @@ class MyApp extends StatelessWidget {
         '/parent/dashboard': (context) => const ParentDashboardScreen(),
         '/parent/settings': (context) => const ParentSettingsScreen(),
         '/child/selection': (context) => const ChildSelectionScreen(),
-        '/child/home': (context) => const ChildHomeScreen(),
+        '/child/home': (context) {
+          // استخراج الأرجومنت بشكل آمن
+          final args = ModalRoute.of(context)!.settings.arguments;
+
+          // التحقق: إذا كانت الأرجومنت فارغة، لا تجعل التطبيق ينهار
+          if (args == null || args is! String) {
+            return const Scaffold(
+              body: Center(child: Text("خطأ: لم يتم العثور على هوية الطفل")),
+            );
+          }
+
+          return ChildHomeScreen(childId: args);
+        },
         '/parent/create-child': (context) => const CreateChildProfileScreen(),
         '/parent/child-profile': (context) {
           final args = ModalRoute.of(context)!.settings.arguments as Map?;
