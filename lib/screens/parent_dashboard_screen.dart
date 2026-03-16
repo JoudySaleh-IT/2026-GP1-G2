@@ -1,166 +1,73 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-// ── Mock Data Model ────────────────────────────────────────────────────────
-class ChildProfile {
-  final String id;
-  final String name;
-  final String avatar;
-  final String level;
-  final int progress;
-  final int streak;
-  final int exercisesCompleted;
-  final String lastActive;
-
-  const ChildProfile({
-    required this.id,
-    required this.name,
-    required this.avatar,
-    required this.level,
-    required this.progress,
-    required this.streak,
-    required this.exercisesCompleted,
-    required this.lastActive,
-  });
-}
-
-final List<ChildProfile> mockChildren = [
-  const ChildProfile(
-    id: '1',
-    name: 'أحمد',
-    avatar: '🦁',
-    level: 'متوسط',
-    progress: 65,
-    streak: 7,
-    exercisesCompleted: 23,
-    lastActive: 'منذ ساعتين',
-  ),
-  const ChildProfile(
-    id: '2',
-    name: 'فاطمة',
-    avatar: '🦊',
-    level: 'مبتدئ',
-    progress: 35,
-    streak: 3,
-    exercisesCompleted: 12,
-    lastActive: 'منذ يوم',
-  ),
-  const ChildProfile(
-    id: '3',
-    name: 'سارة',
-    avatar: '🐼',
-    level: 'متقدم',
-    progress: 85,
-    streak: 15,
-    exercisesCompleted: 47,
-    lastActive: 'منذ ٣٠ دقيقة',
-  ),
-];
-
-// ── Helper: Western → Arabic numerals ─────────────────────────────────────
-String toArabicNumbers(int num) {
-  const arabic = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
-  return num.toString().replaceAllMapped(
-    RegExp(r'\d'),
-    (m) => arabic[int.parse(m.group(0)!)],
-  );
-}
-
-// ── Screen ─────────────────────────────────────────────────────────────────
 class ParentDashboardScreen extends StatelessWidget {
   const ParentDashboardScreen({super.key});
 
+  // دالة لتحويل الأرقام إلى العربية
+  String toArabicNumbers(int num) {
+    const arabic = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+    return num.toString().replaceAllMapped(
+      RegExp(r'\d'),
+      (m) => arabic[int.parse(m.group(0)!)],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    print('🔥 Building ParentDashboardScreen');
+    final String? userId = FirebaseAuth.instance.currentUser?.uid;
+
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
         backgroundColor: const Color(0xFFFCF9EA),
         body: Column(
           children: [
-            // ── Sticky Header ──────────────────────────────────
+            // ── العنوان العلوي (Header) ──
             _buildHeader(context),
 
-            // ── Scrollable Body ────────────────────────────────
+            // ── جسم الصفحة (Body) ──
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    // Section title + Add button
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'ملفات الأطفال',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF222222),
-                          ),
-                        ),
-                        ElevatedButton.icon(
-                          onPressed: () => Navigator.pushNamed(
-                            context,
-                            '/parent/create-child',
-                          ),
-                          icon: const Icon(Icons.add, size: 16),
-                          label: const Text(
-                            'إضافة طفل',
-                            style: TextStyle(fontSize: 13),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF511281),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 8,
-                            ),
-                            minimumSize: Size.zero,
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+              child: StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('children')
+                    .where('parentId', isEqualTo: userId)
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator(color: Color(0xFF511281)));
+                  }
 
-                    const SizedBox(height: 12),
+                  if (snapshot.hasError) {
+                    return const Center(child: Text('حدث خطأ في تحميل البيانات'));
+                  }
 
-                    // Children cards list
-                    ...mockChildren.map(
-                      (child) => _buildChildCard(context, child),
-                    ),
+                  final childrenDocs = snapshot.data?.docs ?? [];
 
-                    const SizedBox(height: 24),
+                  // 1. حالة لا يوجد أطفال (تظهر واجهة الترحيب مع زر الإضافة)
+                  if (childrenDocs.isEmpty) {
+                    return _buildEmptyState(context);
+                  }
 
-                    // Switch to child mode button
-                    SizedBox(
-                      height: 44,
-                      child: ElevatedButton.icon(
-                        onPressed: () =>
-                            Navigator.pushNamed(context, '/child/home'),
-                        icon: const Icon(Icons.person, size: 18),
-                        label: const Text(
-                          'التبديل إلى وضع الطفل',
-                          style: TextStyle(fontSize: 15),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFFF6969),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 24),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-                  ],
-                ),
+                  // 2. حالة وجود طفل (تظهر القائمة ويختفي زر الإضافة)
+                  return ListView(
+                    padding: const EdgeInsets.all(16),
+                    children: [
+                      // نمرر false لعدم إظهار زر الإضافة في العنوان لأن الطفل موجود فعلاً
+                      _buildSectionTitle(context, showAddButton: false), 
+                      const SizedBox(height: 12),
+                      
+                      ...childrenDocs.map((doc) {
+                        final data = doc.data() as Map<String, dynamic>;
+                        return _buildChildCard(context, doc.id, data);
+                      }),
+                      
+                      const SizedBox(height: 24),
+                      _buildSwitchToChildButton(context),
+                    ],
+                  );
+                },
               ),
             ),
           ],
@@ -169,131 +76,106 @@ class ParentDashboardScreen extends StatelessWidget {
     );
   }
 
-  // ── Header with gradient ───────────────────────────────────────────────
+  // ── واجهة عند عدم وجود أطفال (تظهر زر الإضافة) ──
+  Widget _buildEmptyState(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text('🧒', style: TextStyle(fontSize: 80)),
+            const SizedBox(height: 16),
+            const Text(
+              'مرحباً بك في فصيح!',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF511281)),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'ابدأ بإضافة طفلك لمتابعة رحلة تعلمه. (يمكنك إضافة طفل واحد فقط)',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 14, color: Colors.grey),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: () => Navigator.pushNamed(context, '/parent/create-child'),
+              icon: const Icon(Icons.add, color: Colors.white),
+              label: const Text('إضافة طفل الآن', style: TextStyle(color: Colors.white)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF511281),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── عنوان القسم مع قيد الإضافة ──
+  Widget _buildSectionTitle(BuildContext context, {required bool showAddButton}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        const Text(
+          'ملفات الأطفال',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF222222)),
+        ),
+        // يظهر هذا الزر فقط إذا لم يضف المستخدم أي طفل بعد
+        if (showAddButton)
+          TextButton.icon(
+            onPressed: () => Navigator.pushNamed(context, '/parent/create-child'),
+            icon: const Icon(Icons.add, size: 18, color: Color(0xFF511281)),
+            label: const Text('إضافة طفل', style: TextStyle(color: Color(0xFF511281))),
+          ),
+      ],
+    );
+  }
+
+  // ── زر التبديل لوضع الطفل ──
+  Widget _buildSwitchToChildButton(BuildContext context) {
+    return SizedBox(
+      height: 48,
+      child: ElevatedButton.icon(
+        onPressed: () => Navigator.pushNamed(context, '/child/home'),
+        icon: const Icon(Icons.face_rounded, size: 20),
+        label: const Text('التبديل إلى وضع الطفل', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFFFF6969),
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      ),
+    );
+  }
+
+  // ── الهيدر العلوي (Header) ──
   Widget _buildHeader(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFF511281), Color(0xFF7A3FA8)],
-          begin: Alignment.centerRight,
-          end: Alignment.centerLeft,
-        ),
-        boxShadow: [
-          BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 2)),
-        ],
+        gradient: LinearGradient(colors: [Color(0xFF511281), Color(0xFF7A3FA8)]),
+        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10)],
       ),
       child: SafeArea(
         bottom: false,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.all(16),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Title & subtitle
               const Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'لوحة تحكم الأهل',
-                    style: TextStyle(
-                      fontSize: 19,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  SizedBox(height: 2),
-                  Text(
-                    'إدارة تعلم الأطفال',
-                    style: TextStyle(fontSize: 12, color: Colors.white70),
-                  ),
+                  Text('لوحة تحكم الأهل', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+                  Text('إدارة تعلم الأطفال', style: TextStyle(fontSize: 12, color: Colors.white70)),
                 ],
               ),
-
-              // Settings + Logout
               Row(
                 children: [
-                  _headerIconButton(
-                    icon: Icons.settings_outlined,
-                    onTap: () =>
-                        Navigator.pushNamed(context, '/parent/settings'),
-                  ),
-                  const SizedBox(width: 4),
-                  // ✅ Fix
-                  _headerIconButton(
-                    icon: Icons.logout_rounded,
-                    onTap: () async {
-                      final confirm = await showDialog<bool>(
-                        context: context,
-                        builder: (ctx) => AlertDialog(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          title: const Text(
-                            'تسجيل الخروج',
-                            textAlign: TextAlign.right,
-                            style: TextStyle(
-                              fontFamily: 'Tajawal',
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF511281),
-                            ),
-                          ),
-                          content: const Text(
-                            'هل أنت متأكد من تسجيل الخروج؟',
-                            textAlign: TextAlign.right,
-                            style: TextStyle(
-                              fontFamily: 'Tajawal',
-                              fontSize: 15,
-                              color: Color(0xFF444444),
-                            ),
-                          ),
-                          actionsAlignment: MainAxisAlignment.start,
-                          actions: [
-                            // ── نعم ──
-                            ElevatedButton(
-                              onPressed: () => Navigator.pop(ctx, true),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFFFF6969),
-                                foregroundColor: Colors.white,
-                                shape: const StadiumBorder(),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 24,
-                                  vertical: 10,
-                                ),
-                              ),
-                              child: const Text(
-                                'نعم',
-                                style: TextStyle(fontFamily: 'Tajawal'),
-                              ),
-                            ),
-                            // ── لا ──
-                            OutlinedButton(
-                              onPressed: () => Navigator.pop(ctx, false),
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: const Color(0xFF511281),
-                                side: const BorderSide(
-                                  color: Color(0xFF511281),
-                                ),
-                                shape: const StadiumBorder(),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 24,
-                                  vertical: 10,
-                                ),
-                              ),
-                              child: const Text(
-                                'لا',
-                                style: TextStyle(fontFamily: 'Tajawal'),
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-
-                      if (confirm == true && context.mounted) {
-                        // Perform logout
-                        await FirebaseAuth.instance.signOut();
-                      }
-                    },
-                  ),
+                  _headerIconButton(Icons.settings_outlined, () => Navigator.pushNamed(context, '/parent/settings')),
+                  const SizedBox(width: 8),
+                  _headerIconButton(Icons.logout_rounded, () => _handleLogout(context)),
                 ],
               ),
             ],
@@ -303,146 +185,76 @@ class ParentDashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _headerIconButton({
-    required IconData icon,
-    required VoidCallback onTap,
-  }) {
+  Widget _headerIconButton(IconData icon, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
       child: Container(
-        width: 36,
-        height: 36,
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.15),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Icon(icon, color: Colors.white, size: 18),
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(8)),
+        child: Icon(icon, color: Colors.white, size: 20),
       ),
     );
   }
 
-  // ── Child Card ─────────────────────────────────────────────────────────
-  Widget _buildChildCard(BuildContext context, ChildProfile child) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: InkWell(
-        onTap: () => Navigator.pushNamed(
-          context,
-          '/parent/child-profile',
-          arguments: {'childId': child.id},
+  // ── دالة تسجيل الخروج ──
+  void _handleLogout(BuildContext context) async {
+    final bool? confirm = await showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('تسجيل الخروج'),
+        content: const Text('هل أنت متأكد من تسجيل الخروج؟'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('نعم', style: TextStyle(color: Colors.red))),
+        ],
+      ),
+    );
+    if (confirm == true) {
+      await FirebaseAuth.instance.signOut();
+      if (context.mounted) Navigator.pushReplacementNamed(context, '/');
+    }
+  }
+
+  // ── بطاقة الطفل (Child Card) ──
+  Widget _buildChildCard(BuildContext context, String docId, Map<String, dynamic> data) {
+    final int progress = data['progress'] ?? 0;
+    
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.all(16),
+        leading: CircleAvatar(
+          radius: 28,
+          backgroundColor: const Color(0xFFFCF9EA),
+          child: Text(data['avatar'] ?? '👦', style: const TextStyle(fontSize: 30)),
         ),
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: const Color(0xFF511281).withOpacity(0.1),
-              width: 2,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
+        title: Text(data['name'] ?? 'بدون اسم', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('المستوى: ${data['level'] ?? 'مبتدئ'}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+            const SizedBox(height: 8),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: LinearProgressIndicator(
+                value: progress / 100,
+                backgroundColor: const Color(0xFF511281).withOpacity(0.1),
+                valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF511281)),
+                minHeight: 8,
               ),
-            ],
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              children: [
-                // Avatar + name + level
-                Row(
-                  children: [
-                    Text(child.avatar, style: const TextStyle(fontSize: 32)),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            child.name,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF222222),
-                            ),
-                          ),
-                          Text(
-                            child.level,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    // Last active badge
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF511281).withOpacity(0.08),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        child.lastActive,
-                        style: const TextStyle(
-                          fontSize: 10,
-                          color: Color(0xFF511281),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 12),
-
-                // Progress bar
-                Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'التقدم',
-                          style: TextStyle(fontSize: 12, color: Colors.grey),
-                        ),
-                        Text(
-                          '${toArabicNumbers(child.progress)}٪',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Color(0xFF511281),
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
-                      child: LinearProgressIndicator(
-                        value: child.progress / 100,
-                        minHeight: 6,
-                        backgroundColor: const Color(
-                          0xFF511281,
-                        ).withOpacity(0.12),
-                        valueColor: const AlwaysStoppedAnimation<Color>(
-                          Color(0xFF511281),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
             ),
-          ),
+          ],
         ),
+        trailing: Text(
+          '${toArabicNumbers(progress)}٪',
+          style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF511281)),
+        ),
+        onTap: () => Navigator.pushNamed(context, '/parent/child-profile', arguments: {'childId': docId}),
       ),
     );
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../services/auth_service.dart';
 
 class ParentLoginScreen extends StatefulWidget {
   const ParentLoginScreen({super.key});
@@ -13,6 +14,7 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _showPassword = false;
+  final AuthService _authService = AuthService();
 
   @override
   void dispose() {
@@ -21,35 +23,43 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> {
     super.dispose();
   }
 
-  // Inside _ParentLoginScreenState:
-  void _handleSubmit() async {
-    if (_formKey.currentState!.validate()) {
-      setState(() {
-        // optionally clear previous error
-      });
-      try {
-        await FirebaseAuth.instance.signInWithEmailAndPassword(
-          email: _emailController.text.trim(),
-          password: _passwordController.text.trim(),
+void _handleSubmit() async {
+  if (_formKey.currentState!.validate()) {
+    // 1. إظهار دائرة التحميل
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      // 2. محاولة تسجيل الدخول
+      await _authService.loginParent(
+        _emailController.text.trim(),
+        _passwordController.text.trim(),
+      );
+
+      // 3. إغلاق دائرة التحميل
+      if (mounted) Navigator.pop(context);
+
+      // 4. 🔥 الانتقال الإجباري للداشبورد (أضيفي هذا السطر)
+      if (mounted) {
+        Navigator.pushNamedAndRemoveUntil(
+          context, 
+          '/parent/dashboard', 
+          (route) => false // هذا السطر يمسح صفحات الدخول السابقة من الذاكرة
         );
-        // On success, the StreamBuilder in Wrapper will automatically switch to dashboard.
-        // No need to manually navigate.
-      } on FirebaseAuthException catch (e) {
-        String message;
-        if (e.code == 'user-not-found') {
-          message = 'لا يوجد مستخدم بهذا البريد الإلكتروني';
-        } else if (e.code == 'wrong-password') {
-          message = 'كلمة المرور غير صحيحة';
-        } else {
-          message = 'حدث خطأ، حاول مرة أخرى';
-        }
-        _showErrorDialog(message);
-      } catch (e) {
-        _showErrorDialog('حدث خطأ غير متوقع');
       }
+
+    } on FirebaseAuthException catch (e) {
+      if (mounted) Navigator.pop(context); // إغلاق اللودنق عند الخطأ
+      _showErrorDialog('تأكد من صحة البريد أو كلمة المرور');
+    } catch (e) {
+      if (mounted) Navigator.pop(context);
+      _showErrorDialog('حدث خطأ غير متوقع');
     }
   }
-
+}
   void _showErrorDialog(String message) {
     showDialog(
       context: context,
