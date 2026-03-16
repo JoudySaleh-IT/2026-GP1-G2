@@ -149,7 +149,6 @@ class AuthService {
       await _db.collection('children').doc(childId).update({
         'name': name,
         'age': age,
-        'gradeLevel': gradeLevel,
         'avatar': avatar,
         'updatedAt':
             FieldValue.serverTimestamp(), // اختياري: لتسجيل وقت التحديث
