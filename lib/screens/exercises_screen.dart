@@ -171,9 +171,6 @@ class ExercisesScreen extends StatelessWidget {
             ),
           ],
         ),
-        bottomNavigationBar: const _ChildBottomNav(
-          currentRoute: '/child/exercises',
-        ),
       ),
     );
   }

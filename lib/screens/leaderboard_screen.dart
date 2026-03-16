@@ -80,9 +80,7 @@ class LeaderboardScreen extends StatelessWidget {
             ),
           ],
         ),
-        bottomNavigationBar: const _ChildBottomNav(
-          currentRoute: '/child/leaderboard',
-        ),
+        
       ),
     );
   }
