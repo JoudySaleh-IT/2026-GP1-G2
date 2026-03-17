@@ -118,8 +118,11 @@ class ParentDashboardScreen extends StatelessWidget {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xFF511281), Color(0xFF7A3FA8)],
+          colors: [Color(0xFF6A3A9E), Color(0xFF511281)], // ✅ changed
+          begin: Alignment.topRight, // ✅ changed
+          end: Alignment.bottomLeft, // ✅ changed
         ),
+
         boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10)],
       ),
       child: SafeArea(
