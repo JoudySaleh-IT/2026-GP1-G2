@@ -221,9 +221,9 @@ class _ProfileHeader extends StatelessWidget {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xFF511281), Color(0xFF7A3FA8)],
-          begin: Alignment.centerRight,
-          end: Alignment.centerLeft,
+          colors: [Color(0xFF6A3A9E), Color(0xFF511281)],
+          begin: Alignment.topRight,
+          end: Alignment.bottomLeft,
         ),
         boxShadow: [
           BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 2)),

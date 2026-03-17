@@ -26,7 +26,7 @@ const _letters = [
 
 // ─── Screen ──────────────────────────────────────────────────────────────────
 class ExercisesScreen extends StatelessWidget {
-    final String childId;
+  final String childId;
   const ExercisesScreen({super.key, required this.childId});
 
   @override
@@ -45,99 +45,6 @@ class ExercisesScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // ── Child info card ───────────────────────────────
-                    Container(
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: const Color(0xFF511281).withOpacity(0.08),
-                          width: 1.5,
-                        ),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Color(0x0F000000),
-                            blurRadius: 10,
-                            offset: Offset(0, 3),
-                          ),
-                        ],
-                      ),
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
-                        textDirection: TextDirection.ltr,
-                        children: [
-                          // ── Info (LEFT side) ──────────────────────
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'أحمد',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w600,
-                                    color: Color(0xFF222222),
-                                    fontFamily: 'Tajawal',
-                                  ),
-                                ),
-                                const SizedBox(height: 6),
-                                Row(
-                                  textDirection: TextDirection.rtl,
-                                  children: const [
-                                    Icon(
-                                      Icons.emoji_events_rounded,
-                                      color: Color(0xFF511281),
-                                      size: 16,
-                                    ),
-                                    SizedBox(width: 4),
-                                    Text(
-                                      'الترتيب #12',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Color(0xFF555555),
-                                      ),
-                                    ),
-                                    SizedBox(width: 12),
-                                    Icon(
-                                      Icons.star_rounded,
-                                      color: Color(0xFFFBBF24),
-                                      size: 16,
-                                    ),
-                                    SizedBox(width: 4),
-                                    Text(
-                                      '1250 نقطة',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Color(0xFF555555),
-                                      ),
-                                    ),
-                                    SizedBox(width: 12),
-                                    Icon(
-                                      Icons.local_fire_department_rounded,
-                                      color: Color(0xFFFF6969),
-                                      size: 16,
-                                    ),
-                                    SizedBox(width: 4),
-                                    Text(
-                                      '7 يوم',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Color(0xFF555555),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 14),
-                          // ── Avatar (RIGHT side) ───────────────────
-                          const Text('🦁', style: TextStyle(fontSize: 48)),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 8),
 
                     // ── Letters grid ─────────────────────────────────
                     GridView.builder(
@@ -161,7 +68,7 @@ class ExercisesScreen extends StatelessWidget {
                             arguments: {
                               'letter': item.letter,
                               'currentProgress': item.completed,
-                               'childId': childId,
+                              'childId': childId,
                             },
                           ),
                         );
@@ -174,9 +81,9 @@ class ExercisesScreen extends StatelessWidget {
           ],
         ),
         bottomNavigationBar: _ChildBottomNav(
-  currentRoute: '/child/exercises',
-  childId: childId,
-),
+          currentRoute: '/child/exercises',
+          childId: childId,
+        ),
       ),
     );
   }
@@ -408,7 +315,6 @@ class _ChildBottomNav extends StatelessWidget {
   final String childId;
   const _ChildBottomNav({required this.currentRoute, required this.childId});
 
-
   @override
   Widget build(BuildContext context) {
     return Directionality(
@@ -436,32 +342,35 @@ class _ChildBottomNav extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 _NavItem(
-  icon: Icons.menu_book_rounded,
-  label: 'التمارين',
-  isActive: currentRoute == '/child/exercises',
-  onTap: () => Navigator.pushNamed(
-    context, '/child/exercises',
-    arguments: childId, // ✅
-  ),
-),
-_NavItem(
-  icon: Icons.home_rounded,
-  label: 'الرئيسية',
-  isActive: currentRoute == '/child/home',
-  onTap: () => Navigator.pushNamed(
-    context, '/child/home',
-    arguments: childId, // ✅
-  ),
-),
-_NavItem(
-  icon: Icons.leaderboard_rounded,
-  label: 'المتصدرون',
-  isActive: currentRoute == '/child/leaderboard',
-  onTap: () => Navigator.pushNamed(
-    context, '/child/leaderboard',
-    arguments: childId, // ✅
-  ),
-),
+                  icon: Icons.menu_book_rounded,
+                  label: 'التمارين',
+                  isActive: currentRoute == '/child/exercises',
+                  onTap: () => Navigator.pushNamed(
+                    context,
+                    '/child/exercises',
+                    arguments: childId, // ✅
+                  ),
+                ),
+                _NavItem(
+                  icon: Icons.home_rounded,
+                  label: 'الرئيسية',
+                  isActive: currentRoute == '/child/home',
+                  onTap: () => Navigator.pushNamed(
+                    context,
+                    '/child/home',
+                    arguments: childId, // ✅
+                  ),
+                ),
+                _NavItem(
+                  icon: Icons.leaderboard_rounded,
+                  label: 'المتصدرون',
+                  isActive: currentRoute == '/child/leaderboard',
+                  onTap: () => Navigator.pushNamed(
+                    context,
+                    '/child/leaderboard',
+                    arguments: childId, // ✅
+                  ),
+                ),
               ],
             ),
           ),
