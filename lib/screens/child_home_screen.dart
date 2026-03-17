@@ -239,26 +239,65 @@ class _ParentPasswordDialogState extends State<_ParentPasswordDialog> {
     super.dispose();
   }
 
-  void _submit() {
-    setState(() => _loading = true);
+  void _submit() async {
+    // 1. حفظ الـ Navigator والـ ScaffoldMessenger قبل البدء
+    // لأن الـ context الخاص بالـ Dialog سيختفي بمجرد عمل Navigator.pop
+    final navigator = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
 
-    Future.delayed(const Duration(milliseconds: 600), () {
-      if (!mounted) return;
-      if (_controller.text == _mockParentPassword) {
-        Navigator.pop(context); // close dialog
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          '/parent/dashboard',
-          (route) => false,
+    setState(() {
+      _loading = true;
+      _hasError = false;
+    });
+
+    try {
+      String? email = FirebaseAuth.instance.currentUser?.email;
+
+      if (email != null) {
+        AuthCredential credential = EmailAuthProvider.credential(
+          email: email,
+          password: _controller.text,
         );
-      } else {
-        setState(() {
-          _hasError = true;
-          _loading = false;
-          _controller.clear();
+
+        // التحقق من كلمة المرور
+        await FirebaseAuth.instance.currentUser!.reauthenticateWithCredential(
+          credential,
+        );
+
+        // 2. إغلاق الدايلوج أولاً
+        navigator.pop();
+
+        // 3. إظهار الرسالة باستخدام المرجع الذي حفظناه
+        messenger.showSnackBar(
+          SnackBar(
+            content: const Text(
+              'تم التحقق.. جاري العودة لصفحة ولي الأمر',
+              style: TextStyle(fontFamily: 'Tajawal'),
+            ),
+            backgroundColor: const Color(0xFF511281),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+
+        // 4. الانتقال باستخدام المرجع المحفوظ لضمان العمل
+        Future.delayed(const Duration(milliseconds: 500), () {
+          navigator.pushNamedAndRemoveUntil(
+            '/parent/dashboard',
+            (route) => false,
+          );
         });
       }
-    });
+    } on FirebaseAuthException catch (e) {
+      setState(() {
+        _hasError = true;
+        _loading = false;
+        _controller.clear();
+      });
+      print("خطأ فايربيس: ${e.code}");
+    } catch (e) {
+      setState(() => _loading = false);
+      print("خطأ عام: $e");
+    }
   }
 
   @override
