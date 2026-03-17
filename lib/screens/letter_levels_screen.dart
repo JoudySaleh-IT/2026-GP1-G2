@@ -16,6 +16,7 @@ class _LevelInfo {
   final IconData icon;
   final Color color;
   final bool completed;
+  final bool isLocked; // ✅ إضافة خاصية القفل
 
   const _LevelInfo({
     required this.id,
@@ -24,6 +25,7 @@ class _LevelInfo {
     required this.icon,
     required this.color,
     required this.completed,
+    required this.isLocked,
   });
 }
 
@@ -33,9 +35,16 @@ class LetterLevelsScreen extends StatelessWidget {
   const LetterLevelsScreen({super.key, required this.letter, required this.childId});
 
   List<_LevelInfo> _buildLevels() {
-    final p =
-        _levelProgress[letter] ??
-        (mcq: false, listening: false, recording: false);
+    final p = _levelProgress[letter] ?? (mcq: false, listening: false, recording: false);
+
+    // ✅ منطق التسلسل:
+    // 1. المستوى الأول (MCQ) مفتوح دائماً
+    bool mcqLocked = false;
+    // 2. الاستماع يفتح فقط إذا اكتمل الـ MCQ
+    bool listeningLocked = !p.mcq;
+    // 3. التسجيل يفتح فقط إذا اكتمل الاستماع
+    bool recordingLocked = !p.listening;
+
     return [
       _LevelInfo(
         id: 'mcq',
@@ -44,6 +53,7 @@ class LetterLevelsScreen extends StatelessWidget {
         icon: Icons.check_circle_outline_rounded,
         color: const Color(0xFFFF6969),
         completed: p.mcq,
+        isLocked: mcqLocked,
       ),
       _LevelInfo(
         id: 'listening',
@@ -52,6 +62,7 @@ class LetterLevelsScreen extends StatelessWidget {
         icon: Icons.headphones_rounded,
         color: const Color(0xFF511281),
         completed: p.listening,
+        isLocked: listeningLocked,
       ),
       _LevelInfo(
         id: 'recording',
@@ -60,6 +71,7 @@ class LetterLevelsScreen extends StatelessWidget {
         icon: Icons.mic_rounded,
         color: const Color(0xFFFF6969),
         completed: p.recording,
+        isLocked: recordingLocked,
       ),
     ];
   }
@@ -95,23 +107,28 @@ class LetterLevelsScreen extends StatelessWidget {
                           level: entry.value,
                           number: entry.key + 1,
                           onTap: () {
+                            // ✅ منع الانتقال إذا كان المستوى مغلقاً
+                            if (entry.value.isLocked) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('يجب عليك إنهاء المستوى السابق أولاً!'),
+                                  duration: Duration(seconds: 1),
+                                ),
+                              );
+                              return;
+                            }
+
                             if (entry.value.id == 'recording') {
                               Navigator.pushNamed(
                                 context,
                                 '/child/letter-introduction',
-                                arguments: {
-                                  'letter': letter,
-                                  'childId': childId, // ✅
-                                },
+                                arguments: {'letter': letter, 'childId': childId},
                               );
                             } else {
                               Navigator.pushNamed(
                                 context,
                                 '/child/exercise/${entry.value.id}',
-                                arguments: {
-                                  'letter': letter,
-                                  'childId': childId, // ✅
-                                },
+                                arguments: {'letter': letter, 'childId': childId},
                               );
                             }
                           },
@@ -151,9 +168,7 @@ class _LetterLevelsHeader extends StatelessWidget {
           begin: Alignment.centerRight,
           end: Alignment.centerLeft,
         ),
-        boxShadow: [
-          BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 2)),
-        ],
+        boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 2))],
       ),
       padding: EdgeInsets.only(
         top: MediaQuery.of(context).padding.top + 8,
@@ -161,59 +176,34 @@ class _LetterLevelsHeader extends StatelessWidget {
         right: 16,
         left: 16,
       ),
-      child: Directionality(
-        textDirection: TextDirection.rtl,
-        child: Row(
-          children: [
-            Material(
-              color: Colors.transparent,
-              child: _HeaderIconBtn(
-                icon: Icons.arrow_back,
-                onTap: () => Navigator.pushNamed(
-                  context,
-                  '/child/exercises',
-                  arguments: childId, // ✅
+      child: Row(
+        children: [
+          _HeaderIconBtn(
+            icon: Icons.arrow_back,
+            onTap: () => Navigator.pushNamed(context, '/child/exercises', arguments: childId),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            letter,
+            style: const TextStyle(fontSize: 52, color: Colors.white, height: 1.1),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'تمارين حرف $letter',
+                  style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold),
                 ),
-              ),
+                Text(
+                  '$completedCount من $totalCount مستويات مكتملة',
+                  style: const TextStyle(color: Colors.white70, fontSize: 12),
+                ),
+              ],
             ),
-            const SizedBox(width: 12),
-            Text(
-              letter,
-              style: const TextStyle(
-                fontSize: 52,
-                color: Colors.white,
-                fontWeight: FontWeight.w400,
-                height: 1.1,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'تمارين حرف $letter',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 17,
-                      fontWeight: FontWeight.w600,
-                      fontFamily: 'Tajawal',
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    '$completedCount من $totalCount مستويات مكتملة',
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 12,
-                      fontFamily: 'Tajawal',
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -224,32 +214,21 @@ class _LevelCard extends StatefulWidget {
   final int number;
   final VoidCallback onTap;
 
-  const _LevelCard({
-    required this.level,
-    required this.number,
-    required this.onTap,
-  });
+  const _LevelCard({required this.level, required this.number, required this.onTap});
 
   @override
   State<_LevelCard> createState() => _LevelCardState();
 }
 
-class _LevelCardState extends State<_LevelCard>
-    with SingleTickerProviderStateMixin {
+class _LevelCardState extends State<_LevelCard> with SingleTickerProviderStateMixin {
   late final AnimationController _ctrl;
   late final Animation<double> _scale;
 
   @override
   void initState() {
     super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 100),
-    );
-    _scale = Tween<double>(
-      begin: 1.0,
-      end: 0.96,
-    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
+    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 100));
+    _scale = Tween<double>(begin: 1.0, end: 0.96).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
   }
 
   @override
@@ -260,104 +239,81 @@ class _LevelCardState extends State<_LevelCard>
 
   @override
   Widget build(BuildContext context) {
-    final color = widget.level.color;
+    // ✅ إذا كان المستوى مغلقاً، نستخدم اللون الرمادي
+    final Color mainColor = widget.level.isLocked ? Colors.grey : widget.level.color;
 
     return AnimatedBuilder(
       animation: _scale,
       builder: (_, child) => Transform.scale(scale: _scale.value, child: child),
       child: GestureDetector(
-        onTapDown: (_) => _ctrl.forward(),
+        onTapDown: (_) => widget.level.isLocked ? null : _ctrl.forward(),
         onTapUp: (_) {
           _ctrl.reverse();
           widget.onTap();
         },
         onTapCancel: () => _ctrl.reverse(),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: const Color(0xFF511281).withOpacity(0.1),
-              width: 2,
+        child: Opacity(
+          // ✅ تقليل الشفافية إذا كان مغلقاً ليعطي إيحاء بالقفل
+          opacity: widget.level.isLocked ? 0.6 : 1.0,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: mainColor.withOpacity(0.15), width: 2),
+              boxShadow: const [BoxShadow(color: Color(0x0D000000), blurRadius: 8, offset: Offset(0, 2))],
             ),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x0D000000),
-                blurRadius: 8,
-                offset: Offset(0, 2),
-              ),
-            ],
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-          child: Row(
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: color,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: color.withOpacity(0.35),
-                      blurRadius: 8,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: Center(
-                  child: Text(
-                    '${widget.number}',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+            child: Row(
+              children: [
+                // دائرة الرقم
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(color: mainColor, shape: BoxShape.circle),
+                  child: Center(
+                    child: Text(
+                      '${widget.number}',
+                      style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Container(
-                width: 52,
-                height: 52,
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.12),
-                  shape: BoxShape.circle,
+                const SizedBox(width: 12),
+                // أيقونة المستوى
+                Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(color: mainColor.withOpacity(0.12), shape: BoxShape.circle),
+                  child: Icon(
+                    widget.level.isLocked ? Icons.lock_outline_rounded : widget.level.icon, // ✅ عرض قفل
+                    color: mainColor,
+                    size: 26,
+                  ),
                 ),
-                child: Icon(widget.level.icon, color: color, size: 26),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.level.title,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF511281),
-                        fontFamily: 'Tajawal',
+                const SizedBox(width: 14),
+                // النصوص
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.level.title,
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: mainColor),
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      widget.level.description,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF888888),
-                        fontFamily: 'Tajawal',
+                      Text(
+                        widget.level.isLocked ? 'أكمل المستوى السابق للفتح' : widget.level.description,
+                        style: const TextStyle(fontSize: 12, color: Color(0xFF888888)),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              const Icon(
-                Icons.arrow_forward_ios_rounded,
-                color: Color(0xFFCCCCCC),
-                size: 18,
-              ),
-            ],
+                // سهم أو علامة صح
+                Icon(
+                  widget.level.completed ? Icons.check_circle : Icons.arrow_forward_ios_rounded,
+                  color: widget.level.completed ? Colors.green : Colors.grey.shade300,
+                  size: 18,
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -372,12 +328,8 @@ class _HeaderIconBtn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => InkWell(
-    onTap: onTap,
-    borderRadius: BorderRadius.circular(8),
-    child: Container(
-      width: 34,
-      height: 34,
-      child: Icon(icon, color: Colors.white, size: 25),
-    ),
-  );
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: SizedBox(width: 34, height: 34, child: Icon(icon, color: Colors.white, size: 25)),
+      );
 }
