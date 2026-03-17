@@ -131,11 +131,12 @@ class MyApp extends StatelessWidget {
           );
         },
         '/child/letter-introduction': (context) {
-          final args = ModalRoute.of(context)!.settings.arguments as Map?;
-          return LetterIntroductionScreen(
-            letter: args?['letter'] ?? 'ض',
-          );
-        },
+  final args = ModalRoute.of(context)!.settings.arguments as Map?;
+  return LetterIntroductionScreen(
+    letter: args?['letter'] ?? 'ض',
+    childId: args?['childId'] ?? '', // ✅
+  );
+},
         '/child/exercise/recording': (context) {
           final args = ModalRoute.of(context)!.settings.arguments as Map?;
           return ExerciseRecordingScreen(

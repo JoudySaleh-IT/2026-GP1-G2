@@ -16,7 +16,12 @@ const _sampleWords = {
 
 class LetterIntroductionScreen extends StatefulWidget {
   final String letter;
-  const LetterIntroductionScreen({super.key, required this.letter});
+  final String childId; // ✅
+  const LetterIntroductionScreen({
+    super.key,
+    required this.letter,
+    required this.childId, // ✅
+  });
 
   @override
   State<LetterIntroductionScreen> createState() =>
@@ -29,8 +34,7 @@ class _LetterIntroductionScreenState extends State<LetterIntroductionScreen>
   late AnimationController _bounceCtrl;
   late Animation<double> _bounceAnim;
 
-  String get _sampleWord =>
-      _sampleWords[widget.letter] ?? 'خَرُوف';
+  String get _sampleWord => _sampleWords[widget.letter] ?? 'خَرُوف';
 
   @override
   void initState() {
@@ -67,7 +71,10 @@ class _LetterIntroductionScreenState extends State<LetterIntroductionScreen>
     Navigator.pushNamed(
       context,
       '/child/exercise/recording',
-      arguments: {'letter': widget.letter},
+      arguments: {
+        'letter': widget.letter,
+        'childId': widget.childId, // ✅
+      },
     );
   }
 
@@ -197,11 +204,11 @@ class _LetterIntroductionScreenState extends State<LetterIntroductionScreen>
                             backgroundColor: const Color(0xFFFF6969),
                             foregroundColor: Colors.white,
                             shape: const StadiumBorder(),
-                            padding: const EdgeInsets.symmetric(
-                                vertical: 18),
+                            padding:
+                                const EdgeInsets.symmetric(vertical: 18),
                             elevation: 4,
-                            shadowColor: const Color(0xFFFF6969)
-                                .withOpacity(0.4),
+                            shadowColor:
+                                const Color(0xFFFF6969).withOpacity(0.4),
                           ),
                           child: const Text(
                             'ابدأ التمرين',
