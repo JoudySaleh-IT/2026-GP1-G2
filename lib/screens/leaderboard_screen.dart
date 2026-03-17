@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../services/auth_service.dart';
 
 // ─── Mock Data Models ─────────────────────────────────────────────────────────
 class _Player {
@@ -44,7 +48,7 @@ const List<_Player> _topPlayers = [
 
 // ─── Leaderboard Screen ───────────────────────────────────────────────────────
 class LeaderboardScreen extends StatelessWidget {
-    final String childId;
+  final String childId;
   const LeaderboardScreen({super.key, required this.childId});
 
   // ── Constants ──
@@ -53,6 +57,8 @@ class LeaderboardScreen extends StatelessWidget {
   static const _coral = Color(0xFFFF6969);
   static const _bgColor = Color(0xFFFCF9EA);
 
+  @override
+  // ... داخل LeaderboardScreen ...
   @override
   Widget build(BuildContext context) {
     return Directionality(
@@ -63,28 +69,56 @@ class LeaderboardScreen extends StatelessWidget {
           children: [
             _buildHeader(context),
             Expanded(
-              child: ScrollConfiguration(
-                behavior: ScrollConfiguration.of(
-                  context,
-                ).copyWith(overscroll: false),
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
-                  child: Column(
-                    children: [
-                      _buildCurrentUserCard(),
-                      const SizedBox(height: 16),
-                      _buildTopPlayersCard(),
-                    ],
-                  ),
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+                child: Column(
+                  children: [
+                    // --- هنا كارد الطفل الحقيقي ---
+                    StreamBuilder<DocumentSnapshot>(
+                      stream: FirebaseFirestore.instance
+                          .collection('children')
+                          .doc(childId) // نستخدم المعرف الممرر للصفحة
+                          .snapshots(),
+                      builder: (context, snapshot) {
+                        if (snapshot.hasError)
+                          return const Text("خطأ في التحميل");
+                        if (!snapshot.hasData || !snapshot.data!.exists) {
+                          return const CircularProgressIndicator();
+                        }
+
+                        var data =
+                            snapshot.data!.data() as Map<String, dynamic>;
+
+                        // استخراج البيانات الحقيقية
+                        String name = data['name'] ?? 'لاعب';
+                        String avatar = data['avatar'] ?? '👤';
+                        int points = data['points'] ?? 0;
+                        int streak = data['streak'] ?? 0;
+
+                        // نمرر البيانات الحقيقية للدالة التي تبني الكارد
+                        return _buildCurrentUserCard(
+                          name,
+                          avatar,
+                          points,
+                          streak,
+                        );
+                      },
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // بقية القائمة تبقى ثابتة (Mock Data) كما هي في كودك الأصلي
+                    _buildTopPlayersCard(),
+                  ],
                 ),
               ),
             ),
           ],
         ),
         bottomNavigationBar: _ChildBottomNav(
-    currentRoute: '/child/leaderboard',
-    childId: childId,
-  ),
+          currentRoute: '/child/leaderboard',
+          childId: childId,
+        ),
       ),
     );
   }
@@ -145,13 +179,21 @@ class LeaderboardScreen extends StatelessWidget {
   }
 
   // ── Current User Card ──
-  Widget _buildCurrentUserCard() {
+  Widget _buildCurrentUserCard(
+    String name,
+    String avatar,
+    int points,
+    int streak,
+  ) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _purple.withOpacity(0.1), width: 2),
+        border: Border.all(
+          color: const Color(0xFF511281).withOpacity(0.1),
+          width: 2,
+        ),
         boxShadow: const [
           BoxShadow(
             color: Color(0x0D000000),
@@ -162,16 +204,16 @@ class LeaderboardScreen extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // Avatar
-          Text(_currentUser.avatar, style: const TextStyle(fontSize: 48)),
+          // Avatar الحقيقي
+          Text(avatar, style: const TextStyle(fontSize: 48)),
           const SizedBox(width: 14),
 
-          // Info
+          // Info الحقيقي
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                _currentUser.name,
+                name,
                 style: const TextStyle(
                   fontSize: 18,
                   color: Color(0xFF222222),
@@ -184,19 +226,20 @@ class LeaderboardScreen extends StatelessWidget {
                 children: [
                   _statChip(
                     icon: Icons.emoji_events_rounded,
-                    label: 'الترتيب #${_currentUser.rank}',
+                    label:
+                        'لاعب نشط', // بما أن الترتيب يتطلب حساب كل اللاعبين، يمكن وضع وصف مؤقت
                   ),
                   const SizedBox(width: 10),
                   _statChip(
                     icon: Icons.star_rounded,
-                    label: '${_currentUser.points} نقطة',
-                    iconColor: _coral,
+                    label: '$points نقطة',
+                    iconColor: const Color(0xFFFF6969),
                   ),
                   const SizedBox(width: 10),
                   _statChip(
                     icon: Icons.local_fire_department_rounded,
-                    label: '${_currentUser.streak} يوم',
-                    iconColor: _coral,
+                    label: '$streak يوم',
+                    iconColor: const Color(0xFFFF6969),
                   ),
                 ],
               ),
@@ -464,32 +507,35 @@ class _ChildBottomNav extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 _NavItem(
-  icon: Icons.menu_book_rounded,
-  label: 'التمارين',
-  isActive: currentRoute == '/child/exercises',
-  onTap: () => Navigator.pushNamed(
-    context, '/child/exercises',
-    arguments: childId, // ✅
-  ),
-),
-_NavItem(
-  icon: Icons.home_rounded,
-  label: 'الرئيسية',
-  isActive: currentRoute == '/child/home',
-  onTap: () => Navigator.pushNamed(
-    context, '/child/home',
-    arguments: childId, // ✅
-  ),
-),
-_NavItem(
-  icon: Icons.leaderboard_rounded,
-  label: 'المتصدرون',
-  isActive: currentRoute == '/child/leaderboard',
-  onTap: () => Navigator.pushNamed(
-    context, '/child/leaderboard',
-    arguments: childId, // ✅
-  ),
-),
+                  icon: Icons.menu_book_rounded,
+                  label: 'التمارين',
+                  isActive: currentRoute == '/child/exercises',
+                  onTap: () => Navigator.pushNamed(
+                    context,
+                    '/child/exercises',
+                    arguments: childId, // ✅
+                  ),
+                ),
+                _NavItem(
+                  icon: Icons.home_rounded,
+                  label: 'الرئيسية',
+                  isActive: currentRoute == '/child/home',
+                  onTap: () => Navigator.pushNamed(
+                    context,
+                    '/child/home',
+                    arguments: childId, // ✅
+                  ),
+                ),
+                _NavItem(
+                  icon: Icons.leaderboard_rounded,
+                  label: 'المتصدرون',
+                  isActive: currentRoute == '/child/leaderboard',
+                  onTap: () => Navigator.pushNamed(
+                    context,
+                    '/child/leaderboard',
+                    arguments: childId, // ✅
+                  ),
+                ),
               ],
             ),
           ),
