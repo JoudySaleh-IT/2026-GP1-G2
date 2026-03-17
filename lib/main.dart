@@ -29,11 +29,7 @@ import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // 2. Add the DefaultFirebaseOptions here
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-
-  // Keep  testing sign-out
   await FirebaseAuth.instance.signOut();
   runApp(MyApp());
 }
@@ -42,45 +38,22 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      // ─── App Name ────────────────────────────────────────────────
       title: 'فصيح',
       initialRoute: '/',
       home: Wrapper(),
-
-      // ─── Hide the debug banner in the top right corner ───────────
       debugShowCheckedModeBanner: false,
-
-      // ─── RTL Support for Arabic ──────────────────────────────────
-      // This makes the entire app layout go right-to-left by default
       locale: const Locale('ar'),
       builder: (context, child) {
         return Directionality(textDirection: TextDirection.rtl, child: child!);
       },
-
-      // ─── Global App Theme ────────────────────────────────────────
-      // These colors apply across the whole app unless overridden
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF511281), // Your purple brand color
+          seedColor: const Color(0xFF511281),
         ),
         useMaterial3: true,
-
-        // Default font for Arabic text rendering
-        fontFamily:
-            'Tajawal', // See pubspec.yaml setup below if you want this font
+        fontFamily: 'Tajawal',
       ),
-
-      // ─── Starting Screen ─────────────────────────────────────────
-      // This is the first screen users see when they open the app
-      //home: const SplashScreen(),
-
-      // ─── Named Routes ────────────────────────────────────────────
-      // These let you navigate between screens using Navigator.pushNamed()
-      // As you build more screens, add them here.
       routes: {
-        // TODO: This is the main area that has all the paths, so when you add a new page the path should be here
-        // once you build them, e.g:
-        // '/parent/register': (context) => const ParentRegisterScreen(),
         '/parent/register': (context) => const ParentRegisterScreen(),
         '/parent/login': (context) => const ParentLoginScreen(),
         '/parent/forgot-password': (context) => const ForgotPasswordScreen(),
@@ -88,18 +61,14 @@ class MyApp extends StatelessWidget {
         '/parent/settings': (context) => const ParentSettingsScreen(),
         '/child/selection': (context) => const ChildSelectionScreen(),
         '/child/home': (context) {
-          // استخراج الأرجومنت بشكل آمن
-          final args = ModalRoute.of(context)!.settings.arguments;
-
-          // التحقق: إذا كانت الأرجومنت فارغة، لا تجعل التطبيق ينهار
-          if (args == null || args is! String) {
-            return const Scaffold(
-              body: Center(child: Text("خطأ: لم يتم العثور على هوية الطفل")),
-            );
-          }
-
-          return ChildHomeScreen(childId: args);
-        },
+  final args = ModalRoute.of(context)!.settings.arguments;
+  if (args == null || args is! String || args.isEmpty) {
+    return const Scaffold(
+      body: Center(child: Text("خطأ: لم يتم العثور على هوية الطفل")),
+    );
+  }
+  return ChildHomeScreen(childId: args);
+},
         '/parent/create-child': (context) => const CreateChildProfileScreen(),
         '/parent/child-profile': (context) {
           final args = ModalRoute.of(context)!.settings.arguments as Map?;
@@ -109,24 +78,40 @@ class MyApp extends StatelessWidget {
           final args = ModalRoute.of(context)!.settings.arguments as Map?;
           return EditChildProfileScreen(childId: args?['childId']);
         },
-'/child/exercises': (context) {
-  final args = ModalRoute.of(context)!.settings.arguments;
-  if (args == null || args is! String) {
-    return const Scaffold(
-      body: Center(child: Text("خطأ: لم يتم العثور على هوية الطفل")),
-    );
-  }
-  return ExercisesScreen(childId: args);
-},
-        '/child/letter-levels': (context) {
-          final args = ModalRoute.of(context)!.settings.arguments as Map?;
-          return LetterLevelsScreen(letter: args?['letter'] ?? 'ض');
+        '/child/exercises': (context) {
+          final args = ModalRoute.of(context)!.settings.arguments;
+          if (args == null || args is! String) {
+            return const Scaffold(
+              body: Center(child: Text("خطأ: لم يتم العثور على هوية الطفل")),
+            );
+          }
+          return ExercisesScreen(childId: args);
         },
-        '/child/exercise/mcq': (context) => ExerciseMCQScreen(
-          letter:
-              (ModalRoute.of(context)!.settings.arguments as Map?)?['letter'] ??
-              'ض',
-        ),
+        '/child/letter-levels': (context) {
+          final args = ModalRoute.of(context)!.settings.arguments;
+          if (args is Map) {
+            return LetterLevelsScreen(
+              letter: args['letter'] ?? 'ض',
+              childId: args['childId'] ?? '',
+            );
+          }
+          if (args is String) {
+            return LetterLevelsScreen(
+              letter: 'ض',
+              childId: args,
+            );
+          }
+          return const Scaffold(
+            body: Center(child: Text("خطأ: لم يتم العثور على هوية الطفل")),
+          );
+        },
+        '/child/exercise/mcq': (context) {
+          final args = ModalRoute.of(context)!.settings.arguments as Map?;
+          return ExerciseMCQScreen(
+            letter: args?['letter'] ?? 'ض',
+            childId: args?['childId'] ?? '',
+          );
+        },
         '/child/exercise/mcq-result': (context) {
           final args = ModalRoute.of(context)!.settings.arguments as Map;
           return ExerciseMCQResultScreen(
@@ -135,35 +120,40 @@ class MyApp extends StatelessWidget {
             answers: List<Map<String, dynamic>>.from(args['answers']),
             questions: List<Map<String, dynamic>>.from(args['questions']),
             letter: args['letter'] ?? 'ض',
+            childId: args['childId'] ?? '',
           );
         },
-        '/child/exercise/listening': (context) => ExerciseListeningScreen(
-          letter:
-              (ModalRoute.of(context)!.settings.arguments as Map?)?['letter'] ??
-              'ض',
-        ),
-        '/child/letter-introduction': (context) => LetterIntroductionScreen(
-          letter:
-              (ModalRoute.of(context)!.settings.arguments as Map?)?['letter'] ??
-              'ض',
-        ),
-        '/child/exercise/recording': (context) => ExerciseRecordingScreen(
-          letter:
-              (ModalRoute.of(context)!.settings.arguments as Map?)?['letter'] ??
-              'ض',
-        ),
-'/child/placement-test': (context) {
-  final args = ModalRoute.of(context)!.settings.arguments;
-  if (args == null || args is! String) {
-    return const Scaffold(
-      body: Center(child: Text("خطأ: لم يتم العثور على هوية الطفل")),
-    );
-  }
-  return PlacementTestScreen(childId: args);
-},       
-'/child/placement-result': (context) {
-
-  final args = ModalRoute.of(context)!.settings.arguments as Map?;
+        '/child/exercise/listening': (context) {
+          final args = ModalRoute.of(context)!.settings.arguments as Map?;
+          return ExerciseListeningScreen(
+            letter: args?['letter'] ?? 'ض',
+            childId: args?['childId'] ?? '',
+          );
+        },
+        '/child/letter-introduction': (context) {
+          final args = ModalRoute.of(context)!.settings.arguments as Map?;
+          return LetterIntroductionScreen(
+            letter: args?['letter'] ?? 'ض',
+          );
+        },
+        '/child/exercise/recording': (context) {
+          final args = ModalRoute.of(context)!.settings.arguments as Map?;
+          return ExerciseRecordingScreen(
+            letter: args?['letter'] ?? 'ض',
+            childId: args?['childId'] ?? '',
+          );
+        },
+        '/child/placement-test': (context) {
+          final args = ModalRoute.of(context)!.settings.arguments;
+          if (args == null || args is! String) {
+            return const Scaffold(
+              body: Center(child: Text("خطأ: لم يتم العثور على هوية الطفل")),
+            );
+          }
+          return PlacementTestScreen(childId: args);
+        },
+        '/child/placement-result': (context) {
+          final args = ModalRoute.of(context)!.settings.arguments as Map?;
           final rawScores = args?['letterScores'] as List?;
           return PlacementResultScreen(
             childId: args?['childId'] ?? '',
@@ -176,13 +166,9 @@ class MyApp extends StatelessWidget {
             ),
             letterScores: rawScores != null && rawScores.isNotEmpty
                 ? rawScores
-                      .map(
-                        (e) =>
-                            LetterScore(letter: e['letter'], score: e['score']),
-                      )
-                      .toList()
+                    .map((e) => LetterScore(letter: e['letter'], score: e['score']))
+                    .toList()
                 : const [
-                    // ← use defaults when PlacementTest doesn't send scores yet
                     LetterScore(letter: 'ق', score: 35),
                     LetterScore(letter: 'ض', score: 42),
                     LetterScore(letter: 'خ', score: 48),
@@ -192,66 +178,20 @@ class MyApp extends StatelessWidget {
                   ],
           );
         },
-'/child/leaderboard': (context) {
-  final args = ModalRoute.of(context)!.settings.arguments;
-  if (args == null || args is! String) {
-    return const Scaffold(
-      body: Center(child: Text("خطأ: لم يتم العثور على هوية الطفل")),
-    );
-  }
-  return LeaderboardScreen(childId: args);
-},        '/child/exercise-listening-result': (context) =>
+        '/child/leaderboard': (context) {
+          final args = ModalRoute.of(context)!.settings.arguments;
+          if (args == null || args is! String) {
+            return const Scaffold(
+              body: Center(child: Text("خطأ: لم يتم العثور على هوية الطفل")),
+            );
+          }
+          return LeaderboardScreen(childId: args);
+        },
+        '/child/exercise-listening-result': (context) =>
             const ExerciseListeningResultScreen(),
-
         '/child/exercise/recording-result': (context) =>
             const ExerciseRecordingResultScreen(),
-      }, // ← closes routes: { }
-    ); // ← closes MaterialApp(
-  } // ← closes build()
-} // ← closes MyApp
-
-// ─── Temporary Placeholder Screen ──────────────────────────────────────────
-// This is just a stand-in screen so buttons don't crash the app.
-// Delete this once you have real screens built.
-class _PlaceholderScreen extends StatelessWidget {
-  final String title;
-  const _PlaceholderScreen({required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF511281),
-        foregroundColor: Colors.white,
-        title: Text(title),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.construction, size: 64, color: Color(0xFF511281)),
-            const SizedBox(height: 16),
-            Text(
-              'شاشة $title\nقيد الإنشاء',
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 20,
-                color: Color(0xFF511281),
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 32),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(context),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF511281),
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('رجوع'),
-            ),
-          ],
-        ),
-      ),
+      },
     );
   }
 }

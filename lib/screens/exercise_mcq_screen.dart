@@ -56,7 +56,8 @@ const List<_Question> _mcqQuestions = [
 // ─── Screen ───────────────────────────────────────────────────────────────────
 class ExerciseMCQScreen extends StatefulWidget {
   final String letter;
-  const ExerciseMCQScreen({super.key, required this.letter});
+  final String childId;
+  const ExerciseMCQScreen({super.key, required this.letter, required this.childId});
 
   @override
   State<ExerciseMCQScreen> createState() => _ExerciseMCQScreenState();
@@ -109,6 +110,7 @@ class _ExerciseMCQScreenState extends State<ExerciseMCQScreen> {
               .map((q) => {'question': q.question, 'options': q.options})
               .toList(),
           'letter': widget.letter,
+          'childId': widget.childId,
         },
       );
     }
@@ -438,7 +440,8 @@ class _ExerciseMCQScreenState extends State<ExerciseMCQScreen> {
               onTap: () => Navigator.pushNamed(
                 context,
                 '/child/letter-levels',
-                arguments: {'letter': widget.letter},
+                arguments: {'letter': widget.letter, 'childId': widget.childId},
+
               ),
             ),
           ),

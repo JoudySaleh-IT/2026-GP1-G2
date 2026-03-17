@@ -293,6 +293,8 @@ class ExerciseListeningResultScreen extends StatelessWidget {
                               context,
                               '/child/home',
                               (r) => false,
+                                arguments: args['childId'] ?? '',
+
                             ),
                             icon: const Icon(Icons.home_rounded, size: 18),
                             label: const Text('الرئيسية'),

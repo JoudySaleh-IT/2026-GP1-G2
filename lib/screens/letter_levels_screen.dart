@@ -29,7 +29,8 @@ class _LevelInfo {
 
 class LetterLevelsScreen extends StatelessWidget {
   final String letter;
-  const LetterLevelsScreen({super.key, required this.letter});
+  final String childId;
+  const LetterLevelsScreen({super.key, required this.letter, required this.childId});
 
   List<_LevelInfo> _buildLevels() {
     final p =
@@ -78,6 +79,7 @@ class LetterLevelsScreen extends StatelessWidget {
               letter: letter,
               completedCount: completedCount,
               totalCount: levels.length,
+              childId: childId,
             ),
             Expanded(
               child: SingleChildScrollView(
@@ -97,13 +99,19 @@ class LetterLevelsScreen extends StatelessWidget {
                               Navigator.pushNamed(
                                 context,
                                 '/child/letter-introduction',
-                                arguments: {'letter': letter},
+                                arguments: {
+                                  'letter': letter,
+                                  'childId': childId, // ✅
+                                },
                               );
                             } else {
                               Navigator.pushNamed(
                                 context,
                                 '/child/exercise/${entry.value.id}',
-                                arguments: {'letter': letter},
+                                arguments: {
+                                  'letter': letter,
+                                  'childId': childId, // ✅
+                                },
                               );
                             }
                           },
@@ -125,11 +133,13 @@ class _LetterLevelsHeader extends StatelessWidget {
   final String letter;
   final int completedCount;
   final int totalCount;
+  final String childId;
 
   const _LetterLevelsHeader({
     required this.letter,
     required this.completedCount,
     required this.totalCount,
+    required this.childId,
   });
 
   @override
@@ -159,7 +169,11 @@ class _LetterLevelsHeader extends StatelessWidget {
               color: Colors.transparent,
               child: _HeaderIconBtn(
                 icon: Icons.arrow_back,
-                onTap: () => Navigator.pushNamed(context, '/child/exercises'),
+                onTap: () => Navigator.pushNamed(
+                  context,
+                  '/child/exercises',
+                  arguments: childId, // ✅
+                ),
               ),
             ),
             const SizedBox(width: 12),

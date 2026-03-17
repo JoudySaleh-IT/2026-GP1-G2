@@ -72,7 +72,8 @@ enum RecordingState { idle, recording, analyzing, recorded }
 
 class ExerciseRecordingScreen extends StatefulWidget {
   final String letter;
-  const ExerciseRecordingScreen({super.key, required this.letter});
+  final String childId;
+  const ExerciseRecordingScreen({super.key, required this.letter, required this.childId});
 
   @override
   State<ExerciseRecordingScreen> createState() =>
@@ -183,6 +184,8 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
           'total': 100,
           'type': 'تسجيل',
           'questions': questionsData,
+          'childId': widget.childId,
+
         },
       );
     }
@@ -248,7 +251,8 @@ Widget _buildHeader() {
           onTap: () => Navigator.pushNamed(
             context,
             '/child/letter-levels',
-            arguments: {'letter': widget.letter},
+            arguments: {'letter': widget.letter, 'childId': widget.childId},
+
           ),
           borderRadius: BorderRadius.circular(8),
           child: Container(

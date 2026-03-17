@@ -51,7 +51,8 @@ const _listeningExercises = [
 // ─── Screen ──────────────────────────────────────────────────────────────────
 class ExerciseListeningScreen extends StatefulWidget {
   final String letter;
-  const ExerciseListeningScreen({super.key, required this.letter});
+  final String childId;
+const ExerciseListeningScreen({super.key, required this.letter, required this.childId});
 
   @override
   State<ExerciseListeningScreen> createState() =>
@@ -148,6 +149,7 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
           'total': _listeningExercises.length,
           'answers': List<Map<String, String>>.from(_answers),
           'letter': widget.letter,
+          'childId': widget.childId,
         },
       );
     }

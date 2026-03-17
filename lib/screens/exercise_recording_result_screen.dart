@@ -42,7 +42,7 @@ class ExerciseRecordingResultScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final args = ModalRoute.of(context)?.settings.arguments as Map? ?? {};
-
+    final String childId = args['childId'] ?? ''; 
     final int score     = args['score'] ?? 85;
     final int total     = args['total'] ?? 100;
     final List questions = args['questions'] ?? _defaultQuestions;
@@ -129,6 +129,7 @@ class ExerciseRecordingResultScreen extends StatelessWidget {
 
                       // ── Home button ──────────────────────────────────────
                       Row(
+                        
                         children: [
                           Expanded(
                             child: ElevatedButton.icon(
@@ -137,6 +138,8 @@ class ExerciseRecordingResultScreen extends StatelessWidget {
                                 context,
                                 '/child/home',
                                 (r) => false,
+                                  arguments: childId,
+
                               ),
                               icon: const Icon(Icons.home_rounded, size: 18),
                               label: const Text('الرئيسية'),

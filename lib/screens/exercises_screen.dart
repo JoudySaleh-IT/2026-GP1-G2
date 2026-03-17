@@ -161,6 +161,7 @@ class ExercisesScreen extends StatelessWidget {
                             arguments: {
                               'letter': item.letter,
                               'currentProgress': item.completed,
+                               'childId': childId,
                             },
                           ),
                         );

@@ -31,6 +31,8 @@ class ExerciseMCQResultScreen extends StatelessWidget {
   final List<Map<String, dynamic>> answers;
   final List<Map<String, dynamic>> questions;
   final String letter;
+  final String childId;
+
 
   const ExerciseMCQResultScreen({
     super.key,
@@ -39,6 +41,8 @@ class ExerciseMCQResultScreen extends StatelessWidget {
     required this.answers,
     required this.questions,
     required this.letter,
+    required this.childId,
+
   });
 
   @override
@@ -478,8 +482,10 @@ class ExerciseMCQResultScreen extends StatelessWidget {
     return SizedBox(
       height: 52,
       child: ElevatedButton.icon(
-        onPressed: () => Navigator.pushNamed(context, '/child/home'),
-        icon: const Icon(Icons.home_rounded, size: 20),
+onPressed: () => Navigator.pushNamedAndRemoveUntil(
+  context, '/child/home', (r) => false,
+  arguments: childId,
+),        icon: const Icon(Icons.home_rounded, size: 20),
         label: const Text(
           'الرئيسية',
           style: TextStyle(
