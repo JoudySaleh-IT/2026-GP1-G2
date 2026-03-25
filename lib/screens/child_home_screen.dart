@@ -17,23 +17,21 @@ const _mockChild = (
 // ─── Screen ──────────────────────────────────────────────────────────────────
 
 class ChildHomeScreen extends StatelessWidget {
-  final String childId; // ✅ أضيفي هذا المتغير
+  final String childId;
 
   const ChildHomeScreen({
     super.key,
     required this.childId,
-  }); // ✅ تحديث الـ Constructor
+  });
 
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<DocumentSnapshot>(
-      // ✅ نراقب بيانات الطفل في Firestore لحظة بلحظة
       stream: FirebaseFirestore.instance
           .collection('children')
           .doc(childId)
           .snapshots(),
       builder: (context, snapshot) {
-        // حالة الانتظار
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
             body: Center(
@@ -42,15 +40,14 @@ class ChildHomeScreen extends StatelessWidget {
           );
         }
 
-        // في حال عدم وجود بيانات
         if (!snapshot.hasData || !snapshot.data!.exists) {
           return const Scaffold(
             body: Center(child: Text("عذراً، لم يتم العثور على البيانات")),
           );
         }
 
-        // استخراج البيانات الحقيقية
         var data = snapshot.data!.data() as Map<String, dynamic>;
+        final bool hasCompletedPlacement = data['placementDone'] ?? false;
 
         return Directionality(
           textDirection: TextDirection.rtl,
@@ -58,7 +55,6 @@ class ChildHomeScreen extends StatelessWidget {
             backgroundColor: const Color(0xFFFCF9EA),
             body: Column(
               children: [
-                // ✅ الهيدر ببيانات حقيقية
                 _ChildHeader(
                   name: data['name'] ?? 'بطل فصيح',
                   avatar: data['avatar'] ?? '🦁',
@@ -69,16 +65,19 @@ class ChildHomeScreen extends StatelessWidget {
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
                     child: Column(
                       children: [
-                        _PlacementTestBanner(
+                        // ── Smart banner: يتغير حسب حالة الاختبار ────────────
+                        _TestBanner(
+                          isReassessment: hasCompletedPlacement,
                           onTap: () => Navigator.pushNamed(
                             context,
                             '/child/placement-test',
                             arguments: childId,
                           ),
                         ),
+
                         const SizedBox(height: 16),
 
-                        // ── Stats row ببيانات حقيقية ──────────────────────
+                        // ── Stats row ──────────────────────────────────────
                         Row(
                           children: [
                             Expanded(
@@ -108,10 +107,10 @@ class ChildHomeScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 12),
 
-                        // ✅ هدف اليوم ببيانات حقيقية
+                        // ── Today's goal ───────────────────────────────────
                         _TodayGoalCard(
                           done: data['todayExercises'] ?? 0,
-                          goal: data['todayGoal'] ?? 5, // افتراضي 5 لو مش موجود
+                          goal: data['todayGoal'] ?? 5,
                         ),
                       ],
                     ),
@@ -121,7 +120,7 @@ class ChildHomeScreen extends StatelessWidget {
             ),
             bottomNavigationBar: _ChildBottomNav(
               currentRoute: '/child/home',
-              childId: childId, // مرري الـ ID للناف بار إذا كنتِ تحتاجينه
+              childId: childId,
             ),
           ),
         );
@@ -192,7 +191,7 @@ class _ChildHeader extends StatelessWidget {
             ),
           ),
 
-          // Logout icon button — left side in RTL
+          // Logout button — left side in RTL
           InkWell(
             onTap: () => _showLogoutDialog(context),
             borderRadius: BorderRadius.circular(8),
@@ -230,9 +229,6 @@ class _ParentPasswordDialogState extends State<_ParentPasswordDialog> {
   bool _hasError = false;
   bool _loading = false;
 
-  // ── In a real app, validate against the stored parent password ────────────
-  static const String _mockParentPassword = '123456';
-
   @override
   void dispose() {
     _controller.dispose();
@@ -240,8 +236,6 @@ class _ParentPasswordDialogState extends State<_ParentPasswordDialog> {
   }
 
   void _submit() async {
-    // 1. حفظ الـ Navigator والـ ScaffoldMessenger قبل البدء
-    // لأن الـ context الخاص بالـ Dialog سيختفي بمجرد عمل Navigator.pop
     final navigator = Navigator.of(context);
     final messenger = ScaffoldMessenger.of(context);
 
@@ -259,15 +253,11 @@ class _ParentPasswordDialogState extends State<_ParentPasswordDialog> {
           password: _controller.text,
         );
 
-        // التحقق من كلمة المرور
-        await FirebaseAuth.instance.currentUser!.reauthenticateWithCredential(
-          credential,
-        );
+        await FirebaseAuth.instance.currentUser!
+            .reauthenticateWithCredential(credential);
 
-        // 2. إغلاق الدايلوج أولاً
         navigator.pop();
 
-        // 3. إظهار الرسالة باستخدام المرجع الذي حفظناه
         messenger.showSnackBar(
           SnackBar(
             content: const Text(
@@ -279,7 +269,6 @@ class _ParentPasswordDialogState extends State<_ParentPasswordDialog> {
           ),
         );
 
-        // 4. الانتقال باستخدام المرجع المحفوظ لضمان العمل
         Future.delayed(const Duration(milliseconds: 500), () {
           navigator.pushNamedAndRemoveUntil(
             '/parent/dashboard',
@@ -358,47 +347,39 @@ class _ParentPasswordDialogState extends State<_ParentPasswordDialog> {
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
                   borderSide: const BorderSide(
-                    color: Color(0xFF511281),
-                    width: 1.5,
-                  ),
+                      color: Color(0xFF511281), width: 1.5),
                 ),
                 errorBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(color: Colors.red, width: 1.5),
+                  borderSide:
+                      const BorderSide(color: Colors.red, width: 1.5),
                 ),
                 focusedErrorBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(color: Colors.red, width: 1.5),
+                  borderSide:
+                      const BorderSide(color: Colors.red, width: 1.5),
                 ),
                 contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 12,
-                ),
+                    horizontal: 14, vertical: 12),
               ),
             ),
             const SizedBox(height: 4),
           ],
         ),
         actions: [
-          // Cancel
           TextButton(
             onPressed: () => Navigator.pop(context),
             style: TextButton.styleFrom(
               side: BorderSide(
-                color: const Color(0xFF511281).withOpacity(0.2),
-                width: 1.5,
-              ),
+                  color: const Color(0xFF511281).withOpacity(0.2), width: 1.5),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  borderRadius: BorderRadius.circular(8)),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             ),
-            child: const Text(
-              'إلغاء',
-              style: TextStyle(color: Color(0xFF511281)),
-            ),
+            child: const Text('إلغاء',
+                style: TextStyle(color: Color(0xFF511281))),
           ),
-          // Confirm
           ElevatedButton(
             onPressed: _loading ? null : _submit,
             style: ElevatedButton.styleFrom(
@@ -406,16 +387,15 @@ class _ParentPasswordDialogState extends State<_ParentPasswordDialog> {
               foregroundColor: Colors.white,
               elevation: 2,
               shape: const StadiumBorder(),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             ),
             child: _loading
                 ? const SizedBox(
                     width: 18,
                     height: 18,
                     child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
+                        strokeWidth: 2, color: Colors.white),
                   )
                 : const Text('تأكيد'),
           ),
@@ -425,16 +405,17 @@ class _ParentPasswordDialogState extends State<_ParentPasswordDialog> {
   }
 }
 
-// ─── Placement Test Banner ────────────────────────────────────────────────────
-class _PlacementTestBanner extends StatefulWidget {
+// ─── Smart Test Banner (placement + reassessment in one) ────────────────────
+class _TestBanner extends StatefulWidget {
+  final bool isReassessment;
   final VoidCallback onTap;
-  const _PlacementTestBanner({required this.onTap});
+  const _TestBanner({required this.isReassessment, required this.onTap});
 
   @override
-  State<_PlacementTestBanner> createState() => _PlacementTestBannerState();
+  State<_TestBanner> createState() => _TestBannerState();
 }
 
-class _PlacementTestBannerState extends State<_PlacementTestBanner>
+class _TestBannerState extends State<_TestBanner>
     with SingleTickerProviderStateMixin {
   late final AnimationController _ctrl;
   late final Animation<double> _scale;
@@ -443,13 +424,9 @@ class _PlacementTestBannerState extends State<_PlacementTestBanner>
   void initState() {
     super.initState();
     _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 100),
-    );
-    _scale = Tween<double>(
-      begin: 1.0,
-      end: 0.97,
-    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
+        vsync: this, duration: const Duration(milliseconds: 100));
+    _scale = Tween<double>(begin: 1.0, end: 0.97)
+        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
   }
 
   @override
@@ -460,9 +437,12 @@ class _PlacementTestBannerState extends State<_PlacementTestBanner>
 
   @override
   Widget build(BuildContext context) {
+    final isReassessment = widget.isReassessment;
+
     return AnimatedBuilder(
       animation: _scale,
-      builder: (_, child) => Transform.scale(scale: _scale.value, child: child),
+      builder: (_, child) =>
+          Transform.scale(scale: _scale.value, child: child),
       child: GestureDetector(
         onTapDown: (_) => _ctrl.forward(),
         onTapUp: (_) {
@@ -470,17 +450,23 @@ class _PlacementTestBannerState extends State<_PlacementTestBanner>
           widget.onTap();
         },
         onTapCancel: () => _ctrl.reverse(),
-        child: Container(
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeInOut,
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 22),
           decoration: BoxDecoration(
-            color: const Color(0xFFFF6969),
+            color: isReassessment
+                ? const Color(0xFF511281)
+                : const Color(0xFFFF6969),
             borderRadius: BorderRadius.circular(32),
-            boxShadow: const [
+            boxShadow: [
               BoxShadow(
-                color: Color(0x44FF6969),
+                color: isReassessment
+                    ? const Color(0x44511281)
+                    : const Color(0x44FF6969),
                 blurRadius: 12,
-                offset: Offset(0, 4),
+                offset: const Offset(0, 4),
               ),
             ],
           ),
@@ -488,26 +474,49 @@ class _PlacementTestBannerState extends State<_PlacementTestBanner>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               // Text
-              const Column(
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'اختبار تحديد المستوى',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    child: Text(
+                      isReassessment
+                          ? 'إعادة تقييم المستوى'
+                          : 'اختبار تحديد المستوى',
+                      key: ValueKey(isReassessment),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
-                  SizedBox(height: 4),
-                  Text(
-                    'استكشف مستواك اللغوي!',
-                    style: TextStyle(color: Colors.white, fontSize: 13),
+                  const SizedBox(height: 4),
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    child: Text(
+                      isReassessment
+                          ? 'تحقق من تطورك اللغوي!'
+                          : 'استكشف مستواك اللغوي!',
+                      key: ValueKey('sub_$isReassessment'),
+                      style: const TextStyle(
+                          color: Colors.white70, fontSize: 13),
+                    ),
                   ),
                 ],
               ),
-              // Play icon
-              const Icon(Icons.play_circle_fill, color: Colors.white, size: 60),
+              // Icon
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 300),
+                child: Icon(
+                  isReassessment
+                      ? Icons.refresh_rounded
+                      : Icons.play_circle_fill,
+                  key: ValueKey('icon_$isReassessment'),
+                  color: Colors.white,
+                  size: 60,
+                ),
+              ),
             ],
           ),
         ),
@@ -536,15 +545,12 @@ class _StatCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: const Color(0xFF511281).withOpacity(0.1),
-          width: 2,
-        ),
+            color: const Color(0xFF511281).withOpacity(0.1), width: 2),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x0D000000),
-            blurRadius: 6,
-            offset: Offset(0, 2),
-          ),
+              color: Color(0x0D000000),
+              blurRadius: 6,
+              offset: Offset(0, 2)),
         ],
       ),
       child: Column(
@@ -552,16 +558,14 @@ class _StatCard extends StatelessWidget {
         children: [
           Icon(icon, color: const Color(0xFF511281), size: 24),
           const SizedBox(height: 6),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF222222),
-            ),
-          ),
+          Text(value,
+              style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF222222))),
           const SizedBox(height: 2),
-          Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+          Text(label,
+              style: const TextStyle(fontSize: 10, color: Colors.grey)),
         ],
       ),
     );
@@ -584,59 +588,45 @@ class _TodayGoalCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: const Color(0xFF511281).withOpacity(0.1),
-          width: 2,
-        ),
+            color: const Color(0xFF511281).withOpacity(0.1), width: 2),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x0D000000),
-            blurRadius: 6,
-            offset: Offset(0, 2),
-          ),
+              color: Color(0x0D000000),
+              blurRadius: 6,
+              offset: Offset(0, 2)),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Title row
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'هدف اليوم',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF222222),
-                ),
-              ),
-              Text(
-                '$done/$goal',
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Color(0xFFFF6969),
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+              const Text('هدف اليوم',
+                  style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF222222))),
+              Text('$done/$goal',
+                  style: const TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFFFF6969),
+                      fontWeight: FontWeight.w600)),
             ],
           ),
           const SizedBox(height: 10),
-
-          // Progress bar
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
               value: done / goal,
               minHeight: 8,
-              backgroundColor: const Color(0xFFFF6969).withOpacity(0.15),
+              backgroundColor:
+                  const Color(0xFFFF6969).withOpacity(0.15),
               valueColor: const AlwaysStoppedAnimation<Color>(
-                Color(0xFFFF6969),
-              ),
+                  Color(0xFFFF6969)),
             ),
           ),
           const SizedBox(height: 8),
-
-          // Remaining text
           Text(
             'تحتاج $remaining تدريبات لتحقيق الهدف!',
             style: const TextStyle(fontSize: 11, color: Colors.grey),
@@ -647,13 +637,14 @@ class _TodayGoalCard extends StatelessWidget {
   }
 }
 
+// ─── Bottom Navigation Bar ────────────────────────────────────────────────────
 class _ChildBottomNav extends StatelessWidget {
   final String currentRoute;
-  final String childId; // ✅ 1. أضفنا هذا السطر لتعريف المتغير داخل الكلاس
+  final String childId;
 
   const _ChildBottomNav({
     required this.currentRoute,
-    required this.childId, // ✅ 2. أضفناه هنا ليكون مطلوباً عند استدعاء الكلاس
+    required this.childId,
   });
 
   @override
@@ -669,16 +660,16 @@ class _ChildBottomNav extends StatelessWidget {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black26,
-              blurRadius: 8,
-              offset: Offset(0, -2),
-            ),
+                color: Colors.black26,
+                blurRadius: 8,
+                offset: Offset(0, -2)),
           ],
         ),
         child: SafeArea(
           top: false,
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 24),
+            padding:
+                const EdgeInsets.symmetric(vertical: 8, horizontal: 24),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
@@ -686,31 +677,23 @@ class _ChildBottomNav extends StatelessWidget {
                   icon: Icons.menu_book_rounded,
                   label: 'التمارين',
                   isActive: currentRoute == '/child/exercises',
-                  onTap: () => Navigator.pushNamed(
-                    context,
-                    '/child/exercises',
-                    arguments: childId, // ✅ 3. نمرر الـ ID لصفحة التمارين
-                  ),
+                  onTap: () => Navigator.pushNamed(context, '/child/exercises',
+                      arguments: childId),
                 ),
                 _NavItem(
                   icon: Icons.home_rounded,
                   label: 'الرئيسية',
                   isActive: currentRoute == '/child/home',
-                  onTap: () => Navigator.pushNamed(
-                    context,
-                    '/child/home',
-                    arguments: childId, // ✅ نمرره لصفحة الرئيسية أيضاً
-                  ),
+                  onTap: () => Navigator.pushNamed(context, '/child/home',
+                      arguments: childId),
                 ),
                 _NavItem(
                   icon: Icons.leaderboard_rounded,
                   label: 'المتصدرون',
                   isActive: currentRoute == '/child/leaderboard',
                   onTap: () => Navigator.pushNamed(
-                    context,
-                    '/child/leaderboard',
-                    arguments: childId, // ✅ نمرره لصفحة المتصدرين
-                  ),
+                      context, '/child/leaderboard',
+                      arguments: childId),
                 ),
               ],
             ),
