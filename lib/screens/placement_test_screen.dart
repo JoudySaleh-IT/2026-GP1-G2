@@ -1,79 +1,51 @@
 import 'package:flutter/material.dart';
- 
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+
 // ─── Data Model ──────────────────────────────────────────────────────────────
-class _PlacementWord {
-  final int id;
-  final String word;
-  final String transliteration;
+class PlacementWord {
+  final String wordId;
+  final String text;
   final String targetLetter;
   final String imageUrl;
-  final String imageAlt;
-  final String fallbackEmoji;
- 
-  const _PlacementWord({
-    required this.id,
-    required this.word,
-    required this.transliteration,
+  final String audioUrl;
+
+  const PlacementWord({
+    required this.wordId,
+    required this.text,
     required this.targetLetter,
     required this.imageUrl,
-    required this.imageAlt,
-    required this.fallbackEmoji,
+    required this.audioUrl,
   });
 }
- 
-const List<_PlacementWord> _placementWords = [
-  _PlacementWord(
-    id: 1,
-    word: 'قمر',
-    transliteration: 'Qamar',
-    targetLetter: 'ق',
-    imageUrl: 'https://img.icons8.com/plasticine/100/crescent-moon.png',
-    imageAlt: 'صورة قمر - هلال',
-    fallbackEmoji: '🌙',
-  ),
-  _PlacementWord(
-    id: 2,
-    word: 'قلم',
-    transliteration: 'Qalam',
-    targetLetter: 'ق',
-    imageUrl: 'https://img.icons8.com/fluency/96/pen.png',
-    imageAlt: 'صورة قلم',
-    fallbackEmoji: '✏️',
-  ),
-  _PlacementWord(
-    id: 3,
-    word: 'طبق',
-    transliteration: 'Tabaq',
-    targetLetter: 'ق',
-    imageUrl: 'https://img.icons8.com/color/96/plate.png',
-    imageAlt: 'صورة طبق',
-    fallbackEmoji: '🍽️',
-  ),
-];
- 
+
 // ─── Screen ──────────────────────────────────────────────────────────────────
 class PlacementTestScreen extends StatefulWidget {
   final String childId;
   const PlacementTestScreen({super.key, required this.childId});
- 
+
   @override
   State<PlacementTestScreen> createState() => _PlacementTestScreenState();
 }
- 
+
 class _PlacementTestScreenState extends State<PlacementTestScreen>
     with SingleTickerProviderStateMixin {
   static const _purple = Color(0xFF511281);
   static const _coral = Color(0xFFFF6969);
   static const _bgColor = Color(0xFFFCF9EA);
- 
+
+  // --- State Variables ---
+  List<PlacementWord> _placementWords = [];
+  bool _isLoading = true;
   int _currentIndex = 0;
-  List<bool> _recorded = [false, false, false];
+  List<bool> _recorded = [];
   bool _isRecording = false;
   bool _showNext = false;
- 
+  int _playCount = 0; // Tracks how many times they played the audio
+
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
- 
+
   @override
   void initState() {
     super.initState();
@@ -84,20 +56,80 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
     _pulseAnimation = Tween<double>(begin: 1.0, end: 0.75).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
+
+    // Fetch words when screen loads
+    _fetchWordsFromFirestore();
   }
- 
+
+  Future<void> _fetchWordsFromFirestore() async {
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('placement_test_words')
+          .get();
+
+      List<PlacementWord> fetchedWords = [];
+
+      for (var doc in snapshot.docs) {
+        final data = doc.data();
+
+        // 1. Get raw gs:// URLs from Firestore
+        String rawImageUrl = data['image_url'] ?? '';
+        String rawAudioUrl = data['audio_url'] ?? '';
+
+        // 2. Convert gs:// to playable/viewable https:// URLs using Firebase Storage
+        String downloadImageUrl = '';
+        String downloadAudioUrl = '';
+
+        if (rawImageUrl.startsWith('gs://')) {
+          downloadImageUrl = await FirebaseStorage.instance
+              .refFromURL(rawImageUrl)
+              .getDownloadURL();
+        }
+
+        if (rawAudioUrl.startsWith('gs://')) {
+          downloadAudioUrl = await FirebaseStorage.instance
+              .refFromURL(rawAudioUrl)
+              .getDownloadURL();
+        }
+
+        fetchedWords.add(
+          PlacementWord(
+            wordId: data['word_id'] ?? doc.id,
+            text: data['text'] ?? '',
+            targetLetter: data['target_letter'] ?? '',
+            imageUrl: downloadImageUrl,
+            audioUrl: downloadAudioUrl,
+          ),
+        );
+      }
+
+      // 3. Shuffle the 18 words to make it random!
+      fetchedWords.shuffle();
+
+      setState(() {
+        _placementWords = fetchedWords;
+        _recorded = List<bool>.filled(_placementWords.length, false);
+        _isLoading = false;
+      });
+    } catch (e) {
+      print("Error fetching words: $e");
+      // TODO: Handle error UI (e.g., show a retry button)
+      setState(() => _isLoading = false);
+    }
+  }
+
   @override
   void dispose() {
     _pulseController.dispose();
     super.dispose();
   }
- 
-  _PlacementWord get _currentWord => _placementWords[_currentIndex];
- 
+
+  PlacementWord get _currentWord => _placementWords[_currentIndex];
+
   double get _progress =>
       (_currentIndex + (_recorded[_currentIndex] ? 1 : 0)) /
       _placementWords.length;
- 
+
   void _handleRecordToggle() {
     if (_isRecording) {
       final newRecorded = List<bool>.from(_recorded);
@@ -114,63 +146,88 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
       _pulseController.repeat(reverse: true);
     }
   }
- 
+
   void _handleNext() {
     if (_currentIndex < _placementWords.length - 1) {
       setState(() {
         _currentIndex++;
         _showNext = false;
         _isRecording = false;
+        _playCount = 0; // Reset play count for the new word
       });
     } else {
       Navigator.pushNamed(
-  context,
-  '/child/placement-result',
-  arguments: {
-    'testedLetter': 'ق',
-    'childId': widget.childId, // ✅
-  },
-);
+        context,
+        '/child/placement-result',
+        arguments: {
+          'childId': widget.childId,
+          // You might want to pass the whole recording list here later!
+        },
+      );
     }
   }
- 
+
   void _playExample() {
+    if (_playCount >= 3) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('لقد استمعت للكلمة 3 مرات، حان دورك الآن!'),
+          backgroundColor: _coral,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _playCount++;
+    });
+
+    // TODO: Implement actual audio playing using an audio package and _currentWord.audioUrl
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('تشغيل: ${_currentWord.word}'),
+        content: Text('تشغيل: ${_currentWord.text} (المرة $_playCount من 3)'),
         backgroundColor: _purple,
         duration: const Duration(seconds: 1),
       ),
     );
   }
- 
+
   @override
   Widget build(BuildContext context) {
-    // ✅ RTL wrapper
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
         backgroundColor: _bgColor,
-        body: Column(
-          children: [
-            _buildHeader(),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: _buildCard(),
+        body: _isLoading
+            ? const Center(child: CircularProgressIndicator(color: _purple))
+            : _placementWords.isEmpty
+            ? const Center(
+                child: Text(
+                  'لا توجد كلمات في قاعدة البيانات',
+                  style: TextStyle(fontFamily: 'Tajawal', fontSize: 18),
+                ),
+              )
+            : Column(
+                children: [
+                  _buildHeader(),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(16),
+                      child: _buildCard(),
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
-        ),
       ),
     );
   }
- 
+
   Widget _buildHeader() {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          begin: Alignment.topRight, // ✅ RTL: start from right
+          begin: Alignment.topRight,
           end: Alignment.bottomLeft,
           colors: [Color(0xFF6A3A9E), _purple],
         ),
@@ -184,13 +241,18 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           child: Row(
             children: [
-              // ✅ RTL: back arrow points forward (→) which is "back" in RTL
               IconButton(
                 onPressed: () => Navigator.pushNamedAndRemoveUntil(
-  context, '/child/home', (route) => false,
-  arguments: widget.childId,
-),
-icon: const Icon(Icons.chevron_right, color: Colors.white, size: 28),
+                  context,
+                  '/child/home',
+                  (route) => false,
+                  arguments: widget.childId,
+                ),
+                icon: const Icon(
+                  Icons.chevron_right,
+                  color: Colors.white,
+                  size: 28,
+                ),
                 style: IconButton.styleFrom(
                   backgroundColor: Colors.white12,
                   shape: RoundedRectangleBorder(
@@ -201,10 +263,10 @@ icon: const Icon(Icons.chevron_right, color: Colors.white, size: 28),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start, // ✅ RTL: start = right
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'اختبار حرف ق',
+                      'اختبار تحديد المستوى',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 18,
@@ -229,7 +291,7 @@ icon: const Icon(Icons.chevron_right, color: Colors.white, size: 28),
       ),
     );
   }
- 
+
   Widget _buildCard() {
     return Container(
       decoration: BoxDecoration(
@@ -275,7 +337,7 @@ icon: const Icon(Icons.chevron_right, color: Colors.white, size: 28),
       ),
     );
   }
- 
+
   Widget _buildProgressBar() {
     final percent = (_progress * 100).round();
     return Column(
@@ -283,10 +345,9 @@ icon: const Icon(Icons.chevron_right, color: Colors.white, size: 28),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            // ✅ RTL: percentage on right, label on left
-            Text(
+            const Text(
               'التقدم',
-              style: const TextStyle(
+              style: TextStyle(
                 color: _purple,
                 fontSize: 13,
                 fontFamily: 'Tajawal',
@@ -316,17 +377,14 @@ icon: const Icon(Icons.chevron_right, color: Colors.white, size: 28),
       ],
     );
   }
- 
+
   Widget _buildWordSection() {
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          begin: Alignment.topRight, // ✅ RTL
+          begin: Alignment.topRight,
           end: Alignment.bottomLeft,
-          colors: [
-            _purple.withOpacity(0.05),
-            _coral.withOpacity(0.05),
-          ],
+          colors: [_purple.withOpacity(0.05), _coral.withOpacity(0.05)],
         ),
         borderRadius: BorderRadius.circular(20),
       ),
@@ -342,7 +400,7 @@ icon: const Icon(Icons.chevron_right, color: Colors.white, size: 28),
       ),
     );
   }
- 
+
   Widget _buildWordDisplay() {
     return Container(
       decoration: BoxDecoration(
@@ -362,15 +420,12 @@ icon: const Icon(Icons.chevron_right, color: Colors.white, size: 28),
             padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [
-                  _purple.withOpacity(0.1),
-                  _coral.withOpacity(0.1),
-                ],
+                colors: [_purple.withOpacity(0.1), _coral.withOpacity(0.1)],
               ),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Text(
-              _currentWord.word,
+              _currentWord.text,
               style: const TextStyle(
                 fontSize: 52,
                 color: _purple,
@@ -380,29 +435,11 @@ icon: const Icon(Icons.chevron_right, color: Colors.white, size: 28),
               ),
             ),
           ),
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade50,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.grey.shade200),
-            ),
-            child: Text(
-              _currentWord.transliteration,
-              textDirection: TextDirection.ltr,
-              style: TextStyle(
-                fontSize: 13,
-                color: Colors.grey.shade600,
-                letterSpacing: 0.5,
-              ),
-            ),
-          ),
         ],
       ),
     );
   }
- 
+
   Widget _buildWordImage() {
     return Stack(
       alignment: Alignment.center,
@@ -420,10 +457,8 @@ icon: const Icon(Icons.chevron_right, color: Colors.white, size: 28),
           width: 110,
           height: 110,
           fit: BoxFit.contain,
-          errorBuilder: (context, error, stackTrace) => Text(
-            _currentWord.fallbackEmoji,
-            style: const TextStyle(fontSize: 72),
-          ),
+          errorBuilder: (context, error, stackTrace) =>
+              const Icon(Icons.image_not_supported, size: 50, color: _purple),
           loadingBuilder: (context, child, loadingProgress) {
             if (loadingProgress == null) return child;
             return SizedBox(
@@ -434,7 +469,7 @@ icon: const Icon(Icons.chevron_right, color: Colors.white, size: 28),
                   color: _purple,
                   value: loadingProgress.expectedTotalBytes != null
                       ? loadingProgress.cumulativeBytesLoaded /
-                          loadingProgress.expectedTotalBytes!
+                            loadingProgress.expectedTotalBytes!
                       : null,
                 ),
               ),
@@ -444,24 +479,40 @@ icon: const Icon(Icons.chevron_right, color: Colors.white, size: 28),
       ],
     );
   }
- 
+
   Widget _buildListenButton() {
+    // Determine if button should be greyed out
+    bool isMaxPlaysReached = _playCount >= 3;
+
     return OutlinedButton.icon(
-      onPressed: _playExample,
-      icon: const Icon(Icons.volume_up_rounded, size: 22),
-      label: const Text(
-        '🔊 استمع إلى المثال',
-        style: TextStyle(fontSize: 16, fontFamily: 'Tajawal'),
+      onPressed: isMaxPlaysReached ? null : _playExample,
+      icon: Icon(
+        Icons.volume_up_rounded,
+        size: 22,
+        color: isMaxPlaysReached ? Colors.grey : _purple,
+      ),
+      label: Text(
+        isMaxPlaysReached
+            ? 'استمعت 3 مرات'
+            : '🔊 استمع إلى المثال (${3 - _playCount})',
+        style: TextStyle(
+          fontSize: 16,
+          fontFamily: 'Tajawal',
+          color: isMaxPlaysReached ? Colors.grey : _purple,
+        ),
       ),
       style: OutlinedButton.styleFrom(
         foregroundColor: _purple,
-        side: const BorderSide(color: _purple, width: 2),
+        side: BorderSide(
+          color: isMaxPlaysReached ? Colors.grey : _purple,
+          width: 2,
+        ),
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
     );
   }
- 
+
   Widget _buildRecordingSection() {
     return Column(
       children: [
@@ -469,14 +520,11 @@ icon: const Icon(Icons.chevron_right, color: Colors.white, size: 28),
           _buildRecordButton()
         else
           _buildSuccessIndicator(),
-        if (_showNext) ...[
-          const SizedBox(height: 14),
-          _buildNextButton(),
-        ],
+        if (_showNext) ...[const SizedBox(height: 14), _buildNextButton()],
       ],
     );
   }
- 
+
   Widget _buildRecordButton() {
     if (_isRecording) {
       return AnimatedBuilder(
@@ -488,7 +536,7 @@ icon: const Icon(Icons.chevron_right, color: Colors.white, size: 28),
     }
     return _recordButtonWidget(isRecording: false);
   }
- 
+
   Widget _recordButtonWidget({required bool isRecording}) {
     return SizedBox(
       width: double.infinity,
@@ -508,12 +556,14 @@ icon: const Icon(Icons.chevron_right, color: Colors.white, size: 28),
           backgroundColor: isRecording ? _coral : _purple,
           foregroundColor: Colors.white,
           elevation: 4,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
         ),
       ),
     );
   }
- 
+
   Widget _buildSuccessIndicator() {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
@@ -525,7 +575,11 @@ icon: const Icon(Icons.chevron_right, color: Colors.white, size: 28),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.check_circle_rounded, color: Colors.green.shade600, size: 26),
+          Icon(
+            Icons.check_circle_rounded,
+            color: Colors.green.shade600,
+            size: 26,
+          ),
           const SizedBox(width: 10),
           Text(
             'تم التسجيل بنجاح! 🎉',
@@ -540,7 +594,7 @@ icon: const Icon(Icons.chevron_right, color: Colors.white, size: 28),
       ),
     );
   }
- 
+
   Widget _buildNextButton() {
     final isLast = _currentIndex == _placementWords.length - 1;
     return SizedBox(
@@ -553,7 +607,9 @@ icon: const Icon(Icons.chevron_right, color: Colors.white, size: 28),
           foregroundColor: Colors.white,
           elevation: 5,
           shadowColor: _coral.withOpacity(0.4),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
         ),
         child: Text(
           isLast ? '📊 عرض النتائج' : '➡️ الكلمة التالية',
