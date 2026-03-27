@@ -42,12 +42,11 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> {
 
         if (mounted) {
           Navigator.pushNamedAndRemoveUntil(
-            context, 
-            '/parent/dashboard', 
-            (route) => false
+            context,
+            '/parent/dashboard',
+            (route) => false,
           );
         }
-
       } on FirebaseAuthException catch (e) {
         if (mounted) Navigator.pop(context);
         _showErrorDialog('تأكد من صحة البريد أو كلمة المرور');
@@ -98,7 +97,10 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> {
                   alignment: Alignment.centerRight,
                   child: IconButton(
                     onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.arrow_back, color: Color(0xFF511281)),
+                    icon: const Icon(
+                      Icons.arrow_back,
+                      color: Color(0xFF511281),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -108,9 +110,16 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFF511281).withOpacity(0.1), width: 2),
+                    border: Border.all(
+                      color: const Color(0xFF511281).withOpacity(0.1),
+                      width: 2,
+                    ),
                     boxShadow: [
-                      BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 16, offset: const Offset(0, 4)),
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.08),
+                        blurRadius: 16,
+                        offset: const Offset(0, 4),
+                      ),
                     ],
                   ),
                   child: Padding(
@@ -123,7 +132,11 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> {
                           const Text(
                             'تسجيل دخول ولي الأمر',
                             textAlign: TextAlign.center,
-                            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF511281)),
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF511281),
+                            ),
                           ),
                           const SizedBox(height: 8),
                           const Text(
@@ -139,7 +152,9 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> {
                             controller: _emailController,
                             keyboardType: TextInputType.emailAddress,
                             textDirection: TextDirection.ltr,
-                            validator: (v) => (v == null || v.isEmpty) ? 'الرجاء إدخال البريد الإلكتروني' : null,
+                            validator: (v) => (v == null || v.isEmpty)
+                                ? 'الرجاء إدخال البريد الإلكتروني'
+                                : null,
                             decoration: _inputDecoration('parent@example.com'),
                           ),
 
@@ -150,11 +165,20 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> {
                           TextFormField(
                             controller: _passwordController,
                             obscureText: !_showPassword,
-                            validator: (v) => v == null || v.isEmpty ? 'الرجاء إدخال كلمة المرور' : null,
+                            validator: (v) => v == null || v.isEmpty
+                                ? 'الرجاء إدخال كلمة المرور'
+                                : null,
                             decoration: _inputDecoration('••••••••').copyWith(
                               suffixIcon: IconButton(
-                                icon: Icon(_showPassword ? Icons.visibility_off : Icons.visibility, color: const Color(0xFF511281)),
-                                onPressed: () => setState(() => _showPassword = !_showPassword),
+                                icon: Icon(
+                                  _showPassword
+                                      ? Icons.visibility_off
+                                      : Icons.visibility,
+                                  color: const Color(0xFF511281),
+                                ),
+                                onPressed: () => setState(
+                                  () => _showPassword = !_showPassword,
+                                ),
                               ),
                             ),
                           ),
@@ -164,8 +188,17 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> {
                           Align(
                             alignment: Alignment.centerRight,
                             child: GestureDetector(
-                              onTap: () => Navigator.pushNamed(context, '/parent/forgot-password'),
-                              child: const Text('نسيت كلمة المرور؟', style: TextStyle(fontSize: 13, color: Color(0xFF511281))),
+                              onTap: () => Navigator.pushNamed(
+                                context,
+                                '/parent/forgot-password',
+                              ),
+                              child: const Text(
+                                'نسيت كلمة المرور؟',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Color(0xFF511281),
+                                ),
+                              ),
                             ),
                           ),
 
@@ -178,9 +211,17 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> {
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF511281),
                                 foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
                               ),
-                              child: const Text('تسجيل الدخول', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                              child: const Text(
+                                'تسجيل الدخول',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                             ),
                           ),
 
@@ -190,7 +231,9 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> {
                             OutlinedButton.icon(
                               onPressed: _devQuickLogin,
                               icon: const Icon(Icons.terminal, size: 18),
-                              label: const Text('دخول سريع للمطور (Debug Only)'),
+                              label: const Text(
+                                'دخول سريع للمطور (Debug Only)',
+                              ),
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: Colors.orange.shade800,
                                 side: BorderSide(color: Colors.orange.shade300),
@@ -203,10 +246,26 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Text('ليس لديك حساب؟ ', style: TextStyle(fontSize: 14, color: Colors.grey)),
+                              const Text(
+                                'ليس لديك حساب؟ ',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey,
+                                ),
+                              ),
                               GestureDetector(
-                                onTap: () => Navigator.pushNamed(context, '/parent/register'),
-                                child: const Text('إنشاء حساب', style: TextStyle(fontSize: 14, color: Color(0xFF511281), fontWeight: FontWeight.bold)),
+                                onTap: () => Navigator.pushNamed(
+                                  context,
+                                  '/parent/register',
+                                ),
+                                child: const Text(
+                                  'إنشاء حساب',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Color(0xFF511281),
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                               ),
                             ],
                           ),
@@ -224,16 +283,38 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> {
   }
 
   // الـ Widgets المساعدة (بقية الكود كما هو...)
-  Widget _buildLabel(String text) => Text(text, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF333333)));
+  Widget _buildLabel(String text) => Text(
+    text,
+    style: const TextStyle(
+      fontSize: 14,
+      fontWeight: FontWeight.w600,
+      color: Color(0xFF333333),
+    ),
+  );
 
   InputDecoration _inputDecoration(String hint) {
     return InputDecoration(
       hintText: hint,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: const Color(0xFF511281).withOpacity(0.3), width: 2)),
-      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF511281), width: 2)),
-      errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Colors.red, width: 2)),
-      focusedErrorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Colors.red, width: 2)),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: BorderSide(
+          color: const Color(0xFF511281).withOpacity(0.3),
+          width: 2,
+        ),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: const BorderSide(color: Color(0xFF511281), width: 2),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: const BorderSide(color: Colors.red, width: 2),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: const BorderSide(color: Colors.red, width: 2),
+      ),
     );
   }
 }
