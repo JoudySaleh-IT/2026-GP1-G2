@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:audioplayers/audioplayers.dart';
 
 // ─── Data Model ──────────────────────────────────────────────────────────────
 class PlacementWord {
@@ -42,6 +43,7 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
   bool _isRecording = false;
   bool _showNext = false;
   int _playCount = 0; // Tracks how many times they played the audio
+  final AudioPlayer _audioPlayer = AudioPlayer();
 
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
@@ -121,6 +123,7 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
   @override
   void dispose() {
     _pulseController.dispose();
+    _audioPlayer.dispose();
     super.dispose();
   }
 
@@ -167,7 +170,7 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
     }
   }
 
-  void _playExample() {
+  Future<void> _playExample() async {
     if (_playCount >= 3) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -183,14 +186,21 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
       _playCount++;
     });
 
-    // TODO: Implement actual audio playing using an audio package and _currentWord.audioUrl
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('تشغيل: ${_currentWord.text} (المرة $_playCount من 3)'),
-        backgroundColor: _purple,
-        duration: const Duration(seconds: 1),
-      ),
-    );
+    try {
+      // This actually plays the audio from your Firebase Storage URL!
+      await _audioPlayer.play(UrlSource(_currentWord.audioUrl));
+
+      // Optional: keep a brief visual indicator
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('تشغيل: ${_currentWord.text} (المرة $_playCount من 3)'),
+          backgroundColor: _purple,
+          duration: const Duration(seconds: 1),
+        ),
+      );
+    } catch (e) {
+      print("Error playing audio: $e");
+    }
   }
 
   @override

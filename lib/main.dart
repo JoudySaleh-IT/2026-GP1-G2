@@ -47,9 +47,7 @@ class MyApp extends StatelessWidget {
         return Directionality(textDirection: TextDirection.rtl, child: child!);
       },
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF511281),
-        ),
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF511281)),
         useMaterial3: true,
         fontFamily: 'Tajawal',
       ),
@@ -61,14 +59,14 @@ class MyApp extends StatelessWidget {
         '/parent/settings': (context) => const ParentSettingsScreen(),
         '/child/selection': (context) => const ChildSelectionScreen(),
         '/child/home': (context) {
-  final args = ModalRoute.of(context)!.settings.arguments;
-  if (args == null || args is! String || args.isEmpty) {
-    return const Scaffold(
-      body: Center(child: Text("خطأ: لم يتم العثور على هوية الطفل")),
-    );
-  }
-  return ChildHomeScreen(childId: args);
-},
+          final args = ModalRoute.of(context)!.settings.arguments;
+          if (args == null || args is! String || args.isEmpty) {
+            return const Scaffold(
+              body: Center(child: Text("خطأ: لم يتم العثور على هوية الطفل")),
+            );
+          }
+          return ChildHomeScreen(childId: args);
+        },
         '/parent/create-child': (context) => const CreateChildProfileScreen(),
         '/parent/child-profile': (context) {
           final args = ModalRoute.of(context)!.settings.arguments as Map?;
@@ -96,10 +94,7 @@ class MyApp extends StatelessWidget {
             );
           }
           if (args is String) {
-            return LetterLevelsScreen(
-              letter: 'ض',
-              childId: args,
-            );
+            return LetterLevelsScreen(letter: 'ض', childId: args);
           }
           return const Scaffold(
             body: Center(child: Text("خطأ: لم يتم العثور على هوية الطفل")),
@@ -131,12 +126,12 @@ class MyApp extends StatelessWidget {
           );
         },
         '/child/letter-introduction': (context) {
-  final args = ModalRoute.of(context)!.settings.arguments as Map?;
-  return LetterIntroductionScreen(
-    letter: args?['letter'] ?? 'ض',
-    childId: args?['childId'] ?? '', // ✅
-  );
-},
+          final args = ModalRoute.of(context)!.settings.arguments as Map?;
+          return LetterIntroductionScreen(
+            letter: args?['letter'] ?? 'ض',
+            childId: args?['childId'] ?? '', // ✅
+          );
+        },
         '/child/exercise/recording': (context) {
           final args = ModalRoute.of(context)!.settings.arguments as Map?;
           return ExerciseRecordingScreen(
@@ -167,8 +162,11 @@ class MyApp extends StatelessWidget {
             ),
             letterScores: rawScores != null && rawScores.isNotEmpty
                 ? rawScores
-                    .map((e) => LetterScore(letter: e['letter'], score: e['score']))
-                    .toList()
+                      .map(
+                        (e) =>
+                            LetterScore(letter: e['letter'], score: e['score']),
+                      )
+                      .toList()
                 : const [
                     LetterScore(letter: 'ق', score: 35),
                     LetterScore(letter: 'ض', score: 42),
