@@ -555,7 +555,7 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
         onPressed: _handleRecordToggle,
         icon: const Icon(Icons.mic_rounded, size: 26),
         label: Text(
-          isRecording ? '⏹ إيقاف التسجيل' : '🎙 ابدأ التسجيل',
+          isRecording ? ' إيقاف التسجيل' : ' ابدأ التسجيل',
           style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
@@ -592,7 +592,7 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
           ),
           const SizedBox(width: 10),
           Text(
-            'تم التسجيل بنجاح! 🎉',
+            'تم التسجيل بنجاح! ',
             style: TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.bold,
@@ -622,7 +622,7 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
           ),
         ),
         child: Text(
-          isLast ? '📊 عرض النتائج' : '➡️ الكلمة التالية',
+          isLast ? ' عرض النتائج' : '➡️ الكلمة التالية',
           style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
