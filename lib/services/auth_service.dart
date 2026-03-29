@@ -5,7 +5,7 @@ class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  /// --- تسجيل ولي الأمر ---
+  // ─── تسجيل ولي الأمر (Parent Registration) ───
   Future<User?> registerParent({
     required String email,
     required String password,
@@ -20,8 +20,9 @@ class AuthService {
       User? user = result.user;
 
       if (user != null) {
-        await _db.collection('users').doc(user.uid).set({
-          'uid': user.uid,
+        //  تغيير اسم المجموعة إلى parents والحقل إلى parentId
+        await _db.collection('parents').doc(user.uid).set({
+          'parentId': user.uid, // استخدام المعرف الفريد كـ parentId
           'fullName': fullName,
           'email': email,
           'role': 'parent',
@@ -42,7 +43,7 @@ class AuthService {
     }
   }
 
-  /// --- تسجيل الدخول ---
+  // ─── تسجيل الدخول (Login) ───
   Future<User?> loginParent(String email, String password) async {
     try {
       UserCredential result = await _auth.signInWithEmailAndPassword(
@@ -59,36 +60,34 @@ class AuthService {
     }
   }
 
-  /// --- إضافة ملف طفل جديد ---
-  /// [dob] تاريخ الميلاد — يُحفظ كـ Timestamp في Firestore
-  /// [age]  يُحسب تلقائياً من tاريخ الميلاد عند الإنشاء
+  // ─── إضافة ملف طفل جديد (Create Child Profile) ───
   Future<bool> createChildProfile({
     required String name,
     required int age,
-    required DateTime dob,   // ← تاريخ الميلاد
+    required DateTime dob,
     required String gender,
     required String avatar,
   }) async {
     try {
-      final String? userId = _auth.currentUser?.uid;
-      if (userId == null) return false;
+      final String? currentParentId = _auth.currentUser?.uid;
+      if (currentParentId == null) return false;
 
-      // التحقق من قيد الطفل الواحد
+      // التحقق من قيد الطفل الواحد للأب الحالي
       final existing = await _db
           .collection('children')
-          .where('parentId', isEqualTo: userId)
+          .where('parentId', isEqualTo: currentParentId)
           .get();
 
       if (existing.docs.isNotEmpty) {
         throw Exception('limit-reached');
       }
 
-      // حفظ بيانات الطفل
+      // حفظ بيانات الطفل وربطها بـ parentId
       await _db.collection('children').add({
-        'parentId': userId,
+        'parentId': currentParentId, 
         'name': name,
-        'dob': Timestamp.fromDate(dob),   // ← تاريخ الميلاد كـ Timestamp
-        'age': age,                        // ← العمر وقت التسجيل
+        'dob': Timestamp.fromDate(dob),
+        'age': age,
         'gender': gender,
         'avatar': avatar,
         'progress': 0,
@@ -103,8 +102,7 @@ class AuthService {
     }
   }
 
-  /// --- تحديث العمر تلقائياً من تاريخ الميلاد ---
-  /// استدعِها عند فتح التطبيق أو في Cloud Function
+  // ─── مزامنة عمر الطفل بناءً على تاريخ الميلاد ───
   Future<void> syncChildAge(String childId) async {
     try {
       final doc = await _db.collection('children').doc(childId).get();
@@ -114,8 +112,7 @@ class AuthService {
       final dob = (data['dob'] as Timestamp).toDate();
       final now = DateTime.now();
       int age = now.year - dob.year;
-      if (now.month < dob.month ||
-          (now.month == dob.month && now.day < dob.day)) {
+      if (now.month < dob.month || (now.month == dob.month && now.day < dob.day)) {
         age--;
       }
 
@@ -125,38 +122,36 @@ class AuthService {
     }
   }
 
-  /// --- تحديث اسم المستخدم ---
+  // ─── تحديث اسم ولي الأمر ───
   Future<void> updateName(String newName) async {
-    String uid = _auth.currentUser!.uid;
-    await _db.collection('users').doc(uid).update({'fullName': newName});
+    String parentId = _auth.currentUser!.uid;
+    // ✅ التحديث في مجموعة parents
+    await _db.collection('parents').doc(parentId).update({'fullName': newName});
   }
 
-  /// --- تحديث كلمة المرور ---
+  // ─── تحديث كلمة المرور ───
   Future<void> updatePassword(String newPassword) async {
     await _auth.currentUser!.updatePassword(newPassword);
   }
 
-  /// --- إعادة تعيين كلمة المرور ---
+  // ─── إعادة تعيين كلمة المرور ───
   Future<void> sendPasswordReset(String email) async {
     try {
       await _auth.sendPasswordResetEmail(email: email);
     } on FirebaseAuthException catch (e) {
-      print("Error Code: ${e.code}");
       rethrow;
-    } catch (e) {
-      throw Exception("حدث خطأ غير متوقع");
     }
   }
 
-  /// --- تسجيل الخروج ---
+  // ─── تسجيل الخروج ───
   Future<void> signOut() async {
     await _auth.signOut();
   }
 
-  /// --- المستخدم الحالي ---
+  // ─── الحصول على بيانات الأب الحالي ───
   User? get currentUser => _auth.currentUser;
 
-  /// --- تحديث بيانات الطفل ---
+  // ─── تحديث بيانات الطفل ───
   Future<void> updateChildProfile({
     required String childId,
     required String name,
@@ -174,17 +169,16 @@ class AuthService {
         'updatedAt': FieldValue.serverTimestamp(),
       });
     } catch (e) {
-      print("Error updating child: $e");
       throw Exception("فشل في تحديث بيانات الطفل");
     }
   }
 
-  /// --- حذف ملف الطفل ---
+  // ─── حذف ملف الطفل ───
   Future<void> deleteChild(String childId) async {
     await _db.collection('children').doc(childId).delete();
   }
 
-  /// --- جلب ID أول طفل لهذا الأب ---
+  // ─── جلب ID أول طفل لولي الأمر الحالي ───
   Future<String?> getFirstChildId() async {
     try {
       String parentId = _auth.currentUser!.uid;
