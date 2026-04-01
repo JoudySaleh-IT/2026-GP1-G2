@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class ParentRegisterScreen extends StatefulWidget {
   const ParentRegisterScreen({super.key});
@@ -30,30 +31,57 @@ class _ParentRegisterScreenState extends State<ParentRegisterScreen> {
     super.dispose();
   }
 
-  // ─── دالة إرسال البيانات ───
+// ─── الدالة المعدلة لإظهار أخطاء الإيميل المستخدم ───
   void _handleSubmit() async {
     if (_formKey.currentState!.validate()) {
+      // 1. إظهار مؤشر التحميل
       showDialog(
         context: context,
         barrierDismissible: false,
         builder: (context) => const Center(child: CircularProgressIndicator(color: Color(0xFF511281))),
       );
 
-      // استخدام trim() لضمان عدم وجود مسافات فارغة في البداية والنهاية
-      var user = await _authService.registerParent(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
-        fullName: _fullNameController.text.trim(),
-      );
+      try {
+        // 2. محاولة التسجيل
+        var user = await _authService.registerParent(
+          email: _emailController.text.trim(),
+          password: _passwordController.text.trim(),
+          fullName: _fullNameController.text.trim(),
+        );
 
-      if (mounted) Navigator.pop(context); // إغلاق التحميل
+        // 3. إغلاق مؤشر التحميل بعد النجاح
+        if (mounted) Navigator.pop(context);
 
-      if (user != null) {
-        if (mounted) Navigator.pushNamed(context, '/parent/create-child');
-      } else {
+        if (user != null) {
+          if (mounted) Navigator.pushNamed(context, '/parent/create-child');
+        }
+      } on FirebaseAuthException catch (e) {
+        // 4. في حال حدوث خطأ من فيربيس (مثل إيميل مستخدم)
+        if (mounted) Navigator.pop(context); // إغلاق التحميل فوراً
+
+        String errorMessage = 'حدث خطأ أثناء التسجيل';
+        if (e.code == 'email-already-in-use') {
+          errorMessage = 'هذا البريد الإلكتروني مستخدم بالفعل، جرب بريداً آخر.';
+        } else if (e.code == 'invalid-email') {
+          errorMessage = 'صيغة البريد الإلكتروني غير صحيحة.';
+        } else if (e.code == 'weak-password') {
+          errorMessage = 'كلمة المرور ضعيفة جداً.';
+        }
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('فشل التسجيل. ربما البريد مستخدم مسبقاً.')),
+            SnackBar(
+              content: Text(errorMessage),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } catch (e) {
+        // 5. في حال حدوث أي خطأ غير متوقع آخر
+        if (mounted) Navigator.pop(context);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('حدث خطأ غير متوقع، يرجى المحاولة لاحقاً')),
           );
         }
       }

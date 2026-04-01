@@ -36,7 +36,7 @@ class _EditChildProfileScreenState extends State<EditChildProfileScreen> {
   bool _isLoadingData = true;
 
   final List<String> _availableAvatars = [
-    '🦁', '🦊', '🐼', '🐨', '🦋', '🚀', '🌸', '⭐', '🎨', '🎯', '🏆', '🎭',
+   '🦁', '🐯', '🐼', '🦊', '🐻', '🐨', '🦝', '🐰'
   ];
 
   @override
@@ -57,7 +57,6 @@ class _EditChildProfileScreenState extends State<EditChildProfileScreen> {
         final data = doc.data()!;
         setState(() {
           _nameController.text = data['name'] ?? '';
-          _gradeController.text = data['gradeLevel'] ?? '';
           _selectedAvatar = data['avatar'] ?? '🦁';
 
           // تحميل تاريخ الميلاد إذا موجود، وإلا نحسبه من العمر
@@ -103,7 +102,6 @@ class _EditChildProfileScreenState extends State<EditChildProfileScreen> {
         childId: widget.childId,
         name: _nameController.text.trim(),
         age: age,
-        gradeLevel: _gradeController.text.trim(),
         avatar: _selectedAvatar,
         dob: _dob!,
       );

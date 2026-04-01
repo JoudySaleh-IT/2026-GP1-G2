@@ -20,9 +20,8 @@ class AuthService {
       User? user = result.user;
 
       if (user != null) {
-        //  تغيير اسم المجموعة إلى parents والحقل إلى parentId
         await _db.collection('parents').doc(user.uid).set({
-          'parentId': user.uid, // استخدام المعرف الفريد كـ parentId
+          'parentId': user.uid,
           'fullName': fullName,
           'email': email,
           'role': 'parent',
@@ -31,14 +30,17 @@ class AuthService {
       }
       return user;
     } on FirebaseAuthException catch (e) {
+      // طباعة رسائل الخطأ وإعادة رمي الاستثناء لتلتقطه الواجهة
       if (e.code == 'email-already-in-use') {
         print("البريد الإلكتروني مستخدم بالفعل.");
       } else if (e.code == 'weak-password') {
         print("كلمة المرور ضعيفة جداً.");
+      } else if (e.code == 'invalid-email') {
+        print("البريد الإلكتروني غير صالح.");
       }
-      return null;
+      rethrow; 
     } catch (e) {
-      print("حدث خطأ أثناء التسجيل: $e");
+      print("حدث خطأ غير متوقع أثناء التسجيل: $e");
       return null;
     }
   }
@@ -60,7 +62,7 @@ class AuthService {
     }
   }
 
-  // ─── إضافة ملف طفل جديد (Create Child Profile) ───
+  // ─── إضافة ملف طفل جديد (يدعم تعدد الأطفال) ───
   Future<bool> createChildProfile({
     required String name,
     required int age,
@@ -72,17 +74,7 @@ class AuthService {
       final String? currentParentId = _auth.currentUser?.uid;
       if (currentParentId == null) return false;
 
-      // التحقق من قيد الطفل الواحد للأب الحالي
-      final existing = await _db
-          .collection('children')
-          .where('parentId', isEqualTo: currentParentId)
-          .get();
-
-      if (existing.docs.isNotEmpty) {
-        throw Exception('limit-reached');
-      }
-
-      // حفظ بيانات الطفل وربطها بـ parentId
+      // تم إزالة شرط "الطفل الواحد" للسماح بإضافة أكثر من طفل
       await _db.collection('children').add({
         'parentId': currentParentId, 
         'name': name,
@@ -98,6 +90,7 @@ class AuthService {
 
       return true;
     } catch (e) {
+      print("Error creating child: $e");
       rethrow;
     }
   }
@@ -124,14 +117,22 @@ class AuthService {
 
   // ─── تحديث اسم ولي الأمر ───
   Future<void> updateName(String newName) async {
-    String parentId = _auth.currentUser!.uid;
-    // ✅ التحديث في مجموعة parents
-    await _db.collection('parents').doc(parentId).update({'fullName': newName});
+    try {
+      String parentId = _auth.currentUser!.uid;
+      await _db.collection('parents').doc(parentId).update({'fullName': newName});
+    } catch (e) {
+      print("Error updating name: $e");
+      rethrow;
+    }
   }
 
   // ─── تحديث كلمة المرور ───
   Future<void> updatePassword(String newPassword) async {
-    await _auth.currentUser!.updatePassword(newPassword);
+    try {
+      await _auth.currentUser!.updatePassword(newPassword);
+    } catch (e) {
+      rethrow;
+    }
   }
 
   // ─── إعادة تعيين كلمة المرور ───
@@ -151,12 +152,11 @@ class AuthService {
   // ─── الحصول على بيانات الأب الحالي ───
   User? get currentUser => _auth.currentUser;
 
-  // ─── تحديث بيانات الطفل ───
+  // ─── تحديث بيانات الطفل (تم حذف gradeLevel تماماً) ───
   Future<void> updateChildProfile({
     required String childId,
     required String name,
     required int age,
-    required String gradeLevel,
     required String avatar,
     required DateTime dob,
   }) async {
@@ -169,19 +169,25 @@ class AuthService {
         'updatedAt': FieldValue.serverTimestamp(),
       });
     } catch (e) {
+      print("Error updating child: $e");
       throw Exception("فشل في تحديث بيانات الطفل");
     }
   }
 
   // ─── حذف ملف الطفل ───
   Future<void> deleteChild(String childId) async {
-    await _db.collection('children').doc(childId).delete();
+    try {
+      await _db.collection('children').doc(childId).delete();
+    } catch (e) {
+      rethrow;
+    }
   }
 
-  // ─── جلب ID أول طفل لولي الأمر الحالي ───
+  // ─── جلب ID أول طفل (للتوافق) ───
   Future<String?> getFirstChildId() async {
     try {
-      String parentId = _auth.currentUser!.uid;
+      String? parentId = _auth.currentUser?.uid;
+      if (parentId == null) return null;
       var snapshot = await _db
           .collection('children')
           .where('parentId', isEqualTo: parentId)

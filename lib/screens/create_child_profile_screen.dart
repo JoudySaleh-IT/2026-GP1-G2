@@ -53,6 +53,7 @@ class _CreateChildProfileScreenState extends State<CreateChildProfileScreen> {
         !_genderError &&
         !_avatarError &&
         !_dobError) {
+      
       showDialog(
         context: context,
         barrierDismissible: false,
@@ -70,7 +71,7 @@ class _CreateChildProfileScreenState extends State<CreateChildProfileScreen> {
           avatar: _selectedAvatar,
         );
 
-        if (mounted) Navigator.pop(context);
+        if (mounted) Navigator.pop(context); // إغلاق لودينج
 
         if (success && mounted) {
           Navigator.pushNamedAndRemoveUntil(
@@ -78,12 +79,7 @@ class _CreateChildProfileScreenState extends State<CreateChildProfileScreen> {
         }
       } catch (e) {
         if (mounted) Navigator.pop(context);
-
-        String message = 'حدث خطأ غير متوقع';
-        if (e.toString().contains('limit-reached')) {
-          message = 'عذراً، يمكنك إضافة طفل واحد فقط في هذه النسخة.';
-        }
-
+        String message = 'حدث خطأ أثناء حفظ البيانات، يرجى المحاولة لاحقاً';
         if (mounted) {
           ScaffoldMessenger.of(context)
               .showSnackBar(SnackBar(content: Text(message)));
@@ -100,7 +96,7 @@ class _CreateChildProfileScreenState extends State<CreateChildProfileScreen> {
         backgroundColor: const Color(0xFFFCF9EA),
         body: Column(
           children: [
-            _CreateChildHeader(),
+            const _CreateChildHeader(),
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(16),
@@ -124,7 +120,6 @@ class _CreateChildProfileScreenState extends State<CreateChildProfileScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // ── معاينة الصورة ──────────────────────────────
                         Center(
                           child: Container(
                             padding: const EdgeInsets.all(20),
@@ -139,8 +134,6 @@ class _CreateChildProfileScreenState extends State<CreateChildProfileScreen> {
                           ),
                         ),
                         const SizedBox(height: 24),
-
-                        // ── اسم الطفل ───────────────────────────────────
                         const _FieldLabel('اسم الطفل'),
                         const SizedBox(height: 6),
                         TextFormField(
@@ -159,8 +152,6 @@ class _CreateChildProfileScreenState extends State<CreateChildProfileScreen> {
                           },
                         ),
                         const SizedBox(height: 16),
-
-                        // ── تاريخ الميلاد ────────────────────────────────
                         const _FieldLabel('تاريخ الميلاد'),
                         const SizedBox(height: 6),
                         _DobPicker(
@@ -192,8 +183,6 @@ class _CreateChildProfileScreenState extends State<CreateChildProfileScreen> {
                             ),
                           ),
                         const SizedBox(height: 16),
-
-                        // ── الجنس ────────────────────────────────────────
                         const _FieldLabel('الجنس'),
                         const SizedBox(height: 6),
                         _GenderSelector(
@@ -213,8 +202,6 @@ class _CreateChildProfileScreenState extends State<CreateChildProfileScreen> {
                                     fontSize: 12, color: Colors.red)),
                           ),
                         const SizedBox(height: 16),
-
-                        // ── الصورة الرمزية ───────────────────────────────
                         const _FieldLabel('اختر الصورة الرمزية'),
                         const SizedBox(height: 8),
                         GridView.builder(
@@ -263,8 +250,6 @@ class _CreateChildProfileScreenState extends State<CreateChildProfileScreen> {
                                     fontSize: 12, color: Colors.red)),
                           ),
                         const SizedBox(height: 28),
-
-                        // ── زر الإنشاء ───────────────────────────────────
                         SizedBox(
                           width: double.infinity,
                           height: 50,
@@ -275,7 +260,7 @@ class _CreateChildProfileScreenState extends State<CreateChildProfileScreen> {
                               foregroundColor: Colors.white,
                               shape: const StadiumBorder(),
                             ),
-                            child: const Text('إنشاء الملف'),
+                            child: const Text('إنشاء الملف', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                           ),
                         ),
                       ],
@@ -311,7 +296,7 @@ class _CreateChildProfileScreenState extends State<CreateChildProfileScreen> {
       );
 }
 
-// ─── DOB Picker ───────────────────────────────────────────────────────────────
+// ─── DOB Picker ───
 class _DobPicker extends StatelessWidget {
   final DateTime? selectedDate;
   final bool hasError;
@@ -330,17 +315,6 @@ class _DobPicker extends StatelessWidget {
       initialDate: selectedDate ?? DateTime(now.year - 8),
       firstDate: DateTime(now.year - 13),
       lastDate: DateTime(now.year - 5),
-      builder: (context, child) => Theme(
-        data: Theme.of(context).copyWith(
-          colorScheme: const ColorScheme.light(
-            primary: Color(0xFF511281),
-            onPrimary: Colors.white,
-            surface: Colors.white,
-            onSurface: Color(0xFF1A1A1A),
-          ),
-        ),
-        child: child!,
-      ),
     );
     if (picked != null) onChanged(picked);
   }
@@ -391,8 +365,10 @@ class _DobPicker extends StatelessWidget {
   }
 }
 
-// ─── Header ───────────────────────────────────────────────────────────────────
+// ─── Header (تم تعديله ليتطابق مع باقي الصفحات) ───
 class _CreateChildHeader extends StatelessWidget {
+  const _CreateChildHeader();
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -411,9 +387,11 @@ class _CreateChildHeader extends StatelessWidget {
           left: 16),
       child: Row(
         children: [
-          IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: () => Navigator.pop(context)),
+          // ✅ تم تغيير الزر ليطابق صفحة المانجمنت وبدون خلفية بيضاء
+          _HeaderIconBtn(
+            icon: Icons.arrow_back, 
+            onTap: () => Navigator.pop(context),
+          ),
           const SizedBox(width: 12),
           const Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -433,7 +411,24 @@ class _CreateChildHeader extends StatelessWidget {
   }
 }
 
-// ─── Field Label ──────────────────────────────────────────────────────────────
+// ─── زر الأيقونة المخصص (بدون خلفية كما طلبتِ) ───
+class _HeaderIconBtn extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  const _HeaderIconBtn({required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) => InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          width: 34,
+          height: 34,
+          child: Icon(icon, color: Colors.white, size: 25),
+        ),
+      );
+}
+
 class _FieldLabel extends StatelessWidget {
   final String text;
   const _FieldLabel(this.text);
@@ -445,7 +440,6 @@ class _FieldLabel extends StatelessWidget {
           color: Color(0xFF444444)));
 }
 
-// ─── Gender Selector ──────────────────────────────────────────────────────────
 class _GenderSelector extends StatelessWidget {
   final String selected;
   final bool hasError;
