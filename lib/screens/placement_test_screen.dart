@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:audioplayers/audioplayers.dart';
 
 // ─── Data Model ──────────────────────────────────────────────────────────────
 class PlacementWord {
@@ -9,14 +8,12 @@ class PlacementWord {
   final String text;
   final String targetLetter;
   final String imageUrl;
-  final String audioUrl;
 
   const PlacementWord({
     required this.wordId,
     required this.text,
     required this.targetLetter,
     required this.imageUrl,
-    required this.audioUrl,
   });
 }
 
@@ -42,8 +39,6 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
   List<bool> _recorded = [];
   bool _isRecording = false;
   bool _showNext = false;
-  int _playCount = 0; // Tracks how many times they played the audio
-  final AudioPlayer _audioPlayer = AudioPlayer();
 
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
@@ -76,21 +71,13 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
 
         // 1. Get raw gs:// URLs from Firestore
         String rawImageUrl = data['image_url'] ?? '';
-        String rawAudioUrl = data['audio_url'] ?? '';
 
         // 2. Convert gs:// to playable/viewable https:// URLs using Firebase Storage
         String downloadImageUrl = '';
-        String downloadAudioUrl = '';
 
         if (rawImageUrl.startsWith('gs://')) {
           downloadImageUrl = await FirebaseStorage.instance
               .refFromURL(rawImageUrl)
-              .getDownloadURL();
-        }
-
-        if (rawAudioUrl.startsWith('gs://')) {
-          downloadAudioUrl = await FirebaseStorage.instance
-              .refFromURL(rawAudioUrl)
               .getDownloadURL();
         }
 
@@ -100,7 +87,6 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
             text: data['text'] ?? '',
             targetLetter: data['target_letter'] ?? '',
             imageUrl: downloadImageUrl,
-            audioUrl: downloadAudioUrl,
           ),
         );
       }
@@ -123,7 +109,6 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
   @override
   void dispose() {
     _pulseController.dispose();
-    _audioPlayer.dispose();
     super.dispose();
   }
 
@@ -156,7 +141,6 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
         _currentIndex++;
         _showNext = false;
         _isRecording = false;
-        _playCount = 0; // Reset play count for the new word
       });
     } else {
       Navigator.pushNamed(
@@ -167,39 +151,6 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
           // You might want to pass the whole recording list here later!
         },
       );
-    }
-  }
-
-  Future<void> _playExample() async {
-    if (_playCount >= 3) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('لقد استمعت للكلمة 3 مرات، حان دورك الآن!'),
-          backgroundColor: _coral,
-          duration: const Duration(seconds: 2),
-        ),
-      );
-      return;
-    }
-
-    setState(() {
-      _playCount++;
-    });
-
-    try {
-      // This actually plays the audio from your Firebase Storage URL!
-      await _audioPlayer.play(UrlSource(_currentWord.audioUrl));
-
-      // Optional: keep a brief visual indicator
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('تشغيل: ${_currentWord.text} (المرة $_playCount من 3)'),
-          backgroundColor: _purple,
-          duration: const Duration(seconds: 1),
-        ),
-      );
-    } catch (e) {
-      print("Error playing audio: $e");
     }
   }
 
@@ -402,9 +353,7 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
       child: Column(
         children: [
           _buildWordDisplay(),
-          const SizedBox(height: 20),
-          _buildListenButton(),
-          const SizedBox(height: 16),
+          const SizedBox(height: 24),
           _buildRecordingSection(),
         ],
       ),
@@ -479,7 +428,7 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
                   color: _purple,
                   value: loadingProgress.expectedTotalBytes != null
                       ? loadingProgress.cumulativeBytesLoaded /
-                            loadingProgress.expectedTotalBytes!
+                          loadingProgress.expectedTotalBytes!
                       : null,
                 ),
               ),
@@ -487,39 +436,6 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
           },
         ),
       ],
-    );
-  }
-
-  Widget _buildListenButton() {
-    // Determine if button should be greyed out
-    bool isMaxPlaysReached = _playCount >= 3;
-
-    return OutlinedButton.icon(
-      onPressed: isMaxPlaysReached ? null : _playExample,
-      icon: Icon(
-        Icons.volume_up_rounded,
-        size: 22,
-        color: isMaxPlaysReached ? Colors.grey : _purple,
-      ),
-      label: Text(
-        isMaxPlaysReached
-            ? 'استمعت 3 مرات'
-            : '🔊 استمع إلى المثال (${3 - _playCount})',
-        style: TextStyle(
-          fontSize: 16,
-          fontFamily: 'Tajawal',
-          color: isMaxPlaysReached ? Colors.grey : _purple,
-        ),
-      ),
-      style: OutlinedButton.styleFrom(
-        foregroundColor: _purple,
-        side: BorderSide(
-          color: isMaxPlaysReached ? Colors.grey : _purple,
-          width: 2,
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      ),
     );
   }
 
