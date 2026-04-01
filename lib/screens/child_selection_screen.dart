@@ -1,7 +1,8 @@
+import 'dart:math'; // For generating the random code
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../services/ChildSession.dart'; 
+import '../services/ChildSession.dart';
 
 // ─── Helper: تحويل الأرقام إلى العربية ────────────────
 String toArabicNumbers(int num) {
@@ -12,17 +13,98 @@ String toArabicNumbers(int num) {
   );
 }
 
-// ─── الشاشة الرئيسية لاختيار الطفل ────────────────
 class ChildSelectionScreen extends StatelessWidget {
   const ChildSelectionScreen({super.key});
 
+  // ─── Function to generate and show pairing code ───
+  void _showPairingDialog(
+    BuildContext context,
+    String childId,
+    String childName,
+  ) async {
+    // 1. Generate a random 6-digit code
+    final String pairingCode = (Random().nextInt(900000) + 100000).toString();
+    final String? userId = FirebaseAuth.instance.currentUser?.uid;
+
+    try {
+      // 2. Save it to Firestore with an expiry time (e.g., 10 mins from now)
+      await FirebaseFirestore.instance.collection('pairing_codes').add({
+        'code': pairingCode,
+        'parentId': userId,
+        'childId': childId,
+        'childName': childName,
+        'createdAt': FieldValue.serverTimestamp(),
+        'expiresAt': DateTime.now().add(const Duration(minutes: 10)),
+      });
+
+      // 3. Show the dialog to the parent
+      if (!context.mounted) return;
+      showDialog(
+        context: context,
+        builder: (context) => Directionality(
+          textDirection: TextDirection.rtl,
+          child: AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            title: const Text('ربط جهاز جديد', textAlign: TextAlign.center),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'أدخل هذا الكود في جهاز $childName:',
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 20),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF3E5F5),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: const Color(0xFF511281),
+                      width: 2,
+                    ),
+                  ),
+                  child: Text(
+                    pairingCode,
+                    style: const TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 8,
+                      color: Color(0xFF511281),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 15),
+                const Text(
+                  'هذا الكود صالح لمدة ١٠ دقائق فقط',
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text(
+                  'تم',
+                  style: TextStyle(color: Color(0xFF511281)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('حدث خطأ في إنشاء الكود')));
+    }
+  }
+
   void _onChildSelected(BuildContext context, String childId) {
     ChildSession.currentChildId = childId;
-    Navigator.pushNamed(
-      context,
-      '/child/home', 
-      arguments: childId, 
-    );
+    Navigator.pushNamed(context, '/child/home', arguments: childId);
   }
 
   @override
@@ -45,35 +127,41 @@ class ChildSelectionScreen extends StatelessWidget {
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(
-                      child: CircularProgressIndicator(color: Color(0xFF511281)),
+                      child: CircularProgressIndicator(
+                        color: Color(0xFF511281),
+                      ),
                     );
                   }
 
                   final docs = snapshot.data?.docs ?? [];
-
-                  if (docs.isEmpty) {
-                    return _buildEmptyState(context);
-                  }
+                  if (docs.isEmpty) return _buildEmptyState(context);
 
                   return GridView.builder(
                     padding: const EdgeInsets.all(24),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
-                      childAspectRatio: 0.82,
-                    ),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 16,
+                          mainAxisSpacing: 16,
+                          childAspectRatio: 0.82,
+                        ),
                     itemCount: docs.length,
                     itemBuilder: (context, index) {
                       final data = docs[index].data() as Map<String, dynamic>;
                       final String docId = docs[index].id;
+                      final String name = data['name'] ?? 'بدون اسم';
 
                       return _ChildCard(
-                        name: data['name'] ?? 'بدون اسم',
+                        name: name,
                         avatar: data['avatar'] ?? '👦',
                         age: data['age'] ?? 0,
                         level: data['level'] ?? 'مبتدئ',
                         onTap: () => _onChildSelected(context, docId),
+                        onPairingTap: () => _showPairingDialog(
+                          context,
+                          docId,
+                          name,
+                        ), // New callback
                       );
                     },
                   );
@@ -86,6 +174,7 @@ class ChildSelectionScreen extends StatelessWidget {
     );
   }
 
+  // (Keeping your existing _buildEmptyState here...)
   Widget _buildEmptyState(BuildContext context) {
     return Center(
       child: Column(
@@ -96,20 +185,21 @@ class ChildSelectionScreen extends StatelessWidget {
           const Text(
             'لا يوجد أطفال مضافين بعد',
             style: TextStyle(
-              color: Color(0xFF511281), 
+              color: Color(0xFF511281),
               fontWeight: FontWeight.bold,
-              fontSize: 18
+              fontSize: 18,
             ),
           ),
           const SizedBox(height: 12),
           ElevatedButton(
-            onPressed: () => Navigator.pushNamed(context, '/parent/create-child'),
+            onPressed: () =>
+                Navigator.pushNamed(context, '/parent/create-child'),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF511281),
               foregroundColor: Colors.white,
             ),
             child: const Text('إضافة طفل الآن'),
-          )
+          ),
         ],
       ),
     );
@@ -119,7 +209,6 @@ class ChildSelectionScreen extends StatelessWidget {
 // ─── ويدجت الهيدر ───
 class _ChildSelectionHeader extends StatelessWidget {
   const _ChildSelectionHeader();
-
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -130,7 +219,11 @@ class _ChildSelectionHeader extends StatelessWidget {
           end: Alignment.centerLeft,
         ),
         boxShadow: [
-          BoxShadow(color: Color(0x33000000), blurRadius: 8, offset: Offset(0, 4))
+          BoxShadow(
+            color: Color(0x33000000),
+            blurRadius: 8,
+            offset: Offset(0, 4),
+          ),
         ],
       ),
       padding: EdgeInsets.only(
@@ -141,21 +234,21 @@ class _ChildSelectionHeader extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // تم استخدام Icons.arrow_back ليتطابق مع صفحة الإدارة
           _HeaderIconBtn(
-            icon: Icons.arrow_back, 
+            icon: Icons.arrow_back,
             onTap: () => Navigator.pop(context),
           ),
-          const SizedBox(width: 12), 
-          Column(
+          const SizedBox(width: 12),
+          const Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
+            children: [
               Text(
                 'من سيتعلم اليوم؟',
                 style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 17,
-                    fontWeight: FontWeight.w600),
+                  color: Colors.white,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               Text(
                 'اختر طفلاً للمتابعة',
@@ -169,32 +262,30 @@ class _ChildSelectionHeader extends StatelessWidget {
   }
 }
 
-// ─── زر الأيقونة المخصص (مطابق لصفحة المانجمنت وبدون خلفية بيضاء) ───
 class _HeaderIconBtn extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
   const _HeaderIconBtn({required this.icon, required this.onTap});
-
   @override
   Widget build(BuildContext context) => InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Container(
-          width: 34,
-          height: 34,
-          // تم حذف الـ decoration (اللون الأبيض الشفاف) كما طلبتِ
-          child: Icon(icon, color: Colors.white, size: 25),
-        ),
-      );
+    onTap: onTap,
+    borderRadius: BorderRadius.circular(8),
+    child: SizedBox(
+      width: 34,
+      height: 34,
+      child: Icon(icon, color: Colors.white, size: 25),
+    ),
+  );
 }
 
-// ─── ويدجت بطاقة الطفل ───
+// ─── ويدجت بطاقة الطفل المحدثة ───
 class _ChildCard extends StatefulWidget {
   final String name;
   final String avatar;
   final int age;
   final String level;
   final VoidCallback onTap;
+  final VoidCallback onPairingTap; // New Parameter
 
   const _ChildCard({
     required this.name,
@@ -202,13 +293,15 @@ class _ChildCard extends StatefulWidget {
     required this.age,
     required this.level,
     required this.onTap,
+    required this.onPairingTap,
   });
 
   @override
   State<_ChildCard> createState() => _ChildCardState();
 }
 
-class _ChildCardState extends State<_ChildCard> with SingleTickerProviderStateMixin {
+class _ChildCardState extends State<_ChildCard>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   late final Animation<double> _scaleAnim;
 
@@ -216,8 +309,8 @@ class _ChildCardState extends State<_ChildCard> with SingleTickerProviderStateMi
   void initState() {
     super.initState();
     _controller = AnimationController(
-      vsync: this, 
-      duration: const Duration(milliseconds: 100)
+      vsync: this,
+      duration: const Duration(milliseconds: 100),
     );
     _scaleAnim = Tween<double>(begin: 1.0, end: 0.95).animate(_controller);
   }
@@ -245,44 +338,72 @@ class _ChildCardState extends State<_ChildCard> with SingleTickerProviderStateMi
             borderRadius: BorderRadius.circular(16),
             boxShadow: const [
               BoxShadow(
-                color: Color(0x12000000), 
-                blurRadius: 10, 
-                offset: Offset(0, 3)
-              )
+                color: Color(0x12000000),
+                blurRadius: 10,
+                offset: Offset(0, 3),
+              ),
             ],
           ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+          child: Stack(
+            // Added Stack to place the pairing button
             children: [
-              Text(widget.avatar, style: const TextStyle(fontSize: 62)),
-              const SizedBox(height: 12),
-              Text(
-                widget.name,
-                style: const TextStyle(
-                  fontSize: 18, 
-                  fontWeight: FontWeight.bold, 
-                  color: Color(0xFF1A1A1A)
+              // 1. The Main Content
+              Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(widget.avatar, style: const TextStyle(fontSize: 62)),
+                    const SizedBox(height: 12),
+                    Text(
+                      widget.name,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1A1A1A),
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      'العمر: ${toArabicNumbers(widget.age)} سنوات',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFFFF6969),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFF6969).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        widget.level,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFFFF6969),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 5),
-              Text(
-                'العمر: ${toArabicNumbers(widget.age)} سنوات',
-                style: const TextStyle(fontSize: 12, color: Color(0xFFFF6969)),
-              ),
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFF6969).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  widget.level,
-                  style: const TextStyle(
-                    fontSize: 12, 
-                    color: Color(0xFFFF6969), 
-                    fontWeight: FontWeight.w600
+              // 2. The Pairing Button in Top Left Corner
+              Positioned(
+                top: 8,
+                left: 8,
+                child: IconButton(
+                  icon: const Icon(
+                    Icons.phonelink_setup,
+                    color: Color(0xFF511281),
+                    size: 20,
                   ),
+                  onPressed: widget.onPairingTap,
+                  tooltip: 'ربط بجهاز آخر',
                 ),
               ),
             ],

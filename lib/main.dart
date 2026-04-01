@@ -26,11 +26,12 @@ import 'screens/exercise_recording_result_screen.dart';
 import 'screens/exercise_mcq_result_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
+import 'screens/child_enter_code_screen.dart';
+import 'services/childSession.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  await FirebaseAuth.instance.signOut();
   runApp(MyApp());
 }
 
@@ -40,7 +41,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'فصيح',
       initialRoute: '/',
-      home: Wrapper(),
+      //home: Wrapper(),
       debugShowCheckedModeBanner: false,
       locale: const Locale('ar'),
       builder: (context, child) {
@@ -51,7 +52,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
         fontFamily: 'Tajawal',
       ),
-    routes: {
+      routes: {
         // ─── مسارات ولي الأمر (Parent Routes) ───
         '/parent/register': (context) => const ParentRegisterScreen(),
         '/parent/login': (context) => const ParentLoginScreen(),
@@ -60,12 +61,16 @@ class MyApp extends StatelessWidget {
         '/parent/settings': (context) => const ParentSettingsScreen(),
         '/parent/select-child': (context) => const ChildSelectionScreen(),
         '/parent/create-child': (context) => const CreateChildProfileScreen(),
-        
+
+        '/': (context) => const SplashScreen(),
+        // Ensure this matches the name in your SplashScreen button
+        '/child/enter-code': (context) => const ChildEnterCodeScreen(),
+
         '/parent/child-profile': (context) {
           final args = ModalRoute.of(context)!.settings.arguments as Map?;
           return ChildProfileManagementScreen(childId: args?['childId']);
         },
-        
+
         '/parent/child-profile/edit': (context) {
           final args = ModalRoute.of(context)!.settings.arguments as Map?;
           return EditChildProfileScreen(childId: args?['childId']);
@@ -74,9 +79,14 @@ class MyApp extends StatelessWidget {
         // ─── مسارات الطفل (Child Routes) ───
         '/child/home': (context) {
           final args = ModalRoute.of(context)!.settings.arguments;
-          final String? id = args is String ? args : (args as Map?)?['childId'];
+          // Check arguments first, then check our global ChildSession as a backup
+          final String? id = args is String
+              ? args
+              : (args as Map?)?['childId'] ?? ChildSession.currentChildId;
+
           if (id == null || id.isEmpty) {
-            return const Scaffold(body: Center(child: Text("خطأ: لم يتم العثور على هوية الطفل")));
+            // If we still have no ID, send them back to the splash to login/pair
+            return const SplashScreen();
           }
           return ChildHomeScreen(childId: id);
         },
@@ -155,8 +165,13 @@ class MyApp extends StatelessWidget {
             score: args?['score'] ?? 0,
             weakLetters: List<String>.from(args?['weakLetters'] ?? []),
             strongLetters: List<String>.from(args?['strongLetters'] ?? []),
-            letterScores: rawScores != null 
-                ? rawScores.map((e) => LetterScore(letter: e['letter'], score: e['score'])).toList()
+            letterScores: rawScores != null
+                ? rawScores
+                      .map(
+                        (e) =>
+                            LetterScore(letter: e['letter'], score: e['score']),
+                      )
+                      .toList()
                 : [],
           );
         },
@@ -167,8 +182,10 @@ class MyApp extends StatelessWidget {
           return LeaderboardScreen(childId: id ?? '');
         },
 
-        '/child/exercise-listening-result': (context) => const ExerciseListeningResultScreen(),
-        '/child/exercise/recording-result': (context) => const ExerciseRecordingResultScreen(),
+        '/child/exercise-listening-result': (context) =>
+            const ExerciseListeningResultScreen(),
+        '/child/exercise/recording-result': (context) =>
+            const ExerciseRecordingResultScreen(),
       },
     );
   }

@@ -19,10 +19,7 @@ const _mockChild = (
 class ChildHomeScreen extends StatelessWidget {
   final String childId;
 
-  const ChildHomeScreen({
-    super.key,
-    required this.childId,
-  });
+  const ChildHomeScreen({super.key, required this.childId});
 
   @override
   Widget build(BuildContext context) {
@@ -224,68 +221,78 @@ class _ParentPasswordDialog extends StatefulWidget {
 }
 
 class _ParentPasswordDialogState extends State<_ParentPasswordDialog> {
-  final _controller = TextEditingController();
-  bool _obscure = true;
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  bool _obscurePassword = true;
   bool _hasError = false;
   bool _loading = false;
+  String _errorMessage = '';
 
   @override
   void dispose() {
-    _controller.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
     super.dispose();
   }
 
-  void _submit() async {
+  Future<void> _signInParent() async {
     final navigator = Navigator.of(context);
     final messenger = ScaffoldMessenger.of(context);
 
     setState(() {
       _loading = true;
       _hasError = false;
+      _errorMessage = '';
     });
 
     try {
-      String? email = FirebaseAuth.instance.currentUser?.email;
+      // Sign in as parent using email/password
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      );
 
-      if (email != null) {
-        AuthCredential credential = EmailAuthProvider.credential(
-          email: email,
-          password: _controller.text,
-        );
+      // Dismiss the dialog
+      if (mounted) navigator.pop();
 
-        await FirebaseAuth.instance.currentUser!
-            .reauthenticateWithCredential(credential);
-
-        navigator.pop();
-
-        messenger.showSnackBar(
-          SnackBar(
-            content: const Text(
-              'تم التحقق.. جاري العودة لصفحة ولي الأمر',
-              style: TextStyle(fontFamily: 'Tajawal'),
-            ),
-            backgroundColor: const Color(0xFF511281),
-            behavior: SnackBarBehavior.floating,
+      // Show success message
+      messenger.showSnackBar(
+        SnackBar(
+          content: const Text(
+            'تم التحقق.. جاري العودة لصفحة ولي الأمر',
+            style: TextStyle(fontFamily: 'Tajawal'),
           ),
-        );
+          backgroundColor: const Color(0xFF511281),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
 
-        Future.delayed(const Duration(milliseconds: 500), () {
-          navigator.pushNamedAndRemoveUntil(
-            '/parent/dashboard',
-            (route) => false,
-          );
-        });
+      // Navigate to parent dashboard and clear all previous routes
+      if (mounted) {
+        Navigator.of(
+          context,
+          rootNavigator: true,
+        ).pushNamedAndRemoveUntil('/parent/dashboard', (route) => false);
       }
     } on FirebaseAuthException catch (e) {
       setState(() {
-        _hasError = true;
         _loading = false;
-        _controller.clear();
+        _hasError = true;
+        if (e.code == 'user-not-found' || e.code == 'wrong-password') {
+          _errorMessage = 'البريد الإلكتروني أو كلمة المرور غير صحيحة';
+        } else if (e.code == 'invalid-email') {
+          _errorMessage = 'صيغة البريد الإلكتروني غير صحيحة';
+        } else {
+          _errorMessage = 'حدث خطأ، حاول مرة أخرى';
+        }
       });
-      print("خطأ فايربيس: ${e.code}");
     } catch (e) {
-      setState(() => _loading = false);
-      print("خطأ عام: $e");
+      setState(() {
+        _loading = false;
+        _hasError = true;
+        _errorMessage = 'حدث خطأ غير متوقع';
+      });
+      print('Sign in error: $e');
     }
   }
 
@@ -302,7 +309,7 @@ class _ParentPasswordDialogState extends State<_ParentPasswordDialog> {
             Icon(Icons.lock_rounded, color: Color(0xFF511281), size: 22),
             SizedBox(width: 8),
             Text(
-              'تحقق من الهوية',
+              'تسجيل دخول ولي الأمر',
               style: TextStyle(
                 fontSize: 17,
                 fontWeight: FontWeight.bold,
@@ -316,27 +323,18 @@ class _ParentPasswordDialogState extends State<_ParentPasswordDialog> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'أدخل كلمة مرور ولي الأمر للعودة إلى حسابه',
+              'للعودة إلى حساب ولي الأمر، يرجى إدخال بياناتك',
               style: TextStyle(fontSize: 13, color: Colors.grey),
             ),
             const SizedBox(height: 16),
+            // Email field
             TextField(
-              controller: _controller,
-              obscureText: _obscure,
+              controller: _emailController,
               textDirection: TextDirection.ltr,
-              onSubmitted: (_) => _submit(),
+              keyboardType: TextInputType.emailAddress,
               decoration: InputDecoration(
-                hintText: '••••••••',
-                hintStyle: const TextStyle(color: Colors.grey),
-                errorText: _hasError ? 'كلمة المرور غير صحيحة' : null,
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _obscure ? Icons.visibility : Icons.visibility_off,
-                    color: const Color(0xFF511281),
-                    size: 20,
-                  ),
-                  onPressed: () => setState(() => _obscure = !_obscure),
-                ),
+                hintText: 'البريد الإلكتروني',
+                prefixIcon: const Icon(Icons.email_outlined, size: 20),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
                   borderSide: BorderSide(
@@ -347,20 +345,70 @@ class _ParentPasswordDialogState extends State<_ParentPasswordDialog> {
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
                   borderSide: const BorderSide(
-                      color: Color(0xFF511281), width: 1.5),
+                    color: Color(0xFF511281),
+                    width: 1.5,
+                  ),
                 ),
                 errorBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
-                  borderSide:
-                      const BorderSide(color: Colors.red, width: 1.5),
+                  borderSide: const BorderSide(color: Colors.red, width: 1.5),
                 ),
                 focusedErrorBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
-                  borderSide:
-                      const BorderSide(color: Colors.red, width: 1.5),
+                  borderSide: const BorderSide(color: Colors.red, width: 1.5),
                 ),
                 contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 14, vertical: 12),
+                  horizontal: 14,
+                  vertical: 12,
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Password field
+            TextField(
+              controller: _passwordController,
+              obscureText: _obscurePassword,
+              textDirection: TextDirection.ltr,
+              onSubmitted: (_) => _signInParent(),
+              decoration: InputDecoration(
+                hintText: 'كلمة المرور',
+                prefixIcon: const Icon(Icons.lock_outline, size: 20),
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                    color: const Color(0xFF511281),
+                    size: 20,
+                  ),
+                  onPressed: () =>
+                      setState(() => _obscurePassword = !_obscurePassword),
+                ),
+                errorText: _hasError ? _errorMessage : null,
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(
+                    color: const Color(0xFF511281).withOpacity(0.3),
+                    width: 1.5,
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(
+                    color: Color(0xFF511281),
+                    width: 1.5,
+                  ),
+                ),
+                errorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(color: Colors.red, width: 1.5),
+                ),
+                focusedErrorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(color: Colors.red, width: 1.5),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
               ),
             ),
             const SizedBox(height: 4),
@@ -371,33 +419,38 @@ class _ParentPasswordDialogState extends State<_ParentPasswordDialog> {
             onPressed: () => Navigator.pop(context),
             style: TextButton.styleFrom(
               side: BorderSide(
-                  color: const Color(0xFF511281).withOpacity(0.2), width: 1.5),
+                color: const Color(0xFF511281).withOpacity(0.2),
+                width: 1.5,
+              ),
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             ),
-            child: const Text('إلغاء',
-                style: TextStyle(color: Color(0xFF511281))),
+            child: const Text(
+              'إلغاء',
+              style: TextStyle(color: Color(0xFF511281)),
+            ),
           ),
           ElevatedButton(
-            onPressed: _loading ? null : _submit,
+            onPressed: _loading ? null : _signInParent,
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFFF6969),
               foregroundColor: Colors.white,
               elevation: 2,
               shape: const StadiumBorder(),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             ),
             child: _loading
                 ? const SizedBox(
                     width: 18,
                     height: 18,
                     child: CircularProgressIndicator(
-                        strokeWidth: 2, color: Colors.white),
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
                   )
-                : const Text('تأكيد'),
+                : const Text('تسجيل الدخول'),
           ),
         ],
       ),
@@ -424,9 +477,13 @@ class _TestBannerState extends State<_TestBanner>
   void initState() {
     super.initState();
     _ctrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 100));
-    _scale = Tween<double>(begin: 1.0, end: 0.97)
-        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
+      vsync: this,
+      duration: const Duration(milliseconds: 100),
+    );
+    _scale = Tween<double>(
+      begin: 1.0,
+      end: 0.97,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
   }
 
   @override
@@ -441,8 +498,7 @@ class _TestBannerState extends State<_TestBanner>
 
     return AnimatedBuilder(
       animation: _scale,
-      builder: (_, child) =>
-          Transform.scale(scale: _scale.value, child: child),
+      builder: (_, child) => Transform.scale(scale: _scale.value, child: child),
       child: GestureDetector(
         onTapDown: (_) => _ctrl.forward(),
         onTapUp: (_) {
@@ -500,7 +556,9 @@ class _TestBannerState extends State<_TestBanner>
                           : 'استكشف مستواك اللغوي!',
                       key: ValueKey('sub_$isReassessment'),
                       style: const TextStyle(
-                          color: Colors.white70, fontSize: 13),
+                        color: Colors.white70,
+                        fontSize: 13,
+                      ),
                     ),
                   ),
                 ],
@@ -545,12 +603,15 @@ class _StatCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-            color: const Color(0xFF511281).withOpacity(0.1), width: 2),
+          color: const Color(0xFF511281).withOpacity(0.1),
+          width: 2,
+        ),
         boxShadow: const [
           BoxShadow(
-              color: Color(0x0D000000),
-              blurRadius: 6,
-              offset: Offset(0, 2)),
+            color: Color(0x0D000000),
+            blurRadius: 6,
+            offset: Offset(0, 2),
+          ),
         ],
       ),
       child: Column(
@@ -558,14 +619,16 @@ class _StatCard extends StatelessWidget {
         children: [
           Icon(icon, color: const Color(0xFF511281), size: 24),
           const SizedBox(height: 6),
-          Text(value,
-              style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF222222))),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF222222),
+            ),
+          ),
           const SizedBox(height: 2),
-          Text(label,
-              style: const TextStyle(fontSize: 10, color: Colors.grey)),
+          Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
         ],
       ),
     );
@@ -588,12 +651,15 @@ class _TodayGoalCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-            color: const Color(0xFF511281).withOpacity(0.1), width: 2),
+          color: const Color(0xFF511281).withOpacity(0.1),
+          width: 2,
+        ),
         boxShadow: const [
           BoxShadow(
-              color: Color(0x0D000000),
-              blurRadius: 6,
-              offset: Offset(0, 2)),
+            color: Color(0x0D000000),
+            blurRadius: 6,
+            offset: Offset(0, 2),
+          ),
         ],
       ),
       child: Column(
@@ -602,16 +668,22 @@ class _TodayGoalCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('هدف اليوم',
-                  style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF222222))),
-              Text('$done/$goal',
-                  style: const TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFFFF6969),
-                      fontWeight: FontWeight.w600)),
+              const Text(
+                'هدف اليوم',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF222222),
+                ),
+              ),
+              Text(
+                '$done/$goal',
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Color(0xFFFF6969),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 10),
@@ -620,10 +692,10 @@ class _TodayGoalCard extends StatelessWidget {
             child: LinearProgressIndicator(
               value: done / goal,
               minHeight: 8,
-              backgroundColor:
-                  const Color(0xFFFF6969).withOpacity(0.15),
+              backgroundColor: const Color(0xFFFF6969).withOpacity(0.15),
               valueColor: const AlwaysStoppedAnimation<Color>(
-                  Color(0xFFFF6969)),
+                Color(0xFFFF6969),
+              ),
             ),
           ),
           const SizedBox(height: 8),
@@ -642,10 +714,7 @@ class _ChildBottomNav extends StatelessWidget {
   final String currentRoute;
   final String childId;
 
-  const _ChildBottomNav({
-    required this.currentRoute,
-    required this.childId,
-  });
+  const _ChildBottomNav({required this.currentRoute, required this.childId});
 
   @override
   Widget build(BuildContext context) {
@@ -660,16 +729,16 @@ class _ChildBottomNav extends StatelessWidget {
           ),
           boxShadow: [
             BoxShadow(
-                color: Colors.black26,
-                blurRadius: 8,
-                offset: Offset(0, -2)),
+              color: Colors.black26,
+              blurRadius: 8,
+              offset: Offset(0, -2),
+            ),
           ],
         ),
         child: SafeArea(
           top: false,
           child: Padding(
-            padding:
-                const EdgeInsets.symmetric(vertical: 8, horizontal: 24),
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 24),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
@@ -677,23 +746,31 @@ class _ChildBottomNav extends StatelessWidget {
                   icon: Icons.menu_book_rounded,
                   label: 'التمارين',
                   isActive: currentRoute == '/child/exercises',
-                  onTap: () => Navigator.pushNamed(context, '/child/exercises',
-                      arguments: childId),
+                  onTap: () => Navigator.pushNamed(
+                    context,
+                    '/child/exercises',
+                    arguments: childId,
+                  ),
                 ),
                 _NavItem(
                   icon: Icons.home_rounded,
                   label: 'الرئيسية',
                   isActive: currentRoute == '/child/home',
-                  onTap: () => Navigator.pushNamed(context, '/child/home',
-                      arguments: childId),
+                  onTap: () => Navigator.pushNamed(
+                    context,
+                    '/child/home',
+                    arguments: childId,
+                  ),
                 ),
                 _NavItem(
                   icon: Icons.leaderboard_rounded,
                   label: 'المتصدرون',
                   isActive: currentRoute == '/child/leaderboard',
                   onTap: () => Navigator.pushNamed(
-                      context, '/child/leaderboard',
-                      arguments: childId),
+                    context,
+                    '/child/leaderboard',
+                    arguments: childId,
+                  ),
                 ),
               ],
             ),
