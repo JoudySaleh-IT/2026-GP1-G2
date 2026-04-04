@@ -54,7 +54,6 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
 
-    // Fetch words when screen loads
     _fetchWordsFromFirestore();
   }
 
@@ -72,20 +71,11 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
         String rawImageUrl = data['image_url'] ?? '';
         String rawAudioUrl = data['audio_url'] ?? '';
 
-        // 1. Set them to the raw URL by default (perfect for your new https:// links)
         String downloadImageUrl = rawImageUrl;
-        String downloadAudioUrl = rawAudioUrl;
 
-        // 2. Only convert them if they happen to be old gs:// links
         if (rawImageUrl.startsWith('gs://')) {
           downloadImageUrl = await FirebaseStorage.instance
               .refFromURL(rawImageUrl)
-              .getDownloadURL();
-        }
-
-        if (rawAudioUrl.startsWith('gs://')) {
-          downloadAudioUrl = await FirebaseStorage.instance
-              .refFromURL(rawAudioUrl)
               .getDownloadURL();
         }
 
@@ -99,7 +89,6 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
         );
       }
 
-      // 3. Shuffle the 18 words to make it random!
       fetchedWords.shuffle();
 
       setState(() {
@@ -109,7 +98,6 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
       });
     } catch (e) {
       print("Error fetching words: $e");
-      // TODO: Handle error UI (e.g., show a retry button)
       setState(() => _isLoading = false);
     }
   }
@@ -123,8 +111,7 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
   PlacementWord get _currentWord => _placementWords[_currentIndex];
 
   double get _progress =>
-      (_currentIndex + (_recorded[_currentIndex] ? 1 : 0)) /
-      _placementWords.length;
+      _placementWords.isEmpty ? 0 : (_currentIndex + (_recorded[_currentIndex] ? 1 : 0)) / _placementWords.length;
 
   void _handleRecordToggle() {
     if (_isRecording) {
@@ -156,7 +143,6 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
         '/child/placement-result',
         arguments: {
           'childId': widget.childId,
-          // You might want to pass the whole recording list here later!
         },
       );
     }
@@ -171,23 +157,23 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
         body: _isLoading
             ? const Center(child: CircularProgressIndicator(color: _purple))
             : _placementWords.isEmpty
-            ? const Center(
-                child: Text(
-                  'لا توجد كلمات في قاعدة البيانات',
-                  style: TextStyle(fontFamily: 'Tajawal', fontSize: 18),
-                ),
-              )
-            : Column(
-                children: [
-                  _buildHeader(),
-                  Expanded(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.all(16),
-                      child: _buildCard(),
+                ? const Center(
+                    child: Text(
+                      'لا توجد كلمات في قاعدة البيانات',
+                      style: TextStyle(fontFamily: 'Tajawal', fontSize: 18),
                     ),
+                  )
+                : Column(
+                    children: [
+                      _buildHeader(),
+                      Expanded(
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.all(16),
+                          child: _buildCard(),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
       ),
     );
   }
@@ -408,42 +394,30 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
   }
 
   Widget _buildWordImage() {
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        Container(
+    // UPDATED: Purple circle background removed here
+    return Image.network(
+      _currentWord.imageUrl,
+      width: 130, // Increased size slightly to fill space naturally
+      height: 130,
+      fit: BoxFit.contain,
+      errorBuilder: (context, error, stackTrace) =>
+          const Icon(Icons.image_not_supported, size: 50, color: _purple),
+      loadingBuilder: (context, child, loadingProgress) {
+        if (loadingProgress == null) return child;
+        return SizedBox(
           width: 130,
           height: 130,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: _purple.withOpacity(0.15),
+          child: Center(
+            child: CircularProgressIndicator(
+              color: _purple,
+              value: loadingProgress.expectedTotalBytes != null
+                  ? loadingProgress.cumulativeBytesLoaded /
+                      loadingProgress.expectedTotalBytes!
+                  : null,
+            ),
           ),
-        ),
-        Image.network(
-          _currentWord.imageUrl,
-          width: 110,
-          height: 110,
-          fit: BoxFit.contain,
-          errorBuilder: (context, error, stackTrace) =>
-              const Icon(Icons.image_not_supported, size: 50, color: _purple),
-          loadingBuilder: (context, child, loadingProgress) {
-            if (loadingProgress == null) return child;
-            return SizedBox(
-              width: 110,
-              height: 110,
-              child: Center(
-                child: CircularProgressIndicator(
-                  color: _purple,
-                  value: loadingProgress.expectedTotalBytes != null
-                      ? loadingProgress.cumulativeBytesLoaded /
-                            loadingProgress.expectedTotalBytes!
-                      : null,
-                ),
-              ),
-            );
-          },
-        ),
-      ],
+        );
+      },
     );
   }
 
