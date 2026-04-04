@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '/services/ChildSession.dart';
 
 // ─── Mock Data ───────────────────────────────────────────────────────────────
 const _mockChild = (
@@ -139,7 +141,113 @@ class _ChildHeader extends StatelessWidget {
   });
 
   void _showLogoutDialog(BuildContext context) {
+    // Parent password dialog
     showDialog(context: context, builder: (_) => const _ParentPasswordDialog());
+  }
+
+  // ─── UPDATED: Confirmation Dialog for Child Device ────────────────────────
+  void _showChildLogoutConfirmation(
+    BuildContext context,
+    SharedPreferences prefs,
+  ) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return Directionality(
+          textDirection: TextDirection.rtl,
+          child: AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            title: Row(
+              children: const [
+                Icon(Icons.logout_rounded, color: Color(0xFF511281)),
+                SizedBox(width: 8),
+                Text(
+                  'تسجيل الخروج',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF222222),
+                  ),
+                ),
+              ],
+            ),
+            content: const Text(
+              'هل أنت متأكد أنك تريد الخروج والعودة إلى شاشة البداية؟',
+              style: TextStyle(fontSize: 14, color: Colors.black87),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(
+                  dialogContext,
+                ), // Cancel simply pops the dialog
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
+                ),
+                child: const Text(
+                  'إلغاء',
+                  style: TextStyle(
+                    color: Colors.grey,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  // 1. Capture the Navigator using the dialog's context BEFORE any awaits
+                  final nav = Navigator.of(dialogContext, rootNavigator: true);
+
+                  // 2. Clear session data from SharedPreferences
+                  await prefs.remove('saved_childId');
+                  await prefs.remove('saved_parentId');
+                  await prefs.remove('isChildLoggedIn');
+                  ChildSession.currentChildId = null;
+
+                  // 3. Navigate away FIRST!
+                  // We do NOT call Navigator.pop(). This push will automatically
+                  // clear the dialog AND the home screen in one action.
+                  nav.pushNamedAndRemoveUntil('/', (route) => false);
+
+                  // 4. Sign out SECOND!
+                  await FirebaseAuth.instance.signOut();
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFFF6969),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 10,
+                  ),
+                ),
+                child: const Text('نعم، خروج'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // ─── Smart Logout Logic ──────────────────────────────────────────
+  Future<void> _handleLogout(BuildContext context) async {
+    final prefs = await SharedPreferences.getInstance();
+    final isChildLoggedIn = prefs.getBool('isChildLoggedIn') ?? false;
+
+    if (isChildLoggedIn) {
+      // Flow 1: Child Device (Logged in via 6-digit code)
+      // We removed context.mounted check here to prevent silent failures in stateless widgets
+      _showChildLogoutConfirmation(context, prefs);
+    } else {
+      // Flow 2: Parent Device (Logged in from parent dashboard)
+      _showLogoutDialog(context);
+    }
   }
 
   @override
@@ -188,9 +296,9 @@ class _ChildHeader extends StatelessWidget {
             ),
           ),
 
-          // Logout button — left side in RTL
+          // Logout button
           InkWell(
-            onTap: () => _showLogoutDialog(context),
+            onTap: () => _handleLogout(context),
             borderRadius: BorderRadius.circular(8),
             child: Container(
               width: 36,

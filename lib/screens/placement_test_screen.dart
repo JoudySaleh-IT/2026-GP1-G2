@@ -69,15 +69,23 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
       for (var doc in snapshot.docs) {
         final data = doc.data();
 
-        // 1. Get raw gs:// URLs from Firestore
         String rawImageUrl = data['image_url'] ?? '';
+        String rawAudioUrl = data['audio_url'] ?? '';
 
-        // 2. Convert gs:// to playable/viewable https:// URLs using Firebase Storage
-        String downloadImageUrl = '';
+        // 1. Set them to the raw URL by default (perfect for your new https:// links)
+        String downloadImageUrl = rawImageUrl;
+        String downloadAudioUrl = rawAudioUrl;
 
+        // 2. Only convert them if they happen to be old gs:// links
         if (rawImageUrl.startsWith('gs://')) {
           downloadImageUrl = await FirebaseStorage.instance
               .refFromURL(rawImageUrl)
+              .getDownloadURL();
+        }
+
+        if (rawAudioUrl.startsWith('gs://')) {
+          downloadAudioUrl = await FirebaseStorage.instance
+              .refFromURL(rawAudioUrl)
               .getDownloadURL();
         }
 
@@ -428,7 +436,7 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
                   color: _purple,
                   value: loadingProgress.expectedTotalBytes != null
                       ? loadingProgress.cumulativeBytesLoaded /
-                          loadingProgress.expectedTotalBytes!
+                            loadingProgress.expectedTotalBytes!
                       : null,
                 ),
               ),
