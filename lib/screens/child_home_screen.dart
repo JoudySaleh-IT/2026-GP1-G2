@@ -329,21 +329,35 @@ class _ParentPasswordDialog extends StatefulWidget {
 }
 
 class _ParentPasswordDialogState extends State<_ParentPasswordDialog> {
-  final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _hasError = false;
   bool _loading = false;
   String _errorMessage = '';
+  String? _parentEmail;
+
+  @override
+  void initState() {
+    super.initState();
+    // Retrieve the currently logged-in parent's email automatically in the background
+    _parentEmail = FirebaseAuth.instance.currentUser?.email;
+  }
 
   @override
   void dispose() {
-    _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
   Future<void> _signInParent() async {
+    if (_parentEmail == null) {
+      setState(() {
+        _hasError = true;
+        _errorMessage = 'لم يتم العثور على حساب ولي الأمر';
+      });
+      return;
+    }
+
     final navigator = Navigator.of(context);
     final messenger = ScaffoldMessenger.of(context);
 
@@ -354,9 +368,9 @@ class _ParentPasswordDialogState extends State<_ParentPasswordDialog> {
     });
 
     try {
-      // Sign in as parent using email/password
+      // Sign in using the hidden email and the newly entered password
       await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: _emailController.text.trim(),
+        email: _parentEmail!,
         password: _passwordController.text,
       );
 
@@ -365,12 +379,12 @@ class _ParentPasswordDialogState extends State<_ParentPasswordDialog> {
 
       // Show success message
       messenger.showSnackBar(
-        SnackBar(
-          content: const Text(
+        const SnackBar(
+          content: Text(
             'تم التحقق.. جاري العودة لصفحة ولي الأمر',
             style: TextStyle(fontFamily: 'Tajawal'),
           ),
-          backgroundColor: const Color(0xFF511281),
+          backgroundColor: Color(0xFF511281),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -386,10 +400,8 @@ class _ParentPasswordDialogState extends State<_ParentPasswordDialog> {
       setState(() {
         _loading = false;
         _hasError = true;
-        if (e.code == 'user-not-found' || e.code == 'wrong-password') {
-          _errorMessage = 'البريد الإلكتروني أو كلمة المرور غير صحيحة';
-        } else if (e.code == 'invalid-email') {
-          _errorMessage = 'صيغة البريد الإلكتروني غير صحيحة';
+        if (e.code == 'wrong-password' || e.code == 'invalid-credential') {
+          _errorMessage = 'كلمة المرور غير صحيحة';
         } else {
           _errorMessage = 'حدث خطأ، حاول مرة أخرى';
         }
@@ -417,7 +429,7 @@ class _ParentPasswordDialogState extends State<_ParentPasswordDialog> {
             Icon(Icons.lock_rounded, color: Color(0xFF511281), size: 22),
             SizedBox(width: 8),
             Text(
-              'تسجيل دخول ولي الأمر',
+              'حساب ولي الأمر',
               style: TextStyle(
                 fontSize: 17,
                 fontWeight: FontWeight.bold,
@@ -431,48 +443,11 @@ class _ParentPasswordDialogState extends State<_ParentPasswordDialog> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'للعودة إلى حساب ولي الأمر، يرجى إدخال بياناتك',
+              'للعودة إلى حساب ولي الأمر، يرجى إدخال كلمة المرور الخاصة بك:',
               style: TextStyle(fontSize: 13, color: Colors.grey),
             ),
             const SizedBox(height: 16),
-            // Email field
-            TextField(
-              controller: _emailController,
-              textDirection: TextDirection.ltr,
-              keyboardType: TextInputType.emailAddress,
-              decoration: InputDecoration(
-                hintText: 'البريد الإلكتروني',
-                prefixIcon: const Icon(Icons.email_outlined, size: 20),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide(
-                    color: const Color(0xFF511281).withOpacity(0.3),
-                    width: 1.5,
-                  ),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(
-                    color: Color(0xFF511281),
-                    width: 1.5,
-                  ),
-                ),
-                errorBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(color: Colors.red, width: 1.5),
-                ),
-                focusedErrorBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(color: Colors.red, width: 1.5),
-                ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 12,
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            // Password field
+            // Password field ONLY
             TextField(
               controller: _passwordController,
               obscureText: _obscurePassword,
@@ -558,7 +533,7 @@ class _ParentPasswordDialogState extends State<_ParentPasswordDialog> {
                       color: Colors.white,
                     ),
                   )
-                : const Text('تسجيل الدخول'),
+                : const Text('دخول'),
           ),
         ],
       ),
