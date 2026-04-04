@@ -1,21 +1,54 @@
-<<<<<<< HEAD
-# faseh
+# Faseeh (فصيح)
+> AI-driven pronunciation improvement platform for Arabic-speaking children 
+## Project Overview
+Faseeh (فصيح) is an AI-powered mobile application designed to help Arabic-speaking children improve their pronunciation skills in Modern Standard Arabic (MSA).  
+The application provides a safe and interactive environment where children can practice speaking, receive instant feedback, and track their progress over time.
 
-A new Flutter project.
+---
 
-## Getting Started
+## 🎯 Project Goal
+The goal of this project is to enhance children's Arabic pronunciation using artificial intelligence by:
+- Detecting pronunciation errors  
+- Providing corrective feedback  
+- Tracking learning progress  
+- Creating a stress-free speaking experience
+- Enabling parents to monitor their child’s pronunciation progress and performance
 
-This project is a starting point for a Flutter application.
+---
 
-A few resources to get you started if this is your first Flutter project:
+## 🛠️ Technologies Used
+- **Flutter (Dart)** – Application development  
+- **Firebase** – Authentication & database (Firestore)  
+- **Firebase Storage** – Audio storage  
+- **AI / Machine Learning Models** – Pronunciation evaluation  
+- **Figma** – UI/UX design  
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+---
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
-=======
-# 2026-GP1-G2
->>>>>>> 798baf061c10c4c96f5210e0ebf9d82f60a3e991
+##  How to Run the Project
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/JoudySaleh-IT/2026-GP1-G2.git
+
+2. Navigate to the project directory:
+   ```bash
+   cd 2026-GP1-G2
+
+4. Install dependencies:
+   ```bash
+   flutter pub get
+
+6. Make sure you have an emulator or an Andriod physical device connected.
+
+7. Run the application:
+   ```bash
+   flutter run
+
+Note: Make sure Flutter and Dart are properly installed on your machine.
+
+   
+
+   
+    
+
