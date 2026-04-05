@@ -54,7 +54,6 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
 
-    // Fetch words when screen loads
     _fetchWordsFromFirestore();
   }
 
@@ -69,11 +68,9 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
       for (var doc in snapshot.docs) {
         final data = doc.data();
 
-        // 1. Get raw gs:// URLs from Firestore
         String rawImageUrl = data['image_url'] ?? '';
 
-        // 2. Convert gs:// to playable/viewable https:// URLs using Firebase Storage
-        String downloadImageUrl = '';
+        String downloadImageUrl = rawImageUrl;
 
         if (rawImageUrl.startsWith('gs://')) {
           downloadImageUrl = await FirebaseStorage.instance
@@ -91,8 +88,16 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
         );
       }
 
-      // 3. Shuffle the 18 words to make it random!
       fetchedWords.shuffle();
+
+      if (mounted) {
+        for (var word in fetchedWords) {
+          if (word.imageUrl.isNotEmpty) {
+            // We don't use 'await' here so it happens seamlessly in the background
+            precacheImage(NetworkImage(word.imageUrl), context);
+          }
+        }
+      }
 
       setState(() {
         _placementWords = fetchedWords;
@@ -101,7 +106,6 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
       });
     } catch (e) {
       print("Error fetching words: $e");
-      // TODO: Handle error UI (e.g., show a retry button)
       setState(() => _isLoading = false);
     }
   }
@@ -114,9 +118,10 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
 
   PlacementWord get _currentWord => _placementWords[_currentIndex];
 
-  double get _progress =>
-      (_currentIndex + (_recorded[_currentIndex] ? 1 : 0)) /
-      _placementWords.length;
+  double get _progress => _placementWords.isEmpty
+      ? 0
+      : (_currentIndex + (_recorded[_currentIndex] ? 1 : 0)) /
+            _placementWords.length;
 
   void _handleRecordToggle() {
     if (_isRecording) {
@@ -146,10 +151,7 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
       Navigator.pushNamed(
         context,
         '/child/placement-result',
-        arguments: {
-          'childId': widget.childId,
-          // You might want to pass the whole recording list here later!
-        },
+        arguments: {'childId': widget.childId},
       );
     }
   }
@@ -400,42 +402,30 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
   }
 
   Widget _buildWordImage() {
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        Container(
+    // UPDATED: Purple circle background removed here
+    return Image.network(
+      _currentWord.imageUrl,
+      width: 130, // Increased size slightly to fill space naturally
+      height: 130,
+      fit: BoxFit.contain,
+      errorBuilder: (context, error, stackTrace) =>
+          const Icon(Icons.image_not_supported, size: 50, color: _purple),
+      loadingBuilder: (context, child, loadingProgress) {
+        if (loadingProgress == null) return child;
+        return SizedBox(
           width: 130,
           height: 130,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: _purple.withOpacity(0.15),
+          child: Center(
+            child: CircularProgressIndicator(
+              color: _purple,
+              value: loadingProgress.expectedTotalBytes != null
+                  ? loadingProgress.cumulativeBytesLoaded /
+                        loadingProgress.expectedTotalBytes!
+                  : null,
+            ),
           ),
-        ),
-        Image.network(
-          _currentWord.imageUrl,
-          width: 110,
-          height: 110,
-          fit: BoxFit.contain,
-          errorBuilder: (context, error, stackTrace) =>
-              const Icon(Icons.image_not_supported, size: 50, color: _purple),
-          loadingBuilder: (context, child, loadingProgress) {
-            if (loadingProgress == null) return child;
-            return SizedBox(
-              width: 110,
-              height: 110,
-              child: Center(
-                child: CircularProgressIndicator(
-                  color: _purple,
-                  value: loadingProgress.expectedTotalBytes != null
-                      ? loadingProgress.cumulativeBytesLoaded /
-                          loadingProgress.expectedTotalBytes!
-                      : null,
-                ),
-              ),
-            );
-          },
-        ),
-      ],
+        );
+      },
     );
   }
 
