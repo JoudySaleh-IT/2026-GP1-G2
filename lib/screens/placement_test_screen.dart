@@ -69,7 +69,6 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
         final data = doc.data();
 
         String rawImageUrl = data['image_url'] ?? '';
-        String rawAudioUrl = data['audio_url'] ?? '';
 
         String downloadImageUrl = rawImageUrl;
 
@@ -91,6 +90,15 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
 
       fetchedWords.shuffle();
 
+      if (mounted) {
+        for (var word in fetchedWords) {
+          if (word.imageUrl.isNotEmpty) {
+            // We don't use 'await' here so it happens seamlessly in the background
+            precacheImage(NetworkImage(word.imageUrl), context);
+          }
+        }
+      }
+
       setState(() {
         _placementWords = fetchedWords;
         _recorded = List<bool>.filled(_placementWords.length, false);
@@ -110,8 +118,10 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
 
   PlacementWord get _currentWord => _placementWords[_currentIndex];
 
-  double get _progress =>
-      _placementWords.isEmpty ? 0 : (_currentIndex + (_recorded[_currentIndex] ? 1 : 0)) / _placementWords.length;
+  double get _progress => _placementWords.isEmpty
+      ? 0
+      : (_currentIndex + (_recorded[_currentIndex] ? 1 : 0)) /
+            _placementWords.length;
 
   void _handleRecordToggle() {
     if (_isRecording) {
@@ -141,9 +151,7 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
       Navigator.pushNamed(
         context,
         '/child/placement-result',
-        arguments: {
-          'childId': widget.childId,
-        },
+        arguments: {'childId': widget.childId},
       );
     }
   }
@@ -157,23 +165,23 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
         body: _isLoading
             ? const Center(child: CircularProgressIndicator(color: _purple))
             : _placementWords.isEmpty
-                ? const Center(
-                    child: Text(
-                      'لا توجد كلمات في قاعدة البيانات',
-                      style: TextStyle(fontFamily: 'Tajawal', fontSize: 18),
+            ? const Center(
+                child: Text(
+                  'لا توجد كلمات في قاعدة البيانات',
+                  style: TextStyle(fontFamily: 'Tajawal', fontSize: 18),
+                ),
+              )
+            : Column(
+                children: [
+                  _buildHeader(),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(16),
+                      child: _buildCard(),
                     ),
-                  )
-                : Column(
-                    children: [
-                      _buildHeader(),
-                      Expanded(
-                        child: SingleChildScrollView(
-                          padding: const EdgeInsets.all(16),
-                          child: _buildCard(),
-                        ),
-                      ),
-                    ],
                   ),
+                ],
+              ),
       ),
     );
   }
@@ -412,7 +420,7 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
               color: _purple,
               value: loadingProgress.expectedTotalBytes != null
                   ? loadingProgress.cumulativeBytesLoaded /
-                      loadingProgress.expectedTotalBytes!
+                        loadingProgress.expectedTotalBytes!
                   : null,
             ),
           ),
