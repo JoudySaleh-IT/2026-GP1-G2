@@ -31,6 +31,10 @@ class ExercisesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Determine screen size for tablet optimization
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final bool isTablet = screenWidth > 600;
+
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
@@ -40,23 +44,29 @@ class ExercisesScreen extends StatelessWidget {
             _ExercisesHeader(),
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+                // Added responsive horizontal padding for tablets
+                padding: EdgeInsets.fromLTRB(
+                  isTablet ? screenWidth * 0.1 : 16,
+                  16,
+                  isTablet ? screenWidth * 0.1 : 16,
+                  100,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // ── Child info card ───────────────────────────────
-
                     // ── Letters grid ─────────────────────────────────
                     GridView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            crossAxisSpacing: 14,
-                            mainAxisSpacing: 14,
-                            childAspectRatio: 0.88,
-                          ),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        // THE FIX: Use 3 or 4 columns on tablets, 2 on phones
+                        crossAxisCount: isTablet
+                            ? (screenWidth > 900 ? 4 : 3)
+                            : 2,
+                        crossAxisSpacing: 14,
+                        mainAxisSpacing: 14,
+                        childAspectRatio: 0.88,
+                      ),
                       itemCount: _letters.length,
                       itemBuilder: (context, i) {
                         final item = _letters[i];
@@ -130,14 +140,13 @@ class _ExercisesHeader extends StatelessWidget {
       ),
       padding: EdgeInsets.only(
         top: MediaQuery.of(context).padding.top + 10,
-        bottom: 16,
-        right: 16,
-        left: 16,
+        bottom: 20, // Slightly more padding for tablet feel
+        right: 20,
+        left: 20,
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Title + subtitle on the right (RTL)
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -146,22 +155,21 @@ class _ExercisesHeader extends StatelessWidget {
                   'هيا نتدرب!',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 18,
+                    fontSize: 22, // Increased slightly for visibility
                     fontWeight: FontWeight.w700,
                   ),
                 ),
                 SizedBox(height: 3),
                 Text(
                   'اختر حرفاً للتمرن عليه',
-                  style: TextStyle(color: Colors.white70, fontSize: 13),
+                  style: TextStyle(color: Colors.white70, fontSize: 14),
                 ),
               ],
             ),
           ),
-          // Icon on the left (RTL)
           Container(
-            width: 42,
-            height: 42,
+            width: 48,
+            height: 48,
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.15),
               shape: BoxShape.circle,
@@ -169,7 +177,7 @@ class _ExercisesHeader extends StatelessWidget {
             child: const Icon(
               Icons.menu_book_rounded,
               color: Colors.white,
-              size: 22,
+              size: 26,
             ),
           ),
         ],
@@ -243,27 +251,27 @@ class _LetterCardState extends State<_LetterCard>
               ),
             ],
           ),
-          padding: const EdgeInsets.fromLTRB(12, 20, 12, 12),
+          padding: const EdgeInsets.fromLTRB(12, 16, 12, 12),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // ── Letter + name ─────────────────────────────────
               Column(
                 children: [
                   Text(
                     widget.item.letter,
                     style: const TextStyle(
-                      fontSize: 72,
+                      fontSize:
+                          60, // Reduced slightly so it doesn't crowd the card on smaller tablets
                       fontWeight: FontWeight.w500,
                       color: Color(0xFF511281),
-                      height: 1.0,
+                      height: 1.1,
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 4),
                   Text(
                     widget.item.name,
                     style: const TextStyle(
-                      fontSize: 12,
+                      fontSize: 13,
                       color: Color(0xFF888888),
                       letterSpacing: 0.3,
                     ),
@@ -271,7 +279,6 @@ class _LetterCardState extends State<_LetterCard>
                 ],
               ),
 
-              // ── Progress bar + count ──────────────────────────
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
@@ -294,7 +301,7 @@ class _LetterCardState extends State<_LetterCard>
                     child: Text(
                       '${widget.item.completed}/${widget.item.total}',
                       style: const TextStyle(
-                        fontSize: 10,
+                        fontSize: 11,
                         color: Color(0xFF999999),
                       ),
                     ),
@@ -337,7 +344,10 @@ class _ChildBottomNav extends StatelessWidget {
         child: SafeArea(
           top: false,
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 24),
+            padding: const EdgeInsets.symmetric(
+              vertical: 10,
+              horizontal: 24,
+            ), // Taller bar for tablets
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
@@ -348,7 +358,7 @@ class _ChildBottomNav extends StatelessWidget {
                   onTap: () => Navigator.pushNamed(
                     context,
                     '/child/exercises',
-                    arguments: childId, // ✅
+                    arguments: childId,
                   ),
                 ),
                 _NavItem(
@@ -358,7 +368,7 @@ class _ChildBottomNav extends StatelessWidget {
                   onTap: () => Navigator.pushNamed(
                     context,
                     '/child/home',
-                    arguments: childId, // ✅
+                    arguments: childId,
                   ),
                 ),
                 _NavItem(
@@ -368,7 +378,7 @@ class _ChildBottomNav extends StatelessWidget {
                   onTap: () => Navigator.pushNamed(
                     context,
                     '/child/leaderboard',
-                    arguments: childId, // ✅
+                    arguments: childId,
                   ),
                 ),
               ],
@@ -403,9 +413,13 @@ class _NavItem extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: color, size: 24),
+            Icon(
+              icon,
+              color: color,
+              size: 28,
+            ), // Icon slightly bigger for tablet touch targets
             const SizedBox(height: 4),
-            Text(label, style: TextStyle(color: color, fontSize: 11)),
+            Text(label, style: TextStyle(color: color, fontSize: 12)),
           ],
         ),
       ),

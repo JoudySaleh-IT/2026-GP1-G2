@@ -1,4 +1,4 @@
-import 'dart:math'; // For generating the random code
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -16,18 +16,15 @@ String toArabicNumbers(int num) {
 class ChildSelectionScreen extends StatelessWidget {
   const ChildSelectionScreen({super.key});
 
-  // ─── Function to generate and show pairing code ───
   void _showPairingDialog(
     BuildContext context,
     String childId,
     String childName,
   ) async {
-    // 1. Generate a random 6-digit code
     final String pairingCode = (Random().nextInt(900000) + 100000).toString();
     final String? userId = FirebaseAuth.instance.currentUser?.uid;
 
     try {
-      // 2. Save it to Firestore with an expiry time (e.g., 10 mins from now)
       await FirebaseFirestore.instance.collection('pairing_codes').add({
         'code': pairingCode,
         'parentId': userId,
@@ -37,7 +34,6 @@ class ChildSelectionScreen extends StatelessWidget {
         'expiresAt': DateTime.now().add(const Duration(minutes: 10)),
       });
 
-      // 3. Show the dialog to the parent
       if (!context.mounted) return;
       showDialog(
         context: context,
@@ -48,40 +44,44 @@ class ChildSelectionScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(20),
             ),
             title: const Text('ربط جهاز جديد', textAlign: TextAlign.center),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'أدخل هذا الكود في جهاز $childName:',
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 20),
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF3E5F5),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: const Color(0xFF511281),
-                      width: 2,
+            content: ConstrainedBox(
+              // Prevents the dialog from stretching too wide on tablets
+              constraints: const BoxConstraints(maxWidth: 400),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'أدخل هذا الكود في جهاز $childName:',
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 20),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF3E5F5),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: const Color(0xFF511281),
+                        width: 2,
+                      ),
+                    ),
+                    child: Text(
+                      pairingCode,
+                      style: const TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 8,
+                        color: Color(0xFF511281),
+                      ),
                     ),
                   ),
-                  child: Text(
-                    pairingCode,
-                    style: const TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 8,
-                      color: Color(0xFF511281),
-                    ),
+                  const SizedBox(height: 15),
+                  const Text(
+                    'هذا الكود صالح لمدة ١٠ دقائق فقط',
+                    style: TextStyle(fontSize: 12, color: Colors.grey),
                   ),
-                ),
-                const SizedBox(height: 15),
-                const Text(
-                  'هذا الكود صالح لمدة ١٠ دقائق فقط',
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-              ],
+                ],
+              ),
             ),
             actions: [
               TextButton(
@@ -110,6 +110,10 @@ class ChildSelectionScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final String? userId = FirebaseAuth.instance.currentUser?.uid;
+    final double screenWidth = MediaQuery.of(context).size.width;
+
+    // Determine if we are on a tablet (usually width > 600)
+    bool isTablet = screenWidth > 600;
 
     return Directionality(
       textDirection: TextDirection.rtl,
@@ -137,14 +141,17 @@ class ChildSelectionScreen extends StatelessWidget {
                   if (docs.isEmpty) return _buildEmptyState(context);
 
                   return GridView.builder(
-                    padding: const EdgeInsets.all(24),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          crossAxisSpacing: 16,
-                          mainAxisSpacing: 16,
-                          childAspectRatio: 0.82,
-                        ),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isTablet ? screenWidth * 0.1 : 24,
+                      vertical: 24,
+                    ),
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      // 3 columns for tablets, 2 for phones
+                      crossAxisCount: isTablet ? 3 : 2,
+                      crossAxisSpacing: 16,
+                      mainAxisSpacing: 16,
+                      childAspectRatio: 0.82,
+                    ),
                     itemCount: docs.length,
                     itemBuilder: (context, index) {
                       final data = docs[index].data() as Map<String, dynamic>;
@@ -157,11 +164,8 @@ class ChildSelectionScreen extends StatelessWidget {
                         age: data['age'] ?? 0,
                         level: data['level'] ?? 'مبتدئ',
                         onTap: () => _onChildSelected(context, docId),
-                        onPairingTap: () => _showPairingDialog(
-                          context,
-                          docId,
-                          name,
-                        ), // New callback
+                        onPairingTap: () =>
+                            _showPairingDialog(context, docId, name),
                       );
                     },
                   );
@@ -174,7 +178,6 @@ class ChildSelectionScreen extends StatelessWidget {
     );
   }
 
-  // (Keeping your existing _buildEmptyState here...)
   Widget _buildEmptyState(BuildContext context) {
     return Center(
       child: Column(
@@ -191,14 +194,20 @@ class ChildSelectionScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          ElevatedButton(
-            onPressed: () =>
-                Navigator.pushNamed(context, '/parent/create-child'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF511281),
-              foregroundColor: Colors.white,
+          SizedBox(
+            width: 200, // Capping the button width
+            child: ElevatedButton(
+              onPressed: () =>
+                  Navigator.pushNamed(context, '/parent/create-child'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF511281),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text('إضافة طفل الآن'),
             ),
-            child: const Text('إضافة طفل الآن'),
           ),
         ],
       ),
@@ -206,7 +215,7 @@ class ChildSelectionScreen extends StatelessWidget {
   }
 }
 
-// ─── ويدجت الهيدر ───
+// ─── Header Widget ───
 class _ChildSelectionHeader extends StatelessWidget {
   const _ChildSelectionHeader();
   @override
@@ -228,9 +237,9 @@ class _ChildSelectionHeader extends StatelessWidget {
       ),
       padding: EdgeInsets.only(
         top: MediaQuery.of(context).padding.top + 8,
-        bottom: 12,
-        right: 16,
-        left: 16,
+        bottom: 16, // Increased slightly for tablet balance
+        right: 20,
+        left: 20,
       ),
       child: Row(
         children: [
@@ -238,7 +247,7 @@ class _ChildSelectionHeader extends StatelessWidget {
             icon: Icons.arrow_back,
             onTap: () => Navigator.pop(context),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 16),
           const Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -246,13 +255,13 @@ class _ChildSelectionHeader extends StatelessWidget {
                 'من سيتعلم اليوم؟',
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 17,
+                  fontSize: 20, // Slightly larger for clarity
                   fontWeight: FontWeight.w600,
                 ),
               ),
               Text(
                 'اختر طفلاً للمتابعة',
-                style: TextStyle(color: Colors.white70, fontSize: 12),
+                style: TextStyle(color: Colors.white70, fontSize: 14),
               ),
             ],
           ),
@@ -271,21 +280,21 @@ class _HeaderIconBtn extends StatelessWidget {
     onTap: onTap,
     borderRadius: BorderRadius.circular(8),
     child: SizedBox(
-      width: 34,
-      height: 34,
-      child: Icon(icon, color: Colors.white, size: 25),
+      width: 40,
+      height: 40,
+      child: Icon(icon, color: Colors.white, size: 28),
     ),
   );
 }
 
-// ─── ويدجت بطاقة الطفل المحدثة ───
+// ─── Child Card Widget ───
 class _ChildCard extends StatefulWidget {
   final String name;
   final String avatar;
   final int age;
   final String level;
   final VoidCallback onTap;
-  final VoidCallback onPairingTap; // New Parameter
+  final VoidCallback onPairingTap;
 
   const _ChildCard({
     required this.name,
@@ -345,62 +354,72 @@ class _ChildCardState extends State<_ChildCard>
             ],
           ),
           child: Stack(
-            // Added Stack to place the pairing button
             children: [
-              // 1. The Main Content
               Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(widget.avatar, style: const TextStyle(fontSize: 62)),
-                    const SizedBox(height: 12),
-                    Text(
-                      widget.name,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF1A1A1A),
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Using a flexible layout for the avatar so it doesn't
+                      // push the text out on smaller tablets
+                      Flexible(
+                        child: Text(
+                          widget.avatar,
+                          style: const TextStyle(fontSize: 60),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 5),
-                    Text(
-                      'العمر: ${toArabicNumbers(widget.age)} سنوات',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFFFF6969),
+                      const SizedBox(height: 8),
+                      Text(
+                        widget.name,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1A1A1A),
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 5,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFF6969).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        widget.level,
+                      const SizedBox(height: 4),
+                      Text(
+                        'العمر: ${toArabicNumbers(widget.age)} سنوات',
                         style: const TextStyle(
                           fontSize: 12,
                           color: Color(0xFFFF6969),
-                          fontWeight: FontWeight.w600,
                         ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFF6969).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          widget.level,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: Color(0xFFFF6969),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-              // 2. The Pairing Button in Top Left Corner
               Positioned(
-                top: 8,
-                left: 8,
+                top: 4,
+                left: 4,
                 child: IconButton(
                   icon: const Icon(
                     Icons.phonelink_setup,
                     color: Color(0xFF511281),
-                    size: 20,
+                    size: 22,
                   ),
                   onPressed: widget.onPairingTap,
                   tooltip: 'ربط بجهاز آخر',
