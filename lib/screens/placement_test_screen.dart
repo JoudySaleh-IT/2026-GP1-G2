@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-
+import '../services/recording_service.dart';
+import 'package:audioplayers/audioplayers.dart';
 // ─── Data Model ──────────────────────────────────────────────────────────────
 class PlacementWord {
   final String wordId;
@@ -39,7 +40,9 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
   List<bool> _recorded = [];
   bool _isRecording = false;
   bool _showNext = false;
-
+  final RecordingService _recordingService = RecordingService();
+  String? _lastRecordedPath;
+  final AudioPlayer _audioPlayer = AudioPlayer();
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
 
@@ -111,10 +114,12 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
   }
 
   @override
-  void dispose() {
-    _pulseController.dispose();
-    super.dispose();
-  }
+void dispose() {
+  _pulseController.dispose();     // تنظيف الأنيميشن
+  _recordingService.dispose();    // تنظيف المايكروفون
+  _audioPlayer.dispose();         // تنظيف المشغل (إذا أضفتيه)
+  super.dispose();
+}
 
   PlacementWord get _currentWord => _placementWords[_currentIndex];
 
@@ -123,22 +128,49 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
       : (_currentIndex + (_recorded[_currentIndex] ? 1 : 0)) /
             _placementWords.length;
 
-  void _handleRecordToggle() {
+  void _handleRecordToggle() async {
     if (_isRecording) {
-      final newRecorded = List<bool>.from(_recorded);
-      newRecorded[_currentIndex] = true;
+      // إيقاف التسجيل
+      final path = await _recordingService.stop();
       setState(() {
-        _recorded = newRecorded;
+        _lastRecordedPath = path;
         _isRecording = false;
+        _recorded[_currentIndex] = true;
         _showNext = true;
       });
       _pulseController.stop();
       _pulseController.reset();
+
+      // ✅ هنا نبدأ الـ Preprocessing
+      _startPreprocessing(path);
+
     } else {
-      setState(() => _isRecording = true);
-      _pulseController.repeat(reverse: true);
+      // بدء التسجيل بعد التأكد من الإذن
+      final hasPermission = await _recordingService.checkPermission();
+      if (hasPermission) {
+        // اسم الملف يكون ID الكلمة لسهولة التعرف عليه
+        await _recordingService.start('child_${widget.childId}_word_${_currentWord.wordId}');
+        setState(() {
+          _isRecording = true;
+        });
+        _pulseController.repeat(reverse: true);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('الرجاء السماح بالوصول للمايكروفون')),
+        );
+      }
     }
   }
+  
+  // دالة مبدئية للـ Preprocessing (سنربطها بالـ API لاحقاً)
+  void _startPreprocessing(String? path) {
+    if (path == null) return;
+    print("تم حفظ الملف في: $path");
+    
+    // هنا المرحلة القادمة: إرسال الملف لسيرفر البايثون
+    // للقيام بالـ Noise Reduction والـ Alignment
+  }
+
 
   void _handleNext() {
     if (_currentIndex < _placementWords.length - 1) {
