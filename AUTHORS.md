@@ -1,4 +1,4 @@
-# Faseeh (فصيح) – Graduation Project
+# Faseeh (فـصـيـح) – Graduation Project
 
 ## Team Members
 
