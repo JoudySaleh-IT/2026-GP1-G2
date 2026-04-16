@@ -12,7 +12,7 @@ app = FastAPI()
 # تأكدي أن الملف بنفس المجلد
 cred = credentials.Certificate("serviceAccountKey.json")
 firebase_admin.initialize_app(cred, {
-    'storageBucket': 'PROJECT_ID.appspot.com' # استبدلي PROJECT_ID باسم مشروعك في فايربيز
+    'storageBucket': 'gs://faseh-98e8c.firebasestorage.app' # استبدلي PROJECT_ID باسم مشروعك في فايربيز
 })
 
 @app.post("/process-audio/")
