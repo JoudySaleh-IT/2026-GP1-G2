@@ -1,59 +1,45 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File
 import librosa
 import noisereduce as nr
 import soundfile as sf
 import os
-import shutil
-from pathlib import Path
+import firebase_admin
+from firebase_admin import credentials, storage
 
-app = FastAPI(title="Faseeh AI Preprocessing Engine")
+app = FastAPI()
 
-# --- المسارات على الهارد ديسك الخارجي DevSSD ---
-BASE_DIR = Path("/Volumes/DevSSD/Faseeh_AI_Platform")
-RAW_DIR = BASE_DIR / "data" / "raw_uploads"
-CLEAN_DIR = BASE_DIR / "data" / "processed_audios"
-
-# إنشاء المجلدات تلقائياً إذا كانت غير موجودة
-RAW_DIR.mkdir(parents=True, exist_ok=True)
-CLEAN_DIR.mkdir(parents=True, exist_ok=True)
-
-@app.get("/")
-def home():
-    return {"message": "سيرفر فصيح يعمل بنجاح من الهارد ديسك الخارجي!"}
+# ١. إعداد الاتصال بالفايربيز
+# تأكدي أن الملف بنفس المجلد
+cred = credentials.Certificate("serviceAccountKey.json")
+firebase_admin.initialize_app(cred, {
+    'storageBucket': 'PROJECT_ID.appspot.com' # استبدلي PROJECT_ID باسم مشروعك في فايربيز
+})
 
 @app.post("/process-audio/")
 async def process_audio(file: UploadFile = File(...)):
-    try:
-        # ١. حفظ الملف الخام الأصلي (Raw)
-        raw_path = RAW_DIR / file.filename
-        with raw_path.open("wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
+    # حفظ مؤقت للملف لمعالجته
+    temp_raw = f"temp_{file.filename}"
+    with open(temp_raw, "wb") as buffer:
+        buffer.write(await file.read())
 
-        # ٢. التحميل والمعالجة (Resampling to 16kHz)
-        y, sr = librosa.load(str(raw_path), sr=16000)
+    # ٢. المعالجة (Denoising & Trimming)
+    y, sr = librosa.load(temp_raw, sr=16000)
+    y_denoised = nr.reduce_noise(y=y, sr=sr)
+    y_trimmed, _ = librosa.effects.trim(y_denoised)
+    
+    # حفظ الملف المنظف مؤقتاً
+    temp_clean = f"clean_{file.filename}"
+    sf.write(temp_clean, y_trimmed, sr)
 
-        # ٣. Noise Reduction: إزالة وشوشة المايكروفون المحيطة بالطفل
-        y_denoised = nr.reduce_noise(y=y, sr=sr)
+    # ٣. الرفع لـ Firebase Storage
+    bucket = storage.bucket()
+    blob = bucket.blob(f"processed_audios/{temp_clean}")
+    blob.upload_from_filename(temp_clean)
+    
+    blob.make_public() # للحصول على رابط للملف (اختياري)
 
-        # ٤. Silence Trimming: حذف الفراغات قبل وبعد الكلام
-        y_trimmed, _ = librosa.effects.trim(y_denoised, top_db=20)
+    # ٤. تنظيف السيرفر (حذف الملفات المؤقتة)
+    os.remove(temp_raw)
+    os.remove(temp_clean)
 
-        # ٥. Normalization: توحيد مستوى الصوت لثبات جودة البيانات
-        y_normalized = librosa.util.normalize(y_trimmed)
-
-        # ٦. حفظ النسخة المنظفة في مجلد processed_audios
-        output_filename = f"clean_{file.filename}"
-        output_path = CLEAN_DIR / output_filename
-        sf.write(str(output_path), y_normalized, sr)
-
-        return {
-            "status": "success",
-            "metadata": {
-                "original_name": file.filename,
-                "clean_path": str(output_path),
-                "duration": float(librosa.get_duration(y=y_normalized, sr=sr)),
-                "sample_rate": sr
-            }
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    return {"status": "success", "url": blob.public_url}
