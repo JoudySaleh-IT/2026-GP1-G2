@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+librosa
+noisereduce
+soundfile
+python-multipart
+numpy
+firebase-admin
