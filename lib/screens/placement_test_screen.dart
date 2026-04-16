@@ -3,6 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import '../services/recording_service.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:http/http.dart' as http; 
+import 'dart:convert'; 
 // ─── Data Model ──────────────────────────────────────────────────────────────
 class PlacementWord {
   final String wordId;
@@ -142,8 +144,8 @@ void dispose() {
       _pulseController.reset();
 
       // ✅ هنا نبدأ الـ Preprocessing
-      _startPreprocessing(path);
-
+// ✅ تغيير هذا السطر ليصبح هكذا
+      await _startPreprocessing(path);
     } else {
       // بدء التسجيل بعد التأكد من الإذن
       final hasPermission = await _recordingService.checkPermission();
@@ -162,13 +164,38 @@ void dispose() {
     }
   }
   
-  // دالة مبدئية للـ Preprocessing (سنربطها بالـ API لاحقاً)
-  void _startPreprocessing(String? path) {
+ //  الدالة المحدثة للربط بالسحاب
+  Future<void> _startPreprocessing(String? path) async {
     if (path == null) return;
-    print("تم حفظ الملف في: $path");
-    
-    // هنا المرحلة القادمة: إرسال الملف لسيرفر البايثون
-    // للقيام بالـ Noise Reduction والـ Alignment
+
+    // رابط سيرفر العالمي الجديد على ريندر
+    const String baseUrl = "https://faseeh-api.onrender.com";
+    final url = Uri.parse('$baseUrl/process-audio/');
+
+    print("🚀 جاري إرسال الملف إلى السحاب: $path");
+
+    try {
+      // تجهيز الطلب (Multipart Request)
+      var request = http.MultipartRequest('POST', url);
+      
+      // إضافة ملف الصوت
+      request.files.add(await http.MultipartFile.fromPath('file', path));
+
+      // إرسال الطلب وانتظار الرد
+      var streamedResponse = await request.send();
+      var response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 200) {
+        var data = jsonDecode(response.body);
+        print("✅ تم المعالجة بنجاح! الرابط في فايربيز: ${data['url']}");
+        
+        
+      } else {
+        print("❌ فشل السيرفر: ${response.statusCode} - ${response.body}");
+      }
+    } catch (e) {
+      print("⚠️ خطأ في الاتصال بالسيرفر: $e");
+    }
   }
 
 
