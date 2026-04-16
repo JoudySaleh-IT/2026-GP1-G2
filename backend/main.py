@@ -12,8 +12,7 @@ app = FastAPI()
 # تأكدي أن الملف بنفس المجلد
 cred = credentials.Certificate("serviceAccountKey.json")
 firebase_admin.initialize_app(cred, {
-    'storageBucket': 'gs://faseh-98e8c.firebasestorage.app' # استبدلي PROJECT_ID باسم مشروعك في فايربيز
-})
+'storageBucket': 'faseh-98e8c.firebasestorage.app'})
 
 @app.post("/process-audio/")
 async def process_audio(file: UploadFile = File(...)):
