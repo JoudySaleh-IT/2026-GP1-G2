@@ -164,39 +164,39 @@ void dispose() {
     }
   }
   
- //  الدالة المحدثة للربط بالسحاب
-  Future<void> _startPreprocessing(String? path) async {
-    if (path == null) return;
+ ///  الدالة المحدثة للربط بالسحاب (Google Cloud Run)
+Future<void> _startPreprocessing(String? path) async {
+  if (path == null) return;
 
-    // رابط سيرفر العالمي الجديد على ريندر
-    const String baseUrl = "https://faseeh-api.onrender.com";
-    final url = Uri.parse('$baseUrl/process-audio/');
+  // ✅ تم تحديث الرابط من Render إلى Google Cloud Run (المنطقة السعودية)
+  const String baseUrl = "https://faseeh-api-816737402071.me-central1.run.app";
+  final url = Uri.parse('$baseUrl/process-audio/');
 
-    print("🚀 جاري إرسال الملف إلى السحاب: $path");
+  print("🚀 جاري إرسال الملف إلى سحابة جوجل: $path");
 
-    try {
-      // تجهيز الطلب (Multipart Request)
-      var request = http.MultipartRequest('POST', url);
+  try {
+    // تجهيز الطلب (Multipart Request)
+    var request = http.MultipartRequest('POST', url);
+    
+    // إضافة ملف الصوت
+    request.files.add(await http.MultipartFile.fromPath('file', path));
+
+    // إرسال الطلب وانتظار الرد
+    var streamedResponse = await request.send();
+    var response = await http.Response.fromStream(streamedResponse);
+
+    if (response.statusCode == 200) {
+      var data = jsonDecode(response.body);
+      print("✅ تم المعالجة بنجاح في جوجل كلاود!");
+      print("🔗 الرابط الجديد في فايربيز: ${data['url']}");
       
-      // إضافة ملف الصوت
-      request.files.add(await http.MultipartFile.fromPath('file', path));
-
-      // إرسال الطلب وانتظار الرد
-      var streamedResponse = await request.send();
-      var response = await http.Response.fromStream(streamedResponse);
-
-      if (response.statusCode == 200) {
-        var data = jsonDecode(response.body);
-        print("✅ تم المعالجة بنجاح! الرابط في فايربيز: ${data['url']}");
-        
-        
-      } else {
-        print("❌ فشل السيرفر: ${response.statusCode} - ${response.body}");
-      }
-    } catch (e) {
-      print("⚠️ خطأ في الاتصال بالسيرفر: $e");
+    } else {
+      print("❌ فشل سيرفر جوجل: ${response.statusCode} - ${response.body}");
     }
+  } catch (e) {
+    print("⚠️ خطأ في الاتصال بسيرفر جوجل كلاود: $e");
   }
+}
 
 
   void _handleNext() {
