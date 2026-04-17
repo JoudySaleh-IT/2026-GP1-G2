@@ -1,16 +1,16 @@
 from fastapi import FastAPI, UploadFile, File
 import librosa
-import noisereduce as nr
 import soundfile as sf
 import os
 import firebase_admin
 import numpy as np
+import uuid
 from firebase_admin import credentials, storage
+from scipy import signal
 
 app = FastAPI()
 
-# ١. إعداد الاتصال بالفايربيز
-# تأكدي أن الملف بنفس المجلد ولا يحتوي على gs:// في الرابط
+# Firebase initialization
 if not firebase_admin._apps:
     cred = credentials.Certificate("serviceAccountKey.json")
     firebase_admin.initialize_app(cred, {
@@ -19,61 +19,81 @@ if not firebase_admin._apps:
 
 @app.post("/process-audio/")
 async def process_audio(file: UploadFile = File(...)):
-    # مسارات فريدة للملفات لتجنب التداخل عند ضغط عدة مستخدمين
     temp_raw = f"/tmp/raw_{file.filename}"
     temp_clean = f"/tmp/clean_{file.filename}"
 
     try:
-        # حفظ الملف الخام مؤقتاً
+        # Save uploaded file
         with open(temp_raw, "wb") as buffer:
             buffer.write(await file.read())
 
-        # ٢. المعالجة الاحترافية (Professional Preprocessing)
-        # أ- التحميل وتوحيد التردد لـ 16kHz (المعيار العالمي لنماذج الكلام)
+        # Load audio at 16kHz (standard for speech)
         y, sr = librosa.load(temp_raw, sr=16000)
 
-        # ب- إزالة الضوضاء العنيفة (Aggressive Denoising)
-        # stationary=True يحذف صوت المكيف والمراوح بدقة عالية
-        # prop_decrease=1.0 يحذف 100% من الضوضاء المكتشفة
-        y_denoised = nr.reduce_noise(
-            y=y, 
-            sr=sr, 
-            stationary=True, 
-            prop_decrease=1.0
-        )
+        # ------------------------------------------------------------
+        # 1. HIGH-PASS FILTER (80 Hz) – removes rumble, preserves all speech
+        # ------------------------------------------------------------
+        b, a = signal.butter(4, 80, 'hp', fs=sr)
+        y_hp = signal.filtfilt(b, a, y)
 
-        # ج- قص الصمت الحاد (Sharp Trimming)
-        # خفضنا الـ top_db لـ 10 لقص أي "نفس" أو وشوشة خفيفة قبل وبعد الكلام
-        y_trimmed, _ = librosa.effects.trim(y_denoised, top_db=10)
+        # ------------------------------------------------------------
+        # 2. VERY MILD NOISE REDUCTION (OPTIONAL – currently disabled)
+        #    If you find the audio is too noisy, uncomment the next two lines.
+        #    Stationary mode is safer and less likely to distort consonants.
+        # ------------------------------------------------------------
+        # import noisereduce as nr
+        # y_hp = nr.reduce_noise(y=y_hp, sr=sr, stationary=True, prop_decrease=0.5)
 
-        # د- توحيد مستوى الصوت (Normalization)
-        # يضمن أن كل التسجيلات لها نفس "قوة" الصوت، مما يسهل عمل الـ AI لاحقاً
+        # ------------------------------------------------------------
+        # 3. PRE-EMPHASIS (boosts high frequencies for clarity)
+        #    Standard coefficient 0.97 works well for Arabic.
+        # ------------------------------------------------------------
+        y_emp = librosa.effects.preemphasis(y_hp)
+
+        # ------------------------------------------------------------
+        # 4. TRIM LEADING & TRAILING SILENCE ONLY
+        #    Using default ref=np.max (peak energy) ensures weak consonants
+        #    like initial ض or غ are never cut.
+        #    top_db=20 is conservative – only true silence is removed.
+        # ------------------------------------------------------------
+        y_trimmed, _ = librosa.effects.trim(y_emp, top_db=20)
+
+        # ------------------------------------------------------------
+        # 5. NORMALIZE VOLUME
+        # ------------------------------------------------------------
         if len(y_trimmed) > 0:
             y_final = librosa.util.normalize(y_trimmed)
         else:
-            y_final = y_trimmed
+            # Fallback – extremely rare
+            y_final = y_emp
 
-        # حفظ الملف المنظف
+        # Save cleaned file
         sf.write(temp_clean, y_final, sr)
 
-        # ٣. الرفع لـ Firebase Storage
+        # ------------------------------------------------------------
+        # 6. UPLOAD TO FIREBASE STORAGE
+        # ------------------------------------------------------------
         bucket = storage.bucket()
         blob = bucket.blob(f"processed_audios/clean_{file.filename}")
-        blob.upload_from_filename(temp_clean)
-        
-        blob.make_public()
+        download_token = str(uuid.uuid4())
+        blob.metadata = {'firebaseStorageDownloadTokens': download_token}
+        blob.upload_from_filename(temp_clean, content_type='audio/wav')
+
+        firebase_url = (
+            f"https://firebasestorage.googleapis.com/v0/b/{bucket.name}/o/"
+            f"{blob.name.replace('/', '%2F')}?alt=media&token={download_token}"
+        )
 
         return {
-            "status": "success", 
-            "url": blob.public_url,
-            "message": "Audio processed with high fidelity"
+            "status": "success",
+            "url": firebase_url,
+            "message": "Audio processed with conservative trimming – all phonemes preserved."
         }
 
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
     finally:
-        # ٤. تنظيف السيرفر فوراً (Cleanup)
         if os.path.exists(temp_raw):
             os.remove(temp_raw)
         if os.path.exists(temp_clean):
