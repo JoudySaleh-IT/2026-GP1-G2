@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-
+import '../services/recording_service.dart';
+import 'package:audioplayers/audioplayers.dart';
+import 'package:http/http.dart' as http; 
+import 'dart:convert'; 
 // ─── Data Model ──────────────────────────────────────────────────────────────
 class PlacementWord {
   final String wordId;
@@ -39,7 +42,9 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
   List<bool> _recorded = [];
   bool _isRecording = false;
   bool _showNext = false;
-
+  final RecordingService _recordingService = RecordingService();
+  String? _lastRecordedPath;
+  final AudioPlayer _audioPlayer = AudioPlayer();
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
 
@@ -69,7 +74,6 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
         final data = doc.data();
 
         String rawImageUrl = data['image_url'] ?? '';
-        String rawAudioUrl = data['audio_url'] ?? '';
 
         String downloadImageUrl = rawImageUrl;
 
@@ -91,6 +95,15 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
 
       fetchedWords.shuffle();
 
+      if (mounted) {
+        for (var word in fetchedWords) {
+          if (word.imageUrl.isNotEmpty) {
+            // We don't use 'await' here so it happens seamlessly in the background
+            precacheImage(NetworkImage(word.imageUrl), context);
+          }
+        }
+      }
+
       setState(() {
         _placementWords = fetchedWords;
         _recorded = List<bool>.filled(_placementWords.length, false);
@@ -103,32 +116,88 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
   }
 
   @override
-  void dispose() {
-    _pulseController.dispose();
-    super.dispose();
-  }
+void dispose() {
+  _pulseController.dispose();     // تنظيف الأنيميشن
+  _recordingService.dispose();    // تنظيف المايكروفون
+  _audioPlayer.dispose();         // تنظيف المشغل (إذا أضفتيه)
+  super.dispose();
+}
 
   PlacementWord get _currentWord => _placementWords[_currentIndex];
 
-  double get _progress =>
-      _placementWords.isEmpty ? 0 : (_currentIndex + (_recorded[_currentIndex] ? 1 : 0)) / _placementWords.length;
+  double get _progress => _placementWords.isEmpty
+      ? 0
+      : (_currentIndex + (_recorded[_currentIndex] ? 1 : 0)) /
+            _placementWords.length;
 
-  void _handleRecordToggle() {
+  void _handleRecordToggle() async {
     if (_isRecording) {
-      final newRecorded = List<bool>.from(_recorded);
-      newRecorded[_currentIndex] = true;
+      // إيقاف التسجيل
+      final path = await _recordingService.stop();
       setState(() {
-        _recorded = newRecorded;
+        _lastRecordedPath = path;
         _isRecording = false;
+        _recorded[_currentIndex] = true;
         _showNext = true;
       });
       _pulseController.stop();
       _pulseController.reset();
+
+      // ✅ هنا نبدأ الـ Preprocessing
+// ✅ تغيير هذا السطر ليصبح هكذا
+      await _startPreprocessing(path);
     } else {
-      setState(() => _isRecording = true);
-      _pulseController.repeat(reverse: true);
+      // بدء التسجيل بعد التأكد من الإذن
+      final hasPermission = await _recordingService.checkPermission();
+      if (hasPermission) {
+        // اسم الملف يكون ID الكلمة لسهولة التعرف عليه
+        await _recordingService.start('child_${widget.childId}_word_${_currentWord.wordId}');
+        setState(() {
+          _isRecording = true;
+        });
+        _pulseController.repeat(reverse: true);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('الرجاء السماح بالوصول للمايكروفون')),
+        );
+      }
     }
   }
+  
+ ///  الدالة المحدثة للربط بالسحاب (Google Cloud Run)
+Future<void> _startPreprocessing(String? path) async {
+  if (path == null) return;
+
+  // ✅ تم تحديث الرابط من Render إلى Google Cloud Run (المنطقة السعودية)
+  const String baseUrl = "https://faseeh-api-816737402071.me-central1.run.app";
+  final url = Uri.parse('$baseUrl/process-audio/');
+
+  print("🚀 جاري إرسال الملف إلى سحابة جوجل: $path");
+
+  try {
+    // تجهيز الطلب (Multipart Request)
+    var request = http.MultipartRequest('POST', url);
+    
+    // إضافة ملف الصوت
+    request.files.add(await http.MultipartFile.fromPath('file', path));
+
+    // إرسال الطلب وانتظار الرد
+    var streamedResponse = await request.send();
+    var response = await http.Response.fromStream(streamedResponse);
+
+    if (response.statusCode == 200) {
+      var data = jsonDecode(response.body);
+      print("✅ تم المعالجة بنجاح في جوجل كلاود!");
+      print("🔗 الرابط الجديد في فايربيز: ${data['url']}");
+      
+    } else {
+      print("❌ فشل سيرفر جوجل: ${response.statusCode} - ${response.body}");
+    }
+  } catch (e) {
+    print("⚠️ خطأ في الاتصال بسيرفر جوجل كلاود: $e");
+  }
+}
+
 
   void _handleNext() {
     if (_currentIndex < _placementWords.length - 1) {
@@ -141,9 +210,7 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
       Navigator.pushNamed(
         context,
         '/child/placement-result',
-        arguments: {
-          'childId': widget.childId,
-        },
+        arguments: {'childId': widget.childId},
       );
     }
   }
@@ -157,23 +224,23 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
         body: _isLoading
             ? const Center(child: CircularProgressIndicator(color: _purple))
             : _placementWords.isEmpty
-                ? const Center(
-                    child: Text(
-                      'لا توجد كلمات في قاعدة البيانات',
-                      style: TextStyle(fontFamily: 'Tajawal', fontSize: 18),
+            ? const Center(
+                child: Text(
+                  'لا توجد كلمات في قاعدة البيانات',
+                  style: TextStyle(fontFamily: 'Tajawal', fontSize: 18),
+                ),
+              )
+            : Column(
+                children: [
+                  _buildHeader(),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(16),
+                      child: _buildCard(),
                     ),
-                  )
-                : Column(
-                    children: [
-                      _buildHeader(),
-                      Expanded(
-                        child: SingleChildScrollView(
-                          padding: const EdgeInsets.all(16),
-                          child: _buildCard(),
-                        ),
-                      ),
-                    ],
                   ),
+                ],
+              ),
       ),
     );
   }
@@ -412,7 +479,7 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
               color: _purple,
               value: loadingProgress.expectedTotalBytes != null
                   ? loadingProgress.cumulativeBytesLoaded /
-                      loadingProgress.expectedTotalBytes!
+                        loadingProgress.expectedTotalBytes!
                   : null,
             ),
           ),

@@ -35,11 +35,24 @@ void main() async {
   runApp(MyApp());
 }
 
+class NoStretchScrollBehavior extends ScrollBehavior {
+  @override
+  Widget buildOverscrollIndicator(
+    BuildContext context,
+    Widget child,
+    ScrollableDetails details,
+  ) {
+    // This removes the glowing/stretching completely
+    return child;
+  }
+}
+
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'فصيح',
+      scrollBehavior: NoStretchScrollBehavior(),
       initialRoute: '/',
       //home: Wrapper(),
       debugShowCheckedModeBanner: false,
