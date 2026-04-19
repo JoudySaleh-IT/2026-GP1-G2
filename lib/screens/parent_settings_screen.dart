@@ -175,17 +175,19 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
             ),
             ElevatedButton(
               onPressed: () async {
-                await _authService.signOut();
-                if (mounted) {
-                  // Clear the entire navigation stack and go to splash
+                // استخدام خدمة المصادقة الخاصة بك
+                await _authService.signOut(); 
+                
+                if (ctx.mounted) {
+                  // مسح كل الصفحات السابقة والعودة للصفحة الرئيسية
                   Navigator.of(
-                    context,
+                    ctx,
                     rootNavigator: true,
                   ).pushNamedAndRemoveUntil('/', (route) => false);
                 }
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: _pink,
+                backgroundColor: const Color(0xFFFF6969),
                 foregroundColor: Colors.white,
               ),
               child: const Text('تسجيل الخروج'),
