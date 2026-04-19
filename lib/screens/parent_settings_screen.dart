@@ -298,7 +298,7 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
   Widget _buildLogoutCard() {
     return _buildCard(
       child: InkWell(
-        onTap: () => Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false),
+        onTap: _showLogoutDialog, 
         child: Row(
           children: [
             _iconCircle(Icons.logout_rounded),
