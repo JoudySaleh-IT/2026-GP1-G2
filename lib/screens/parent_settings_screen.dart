@@ -103,6 +103,53 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
     }
   }
 
+
+  // ── تسجيل الخروج الحقيقي ────────────────────────────────────────────────
+  void _showLogoutDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: const Text(
+            'تأكيد تسجيل الخروج',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          content: const Text('هل أنت متأكد أنك تريد تسجيل الخروج؟'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('إلغاء', style: TextStyle(color: Colors.grey)),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                // استخدام خدمة المصادقة الخاصة بك
+                await _authService.signOut(); 
+                
+                if (ctx.mounted) {
+                  // مسح كل الصفحات السابقة والعودة للصفحة الرئيسية
+                  Navigator.of(
+                    ctx,
+                    rootNavigator: true,
+                  ).pushNamedAndRemoveUntil('/', (route) => false);
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFFF6969),
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('تسجيل الخروج'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Directionality(
@@ -251,7 +298,7 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
   Widget _buildLogoutCard() {
     return _buildCard(
       child: InkWell(
-        onTap: () => Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false),
+        onTap: _showLogoutDialog, 
         child: Row(
           children: [
             _iconCircle(Icons.logout_rounded),
