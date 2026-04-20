@@ -1,8 +1,11 @@
 fastapi
 uvicorn
-librosa
-noisereduce
-soundfile
 python-multipart
+librosa
+soundfile
+scipy
 numpy
 firebase-admin
+transformers
+editdistance
+safetensors

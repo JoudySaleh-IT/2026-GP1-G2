@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, Form
 import librosa
 import soundfile as sf
 import os
@@ -7,74 +7,70 @@ import numpy as np
 import uuid
 from firebase_admin import credentials, storage
 from scipy import signal
+from transformers import Wav2Vec2ForCTC, Wav2Vec2Processor
+import torch
+import editdistance
 
 app = FastAPI()
 
-# Firebase initialization
+# 1. Firebase Setup (Cloud Native Version!)
 if not firebase_admin._apps:
-    cred = credentials.Certificate("serviceAccountKey.json")
-    firebase_admin.initialize_app(cred, {
+    # Notice we removed the "cred" line completely. 
+    # Cloud Run will automatically use its built-in security badge!
+    firebase_admin.initialize_app(options={
         'storageBucket': 'faseh-98e8c.firebasestorage.app'
     })
 
+# 2. Load the AI Model (Loads into memory when Cloud Run starts)
+print("Loading Arabic AI Model...")
+processor = Wav2Vec2Processor.from_pretrained("jonatasgrosman/wav2vec2-large-xlsr-53-arabic")
+model = Wav2Vec2ForCTC.from_pretrained("jonatasgrosman/wav2vec2-large-xlsr-53-arabic")
+print("Model loaded successfully!")
+
 @app.post("/process-audio/")
-async def process_audio(file: UploadFile = File(...)):
+async def process_audio(
+    file: UploadFile = File(...), 
+    target_word: str = Form(...) 
+):
     temp_raw = f"/tmp/raw_{file.filename}"
     temp_clean = f"/tmp/clean_{file.filename}"
 
     try:
-        # Save uploaded file
+        # Save raw audio
         with open(temp_raw, "wb") as buffer:
             buffer.write(await file.read())
 
-        # Load audio at 16kHz (standard for speech)
+        # 3. Audio Preprocessing (Optimized for children)
         y, sr = librosa.load(temp_raw, sr=16000)
-
-        # ------------------------------------------------------------
-        # 1. HIGH-PASS FILTER (80 Hz) – removes rumble, preserves all speech
-        # ------------------------------------------------------------
         b, a = signal.butter(4, 80, 'hp', fs=sr)
         y_hp = signal.filtfilt(b, a, y)
-
-        # ------------------------------------------------------------
-        # 2. VERY MILD NOISE REDUCTION (OPTIONAL – currently disabled)
-        #    If you find the audio is too noisy, uncomment the next two lines.
-        #    Stationary mode is safer and less likely to distort consonants.
-        # ------------------------------------------------------------
-        # import noisereduce as nr
-        # y_hp = nr.reduce_noise(y=y_hp, sr=sr, stationary=True, prop_decrease=0.5)
-
-        # ------------------------------------------------------------
-        # 3. PRE-EMPHASIS (boosts high frequencies for clarity)
-        #    Standard coefficient 0.97 works well for Arabic.
-        # ------------------------------------------------------------
         y_emp = librosa.effects.preemphasis(y_hp)
-
-        # ------------------------------------------------------------
-        # 4. TRIM LEADING & TRAILING SILENCE ONLY
-        #    Using default ref=np.max (peak energy) ensures weak consonants
-        #    like initial ض or غ are never cut.
-        #    top_db=20 is conservative – only true silence is removed.
-        # ------------------------------------------------------------
         y_trimmed, _ = librosa.effects.trim(y_emp, top_db=20)
 
-        # ------------------------------------------------------------
-        # 5. NORMALIZE VOLUME
-        # ------------------------------------------------------------
         if len(y_trimmed) > 0:
             y_final = librosa.util.normalize(y_trimmed)
         else:
-            # Fallback – extremely rare
             y_final = y_emp
 
-        # Save cleaned file
         sf.write(temp_clean, y_final, sr)
 
-        # ------------------------------------------------------------
-        # 6. UPLOAD TO FIREBASE STORAGE
-        # ------------------------------------------------------------
+        # 4. AI Evaluation
+        inputs = processor(y_final, sampling_rate=16000, return_tensors="pt", padding=True)
+        with torch.no_grad():
+            logits = model(inputs.input_values).logits
+        
+        predicted_ids = torch.argmax(logits, dim=-1)
+        transcription = processor.batch_decode(predicted_ids)[0]
+        
+        # Calculate Character Error Rate (CER)
+        mistakes = editdistance.eval(target_word, transcription)
+        total_letters = len(target_word)
+        accuracy = max(0, 100 - ((mistakes / total_letters) * 100))
+
+        # 5. Upload to Firebase
         bucket = storage.bucket()
         blob = bucket.blob(f"processed_audios/clean_{file.filename}")
+        
         download_token = str(uuid.uuid4())
         blob.metadata = {'firebaseStorageDownloadTokens': download_token}
         blob.upload_from_filename(temp_clean, content_type='audio/wav')
@@ -84,16 +80,20 @@ async def process_audio(file: UploadFile = File(...)):
             f"{blob.name.replace('/', '%2F')}?alt=media&token={download_token}"
         )
 
+        # 6. Return Data to Flutter (THIS IS WHAT WAS MISSING!)
         return {
             "status": "success",
             "url": firebase_url,
-            "message": "Audio processed with conservative trimming – all phonemes preserved."
+            "score": round(accuracy),
+            "transcription_heard": transcription,
+            "target": target_word
         }
 
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
     finally:
+        # Clean up temporary files
         if os.path.exists(temp_raw):
             os.remove(temp_raw)
         if os.path.exists(temp_clean):

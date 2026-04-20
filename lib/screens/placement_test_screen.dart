@@ -3,8 +3,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import '../services/recording_service.dart';
 import 'package:audioplayers/audioplayers.dart';
-import 'package:http/http.dart' as http; 
-import 'dart:convert'; 
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
 // ─── Data Model ──────────────────────────────────────────────────────────────
 class PlacementWord {
   final String wordId;
@@ -42,6 +43,9 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
   List<bool> _recorded = [];
   bool _isRecording = false;
   bool _showNext = false;
+  // متغير جديد لتتبع مجموع النسب المئوية لكل الكلمات
+  double _totalAccumulatedScore = 0.0;
+  List<Map<String, dynamic>> _individualScores = [];
   final RecordingService _recordingService = RecordingService();
   String? _lastRecordedPath;
   final AudioPlayer _audioPlayer = AudioPlayer();
@@ -116,12 +120,12 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
   }
 
   @override
-void dispose() {
-  _pulseController.dispose();     // تنظيف الأنيميشن
-  _recordingService.dispose();    // تنظيف المايكروفون
-  _audioPlayer.dispose();         // تنظيف المشغل (إذا أضفتيه)
-  super.dispose();
-}
+  void dispose() {
+    _pulseController.dispose(); // تنظيف الأنيميشن
+    _recordingService.dispose(); // تنظيف المايكروفون
+    _audioPlayer.dispose(); // تنظيف المشغل (إذا أضفتيه)
+    super.dispose();
+  }
 
   PlacementWord get _currentWord => _placementWords[_currentIndex];
 
@@ -134,24 +138,33 @@ void dispose() {
     if (_isRecording) {
       // إيقاف التسجيل
       final path = await _recordingService.stop();
+
       setState(() {
         _lastRecordedPath = path;
         _isRecording = false;
         _recorded[_currentIndex] = true;
-        _showNext = true;
+        // ⚠️ أزلنا _showNext = true من هنا لكي لا يضغط الطفل "التالي" قبل وصول النتيجة
       });
+
       _pulseController.stop();
       _pulseController.reset();
 
-      // ✅ هنا نبدأ الـ Preprocessing
-// ✅ تغيير هذا السطر ليصبح هكذا
+      // ✅ ننتظر السيرفر حتى ينتهي من التقييم
       await _startPreprocessing(path);
+
+      // ✅ بعد أن ينتهي السيرفر ويحفظ النتيجة، نظهر زر "التالي"
+      if (mounted) {
+        setState(() {
+          _showNext = true;
+        });
+      }
     } else {
       // بدء التسجيل بعد التأكد من الإذن
       final hasPermission = await _recordingService.checkPermission();
       if (hasPermission) {
-        // اسم الملف يكون ID الكلمة لسهولة التعرف عليه
-        await _recordingService.start('child_${widget.childId}_word_${_currentWord.wordId}');
+        await _recordingService.start(
+          'child_${widget.childId}_word_${_currentWord.wordId}',
+        );
         setState(() {
           _isRecording = true;
         });
@@ -163,54 +176,83 @@ void dispose() {
       }
     }
   }
-  
- ///  الدالة المحدثة للربط بالسحاب (Google Cloud Run)
-Future<void> _startPreprocessing(String? path) async {
-  if (path == null) return;
 
-  // ✅ تم تحديث الرابط من Render إلى Google Cloud Run (المنطقة السعودية)
-  const String baseUrl = "https://faseeh-api-816737402071.me-central1.run.app";
-  final url = Uri.parse('$baseUrl/process-audio/');
+  /// الدالة المحدثة للربط بالسحاب (Google Cloud Run) والتقييم
+  Future<void> _startPreprocessing(String? path) async {
+    if (path == null) return;
 
-  print("🚀 جاري إرسال الملف إلى سحابة جوجل: $path");
+    const String baseUrl =
+        "https://faseeh-api-816737402071.me-central1.run.app";
+    final url = Uri.parse('$baseUrl/process-audio/');
 
-  try {
-    // تجهيز الطلب (Multipart Request)
-    var request = http.MultipartRequest('POST', url);
-    
-    // إضافة ملف الصوت
-    request.files.add(await http.MultipartFile.fromPath('file', path));
+    print("🚀 جاري إرسال الملف إلى سحابة جوجل: $path");
+    print("🎯 الكلمة المستهدفة للتقييم: ${_currentWord.text}");
 
-    // إرسال الطلب وانتظار الرد
-    var streamedResponse = await request.send();
-    var response = await http.Response.fromStream(streamedResponse);
+    try {
+      var request = http.MultipartRequest('POST', url);
 
-    if (response.statusCode == 200) {
-      var data = jsonDecode(response.body);
-      print("✅ تم المعالجة بنجاح في جوجل كلاود!");
-      print("🔗 الرابط الجديد في فايربيز: ${data['url']}");
-      
-    } else {
-      print("❌ فشل سيرفر جوجل: ${response.statusCode} - ${response.body}");
+      request.files.add(await http.MultipartFile.fromPath('file', path));
+      request.fields['target_word'] = _currentWord.text;
+
+      var streamedResponse = await request.send();
+      var response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 200) {
+        var data = jsonDecode(response.body);
+
+        // 🚨 DIAGNOSTIC PRINT: This will tell us EXACTLY what the server is returning!
+        print("📥 رد السيرفر: $data");
+
+        if (data['status'] == 'success' && data.containsKey('score')) {
+          double wordScore = (data['score'] as num).toDouble();
+
+          setState(() {
+            _totalAccumulatedScore += wordScore;
+            _individualScores.add({
+              'letter': _currentWord.targetLetter,
+              'score': wordScore.round(),
+            });
+          });
+
+          print("⭐ نتيجة الكلمة: $wordScore%");
+        } else if (data['status'] == 'error') {
+          // 🚨 IF THE AI FAILS, THIS WILL PRINT THE EXACT REASON
+          print("⚠️ السيرفر واجه مشكلة داخلية: ${data['message']}");
+        } else {
+          print(
+            "⚠️ السيرفر رد بنجاح ولكن لم يرسل تقييم (score). هل السيرفر محدث؟",
+          );
+        }
+      } else {
+        print("❌ فشل سيرفر جوجل: ${response.statusCode} - ${response.body}");
+      }
+    } catch (e) {
+      print("⚠️ خطأ في الاتصال بسيرفر جوجل كلاود: $e");
     }
-  } catch (e) {
-    print("⚠️ خطأ في الاتصال بسيرفر جوجل كلاود: $e");
   }
-}
-
 
   void _handleNext() {
     if (_currentIndex < _placementWords.length - 1) {
+      // الانتقال للكلمة التالية
       setState(() {
         _currentIndex++;
         _showNext = false;
         _isRecording = false;
       });
     } else {
+      // انتهى الاختبار! نحسب النسبة النهائية
+      double finalPlacementPercentage =
+          _totalAccumulatedScore / _placementWords.length;
+
+      // الانتقال لشاشة النتائج وتمرير البيانات الكاملة
       Navigator.pushNamed(
         context,
         '/child/placement-result',
-        arguments: {'childId': widget.childId},
+        arguments: {
+          'childId': widget.childId,
+          'score': finalPlacementPercentage.round(),
+          'letterScores': _individualScores, // تمرير تفاصيل الحروف
+        },
       );
     }
   }
@@ -556,13 +598,17 @@ Future<void> _startPreprocessing(String? path) async {
             size: 26,
           ),
           const SizedBox(width: 10),
-          Text(
-            'تم التسجيل بنجاح! ',
-            style: TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.bold,
-              color: Colors.green.shade700,
-              fontFamily: 'Tajawal',
+          // ✅ Wrap the Text in a Flexible widget so it doesn't overflow!
+          Flexible(
+            child: Text(
+              'تم التسجيل بنجاح! ',
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.bold,
+                color: Colors.green.shade700,
+                fontFamily: 'Tajawal',
+              ),
+              overflow: TextOverflow.visible,
             ),
           ),
         ],
