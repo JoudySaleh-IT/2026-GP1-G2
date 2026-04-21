@@ -30,71 +30,95 @@ print("Model loaded successfully!")
 @app.post("/process-audio/")
 async def process_audio(
     file: UploadFile = File(...), 
-    target_word: str = Form(...) 
+    target_word: str = Form(...),
+    target_letter: str = Form(...) 
 ):
     temp_raw = f"/tmp/raw_{file.filename}"
     temp_clean = f"/tmp/clean_{file.filename}"
 
     try:
-        # Save raw audio
+        # حفظ الملف الصوتي
         with open(temp_raw, "wb") as buffer:
             buffer.write(await file.read())
 
-        # 3. Audio Preprocessing (Optimized for children)
+        # 1. معالجة صوتية (رحيمة بالأطفال)
         y, sr = librosa.load(temp_raw, sr=16000)
         b, a = signal.butter(4, 80, 'hp', fs=sr)
         y_hp = signal.filtfilt(b, a, y)
-        y_emp = librosa.effects.preemphasis(y_hp)
-        y_trimmed, _ = librosa.effects.trim(y_emp, top_db=20)
-
-        if len(y_trimmed) > 0:
-            y_final = librosa.util.normalize(y_trimmed)
+        
+        #  تم التعديل هنا: جعلنا قص الصمت متساهلاً جداً (top_db=35 بدل 20) لكي لا نحذف الكلمات الهادئة
+        y_trimmed, _ = librosa.effects.trim(y_hp, top_db=35) 
+        
+        # إذا تم قص الكلمة بالكامل بالخطأ، نعود للصوت الأصلي
+        if len(y_trimmed) < (sr * 0.2): 
+            y_final = librosa.util.normalize(y_hp)
         else:
-            y_final = y_emp
+            y_final = librosa.util.normalize(y_trimmed)
 
         sf.write(temp_clean, y_final, sr)
 
-        # 4. AI Evaluation
+        # 2. استخراج النص من الذكاء الاصطناعي
         inputs = processor(y_final, sampling_rate=16000, return_tensors="pt", padding=True)
         with torch.no_grad():
             logits = model(inputs.input_values).logits
         
         predicted_ids = torch.argmax(logits, dim=-1)
-        transcription = processor.batch_decode(predicted_ids)[0]
+        transcription = processor.batch_decode(predicted_ids)[0].strip()
         
-        # Calculate Character Error Rate (CER)
-        mistakes = editdistance.eval(target_word, transcription)
-        total_letters = len(target_word)
-        accuracy = max(0, 100 - ((mistakes / total_letters) * 100))
+        # 3.  خوارزمية التقييم المخصصة للحرف المستهدف 🌟
+        final_score = 15.0 # الدرجة الافتراضية لمحاولة الطفل (حتى لا يأخذ صفر أبداً)
 
-        # 5. Upload to Firebase
+        if not transcription:
+            # إذا لم يسمع المودل أي شيء (صمت تام أو صوت غير مفهوم)
+            final_score = 15.0 
+            
+        elif target_letter in transcription:
+            #  الحالة الذهبية: الطفل نطق الحرف المستهدف بنجاح والمودل سمعه!
+            # بما أنه نطق الحرف، يستحق درجة عالية (من 75 إلى 100) بغض النظر عن باقي الكلمة
+            mistakes = editdistance.eval(target_word, transcription)
+            total_letters = len(target_word)
+            word_accuracy = max(0, 100 - ((mistakes / total_letters) * 100))
+            
+            # نعطيه أعلى درجة: إما 85 كحد أدنى مكافأة له، أو دقة الكلمة إذا كانت أعلى
+            final_score = max(85.0, word_accuracy * 1.2) 
+            
+        else:
+            #  الحالة السلبية: الحرف المستهدف غير موجود في الكلمة التي سمعها المودل (الطفل أخطأ أو لَدَغ)
+            # هنا نقيس مدى قرب الكلمة المنطوقة من الكلمة المطلوبة
+            mistakes = editdistance.eval(target_word, transcription)
+            total_letters = len(target_word)
+            word_accuracy = max(0, 100 - ((mistakes / total_letters) * 100))
+            
+            # بما أنه أخطأ في الحرف المستهدف، الدرجة لن تتجاوز 65% (لكي يقع في فئة: يحتاج تدريب أو متوسط)
+            final_score = min(65.0, word_accuracy * 1.2)
+            
+            # إذا كانت دقة الكلمة سيئة جداً ولم ينطق الحرف، نعطيه درجة منخفضة
+            if final_score < 15.0:
+                final_score = 25.0
+
+        # قانون منع القيم الشاذة
+        final_score = max(15.0, min(100.0, final_score))
+
+        # الرفع للفايربيس
         bucket = storage.bucket()
         blob = bucket.blob(f"processed_audios/clean_{file.filename}")
-        
         download_token = str(uuid.uuid4())
         blob.metadata = {'firebaseStorageDownloadTokens': download_token}
         blob.upload_from_filename(temp_clean, content_type='audio/wav')
+        firebase_url = f"https://firebasestorage.googleapis.com/v0/b/{bucket.name}/o/{blob.name.replace('/', '%2F')}?alt=media&token={download_token}"
 
-        firebase_url = (
-            f"https://firebasestorage.googleapis.com/v0/b/{bucket.name}/o/"
-            f"{blob.name.replace('/', '%2F')}?alt=media&token={download_token}"
-        )
-
-        # 6. Return Data to Flutter (THIS IS WHAT WAS MISSING!)
         return {
             "status": "success",
             "url": firebase_url,
-            "score": round(accuracy),
+            "score": round(final_score),
             "transcription_heard": transcription,
-            "target": target_word
+            "target_word": target_word,
+            "target_letter": target_letter
         }
 
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
     finally:
-        # Clean up temporary files
-        if os.path.exists(temp_raw):
-            os.remove(temp_raw)
-        if os.path.exists(temp_clean):
-            os.remove(temp_clean)
+        if os.path.exists(temp_raw): os.remove(temp_raw)
+        if os.path.exists(temp_clean): os.remove(temp_clean)

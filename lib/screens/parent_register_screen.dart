@@ -209,7 +209,7 @@ _buildTextField(
 
     // فحص الطول (8 خانات على الأقل)
     if (v.length < 8) {
-      missingRequirements.add('• 8 خانات على الأقل');
+      missingRequirements.add('• ٨ خانات على الأقل');
     }
     
     // فحص الحرف الكبير (Capital Letter)

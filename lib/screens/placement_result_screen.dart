@@ -38,8 +38,8 @@ class PlacementResultScreen extends StatefulWidget {
   const PlacementResultScreen({
     super.key,
     required this.childId,
-    required this.score, // أزلنا القيمة الافتراضية 72
-    required this.letterScores, // أزلنا القيم الافتراضية للحروف
+    required this.score,
+    required this.letterScores,
   });
 
   @override
@@ -47,16 +47,13 @@ class PlacementResultScreen extends StatefulWidget {
 }
 
 class _PlacementResultScreenState extends State<PlacementResultScreen> {
-  // ✅ تصنيف الحروف تلقائياً بناءً على الدرجات
-  List<String> get _weakLetters => widget.letterScores
-      .where((ls) => ls.score < 50)
-      .map((ls) => ls.letter)
-      .toList();
+  // ✅ الحروف التي تحتاج تدريب (تجمع الضعيف والمتوسط: أي حرف درجته أقل من 70%)
+  List<LetterScore> get _lettersToPractice =>
+      widget.letterScores.where((ls) => ls.score < 70).toList();
 
-  List<String> get _strongLetters => widget.letterScores
-      .where((ls) => ls.score >= 75)
-      .map((ls) => ls.letter)
-      .toList();
+  // ✅ الحروف المتقنة (التي درجتها 70% وما فوق)
+  List<LetterScore> get _masteredLetters =>
+      widget.letterScores.where((ls) => ls.score >= 70).toList();
 
   // ── Write placementDone = true to Firestore when result screen opens ────────
   @override
@@ -71,10 +68,10 @@ class _PlacementResultScreenState extends State<PlacementResultScreen> {
           .collection('children')
           .doc(widget.childId)
           .update({
-            'placementDone': true,
-            'placementScore': widget.score,
-            'placementDate': FieldValue.serverTimestamp(),
-          });
+        'placementDone': true,
+        'placementScore': widget.score,
+        'placementDate': FieldValue.serverTimestamp(),
+      });
     } catch (e) {
       debugPrint('Error updating placementDone: $e');
     }
@@ -86,11 +83,19 @@ class _PlacementResultScreenState extends State<PlacementResultScreen> {
   static const _coral = Color(0xFFFF6969);
   static const _bgColor = Color(0xFFFCF9EA);
 
+  // ── Overall Child Level ──
+  // ── Overall Child Level ──
+  String get _overallLevel {
+    if (widget.score >= 70) return 'مستوى خبير 🌟';
+    if (widget.score >= 40) return 'مستوى متوسط 👍';
+    return 'مستوى مبتدئ ';
+  }
+
   // ── Encouragement message ──
   String get _encouragementMessage {
-    if (widget.score >= 80) return 'ممتاز يا بطل! 👏';
-    if (widget.score >= 60) return 'أحسنت! استمر في التدريب 🌟';
-    return 'بداية جميلة! نكمل معًا 💜';
+    if (widget.score >= 70) return 'ممتاز يا بطل! 👏';
+    if (widget.score >= 40) return 'أحسنت! في الطريق الصحيح 🌟';
+    return 'بداية جميلة! سنتدرب معًا 💜';
   }
 
   // ── Sorted letter scores (ascending) ──
@@ -99,40 +104,43 @@ class _PlacementResultScreenState extends State<PlacementResultScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: _bgColor,
-      body: Stack(
-        children: [
-          _bubble(
-            top: 60,
-            left: 24,
-            size: 90,
-            color: const Color(0xFFFFB84D).withOpacity(0.22),
-          ),
-          _bubble(
-            bottom: 100,
-            right: 24,
-            size: 110,
-            color: _purple2.withOpacity(0.15),
-          ),
-          _bubble(
-            top: 300,
-            right: 18,
-            size: 70,
-            color: _coral.withOpacity(0.15),
-          ),
-          SafeArea(
-            child: ScrollConfiguration(
-              behavior: ScrollConfiguration.of(
-                context,
-              ).copyWith(overscroll: false),
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: _buildCard(context),
+    return Directionality(
+      textDirection: TextDirection.rtl, // ✅ لفرض الاتجاه العربي
+      child: Scaffold(
+        backgroundColor: _bgColor,
+        body: Stack(
+          children: [
+            _bubble(
+              top: 60,
+              left: 24,
+              size: 90,
+              color: const Color(0xFFFFB84D).withOpacity(0.22),
+            ),
+            _bubble(
+              bottom: 100,
+              right: 24,
+              size: 110,
+              color: _purple2.withOpacity(0.15),
+            ),
+            _bubble(
+              top: 300,
+              right: 18,
+              size: 70,
+              color: _coral.withOpacity(0.15),
+            ),
+            SafeArea(
+              child: ScrollConfiguration(
+                behavior: ScrollConfiguration.of(
+                  context,
+                ).copyWith(overscroll: false),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: _buildCard(context),
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -314,6 +322,24 @@ class _PlacementResultScreenState extends State<PlacementResultScreen> {
               height: 1.1,
             ),
           ),
+          const SizedBox(height: 4),
+          // ✅ عرض المستوى الكلي للطفل
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.white24,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              _overallLevel,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+                fontFamily: 'Tajawal',
+              ),
+            ),
+          ),
           const SizedBox(height: 8),
           const Text(
             'هذه النتيجة من الحروف التي اختبرناها',
@@ -338,7 +364,7 @@ class _PlacementResultScreenState extends State<PlacementResultScreen> {
         border: Border.all(color: const Color(0xFFFFD9CC)),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
             'الحروف التي سنتدرب عليها ✍️',
@@ -350,22 +376,17 @@ class _PlacementResultScreenState extends State<PlacementResultScreen> {
             ),
           ),
           const SizedBox(height: 14),
-          // ✅ Changed widget.weakLetters to _weakLetters
-          _weakLetters.isEmpty
+          _lettersToPractice.isEmpty
               ? _emptyState(
                   text: 'رائع! لا توجد حروف تحتاج تدريب الآن 💚',
                   bgColor: Colors.green.shade50,
                   borderColor: Colors.green.shade200,
                   textColor: Colors.green.shade700,
                 )
-              : _buildLetterGrid(
+              : _buildDynamicLetterGrid(
                   context,
-                  letters: _weakLetters,
-                  badge: 'يحتاج تدريب',
-                  badgeBg: _coral.withOpacity(0.1),
-                  badgeText: _coral,
-                  borderColor: _coral.withOpacity(0.2),
-                ),
+                  letters: _lettersToPractice,
+                ), // ✅ استخدام الدالة الديناميكية
         ],
       ),
     );
@@ -381,7 +402,7 @@ class _PlacementResultScreenState extends State<PlacementResultScreen> {
         border: Border.all(color: const Color(0xFFD5F0D8)),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
             'الحروف التي أتقنتها 🌟',
@@ -393,41 +414,52 @@ class _PlacementResultScreenState extends State<PlacementResultScreen> {
             ),
           ),
           const SizedBox(height: 14),
-          // ✅ Changed widget.strongLetters to _strongLetters
-          _strongLetters.isEmpty
+          _masteredLetters.isEmpty
               ? _emptyState(
                   text: 'سنعرض هنا الحروف التي أتقنتها لاحقًا',
                   bgColor: Colors.white,
                   borderColor: Colors.grey.shade200,
                   textColor: Colors.grey.shade600,
                 )
-              : _buildLetterGrid(
+              : _buildDynamicLetterGrid(
                   context,
-                  letters: _strongLetters,
-                  badge: 'ممتاز',
-                  badgeBg: Colors.green.shade100,
-                  badgeText: Colors.green.shade700,
-                  borderColor: Colors.green.shade200,
-                ),
+                  letters: _masteredLetters,
+                ), // ✅ استخدام الدالة الديناميكية
         ],
       ),
     );
   }
 
-  Widget _buildLetterGrid(
+  // ✅ دالة جديدة ترسم الحرف وتعطيه وساماً (Badge) حسب درجته الفردية
+  Widget _buildDynamicLetterGrid(
     BuildContext context, {
-    required List<String> letters,
-    required String badge,
-    required Color badgeBg,
-    required Color badgeText,
-    required Color borderColor,
+    required List<LetterScore> letters,
   }) {
     final cardWidth =
         (MediaQuery.of(context).size.width - 32 - 40 - 20) / 3 - 2;
+
     return Wrap(
       spacing: 10,
       runSpacing: 10,
-      children: letters.map((letter) {
+      children: letters.map((item) {
+        // تحديد مظهر البطاقة بناءً على الدرجة (متقن، تطوير، تأسيس)
+        String badge = 'متقن';
+        Color badgeBg = Colors.green.shade100;
+        Color badgeText = Colors.green.shade700;
+        Color borderColor = Colors.green.shade200;
+
+        if (item.score < 40) {
+          badge = 'تأسيس'; // كلمة ألطف من "ضعيف" للأطفال
+          badgeBg = _coral.withOpacity(0.1);
+          badgeText = _coral;
+          borderColor = _coral.withOpacity(0.2);
+        } else if (item.score < 70) {
+          badge = 'تطوير'; // للمستوى المتوسط
+          badgeBg = Colors.orange.shade100;
+          badgeText = Colors.orange.shade800;
+          borderColor = Colors.orange.shade200;
+        }
+
         return SizedBox(
           width: cardWidth,
           child: Container(
@@ -448,7 +480,7 @@ class _PlacementResultScreenState extends State<PlacementResultScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  letter,
+                  item.letter,
                   style: const TextStyle(
                     fontSize: 36,
                     color: _purple,
@@ -458,7 +490,7 @@ class _PlacementResultScreenState extends State<PlacementResultScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  _getLetterName(letter),
+                  _getLetterName(item.letter),
                   style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
                 ),
                 const SizedBox(height: 8),
@@ -499,7 +531,7 @@ class _PlacementResultScreenState extends State<PlacementResultScreen> {
         border: Border.all(color: const Color(0xFFE7DDF5)),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
             'كيف كان أداؤك في كل حرف؟',
@@ -518,11 +550,13 @@ class _PlacementResultScreenState extends State<PlacementResultScreen> {
   }
 
   Widget _buildScoreRow(LetterScore item) {
-    final String label = item.score >= 75
-        ? 'أحسنت جدًا'
-        : item.score >= 50
-        ? 'اقتربت أكثر'
-        : 'سنتدرب عليه';
+    // ✅ تطبيق العتبات الجديدة والمسميات هنا في قائمة التفاصيل
+    final String label = item.score >= 70
+        ? 'متقن 🌟'
+        : item.score >= 40
+            ? 'في الطريق الصحيح 👍'
+            : 'يحتاج تدريب ✍️';
+
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),

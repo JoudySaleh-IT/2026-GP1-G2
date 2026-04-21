@@ -43,9 +43,16 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
   List<bool> _recorded = [];
   bool _isRecording = false;
   bool _showNext = false;
-  // متغير جديد لتتبع مجموع النسب المئوية لكل الكلمات
+  
   double _totalAccumulatedScore = 0.0;
   List<Map<String, dynamic>> _individualScores = [];
+  
+  // ✅ نظام "الطابور الذكي" لمعالجة الكلمات في الخلفية دون إيقاف الطفل
+  final List<Map<String, String>> _evaluationQueue = [];
+  bool _isProcessingQueue = false;
+  int _pendingEvaluations = 0; 
+  bool _isCalculatingFinalScore = false;
+
   final RecordingService _recordingService = RecordingService();
   String? _lastRecordedPath;
   final AudioPlayer _audioPlayer = AudioPlayer();
@@ -76,9 +83,7 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
 
       for (var doc in snapshot.docs) {
         final data = doc.data();
-
         String rawImageUrl = data['image_url'] ?? '';
-
         String downloadImageUrl = rawImageUrl;
 
         if (rawImageUrl.startsWith('gs://')) {
@@ -102,7 +107,6 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
       if (mounted) {
         for (var word in fetchedWords) {
           if (word.imageUrl.isNotEmpty) {
-            // We don't use 'await' here so it happens seamlessly in the background
             precacheImage(NetworkImage(word.imageUrl), context);
           }
         }
@@ -121,9 +125,9 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
 
   @override
   void dispose() {
-    _pulseController.dispose(); // تنظيف الأنيميشن
-    _recordingService.dispose(); // تنظيف المايكروفون
-    _audioPlayer.dispose(); // تنظيف المشغل (إذا أضفتيه)
+    _pulseController.dispose();
+    _recordingService.dispose();
+    _audioPlayer.dispose();
     super.dispose();
   }
 
@@ -138,28 +142,34 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
     if (_isRecording) {
       // إيقاف التسجيل
       final path = await _recordingService.stop();
+      
+      // حفظ بيانات الكلمة الحالية
+      final currentWordText = _currentWord.text;
+      final currentWordLetter = _currentWord.targetLetter;
 
       setState(() {
         _lastRecordedPath = path;
         _isRecording = false;
         _recorded[_currentIndex] = true;
-        // ⚠️ أزلنا _showNext = true من هنا لكي لا يضغط الطفل "التالي" قبل وصول النتيجة
+        _showNext = true; // ✨ نظهر زر التالي فوراً بدون أي انتظار!
+        _pendingEvaluations++; // نزيد عداد التقييمات المعلقة
       });
 
       _pulseController.stop();
       _pulseController.reset();
 
-      // ✅ ننتظر السيرفر حتى ينتهي من التقييم
-      await _startPreprocessing(path);
-
-      // ✅ بعد أن ينتهي السيرفر ويحفظ النتيجة، نظهر زر "التالي"
-      if (mounted) {
-        setState(() {
-          _showNext = true;
+      if (path != null) {
+        // ✨ إضافة الكلمة لطابور المعالجة وتشغيله في الخلفية
+        _evaluationQueue.add({
+          'path': path,
+          'word': currentWordText,
+          'letter': currentWordLetter,
         });
+        _processQueue();
       }
+
     } else {
-      // بدء التسجيل بعد التأكد من الإذن
+      // بدء التسجيل
       final hasPermission = await _recordingService.checkPermission();
       if (hasPermission) {
         await _recordingService.start(
@@ -177,22 +187,35 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
     }
   }
 
-  /// الدالة المحدثة للربط بالسحاب (Google Cloud Run) والتقييم
-  Future<void> _startPreprocessing(String? path) async {
-    if (path == null) return;
+  // ✨ دالة الطابور الذكي: تعالج الكلمات واحدة تلو الأخرى في الخلفية لكي لا يتعطل السيرفر
+  Future<void> _processQueue() async {
+    if (_isProcessingQueue) return; // إذا كان المعالج يعمل، اتركه يكمل عمله
+    _isProcessingQueue = true;
 
-    const String baseUrl =
-        "https://faseeh-api-816737402071.me-central1.run.app";
+    while (_evaluationQueue.isNotEmpty) {
+      final item = _evaluationQueue.first;
+      
+      // نرسل الكلمة للسيرفر وننتظره (بينما الطفل يكمل اللعب بحرية)
+      await _startPreprocessing(item['path']!, item['word']!, item['letter']!);
+      
+      // بعد استلام النتيجة، نحذف الكلمة من الطابور
+      _evaluationQueue.removeAt(0);
+    }
+
+    _isProcessingQueue = false;
+  }
+
+  Future<void> _startPreprocessing(String path, String targetWord, String targetLetter) async {
+    const String baseUrl = "https://faseeh-api-816737402071.me-central1.run.app";
     final url = Uri.parse('$baseUrl/process-audio/');
 
-    print("🚀 جاري إرسال الملف إلى سحابة جوجل: $path");
-    print("🎯 الكلمة المستهدفة للتقييم: ${_currentWord.text}");
+    print("🚀 جاري تقييم: $targetWord");
 
     try {
       var request = http.MultipartRequest('POST', url);
-
       request.files.add(await http.MultipartFile.fromPath('file', path));
-      request.fields['target_word'] = _currentWord.text;
+      request.fields['target_word'] = targetWord;
+      request.fields['target_letter'] = targetLetter; // إرسال الحرف المستهدف الصحيح
 
       var streamedResponse = await request.send();
       var response = await http.Response.fromStream(streamedResponse);
@@ -200,61 +223,92 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
       if (response.statusCode == 200) {
         var data = jsonDecode(response.body);
 
-        // 🚨 DIAGNOSTIC PRINT: This will tell us EXACTLY what the server is returning!
-        print("📥 رد السيرفر: $data");
-
         if (data['status'] == 'success' && data.containsKey('score')) {
           double wordScore = (data['score'] as num).toDouble();
 
           setState(() {
             _totalAccumulatedScore += wordScore;
             _individualScores.add({
-              'letter': _currentWord.targetLetter,
+              'letter': targetLetter,
               'score': wordScore.round(),
             });
           });
-
-          print("⭐ نتيجة الكلمة: $wordScore%");
-        } else if (data['status'] == 'error') {
-          // 🚨 IF THE AI FAILS, THIS WILL PRINT THE EXACT REASON
-          print("⚠️ السيرفر واجه مشكلة داخلية: ${data['message']}");
-        } else {
-          print(
-            "⚠️ السيرفر رد بنجاح ولكن لم يرسل تقييم (score). هل السيرفر محدث؟",
-          );
+          print("⭐ نتيجة $targetWord: $wordScore%");
         }
-      } else {
-        print("❌ فشل سيرفر جوجل: ${response.statusCode} - ${response.body}");
       }
     } catch (e) {
-      print("⚠️ خطأ في الاتصال بسيرفر جوجل كلاود: $e");
+      print("⚠️ خطأ في الاتصال: $e");
+    } finally {
+      // نقلل عداد الانتظار في النهاية
+      if (mounted) {
+        setState(() {
+          _pendingEvaluations--;
+        });
+        
+        // إذا كان الطفل قد أنهى الاختبار، والآن انتهت آخر كلمة في الطابور
+        if (_isCalculatingFinalScore && _pendingEvaluations == 0) {
+          _navigateToResults();
+        }
+      }
     }
   }
 
   void _handleNext() {
     if (_currentIndex < _placementWords.length - 1) {
-      // الانتقال للكلمة التالية
       setState(() {
         _currentIndex++;
         _showNext = false;
         _isRecording = false;
       });
     } else {
-      // انتهى الاختبار! نحسب النسبة النهائية
-      double finalPlacementPercentage =
-          _totalAccumulatedScore / _placementWords.length;
-
-      // الانتقال لشاشة النتائج وتمرير البيانات الكاملة
-      Navigator.pushNamed(
-        context,
-        '/child/placement-result',
-        arguments: {
-          'childId': widget.childId,
-          'score': finalPlacementPercentage.round(),
-          'letterScores': _individualScores, // تمرير تفاصيل الحروف
-        },
-      );
+      // انتهى الاختبار! هل الطابور في الخلفية ما زال يعالج كلمات؟
+      if (_pendingEvaluations > 0) {
+        setState(() {
+          _isCalculatingFinalScore = true; // نعرض شاشة التحميل النهاية الأنيقة
+        });
+      } else {
+        _navigateToResults(); // كل شيء جاهز، ننتقل فوراً لشاشة النتائج
+      }
     }
+  }
+
+  void _navigateToResults() {
+    double finalPlacementPercentage = _placementWords.isEmpty 
+        ? 0 
+        : _totalAccumulatedScore / _placementWords.length;
+
+    // تجميع درجات الكلمات حسب الحرف المستهدف لتصبح 6 حروف فقط
+    Map<String, List<int>> groupedScores = {};
+    for (var item in _individualScores) {
+      String letter = item['letter'];
+      int score = item['score'] as int;
+      
+      if (!groupedScores.containsKey(letter)) {
+        groupedScores[letter] = [];
+      }
+      groupedScores[letter]!.add(score);
+    }
+
+    // حساب المتوسط لكل حرف
+    List<Map<String, dynamic>> finalLetterScores = [];
+    groupedScores.forEach((letter, scores) {
+      double average = scores.reduce((a, b) => a + b) / scores.length;
+      finalLetterScores.add({
+        'letter': letter,
+        'score': average.round(),
+      });
+    });
+
+    // الانتقال لشاشة النتائج
+    Navigator.pushReplacementNamed(
+      context,
+      '/child/placement-result',
+      arguments: {
+        'childId': widget.childId,
+        'score': finalPlacementPercentage.round(),
+        'letterScores': finalLetterScores,
+      },
+    );
   }
 
   @override
@@ -265,24 +319,57 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
         backgroundColor: _bgColor,
         body: _isLoading
             ? const Center(child: CircularProgressIndicator(color: _purple))
-            : _placementWords.isEmpty
-            ? const Center(
-                child: Text(
-                  'لا توجد كلمات في قاعدة البيانات',
-                  style: TextStyle(fontFamily: 'Tajawal', fontSize: 18),
-                ),
-              )
-            : Column(
-                children: [
-                  _buildHeader(),
-                  Expanded(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.all(16),
-                      child: _buildCard(),
-                    ),
-                  ),
-                ],
-              ),
+            : _isCalculatingFinalScore 
+                ? _buildFinalCalculatingScreen() 
+                : _placementWords.isEmpty
+                    ? const Center(
+                        child: Text(
+                          'لا توجد كلمات في قاعدة البيانات',
+                          style: TextStyle(fontFamily: 'Tajawal', fontSize: 18),
+                        ),
+                      )
+                    : Column(
+                        children: [
+                          _buildHeader(),
+                          Expanded(
+                            child: SingleChildScrollView(
+                              padding: const EdgeInsets.all(16),
+                              child: _buildCard(),
+                            ),
+                          ),
+                        ],
+                      ),
+      ),
+    );
+  }
+
+  Widget _buildFinalCalculatingScreen() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(color: _purple.withOpacity(0.2), blurRadius: 20, spreadRadius: 5)
+              ]
+            ),
+            child: const CircularProgressIndicator(color: _purple, strokeWidth: 4),
+          ),
+          const SizedBox(height: 30),
+          const Text(
+            'جاري إعداد نتيجتك يا بطل... 🚀',
+            style: TextStyle(
+              color: _purple,
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'Tajawal',
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -503,10 +590,9 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
   }
 
   Widget _buildWordImage() {
-    // UPDATED: Purple circle background removed here
     return Image.network(
       _currentWord.imageUrl,
-      width: 130, // Increased size slightly to fill space naturally
+      width: 130,
       height: 130,
       fit: BoxFit.contain,
       errorBuilder: (context, error, stackTrace) =>
@@ -598,7 +684,6 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
             size: 26,
           ),
           const SizedBox(width: 10),
-          // ✅ Wrap the Text in a Flexible widget so it doesn't overflow!
           Flexible(
             child: Text(
               'تم التسجيل بنجاح! ',
@@ -632,13 +717,33 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
             borderRadius: BorderRadius.circular(14),
           ),
         ),
-        child: Text(
-          isLast ? ' عرض النتائج' : '➡️ الكلمة التالية',
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            fontFamily: 'Tajawal',
-          ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // النص يكون على اليمين
+            Text(
+              isLast ? 'عرض النتائج' : 'الكلمة التالية',
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'Tajawal',
+              ),
+            ),
+            // مسافة بسيطة ثم السهم على اليسار
+            if (!isLast) ...[
+              const SizedBox(width: 8),
+              const Icon(
+                Icons.arrow_back_rounded, 
+                size: 22,
+                // إجبار السهم على التأشير لليسار دائماً
+                textDirection: TextDirection.ltr, 
+              ),
+            ] else ...[
+              // أيقونة مختلفة لزر عرض النتائج (اختياري)
+              const SizedBox(width: 8),
+              const Icon(Icons.check_circle_outline_rounded, size: 22),
+            ]
+          ],
         ),
       ),
     );
