@@ -191,23 +191,46 @@ _buildTextField(
                           const SizedBox(height: 16),
 
                           // ── كلمة المرور ──
-                          _buildLabel('كلمة المرور'),
-                          const SizedBox(height: 6),
-                          _buildTextField(
-                            controller: _passwordController,
-                            hint: '••••••••',
-                            obscure: !_showPassword,
-                            suffixIcon: IconButton(
-                              icon: Icon(_showPassword ? Icons.visibility_off : Icons.visibility, color: const Color(0xFF511281)),
-                              onPressed: () => setState(() => _showPassword = !_showPassword),
-                            ),
-                            validator: (v) {
-                              if (v == null || v.isEmpty) return 'الرجاء إدخال كلمة المرور';
-                              if (v.length < 8) return 'يجب أن تكون 8 خانات على الأقل';
-                              if (!RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(v)) return 'يجب أن تحتوي على رمز واحد على الأقل (@، #، !)';
-                              return null;
-                            },
-                          ),
+_buildLabel('كلمة المرور'),
+const SizedBox(height: 6),
+_buildTextField(
+  controller: _passwordController,
+  hint: '••••••••',
+  obscure: !_showPassword,
+  suffixIcon: IconButton(
+    icon: Icon(_showPassword ? Icons.visibility_off : Icons.visibility, color: const Color(0xFF511281)),
+    onPressed: () => setState(() => _showPassword = !_showPassword),
+  ),
+  validator: (v) {
+    if (v == null || v.isEmpty) return 'الرجاء إدخال كلمة المرور';
+
+    // نجهز قائمة لتجميع الشروط غير المتحققة
+    List<String> missingRequirements = [];
+
+    // فحص الطول (8 خانات على الأقل)
+    if (v.length < 8) {
+      missingRequirements.add('• ٨ خانات على الأقل');
+    }
+    
+    // فحص الحرف الكبير (Capital Letter)
+    if (!RegExp(r'[A-Z]').hasMatch(v)) {
+      missingRequirements.add('• حرف إنجليزي كبير واحد على الأقل (A-Z)');
+    }
+
+    // فحص الرموز الخاصة
+    if (!RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(v)) {
+      missingRequirements.add('• رمز واحد على الأقل (@، #، !)');
+    }
+
+    // إذا كانت القائمة تحتوي على أخطاء، ندمجها ونعرضها للمستخدم دفعة واحدة
+    if (missingRequirements.isNotEmpty) {
+      return 'يجب أن تحتوي كلمة المرور على:\n${missingRequirements.join('\n')}';
+    }
+
+    // إذا تجاوز كل الشروط بنجاح
+    return null;
+  },
+),
                           const SizedBox(height: 16),
 
                           // ── تأكيد كلمة المرور ──

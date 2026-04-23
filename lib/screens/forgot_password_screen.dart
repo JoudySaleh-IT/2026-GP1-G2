@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // ✅ تم إضافة هذا السطر لحل الخطأ
-import '../services/auth_service.dart'; // تأكدي من صحة المسار
+import 'package:firebase_auth/firebase_auth.dart'; 
+import '../services/auth_service.dart'; 
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -12,7 +12,7 @@ class ForgotPasswordScreen extends StatefulWidget {
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
-  final AuthService _authService = AuthService(); // ✅ تعريف الخدمة
+  final AuthService _authService = AuthService(); //  تعريف الخدمة
   
   bool _isSubmitted = false;
 
@@ -184,7 +184,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 ),
                 const SizedBox(height: 8),
                 const Text(
-                  'أدخل بريدك الإلكتروني وسنرسل لك رابط لإعادة تعيين كلمة المرور',
+                  'يرجى إدخال بريدك الإلكتروني، وسيتم إرسال رابط لإعادة تعيين كلمة المرور.',
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 14, color: Colors.grey),
                 ),

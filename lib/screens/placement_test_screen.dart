@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import '../services/recording_service.dart';
+import 'package:audioplayers/audioplayers.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 // ─── Data Model ──────────────────────────────────────────────────────────────
 class PlacementWord {
@@ -39,7 +43,19 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
   List<bool> _recorded = [];
   bool _isRecording = false;
   bool _showNext = false;
+  
+  double _totalAccumulatedScore = 0.0;
+  List<Map<String, dynamic>> _individualScores = [];
+  
+  // ✅ نظام "الطابور الذكي" لمعالجة الكلمات في الخلفية دون إيقاف الطفل
+  final List<Map<String, String>> _evaluationQueue = [];
+  bool _isProcessingQueue = false;
+  int _pendingEvaluations = 0; 
+  bool _isCalculatingFinalScore = false;
 
+  final RecordingService _recordingService = RecordingService();
+  String? _lastRecordedPath;
+  final AudioPlayer _audioPlayer = AudioPlayer();
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
 
@@ -67,9 +83,7 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
 
       for (var doc in snapshot.docs) {
         final data = doc.data();
-
         String rawImageUrl = data['image_url'] ?? '';
-
         String downloadImageUrl = rawImageUrl;
 
         if (rawImageUrl.startsWith('gs://')) {
@@ -93,7 +107,6 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
       if (mounted) {
         for (var word in fetchedWords) {
           if (word.imageUrl.isNotEmpty) {
-            // We don't use 'await' here so it happens seamlessly in the background
             precacheImage(NetworkImage(word.imageUrl), context);
           }
         }
@@ -113,6 +126,8 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
   @override
   void dispose() {
     _pulseController.dispose();
+    _recordingService.dispose();
+    _audioPlayer.dispose();
     super.dispose();
   }
 
@@ -123,20 +138,118 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
       : (_currentIndex + (_recorded[_currentIndex] ? 1 : 0)) /
             _placementWords.length;
 
-  void _handleRecordToggle() {
+  void _handleRecordToggle() async {
     if (_isRecording) {
-      final newRecorded = List<bool>.from(_recorded);
-      newRecorded[_currentIndex] = true;
+      // إيقاف التسجيل
+      final path = await _recordingService.stop();
+      
+      // حفظ بيانات الكلمة الحالية
+      final currentWordText = _currentWord.text;
+      final currentWordLetter = _currentWord.targetLetter;
+
       setState(() {
-        _recorded = newRecorded;
+        _lastRecordedPath = path;
         _isRecording = false;
-        _showNext = true;
+        _recorded[_currentIndex] = true;
+        _showNext = true; // ✨ نظهر زر التالي فوراً بدون أي انتظار!
+        _pendingEvaluations++; // نزيد عداد التقييمات المعلقة
       });
+
       _pulseController.stop();
       _pulseController.reset();
+
+      if (path != null) {
+        // ✨ إضافة الكلمة لطابور المعالجة وتشغيله في الخلفية
+        _evaluationQueue.add({
+          'path': path,
+          'word': currentWordText,
+          'letter': currentWordLetter,
+        });
+        _processQueue();
+      }
+
     } else {
-      setState(() => _isRecording = true);
-      _pulseController.repeat(reverse: true);
+      // بدء التسجيل
+      final hasPermission = await _recordingService.checkPermission();
+      if (hasPermission) {
+        await _recordingService.start(
+          'child_${widget.childId}_word_${_currentWord.wordId}',
+        );
+        setState(() {
+          _isRecording = true;
+        });
+        _pulseController.repeat(reverse: true);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('الرجاء السماح بالوصول للمايكروفون')),
+        );
+      }
+    }
+  }
+
+  // ✨ دالة الطابور الذكي: تعالج الكلمات واحدة تلو الأخرى في الخلفية لكي لا يتعطل السيرفر
+  Future<void> _processQueue() async {
+    if (_isProcessingQueue) return; // إذا كان المعالج يعمل، اتركه يكمل عمله
+    _isProcessingQueue = true;
+
+    while (_evaluationQueue.isNotEmpty) {
+      final item = _evaluationQueue.first;
+      
+      // نرسل الكلمة للسيرفر وننتظره (بينما الطفل يكمل اللعب بحرية)
+      await _startPreprocessing(item['path']!, item['word']!, item['letter']!);
+      
+      // بعد استلام النتيجة، نحذف الكلمة من الطابور
+      _evaluationQueue.removeAt(0);
+    }
+
+    _isProcessingQueue = false;
+  }
+
+  Future<void> _startPreprocessing(String path, String targetWord, String targetLetter) async {
+    const String baseUrl = "https://faseeh-api-816737402071.me-central1.run.app";
+    final url = Uri.parse('$baseUrl/process-audio/');
+
+    print("🚀 جاري تقييم: $targetWord");
+
+    try {
+      var request = http.MultipartRequest('POST', url);
+      request.files.add(await http.MultipartFile.fromPath('file', path));
+      request.fields['target_word'] = targetWord;
+      request.fields['target_letter'] = targetLetter; // إرسال الحرف المستهدف الصحيح
+
+      var streamedResponse = await request.send();
+      var response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 200) {
+        var data = jsonDecode(response.body);
+
+        if (data['status'] == 'success' && data.containsKey('score')) {
+          double wordScore = (data['score'] as num).toDouble();
+
+          setState(() {
+            _totalAccumulatedScore += wordScore;
+            _individualScores.add({
+              'letter': targetLetter,
+              'score': wordScore.round(),
+            });
+          });
+          print("⭐ نتيجة $targetWord: $wordScore%");
+        }
+      }
+    } catch (e) {
+      print("⚠️ خطأ في الاتصال: $e");
+    } finally {
+      // نقلل عداد الانتظار في النهاية
+      if (mounted) {
+        setState(() {
+          _pendingEvaluations--;
+        });
+        
+        // إذا كان الطفل قد أنهى الاختبار، والآن انتهت آخر كلمة في الطابور
+        if (_isCalculatingFinalScore && _pendingEvaluations == 0) {
+          _navigateToResults();
+        }
+      }
     }
   }
 
@@ -148,12 +261,54 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
         _isRecording = false;
       });
     } else {
-      Navigator.pushNamed(
-        context,
-        '/child/placement-result',
-        arguments: {'childId': widget.childId},
-      );
+      // انتهى الاختبار! هل الطابور في الخلفية ما زال يعالج كلمات؟
+      if (_pendingEvaluations > 0) {
+        setState(() {
+          _isCalculatingFinalScore = true; // نعرض شاشة التحميل النهاية الأنيقة
+        });
+      } else {
+        _navigateToResults(); // كل شيء جاهز، ننتقل فوراً لشاشة النتائج
+      }
     }
+  }
+
+  void _navigateToResults() {
+    double finalPlacementPercentage = _placementWords.isEmpty 
+        ? 0 
+        : _totalAccumulatedScore / _placementWords.length;
+
+    // تجميع درجات الكلمات حسب الحرف المستهدف لتصبح 6 حروف فقط
+    Map<String, List<int>> groupedScores = {};
+    for (var item in _individualScores) {
+      String letter = item['letter'];
+      int score = item['score'] as int;
+      
+      if (!groupedScores.containsKey(letter)) {
+        groupedScores[letter] = [];
+      }
+      groupedScores[letter]!.add(score);
+    }
+
+    // حساب المتوسط لكل حرف
+    List<Map<String, dynamic>> finalLetterScores = [];
+    groupedScores.forEach((letter, scores) {
+      double average = scores.reduce((a, b) => a + b) / scores.length;
+      finalLetterScores.add({
+        'letter': letter,
+        'score': average.round(),
+      });
+    });
+
+    // الانتقال لشاشة النتائج
+    Navigator.pushReplacementNamed(
+      context,
+      '/child/placement-result',
+      arguments: {
+        'childId': widget.childId,
+        'score': finalPlacementPercentage.round(),
+        'letterScores': finalLetterScores,
+      },
+    );
   }
 
   @override
@@ -164,24 +319,57 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
         backgroundColor: _bgColor,
         body: _isLoading
             ? const Center(child: CircularProgressIndicator(color: _purple))
-            : _placementWords.isEmpty
-            ? const Center(
-                child: Text(
-                  'لا توجد كلمات في قاعدة البيانات',
-                  style: TextStyle(fontFamily: 'Tajawal', fontSize: 18),
-                ),
-              )
-            : Column(
-                children: [
-                  _buildHeader(),
-                  Expanded(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.all(16),
-                      child: _buildCard(),
-                    ),
-                  ),
-                ],
-              ),
+            : _isCalculatingFinalScore 
+                ? _buildFinalCalculatingScreen() 
+                : _placementWords.isEmpty
+                    ? const Center(
+                        child: Text(
+                          'لا توجد كلمات في قاعدة البيانات',
+                          style: TextStyle(fontFamily: 'Tajawal', fontSize: 18),
+                        ),
+                      )
+                    : Column(
+                        children: [
+                          _buildHeader(),
+                          Expanded(
+                            child: SingleChildScrollView(
+                              padding: const EdgeInsets.all(16),
+                              child: _buildCard(),
+                            ),
+                          ),
+                        ],
+                      ),
+      ),
+    );
+  }
+
+  Widget _buildFinalCalculatingScreen() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(color: _purple.withOpacity(0.2), blurRadius: 20, spreadRadius: 5)
+              ]
+            ),
+            child: const CircularProgressIndicator(color: _purple, strokeWidth: 4),
+          ),
+          const SizedBox(height: 30),
+          const Text(
+            'جاري إعداد نتيجتك يا بطل... 🚀',
+            style: TextStyle(
+              color: _purple,
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'Tajawal',
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -402,10 +590,9 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
   }
 
   Widget _buildWordImage() {
-    // UPDATED: Purple circle background removed here
     return Image.network(
       _currentWord.imageUrl,
-      width: 130, // Increased size slightly to fill space naturally
+      width: 130,
       height: 130,
       fit: BoxFit.contain,
       errorBuilder: (context, error, stackTrace) =>
@@ -497,13 +684,16 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
             size: 26,
           ),
           const SizedBox(width: 10),
-          Text(
-            'تم التسجيل بنجاح! ',
-            style: TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.bold,
-              color: Colors.green.shade700,
-              fontFamily: 'Tajawal',
+          Flexible(
+            child: Text(
+              'تم التسجيل بنجاح! ',
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.bold,
+                color: Colors.green.shade700,
+                fontFamily: 'Tajawal',
+              ),
+              overflow: TextOverflow.visible,
             ),
           ),
         ],
@@ -527,13 +717,33 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
             borderRadius: BorderRadius.circular(14),
           ),
         ),
-        child: Text(
-          isLast ? ' عرض النتائج' : '➡️ الكلمة التالية',
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            fontFamily: 'Tajawal',
-          ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // النص يكون على اليمين
+            Text(
+              isLast ? 'عرض النتائج' : 'الكلمة التالية',
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'Tajawal',
+              ),
+            ),
+            // مسافة بسيطة ثم السهم على اليسار
+            if (!isLast) ...[
+              const SizedBox(width: 8),
+              const Icon(
+                Icons.arrow_back_rounded, 
+                size: 22,
+                // إجبار السهم على التأشير لليسار دائماً
+                textDirection: TextDirection.ltr, 
+              ),
+            ] else ...[
+              // أيقونة مختلفة لزر عرض النتائج (اختياري)
+              const SizedBox(width: 8),
+              const Icon(Icons.check_circle_outline_rounded, size: 22),
+            ]
+          ],
         ),
       ),
     );

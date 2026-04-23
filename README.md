@@ -1,7 +1,7 @@
-# Faseeh (فصيح)
+# Faseeh (فـصـيـح)
 > AI-driven pronunciation improvement platform for Arabic-speaking children 
 ## Project Overview
-Faseeh (فصيح) is an AI-powered mobile application designed to help Arabic-speaking children improve their pronunciation skills in Modern Standard Arabic (MSA).  
+Faseeh (فـصـيـح) is an AI-powered mobile application designed to help Arabic-speaking children improve their pronunciation skills in Modern Standard Arabic (MSA).  
 The application provides a safe and interactive environment where children can practice speaking, receive instant feedback, and track their progress over time.
 
 ---

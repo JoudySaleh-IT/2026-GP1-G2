@@ -171,21 +171,26 @@ class MyApp extends StatelessWidget {
         },
 
         '/child/placement-result': (context) {
-          final args = ModalRoute.of(context)!.settings.arguments as Map?;
-          final rawScores = args?['letterScores'] as List?;
+          // 1. نستقبل البيانات القادمة من شاشة الاختبار
+          final args =
+              ModalRoute.of(context)!.settings.arguments
+                  as Map<String, dynamic>;
+
+          // 2. نحول قائمة الحروف إلى النموذج الذي تفهمه شاشة النتائج (LetterScore)
+          List<LetterScore> convertedScores = (args['letterScores'] as List)
+              .map((item) {
+                return LetterScore(
+                  letter: item['letter'],
+                  score: item['score'],
+                );
+              })
+              .toList();
+
+          // 3. نفتح الشاشة ونمرر لها البيانات النظيفة
           return PlacementResultScreen(
-            childId: args?['childId'] ?? '',
-            score: args?['score'] ?? 0,
-            weakLetters: List<String>.from(args?['weakLetters'] ?? []),
-            strongLetters: List<String>.from(args?['strongLetters'] ?? []),
-            letterScores: rawScores != null
-                ? rawScores
-                      .map(
-                        (e) =>
-                            LetterScore(letter: e['letter'], score: e['score']),
-                      )
-                      .toList()
-                : [],
+            childId: args['childId'],
+            score: args['score'],
+            letterScores: convertedScores,
           );
         },
 
