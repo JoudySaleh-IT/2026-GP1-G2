@@ -47,7 +47,7 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
   double _totalAccumulatedScore = 0.0;
   List<Map<String, dynamic>> _individualScores = [];
   
-  // ✅ نظام "الطابور الذكي" لمعالجة الكلمات في الخلفية دون إيقاف الطفل
+  //  نظام "الطابور الذكي" لمعالجة الكلمات في الخلفية دون إيقاف الطفل
   final List<Map<String, String>> _evaluationQueue = [];
   bool _isProcessingQueue = false;
   int _pendingEvaluations = 0; 
@@ -151,7 +151,7 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
         _lastRecordedPath = path;
         _isRecording = false;
         _recorded[_currentIndex] = true;
-        _showNext = true; // ✨ نظهر زر التالي فوراً بدون أي انتظار!
+        _showNext = true; //  نظهر زر التالي فوراً بدون أي انتظار!
         _pendingEvaluations++; // نزيد عداد التقييمات المعلقة
       });
 
@@ -159,7 +159,7 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
       _pulseController.reset();
 
       if (path != null) {
-        // ✨ إضافة الكلمة لطابور المعالجة وتشغيله في الخلفية
+        //  إضافة الكلمة لطابور المعالجة وتشغيله في الخلفية
         _evaluationQueue.add({
           'path': path,
           'word': currentWordText,
@@ -187,7 +187,7 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
     }
   }
 
-  // ✨ دالة الطابور الذكي: تعالج الكلمات واحدة تلو الأخرى في الخلفية لكي لا يتعطل السيرفر
+  //  دالة الطابور الذكي: تعالج الكلمات واحدة تلو الأخرى في الخلفية لكي لا يتعطل السيرفر
   Future<void> _processQueue() async {
     if (_isProcessingQueue) return; // إذا كان المعالج يعمل، اتركه يكمل عمله
     _isProcessingQueue = true;
