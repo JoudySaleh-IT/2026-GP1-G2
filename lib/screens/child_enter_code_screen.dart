@@ -16,20 +16,17 @@ class ChildEnterCodeScreen extends StatefulWidget {
 
 class _ChildEnterCodeScreenState extends State<ChildEnterCodeScreen> {
   final TextEditingController _codeController = TextEditingController();
+  final FocusNode _focusNode = FocusNode(); // Added to keep focus
   bool _isLoading = false;
 
-  // ─── Function to Verify the Code ────────────────
+  // ─── No changes to _verifyCode or _showError functions ───
   Future<void> _verifyCode(String enteredCode) async {
+    // ... your existing logic remains exactly the same ...
     setState(() => _isLoading = true);
-
     try {
-      // 1. Sign in anonymously if needed
       if (FirebaseAuth.instance.currentUser == null) {
         await FirebaseAuth.instance.signInAnonymously();
-        print('Anonymous sign-in successful');
       }
-
-      // 2. Query Firestore (requires index on (code, expiresAt))
       final query = await FirebaseFirestore.instance
           .collection('pairing_codes')
           .where('code', isEqualTo: enteredCode)
@@ -42,37 +39,27 @@ class _ChildEnterCodeScreenState extends State<ChildEnterCodeScreen> {
         setState(() => _isLoading = false);
         return;
       }
-
       final doc = query.docs.first;
       final data = doc.data();
-
       final childId = data['childId'] as String;
       final parentId = data['parentId'] as String;
       final childName = data['childName'] as String? ?? 'بطلنا';
-
-      // Save session data
       ChildSession.currentChildId = childId;
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('saved_childId', childId);
       await prefs.setString('saved_parentId', parentId);
       await prefs.setBool('isChildLoggedIn', true);
-
-      // Delete used code
       await doc.reference.delete();
-
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('مرحباً بك يا $childName!')));
-
-      // ✅ Pass childId as argument to avoid relying on static variable
       Navigator.pushReplacementNamed(
         context,
         '/child/home',
         arguments: childId,
       );
     } catch (e) {
-      print('🔥 Verification error: $e');
       _showError('حدث خطأ أثناء التحقق من الكود. حاول مرة أخرى.');
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -90,7 +77,6 @@ class _ChildEnterCodeScreenState extends State<ChildEnterCodeScreen> {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
-        // Matching your Splash Screen Background
         body: Container(
           width: double.infinity,
           decoration: const BoxDecoration(
@@ -103,7 +89,6 @@ class _ChildEnterCodeScreenState extends State<ChildEnterCodeScreen> {
           child: SafeArea(
             child: Column(
               children: [
-                // Back Button
                 Align(
                   alignment: Alignment.topRight,
                   child: IconButton(
@@ -114,10 +99,7 @@ class _ChildEnterCodeScreenState extends State<ChildEnterCodeScreen> {
                     onPressed: () => Navigator.pop(context),
                   ),
                 ),
-
                 const Spacer(),
-
-                // Kid-friendly Header
                 const Text(
                   '🚀 أدخل كود الدخول',
                   style: TextStyle(
@@ -131,62 +113,100 @@ class _ChildEnterCodeScreenState extends State<ChildEnterCodeScreen> {
                   'اطلب الكود المكون من ٦ أرقام من ولي أمرك',
                   style: TextStyle(fontSize: 14, color: Colors.grey),
                 ),
-
                 const SizedBox(height: 40),
 
-                // Large PIN Entry
+                // ─── NEW SEPARATE DIGIT BOXES UI ───
+                // ─── UPDATED SEPARATE DIGIT BOXES UI ───
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 40),
-                  child: TextField(
-                    controller: _codeController,
-                    keyboardType: TextInputType.number,
-                    maxLength: 6,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 36,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 15,
-                      color: Color(0xFF511281),
-                    ),
-                    decoration: InputDecoration(
-                      counterText: "", // Hide the 0/6 counter
-                      filled: true,
-                      fillColor: Colors.white,
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(15),
-                        borderSide: const BorderSide(
-                          color: Color(0xFFB39DDB),
-                          width: 2,
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  // Wrap ONLY the input area with LTR so digits flow left-to-right
+                  child: Directionality(
+                    textDirection: TextDirection.ltr,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        // Hidden TextField to handle keyboard input
+                        Opacity(
+                          opacity: 0,
+                          child: TextField(
+                            controller: _codeController,
+                            focusNode: _focusNode,
+                            keyboardType: TextInputType.number,
+                            maxLength: 6,
+                            onChanged: (value) {
+                              setState(() {});
+                              if (value.length == 6) {
+                                _verifyCode(value);
+                              }
+                            },
+                          ),
                         ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(15),
-                        borderSide: const BorderSide(
-                          color: Color(0xFF511281),
-                          width: 2,
+                        // Visual digit boxes
+                        GestureDetector(
+                          onTap: () => _focusNode.requestFocus(),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: List.generate(6, (index) {
+                              String char = "";
+                              // Logic stays the same, but the Row now renders LTR
+                              if (_codeController.text.length > index) {
+                                char = _codeController.text[index];
+                              }
+                              bool isFocused =
+                                  _codeController.text.length == index;
+
+                              return Container(
+                                width: 45,
+                                height: 55,
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: isFocused
+                                        ? const Color(0xFF511281)
+                                        : const Color(0xFFB39DDB),
+                                    width: isFocused ? 2.5 : 1.5,
+                                  ),
+                                  boxShadow: [
+                                    if (isFocused)
+                                      BoxShadow(
+                                        color: const Color(
+                                          0xFF511281,
+                                        ).withOpacity(0.2),
+                                        blurRadius: 8,
+                                        spreadRadius: 1,
+                                      ),
+                                  ],
+                                ),
+                                child: Text(
+                                  char,
+                                  style: const TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF511281),
+                                  ),
+                                ),
+                              );
+                            }),
+                          ),
                         ),
-                      ),
+                      ],
                     ),
-                    onChanged: (value) {
-                      if (value.length == 6) {
-                        _verifyCode(
-                          value,
-                        ); // Auto-verify when 6 digits are typed
-                      }
-                    },
                   ),
                 ),
 
-                const SizedBox(height: 30),
-
+                // ─── END OF NEW UI ───
+                const SizedBox(height: 40),
                 if (_isLoading)
                   const CircularProgressIndicator(color: Color(0xFF511281))
                 else
-                  const Text(
-                    "بانتظار الأرقام الستة...",
-                    style: TextStyle(color: Colors.grey),
+                  Text(
+                    _codeController.text.length == 6
+                        ? "جاري التحقق..."
+                        : "بانتظار الأرقام الستة...",
+                    style: const TextStyle(color: Colors.grey),
                   ),
-
                 const Spacer(flex: 2),
               ],
             ),
