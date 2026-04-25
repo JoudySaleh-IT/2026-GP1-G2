@@ -65,16 +65,20 @@ async def process_audio(
         predicted_ids = torch.argmax(logits, dim=-1)
         transcription = processor.batch_decode(predicted_ids)[0].strip()
         
+<<<<<<< HEAD
         # 3.  خوارزمية التقييم المخصصة للحرف المستهدف 
         final_score = 15.0 # الدرجة الافتراضية لمحاولة الطفل (حتى لا يأخذ صفر أبداً)
+=======
+        # 3. خوارزمية التقييم المخصصة للحرف المستهدف 🌟
+        final_score = 0.0 # تبدأ الدرجة من صفر
+>>>>>>> b74ffbe7ce06cc428ad6754ec2eb761c58c4a299
 
         if not transcription:
             # إذا لم يسمع المودل أي شيء (صمت تام أو صوت غير مفهوم)
-            final_score = 15.0 
+            final_score = 0.0 
             
         elif target_letter in transcription:
-            #  الحالة الذهبية: الطفل نطق الحرف المستهدف بنجاح والمودل سمعه!
-            # بما أنه نطق الحرف، يستحق درجة عالية (من 75 إلى 100) بغض النظر عن باقي الكلمة
+            # الحالة الذهبية: الطفل نطق الحرف المستهدف بنجاح والمودل سمعه!
             mistakes = editdistance.eval(target_word, transcription)
             total_letters = len(target_word)
             word_accuracy = max(0, 100 - ((mistakes / total_letters) * 100))
@@ -83,22 +87,18 @@ async def process_audio(
             final_score = max(85.0, word_accuracy * 1.2) 
             
         else:
-            #  الحالة السلبية: الحرف المستهدف غير موجود في الكلمة التي سمعها المودل (الطفل أخطأ أو لَدَغ)
-            # هنا نقيس مدى قرب الكلمة المنطوقة من الكلمة المطلوبة
+            # الحالة السلبية: الحرف المستهدف غير موجود في الكلمة
             mistakes = editdistance.eval(target_word, transcription)
             total_letters = len(target_word)
             word_accuracy = max(0, 100 - ((mistakes / total_letters) * 100))
             
-            # بما أنه أخطأ في الحرف المستهدف، الدرجة لن تتجاوز 65% (لكي يقع في فئة: يحتاج تدريب أو متوسط)
+            # بما أنه أخطأ في الحرف المستهدف، الدرجة لن تتجاوز 65% 
+            # وإذا كانت دقة الكلمة سيئة جداً، ستنزل الدرجة بشكل طبيعي وقد تصل إلى الصفر
             final_score = min(65.0, word_accuracy * 1.2)
-            
-            # إذا كانت دقة الكلمة سيئة جداً ولم ينطق الحرف، نعطيه درجة منخفضة
-            if final_score < 15.0:
-                final_score = 25.0
 
-        # قانون منع القيم الشاذة
-        final_score = max(15.0, min(100.0, final_score))
-
+        # قانون منع القيم الشاذة (الحد الأدنى 0 والحد الأقصى 100)
+        final_score = max(0.0, min(100.0, final_score))
+        
         # الرفع للفايربيس
         bucket = storage.bucket()
         blob = bucket.blob(f"processed_audios/clean_{file.filename}")
