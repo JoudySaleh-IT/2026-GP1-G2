@@ -65,7 +65,7 @@ async def process_audio(
         predicted_ids = torch.argmax(logits, dim=-1)
         transcription = processor.batch_decode(predicted_ids)[0].strip()
         
-        # 3.  خوارزمية التقييم المخصصة للحرف المستهدف 🌟
+        # 3.  خوارزمية التقييم المخصصة للحرف المستهدف 
         final_score = 15.0 # الدرجة الافتراضية لمحاولة الطفل (حتى لا يأخذ صفر أبداً)
 
         if not transcription:
