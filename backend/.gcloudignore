@@ -11,3 +11,9 @@ __pycache__/
 
 # Ignore Mac system files
 .DS_Store
+
+backend/serviceAccountKey.json # لخصوصية بياناتك
+.git                           # لعدم رفع تاريخ التغييرات (حجمه كبير)
+venv/                          # لعدم رفع البيئة الافتراضية (تثقل الرفع جداً)
+__pycache__/                   # ملفات مؤقتة لا داعي لها
+.DS_Store                      # ملفات نظام الماك
