@@ -1,30 +1,31 @@
-# Use a lightweight Python base image
+# 1. استخدام نسخة بايثون خفيفة
 FROM python:3.10-slim
 
-# Set the working directory
+# 2. تحديد مجلد العمل
 WORKDIR /app
 
-# Install system dependencies required for audio processing
+# 3. تثبيت مكتبات النظام الضرورية لمعالجة الصوت
 RUN apt-get update && apt-get install -y libsndfile1 ffmpeg && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements file
+# 4. نسخ ملف المكتبات أولاً (لتحسين سرعة البناء مستقبلاً)
 COPY requirements.txt .
 
-# Upgrade pip and install the SECURE, CPU-only version of PyTorch
+# 5. تحديث pip وتثبيت نسخة PyTorch المخصصة للمعالجات (بدون GPU لأن السيرفر CPU)
 RUN pip install --no-cache-dir --upgrade pip
-RUN pip install --no-cache-dir "torch>=2.6.0" --index-url https://download.pytorch.org/whl/cpu
+RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
 
-# Install the rest of the required Python libraries
+# 6. تثبيت باقي المكتبات المطلوبة
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Pre-download the Hugging Face model
-RUN python -c "from transformers import Wav2Vec2ForCTC, Wav2Vec2Processor; Wav2Vec2Processor.from_pretrained('jonatasgrosman/wav2vec2-large-xlsr-53-arabic'); Wav2Vec2ForCTC.from_pretrained('jonatasgrosman/wav2vec2-large-xlsr-53-arabic')"
-
-# Copy your Python code
+# 7. نسخ كل ملفات المشروع (بما في ذلك مجلد final_faseeh_model)
 COPY . .
 
-# Set the default port to 8080
+# --- ملاحظة هامة ---
+# قمنا بحذف سطر RUN python -c "from transformers..." 
+# لأن الموديل الآن موجود محلياً في مجلدك ولن نحمله من الإنترنت.
+
+# 8. تحديد المنفذ الافتراضي
 ENV PORT=8080
 
-# The startup command
+# 9. أمر التشغيل
 CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT}"]
