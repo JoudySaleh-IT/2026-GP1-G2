@@ -66,33 +66,29 @@ async def process_audio(
         predicted_ids = torch.argmax(logits, dim=-1)
         transcription = processor.batch_decode(predicted_ids)[0].strip()
 
-        # 3. خوارزمية التقييم المعدلة (بدون ضرب 1.2)
+       # 3. خوارزمية التقييم "الدقة المجردة"
         final_score = 0.0
 
         if not transcription:
+            # الحالة الثالثة: صمت أو ضجيج
             final_score = 0.0 
             
         elif target_letter in transcription:
-            # تم حذف معامل الضرب 1.2 لأن الموديل أصبح أدق في الفهم
+            # الحالة الأولى: الحرف موجود (التقييم بناءً على الدقة فقط)
             mistakes = editdistance.eval(target_word, transcription)
             total_letters = len(target_word)
-            # حساب الدقة بناءً على المسافة اللغوية الحقيقية
-            final_score = max(0, 100 - ((mistakes / total_letters) * 100))
             
-            # إذا نطق الحرف المستهدف، نعطيه دفعة معنوية بسيطة للحد الأدنى فقط
-            if final_score < 70:
-                final_score = 75.0
+            # حساب الدقة الفعلية (بدون رفعها لـ 75)
+            accuracy = max(0, 100 - ((mistakes / total_letters) * 100))
+            
+            # هنا الدرجة هي الدقة الحقيقية مهما كانت منخفضة
+            final_score = accuracy
             
         else:
-            # في حال عدم وجود الحرف المستهدف، الدرجة تعتمد على دقة الكلمة بحد أقصى 60
-            mistakes = editdistance.eval(target_word, transcription)
-            total_letters = len(target_word)
-            word_accuracy = max(0, 100 - ((mistakes / total_letters) * 100))
-            final_score = min(60.0, word_accuracy)
-
-        # ضمان أن الدرجة بين 0 و 100
-        final_score = max(0.0, min(100.0, final_score))
-        
+            # الحالة الثانية: الحرف غير موجود
+            # الدرجة صفر لأن الهدف الرئيسي لم يتحقق
+            final_score = 0.0
+            
         # 4. الرفع إلى Firebase Storage
         bucket = storage.bucket()
         blob = bucket.blob(f"processed_audios/clean_{file.filename}")

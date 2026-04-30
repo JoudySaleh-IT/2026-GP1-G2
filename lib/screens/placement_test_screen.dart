@@ -399,8 +399,9 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
                   (route) => false,
                   arguments: widget.childId,
                 ),
+                // تم تغيير الأيقونة هنا لتؤشر لليمين (الخلف في نظام RTL)
                 icon: const Icon(
-                  Icons.chevron_right,
+                  Icons.chevron_left, 
                   color: Colors.white,
                   size: 28,
                 ),
@@ -442,7 +443,7 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
       ),
     );
   }
-
+  
   Widget _buildCard() {
     return Container(
       decoration: BoxDecoration(
