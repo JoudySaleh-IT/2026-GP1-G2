@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/auth_service.dart';
 import 'edit_child_profile_screen.dart';
@@ -11,24 +10,25 @@ class _WeekDay {
   const _WeekDay(this.day, this.exercises);
 }
 
-const _name = 'أحمد';
-const _avatar = '🦁';
-const _age = 10;
-const _level = 'متوسط';
-const _progress = 65;
-const _streak = 7;
-const _exercisesCompleted = 23;
-const _weeklyData = [
-  _WeekDay('الإثنين', 3),
-  _WeekDay('الثلاثاء', 5),
-  _WeekDay('الأربعاء', 2),
-  _WeekDay('الخميس', 4),
-  _WeekDay('الجمعة', 6),
-  _WeekDay('السبت', 3),
-  _WeekDay('الأحد', 0),
+const _weeklyDataMock = [
+  _WeekDay('الإثنين', 4),
+  _WeekDay('الثلاثاء', 7),
+  _WeekDay('الأربعاء', 3),
+  _WeekDay('الخميس', 8),
+  _WeekDay('الجمعة', 5),
+  _WeekDay('السبت', 9),
+  _WeekDay('الأحد', 2),
 ];
 
-// ─── Screen ──────────────────────────────────────────────────────────────────
+const Map<String, dynamic> _letterProgressMock = {
+  'ر': {'level': 'مبتدئ', 'completed': 2, 'total': 10},
+  'س': {'level': 'متوسط', 'completed': 6, 'total': 10},
+  'ق': {'level': 'مبتدئ', 'completed': 1, 'total': 10},
+  'ص': {'level': 'متقدم', 'completed': 9, 'total': 10},
+  'خ': {'level': 'متوسط', 'completed': 5, 'total': 10},
+};
+
+// ─── Main Screen ─────────────────────────────────────────────────────────────
 class ChildProfileManagementScreen extends StatefulWidget {
   final String? childId;
   const ChildProfileManagementScreen({super.key, this.childId});
@@ -41,6 +41,19 @@ class ChildProfileManagementScreen extends StatefulWidget {
 class _ChildProfileManagementScreenState
     extends State<ChildProfileManagementScreen> {
   final AuthService _authService = AuthService();
+  late final ScrollController _scrollController;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   void _confirmDelete() {
     showDialog(
@@ -53,32 +66,12 @@ class _ChildProfileManagementScreenState
           ),
           title: const Text(
             'حذف ملف الطفل؟',
-            style: TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF222222),
-            ),
+            style: TextStyle(fontWeight: FontWeight.bold),
           ),
-          content: const Text(
-            'لا يمكن التراجع عن هذا الإجراء. سيتم حذف ملف الطفل وجميع بياناته بشكل نهائي.',
-            style: TextStyle(fontSize: 13, color: Colors.grey),
-          ),
+          content: const Text('سيتم حذف ملف الطفل وجميع بياناته بشكل نهائي.'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              style: TextButton.styleFrom(
-                side: BorderSide(
-                  color: const Color(0xFF511281).withOpacity(0.2),
-                  width: 2,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-              ),
               child: const Text(
                 'إلغاء',
                 style: TextStyle(color: Color(0xFF511281)),
@@ -87,9 +80,9 @@ class _ChildProfileManagementScreenState
             ElevatedButton(
               onPressed: () async {
                 try {
-                  await _authService.deleteChild(widget.childId!); // حذف حقيقي
+                  await _authService.deleteChild(widget.childId!);
                   if (mounted) {
-                    Navigator.pop(context); // إغلاق الديالوج
+                    Navigator.pop(context);
                     Navigator.pushNamedAndRemoveUntil(
                       context,
                       '/parent/dashboard',
@@ -114,16 +107,13 @@ class _ChildProfileManagementScreenState
   }
 
   @override
-  @override
   Widget build(BuildContext context) {
-    // نستخدم StreamBuilder لمراقبة وثيقة الطفل في Firestore لحظة بلحظة
     return StreamBuilder<DocumentSnapshot>(
       stream: FirebaseFirestore.instance
           .collection('children')
           .doc(widget.childId)
           .snapshots(),
       builder: (context, snapshot) {
-        // 1. حالة الانتظار: إذا كانت البيانات لا تزال تحمل
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
             body: Center(
@@ -132,15 +122,9 @@ class _ChildProfileManagementScreenState
           );
         }
 
-        // 2. حالة الخطأ أو عدم وجود بيانات
-        if (!snapshot.hasData || !snapshot.data!.exists) {
-          return const Scaffold(
-            body: Center(child: Text("لم يتم العثور على بيانات الطفل")),
-          );
-        }
-
-        // 3. استخراج البيانات الحقيقية من snapshot
-        var data = snapshot.data!.data() as Map<String, dynamic>;
+        var realData = snapshot.hasData && snapshot.data!.exists
+            ? snapshot.data!.data() as Map<String, dynamic>
+            : {'name': 'تحميل...', 'avatar': '👤', 'age': 0};
 
         return Directionality(
           textDirection: TextDirection.rtl,
@@ -148,44 +132,94 @@ class _ChildProfileManagementScreenState
             backgroundColor: const Color(0xFFFCF9EA),
             body: Column(
               children: [
-                // الهيدر الآن يأخذ البيانات من Firestore مباشرة
                 _ProfileHeader(
                   childId: widget.childId,
                   onDelete: _confirmDelete,
-                  name: data['name'] ?? 'بدون اسم',
-                  avatar: data['avatar'] ?? '🦁',
-                  age: data['age'] ?? 0,
+                  name: realData['name'] ?? 'بدون اسم',
+                  avatar: realData['avatar'] ?? '🦁',
+                  age: realData['age'] ?? 0,
                 ),
                 Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      children: [
-                        // التمارين: نأخذ القيمة من الحقل 'progress' أو أي حقل مخصص للتمارين
+                  child: Scrollbar(
+                    controller: _scrollController,
+                    child: ListView(
+                      controller: _scrollController,
+                      physics:
+                          const ClampingScrollPhysics(), // <-- No bounce = no drift
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
+                      children: const [
                         _StatCard(
+                          key: ValueKey('stat_exercises'),
                           icon: Icons.menu_book_rounded,
-                          title: 'التمارين',
-                          value: '${data['completedExercises'] ?? 0}',
-                          subtitle: 'تم إكمالها',
+                          title: 'التمارين المنجزة',
+                          value: '42',
+                          subtitle: 'أداء رائع هذا الشهر',
                         ),
-                        const SizedBox(height: 12),
-
-                        // سلسلة الأيام
+                        SizedBox(height: 12),
                         _StatCard(
+                          key: ValueKey('stat_streak'),
                           icon: Icons.emoji_events_rounded,
                           title: 'سلسلة الأيام',
-                          value: '${data['streak'] ?? 0} أيام',
-                          subtitle: 'السلسلة الحالية',
+                          value: '12 يوم',
+                          subtitle: 'بطل فصيح مستمر',
                         ),
-                        const SizedBox(height: 12),
-
-                        // بطاقة التقدم تأخذ النسبة من Firestore
-                        _ProgressCard(progress: data['progress'] ?? 0),
-                        const SizedBox(height: 16),
-
-                        // النشاط الأسبوعي (هذا الجزء يحتاج مصفوفة بيانات، يمكنك تركها حالياً أو جلبها من Firestore)
-                        _WeeklyChartCard(weeklyData: _weeklyData),
-                        const SizedBox(height: 16),
+                        SizedBox(height: 12),
+                        _ProgressCard(progress: 74),
+                        SizedBox(height: 24),
+                        Text(
+                          'حروف تحتاج تحسين',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF511281),
+                          ),
+                        ),
+                        SizedBox(height: 12),
+                        _LetterListTile(
+                          key: ValueKey('letter_ر'),
+                          letter: 'ر',
+                          level: 'مبتدئ',
+                          completed: 2,
+                          total: 10,
+                        ),
+                        SizedBox(height: 12),
+                        _LetterListTile(
+                          key: ValueKey('letter_س'),
+                          letter: 'س',
+                          level: 'متوسط',
+                          completed: 6,
+                          total: 10,
+                        ),
+                        SizedBox(height: 12),
+                        _LetterListTile(
+                          key: ValueKey('letter_ق'),
+                          letter: 'ق',
+                          level: 'مبتدئ',
+                          completed: 1,
+                          total: 10,
+                        ),
+                        SizedBox(height: 12),
+                        _LetterListTile(
+                          key: ValueKey('letter_ص'),
+                          letter: 'ص',
+                          level: 'متقدم',
+                          completed: 9,
+                          total: 10,
+                        ),
+                        SizedBox(height: 12),
+                        _LetterListTile(
+                          key: ValueKey('letter_خ'),
+                          letter: 'خ',
+                          level: 'متوسط',
+                          completed: 5,
+                          total: 10,
+                        ),
+                        SizedBox(height: 12),
+                        _WeeklyChartCard(
+                          key: ValueKey('weekly_chart'),
+                          weeklyData: _weeklyDataMock,
+                        ),
+                        SizedBox(height: 20),
                       ],
                     ),
                   ),
@@ -199,17 +233,101 @@ class _ChildProfileManagementScreenState
   }
 }
 
-// ─── Header ───────────────────────────────────────────────────────────────────
+// ─── UI Components ──────────────────────────────────────────────────────────
+
+class _LetterListTile extends StatelessWidget {
+  final String letter;
+  final String level;
+  final int completed;
+  final int total;
+  const _LetterListTile({
+    super.key,
+    required this.letter,
+    required this.level,
+    required this.completed,
+    required this.total,
+  });
+
+  Color _getLevelColor(String level) {
+    if (level == 'مبتدئ') return const Color(0xFFFF6969);
+    if (level == 'متوسط') return const Color(0xFFFFB347);
+    return const Color(0xFF4CAF50);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final Color color = _getLevelColor(level);
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: _cardDecoration(),
+      child: Row(
+        children: [
+          Container(
+            width: 52,
+            height: 52,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Text(
+              letter,
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      level,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: color,
+                      ),
+                    ),
+                    Text(
+                      '$completed/$total تمارين',
+                      style: const TextStyle(fontSize: 11, color: Colors.grey),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: LinearProgressIndicator(
+                    value: completed / total,
+                    minHeight: 6,
+                    backgroundColor: const Color(0xFFEEEEEE),
+                    valueColor: AlwaysStoppedAnimation<Color>(color),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _ProfileHeader extends StatelessWidget {
   final String? childId;
   final VoidCallback onDelete;
-  // أضفنا هذه المتغيرات لاستقبال البيانات الحقيقية
   final String name;
   final String avatar;
   final int age;
-
   const _ProfileHeader({
-    required this.childId,
+    this.childId,
     required this.onDelete,
     required this.name,
     required this.avatar,
@@ -225,31 +343,25 @@ class _ProfileHeader extends StatelessWidget {
           begin: Alignment.topRight,
           end: Alignment.bottomLeft,
         ),
-        boxShadow: [
-          BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 2)),
-        ],
       ),
       padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + 8,
-        bottom: 12,
+        top: MediaQuery.of(context).padding.top + 10,
+        bottom: 20,
         right: 16,
         left: 16,
       ),
       child: Row(
         children: [
-          _HeaderIconBtn(
-            icon: Icons.arrow_back,
-            onTap: () => Navigator.pop(context),
+          IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () => Navigator.pop(context),
           ),
-          const SizedBox(width: 10),
-          // نستخدم الـ avatar القادم من Firestore
-          Text(avatar, style: const TextStyle(fontSize: 36)),
-          const SizedBox(width: 10),
+          Text(avatar, style: const TextStyle(fontSize: 32)),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // نستخدم الـ name القادم من Firestore
                 Text(
                   name,
                   style: const TextStyle(
@@ -258,62 +370,40 @@ class _ProfileHeader extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                // نستخدم الـ age والـ level القادمين من Firestore
                 Text(
-                  '$age سنوات ',
+                  '$age سنوات | متفاعل',
                   style: const TextStyle(color: Colors.white70, fontSize: 11),
                 ),
               ],
             ),
           ),
-          // زر التعديل
-          _HeaderIconBtn(
-            icon: Icons.edit_outlined,
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) =>
-                      EditChildProfileScreen(childId: childId ?? ''),
-                ),
-              );
-            },
+          IconButton(
+            icon: const Icon(Icons.edit_outlined, color: Colors.white),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) =>
+                    EditChildProfileScreen(childId: childId ?? ''),
+              ),
+            ),
           ),
-          const SizedBox(width: 4),
-          // زر الحذف
-          _HeaderIconBtn(icon: Icons.delete_outline_rounded, onTap: onDelete),
+          IconButton(
+            icon: const Icon(Icons.delete_outline_rounded, color: Colors.white),
+            onPressed: onDelete,
+          ),
         ],
       ),
     );
   }
 }
 
-class _HeaderIconBtn extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-  const _HeaderIconBtn({required this.icon, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) => InkWell(
-    onTap: onTap,
-    borderRadius: BorderRadius.circular(8),
-    child: Container(
-      width: 34,
-      height: 34,
-      child: Icon(icon, color: Colors.white, size: 25),
-    ),
-  );
-}
-
-// ─── Stat Card — vertical layout matching Figma ───────────────────────────────
-// Layout: [icon  title] at top-right, big number below, subtitle below number
 class _StatCard extends StatelessWidget {
   final IconData icon;
   final String title;
   final String value;
   final String subtitle;
-
   const _StatCard({
+    super.key,
     required this.icon,
     required this.title,
     required this.value,
@@ -323,43 +413,26 @@ class _StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+      padding: const EdgeInsets.all(18),
       decoration: _cardDecoration(),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start, // RTL: start = right
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Top row: title + icon ────────────────────────────
           Row(
-            mainAxisAlignment: MainAxisAlignment.start,
             children: [
-              Icon(icon, size: 16, color: const Color(0xFFFF6969)),
-              const SizedBox(width: 6),
+              Icon(icon, size: 18, color: const Color(0xFFFF6969)),
+              const SizedBox(width: 8),
               Text(
                 title,
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: Color(0xFF888888),
-                  fontWeight: FontWeight.w500,
-                ),
+                style: const TextStyle(fontSize: 13, color: Colors.grey),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-
-          // ── Big value ────────────────────────────────────────
+          const SizedBox(height: 8),
           Text(
             value,
-            style: const TextStyle(
-              fontSize: 32,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF1A1A1A),
-              height: 1.1,
-            ),
+            style: const TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
           ),
-          const SizedBox(height: 4),
-
-          // ── Subtitle ─────────────────────────────────────────
           Text(
             subtitle,
             style: const TextStyle(fontSize: 12, color: Color(0xFFAAAAAA)),
@@ -370,53 +443,36 @@ class _StatCard extends StatelessWidget {
   }
 }
 
-// ─── Progress Card — number above bar ────────────────────────────────────────
 class _ProgressCard extends StatelessWidget {
   final int progress;
-  const _ProgressCard({required this.progress});
+  const _ProgressCard({super.key, required this.progress});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+      padding: const EdgeInsets.all(18),
       decoration: _cardDecoration(),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start, // RTL: start = right
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Top row: title + icon ────────────────────────────
           const Row(
-            mainAxisAlignment: MainAxisAlignment.start,
             children: [
-              Icon(Icons.mic, size: 16, color: Color(0xFFFF6969)),
-              SizedBox(width: 6),
+              Icon(Icons.auto_graph, size: 18, color: Color(0xFFFF6969)),
+              SizedBox(width: 8),
               Text(
-                'التقدم',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Color(0xFF888888),
-                  fontWeight: FontWeight.w500,
-                ),
+                'التقدم الإجمالي',
+                style: TextStyle(fontSize: 13, color: Colors.grey),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-
-          // ── Percentage number ────────────────────────────────
+          const SizedBox(height: 8),
           Text(
             '$progress%',
-            style: const TextStyle(
-              fontSize: 32,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF1A1A1A),
-              height: 1.1,
-            ),
+            style: const TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 10),
-
-          // ── Progress bar below number ────────────────────────
           ClipRRect(
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: BorderRadius.circular(10),
             child: LinearProgressIndicator(
               value: progress / 100,
               minHeight: 8,
@@ -432,180 +488,72 @@ class _ProgressCard extends StatelessWidget {
   }
 }
 
-// ─── Shared card decoration ───────────────────────────────────────────────────
 BoxDecoration _cardDecoration() => BoxDecoration(
   color: Colors.white,
-  borderRadius: BorderRadius.circular(14),
+  borderRadius: BorderRadius.circular(16),
   border: Border.all(
-    color: const Color(0xFF511281).withOpacity(0.08),
+    color: const Color(0xFF511281).withOpacity(0.05),
     width: 1.5,
   ),
-  boxShadow: const [
-    BoxShadow(color: Color(0x0F000000), blurRadius: 8, offset: Offset(0, 2)),
+  boxShadow: [
+    BoxShadow(
+      color: Colors.black.withOpacity(0.03),
+      blurRadius: 10,
+      offset: const Offset(0, 4),
+    ),
   ],
 );
 
-// ─── Weekly Chart Card ────────────────────────────────────────────────────────
 class _WeeklyChartCard extends StatelessWidget {
   final List<_WeekDay> weeklyData;
-  const _WeeklyChartCard({required this.weeklyData});
+  const _WeeklyChartCard({super.key, required this.weeklyData});
 
   @override
   Widget build(BuildContext context) {
-    final maxVal = weeklyData
-        .map((e) => e.exercises)
-        .reduce((a, b) => a > b ? a : b);
-
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+      padding: const EdgeInsets.all(18),
       decoration: _cardDecoration(),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start, // RTL: start = right
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
             'النشاط الأسبوعي',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF222222),
-            ),
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
           ),
-          const SizedBox(height: 16),
-
-          // Bars + Y-axis
+          const SizedBox(height: 20),
           SizedBox(
-            height: 170,
+            height: 120,
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Y-axis
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 2),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: List.generate(maxVal + 1, (i) {
-                      return Text(
-                        '${maxVal - i}',
-                        style: const TextStyle(
-                          fontSize: 10,
-                          color: Color(0xFFBBBBBB),
-                        ),
-                      );
-                    }),
-                  ),
-                ),
-                const SizedBox(width: 8),
-
-                // Bars with dashed grid
-                Expanded(
-                  child: CustomPaint(
-                    painter: _GridPainter(steps: maxVal),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: weeklyData.map((day) {
-                        final ratio = maxVal == 0
-                            ? 0.0
-                            : day.exercises / maxVal;
-                        return Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 5),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                if (day.exercises > 0)
-                                  Text(
-                                    '${day.exercises}',
-                                    style: const TextStyle(
-                                      fontSize: 9,
-                                      color: Color(0xFFFF6969),
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                const SizedBox(height: 3),
-                                AnimatedContainer(
-                                  duration: const Duration(milliseconds: 600),
-                                  curve: Curves.easeOut,
-                                  height: ratio * 130,
-                                  decoration: BoxDecoration(
-                                    color: day.exercises == 0
-                                        ? const Color(0xFFEEEEEE)
-                                        : const Color(0xFFFF6969),
-                                    borderRadius: const BorderRadius.vertical(
-                                      top: Radius.circular(5),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Divider
-          Padding(
-            padding: const EdgeInsets.only(right: 26),
-            child: const Divider(
-              height: 8,
-              thickness: 1,
-              color: Color(0xFFEEEEEE),
-            ),
-          ),
-
-          // X-axis: full day names, rotated
-          Padding(
-            padding: const EdgeInsets.only(right: 26, top: 4),
-            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: weeklyData.map((day) {
                 return Expanded(
-                  child: Transform.rotate(
-                    angle: -0.45,
-                    child: Text(
-                      day.day,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 9.5,
-                        color: Color(0xFF888888),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Container(
+                        height: day.exercises * 10.0,
+                        margin: const EdgeInsets.symmetric(horizontal: 6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFF6969),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
                       ),
-                    ),
+                      const SizedBox(height: 8),
+                      Text(
+                        day.day.substring(0, 2),
+                        style: const TextStyle(
+                          fontSize: 10,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
                   ),
                 );
               }).toList(),
             ),
           ),
-          const SizedBox(height: 6),
         ],
       ),
     );
   }
-}
-
-// ─── Dashed grid painter ──────────────────────────────────────────────────────
-class _GridPainter extends CustomPainter {
-  final int steps;
-  const _GridPainter({required this.steps});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = const Color(0xFFEEEEEE)
-      ..strokeWidth = 1;
-
-    for (int i = 0; i <= steps; i++) {
-      final y = size.height * (1 - i / steps);
-      double x = 0;
-      while (x < size.width) {
-        canvas.drawLine(Offset(x, y), Offset(x + 4, y), paint);
-        x += 8;
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(_GridPainter old) => old.steps != steps;
 }
