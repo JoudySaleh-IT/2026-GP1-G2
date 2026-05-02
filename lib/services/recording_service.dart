@@ -43,7 +43,6 @@ class RecordingService {
     String audioFilePath,
     String targetWord,
   ) async {
-    // ⚠️ استبدلي 192.168.X.X برقم الـ IP الخاص بالماك ⚠️
     var apiUrl = Uri.parse('http://192.168.1.91:8000/process-audio/');
 
     try {
