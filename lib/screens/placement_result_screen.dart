@@ -62,20 +62,30 @@ class _PlacementResultScreenState extends State<PlacementResultScreen> {
     _markPlacementDone();
   }
 
-  Future<void> _markPlacementDone() async {
-    try {
-      await FirebaseFirestore.instance
-          .collection('children')
-          .doc(widget.childId)
-          .update({
-        'placementDone': true,
-        'placementScore': widget.score,
-        'placementDate': FieldValue.serverTimestamp(),
-      });
-    } catch (e) {
-      debugPrint('Error updating placementDone: $e');
-    }
+ Future<void> _markPlacementDone() async {
+  try {
+    // 1. تحويل قائمة الكائنات (LetterScore objects) إلى خريطة (Map) يفهمها الفايربيس
+    // سيتم حفظها بصيغة: {'أ': 50, 'ب': 80, ...}
+    Map<String, int> scoresMap = {
+      for (var item in widget.letterScores) item.letter: item.score
+    };
+
+    // 2. تحديث مستند الطفل في Firestore
+    await FirebaseFirestore.instance
+        .collection('children')
+        .doc(widget.childId)
+        .update({
+      'placementDone': true,
+      'placementScore': widget.score,
+      'placementDate': FieldValue.serverTimestamp(),
+      'letterScores': scoresMap, // ✅ هذا هو السطر الناقص اللي بيحل مشكلة التمارين!
+    });
+    
+    debugPrint('✅ تم حفظ نتائج اختبار المستوى وتفاصيل الحروف بنجاح');
+  } catch (e) {
+    debugPrint('❌ خطأ أثناء تحديث بيانات الاختبار: $e');
   }
+}
 
   // ── Constants ──
   static const _purple = Color(0xFF511281);

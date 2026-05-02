@@ -22,6 +22,13 @@ class ChildHomeScreen extends StatelessWidget {
   final String childId;
 
   const ChildHomeScreen({super.key, required this.childId});
+  // ✅ دالة التحقق من إتمام التمارين (درجات الحروف >= 70)
+  bool _canReassess(Map<String, dynamic> data) {
+    final Map<String, dynamic> scores = data['letterScores'] ?? {};
+    if (scores.isEmpty) return false;
+    // إذا وجدنا أي حرف درجته أقل من 70، يعني لسه ما خلص
+    return !scores.values.any((score) => (score as num) < 70);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -47,6 +54,8 @@ class ChildHomeScreen extends StatelessWidget {
 
         var data = snapshot.data!.data() as Map<String, dynamic>;
         final bool hasCompletedPlacement = data['placementDone'] ?? false;
+// ✅ حساب هل يحق له إعادة التقييم
+        final bool canReassess = _canReassess(data);
 
         return Directionality(
           textDirection: TextDirection.rtl,
@@ -64,63 +73,42 @@ class ChildHomeScreen extends StatelessWidget {
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
                     child: Column(
                       children: [
-                        // ── Smart banner: يتغير حسب حالة الاختبار ────────────
+                        // ── البانر الذكي مع نظام القفل ────────────
                         _TestBanner(
                           isReassessment: hasCompletedPlacement,
-                          onTap: () => Navigator.pushNamed(
-                            context,
-                            '/child/placement-test',
-                            arguments: childId,
-                          ),
+                          isLocked: hasCompletedPlacement && !canReassess,
+                          onTap: () {
+                            if (hasCompletedPlacement && !canReassess) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('أكمل تمارينك أولاً لتتمكن من إعادة التقييم! 💪'),
+                                  backgroundColor: Color(0xFF511281),
+                                ),
+                              );
+                              return;
+                            }
+                            Navigator.pushNamed(context, '/child/placement-test', arguments: childId);
+                          },
                         ),
-
                         const SizedBox(height: 16),
-
-                        // ── Stats row ──────────────────────────────────────
                         Row(
                           children: [
-                            Expanded(
-                              child: _StatCard(
-                                icon: Icons.local_fire_department,
-                                value: (data['streak'] ?? 0).toString(),
-                                label: 'المواظبة',
-                              ),
-                            ),
+                            Expanded(child: _StatCard(icon: Icons.local_fire_department, value: (data['streak'] ?? 0).toString(), label: 'المواظبة')),
                             const SizedBox(width: 8),
-                            Expanded(
-                              child: _StatCard(
-                                icon: Icons.star,
-                                value: (data['points'] ?? 0).toString(),
-                                label: 'النقاط',
-                              ),
-                            ),
+                            Expanded(child: _StatCard(icon: Icons.star, value: (data['points'] ?? 0).toString(), label: 'النقاط')),
                             const SizedBox(width: 8),
-                            Expanded(
-                              child: _StatCard(
-                                icon: Icons.emoji_events,
-                                value: '#${data['rank'] ?? '-'}',
-                                label: 'الترتيب',
-                              ),
-                            ),
+                            Expanded(child: _StatCard(icon: Icons.emoji_events, value: '#${data['rank'] ?? '-'}', label: 'الترتيب')),
                           ],
                         ),
                         const SizedBox(height: 12),
-
-                        // ── Today's goal ───────────────────────────────────
-                        _TodayGoalCard(
-                          done: data['todayExercises'] ?? 0,
-                          goal: data['todayGoal'] ?? 5,
-                        ),
+                        _TodayGoalCard(done: data['todayExercises'] ?? 0, goal: data['todayGoal'] ?? 5),
                       ],
                     ),
                   ),
                 ),
               ],
             ),
-            bottomNavigationBar: _ChildBottomNav(
-              currentRoute: '/child/home',
-              childId: childId,
-            ),
+            bottomNavigationBar: _ChildBottomNav(currentRoute: '/child/home', childId: childId),
           ),
         );
       },
@@ -541,124 +529,77 @@ class _ParentPasswordDialogState extends State<_ParentPasswordDialog> {
   }
 }
 
-// ─── Smart Test Banner (placement + reassessment in one) ────────────────────
 class _TestBanner extends StatefulWidget {
   final bool isReassessment;
+  final bool isLocked;
   final VoidCallback onTap;
-  const _TestBanner({required this.isReassessment, required this.onTap});
+  const _TestBanner({required this.isReassessment, required this.onTap, this.isLocked = false});
 
   @override
   State<_TestBanner> createState() => _TestBannerState();
 }
 
-class _TestBannerState extends State<_TestBanner>
-    with SingleTickerProviderStateMixin {
+class _TestBannerState extends State<_TestBanner> with SingleTickerProviderStateMixin {
   late final AnimationController _ctrl;
   late final Animation<double> _scale;
 
   @override
   void initState() {
     super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 100),
-    );
-    _scale = Tween<double>(
-      begin: 1.0,
-      end: 0.97,
-    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
+    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 100));
+    _scale = Tween<double>(begin: 1.0, end: 0.97).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
   }
 
   @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
+  void dispose() { _ctrl.dispose(); super.dispose(); }
 
   @override
   Widget build(BuildContext context) {
-    final isReassessment = widget.isReassessment;
+    final Color bgColor = widget.isLocked 
+        ? Colors.grey.shade400 
+        : (widget.isReassessment ? const Color(0xFF511281) : const Color(0xFFFF6969));
 
     return AnimatedBuilder(
       animation: _scale,
       builder: (_, child) => Transform.scale(scale: _scale.value, child: child),
       child: GestureDetector(
-        onTapDown: (_) => _ctrl.forward(),
-        onTapUp: (_) {
-          _ctrl.reverse();
-          widget.onTap();
-        },
+        onTapDown: (_) => widget.isLocked ? null : _ctrl.forward(),
+        onTapUp: (_) { _ctrl.reverse(); widget.onTap(); },
         onTapCancel: () => _ctrl.reverse(),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 400),
-          curve: Curves.easeInOut,
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 22),
-          decoration: BoxDecoration(
-            color: isReassessment
-                ? const Color(0xFF511281)
-                : const Color(0xFFFF6969),
-            borderRadius: BorderRadius.circular(32),
-            boxShadow: [
-              BoxShadow(
-                color: isReassessment
-                    ? const Color(0x44511281)
-                    : const Color(0x44FF6969),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // Text
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 300),
-                    child: Text(
-                      isReassessment
-                          ? 'إعادة تقييم المستوى'
-                          : 'اختبار تحديد المستوى',
-                      key: ValueKey(isReassessment),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
+        child: Opacity(
+          opacity: widget.isLocked ? 0.8 : 1.0,
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 22),
+            decoration: BoxDecoration(
+              color: bgColor,
+              borderRadius: BorderRadius.circular(32),
+              boxShadow: [BoxShadow(color: bgColor.withOpacity(0.3), blurRadius: 12, offset: const Offset(0, 4))],
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.isLocked ? 'إعادة التقييم ' : (widget.isReassessment ? 'إعادة تقييم المستوى' : 'تحديد المستوى'),
+                      style: const TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.bold),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 300),
-                    child: Text(
-                      isReassessment
-                          ? 'تحقق من تطورك اللغوي!'
-                          : 'استكشف مستواك اللغوي!',
-                      key: ValueKey('sub_$isReassessment'),
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 13,
-                      ),
+                    const SizedBox(height: 4),
+                    Text(
+                      widget.isLocked ? 'أنهِ تمارينك لفتح الاختبار' : 'استكشف مستواك اللغوي!',
+                      style: const TextStyle(color: Colors.white70, fontSize: 13),
                     ),
-                  ),
-                ],
-              ),
-              // Icon
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 300),
-                child: Icon(
-                  isReassessment
-                      ? Icons.refresh_rounded
-                      : Icons.play_circle_fill,
-                  key: ValueKey('icon_$isReassessment'),
-                  color: Colors.white,
-                  size: 60,
+                  ],
                 ),
-              ),
-            ],
+                Icon(
+                  widget.isLocked ? Icons.lock_outline_rounded : (widget.isReassessment ? Icons.refresh_rounded : Icons.play_circle_fill),
+                  color: Colors.white,
+                  size: 50,
+                ),
+              ],
+            ),
           ),
         ),
       ),
