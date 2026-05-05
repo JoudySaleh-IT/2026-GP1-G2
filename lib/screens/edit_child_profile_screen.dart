@@ -6,8 +6,7 @@ import '../services/auth_service.dart';
 int _calcAge(DateTime dob) {
   final now = DateTime.now();
   int age = now.year - dob.year;
-  if (now.month < dob.month ||
-      (now.month == dob.month && now.day < dob.day)) {
+  if (now.month < dob.month || (now.month == dob.month && now.day < dob.day)) {
     age--;
   }
   return age;
@@ -26,17 +25,21 @@ class _EditChildProfileScreenState extends State<EditChildProfileScreen> {
   final AuthService _authService = AuthService();
 
   late final TextEditingController _nameController = TextEditingController();
-  late final TextEditingController _gradeController = TextEditingController();
-
+  
   String _selectedAvatar = '🦁';
   DateTime? _dob;
   bool _dobError = false;
+  
+  // ── متغيرات التحكم في ثبات اللون الأحمر ──
+  bool _isNameActive = false; // هل تم لمس أو تعديل حقل الاسم؟
+  bool _isDobActive = false;  // هل تم لمس أو تعديل حقل التاريخ؟
+  
   bool _isSaving = false;
   bool _showSuccess = false;
   bool _isLoadingData = true;
 
   final List<String> _availableAvatars = [
-   '🦁', '🐯', '🐼', '🦊', '🐻', '🐨', '🦝', '🐰'
+    '🦁', '🐯', '🐼', '🦊', '🐻', '🐨', '🦝', '🐰'
   ];
 
   @override
@@ -45,7 +48,6 @@ class _EditChildProfileScreenState extends State<EditChildProfileScreen> {
     _loadChildData();
   }
 
-  // ── جلب بيانات الطفل من Firestore ──
   Future<void> _loadChildData() async {
     try {
       final doc = await FirebaseFirestore.instance
@@ -58,21 +60,13 @@ class _EditChildProfileScreenState extends State<EditChildProfileScreen> {
         setState(() {
           _nameController.text = data['name'] ?? '';
           _selectedAvatar = data['avatar'] ?? '🦁';
-
-          // تحميل تاريخ الميلاد إذا موجود، وإلا نحسبه من العمر
           if (data['dob'] != null) {
             _dob = (data['dob'] as Timestamp).toDate();
-          } else if (data['age'] != null) {
-            // fallback: إذا ما في dob نقدّر تاريخ الميلاد من العمر
-            final age = data['age'] as int;
-            _dob = DateTime(DateTime.now().year - age, 1, 1);
           }
-
           _isLoadingData = false;
         });
       }
     } catch (e) {
-      debugPrint("Error loading child data: $e");
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('خطأ في تحميل البيانات')));
@@ -83,21 +77,16 @@ class _EditChildProfileScreenState extends State<EditChildProfileScreen> {
   @override
   void dispose() {
     _nameController.dispose();
-    _gradeController.dispose();
     super.dispose();
   }
 
-  // ── حفظ التغييرات ──
   Future<void> _handleSave() async {
     setState(() => _dobError = _dob == null);
-
     if (!_formKey.currentState!.validate() || _dob == null) return;
 
     setState(() => _isSaving = true);
-
     try {
       final age = _calcAge(_dob!);
-
       await _authService.updateChildProfile(
         childId: widget.childId,
         name: _nameController.text.trim(),
@@ -110,19 +99,16 @@ class _EditChildProfileScreenState extends State<EditChildProfileScreen> {
         setState(() {
           _isSaving = false;
           _showSuccess = true;
+          // إعادة الألوان للطبيعي بعد الحفظ
+          _isNameActive = false;
+          _isDobActive = false;
         });
-
         Future.delayed(const Duration(milliseconds: 1500), () {
           if (mounted) Navigator.pop(context, true);
         });
       }
     } catch (e) {
       setState(() => _isSaving = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('فشل التحديث، حاول مرة أخرى')),
-        );
-      }
     }
   }
 
@@ -133,8 +119,7 @@ class _EditChildProfileScreenState extends State<EditChildProfileScreen> {
       child: Scaffold(
         backgroundColor: const Color(0xFFFCF9EA),
         body: _isLoadingData
-            ? const Center(
-                child: CircularProgressIndicator(color: Color(0xFF511281)))
+            ? const Center(child: CircularProgressIndicator(color: Color(0xFF511281)))
             : Column(
                 children: [
                   _EditHeader(onBack: () => Navigator.pop(context)),
@@ -146,85 +131,50 @@ class _EditChildProfileScreenState extends State<EditChildProfileScreen> {
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                              color: const Color(0xFF511281).withOpacity(0.1),
-                              width: 2),
-                          boxShadow: const [
-                            BoxShadow(
-                                color: Color(0x0D000000),
-                                blurRadius: 8,
-                                offset: Offset(0, 2))
-                          ],
+                          border: Border.all(color: const Color(0xFF511281).withOpacity(0.1), width: 2),
                         ),
                         child: Form(
                           key: _formKey,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
-                                'المعلومات الشخصية',
-                                style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF222222)),
-                              ),
+                              const Text('المعلومات الشخصية', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                               const Divider(height: 24),
 
-                              // ── اسم الطفل ──────────────────────────────
+                              // ── حقل اسم الطفل ──
                               const _FieldLabel('اسم الطفل'),
                               const SizedBox(height: 6),
                               TextFormField(
                                 controller: _nameController,
-                                decoration: _inputDecoration('أدخل اسم الطفل'),
-                                validator: (v) =>
-                                    (v == null || v.trim().isEmpty)
-                                        ? 'يرجى إدخال اسم الطفل'
-                                        : null,
+                                // تفعيل اللون الأحمر عند البدء بالكتابة أو اللمس
+                                onChanged: (v) => setState(() => _isNameActive = true),
+                                onTap: () => setState(() => _isNameActive = true),
+                                decoration: _inputDecoration('أدخل اسم الطفل', _isNameActive),
+                                validator: (v) => (v == null || v.trim().isEmpty) ? 'يرجى إدخال اسم الطفل' : null,
                               ),
                               const SizedBox(height: 16),
 
-                              // ── تاريخ الميلاد ───────────────────────────
+                              // ── حقل تاريخ الميلاد ──
                               const _FieldLabel('تاريخ الميلاد'),
                               const SizedBox(height: 6),
                               _DobPicker(
                                 selectedDate: _dob,
-                                hasError: _dobError,
+                                isActive: _isDobActive || _dobError,
+                                onTap: () => setState(() => _isDobActive = true),
                                 onChanged: (date) => setState(() {
                                   _dob = date;
                                   _dobError = false;
+                                  _isDobActive = true;
                                 }),
                               ),
-                              if (_dobError)
-                                const Padding(
-                                  padding: EdgeInsets.only(top: 6, right: 4),
-                                  child: Text('يرجى اختيار تاريخ الميلاد',
-                                      style: TextStyle(
-                                          fontSize: 12, color: Colors.red)),
-                                ),
-                              if (_dob != null)
-                                Padding(
-                                  padding:
-                                      const EdgeInsets.only(top: 6, right: 4),
-                                  child: Text(
-                                    'العمر: ${_calcAge(_dob!)} سنة',
-                                    style: const TextStyle(
-                                      fontSize: 13,
-                                      color: Color(0xFF511281),
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
                               const SizedBox(height: 16),
 
-                              // ── الصورة الرمزية ──────────────────────────
                               const _FieldLabel('اختر صورة رمزية'),
                               const SizedBox(height: 10),
                               _buildAvatarGrid(),
                               const SizedBox(height: 20),
-
                               if (_showSuccess) _buildSuccessBanner(),
                               const SizedBox(height: 12),
-
                               _buildActionButtons(),
                             ],
                           ),
@@ -238,12 +188,33 @@ class _EditChildProfileScreenState extends State<EditChildProfileScreen> {
     );
   }
 
+  // تعديل الـ Decoration ليدعم اللون الأحمر الثابت
+  InputDecoration _inputDecoration(String hint, bool isActive) {
+    // اللون يكون أحمر إذا كان الحقل نشطاً، وإلا بنفسجي شفاف
+    final Color currentColor = isActive ? const Color(0xFFFF6969) : const Color(0xFF511281).withOpacity(0.2);
+    
+    return InputDecoration(
+      hintText: hint,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      // الحدود العادية (تتغير للأحمر إذا صار isActive)
+      enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: currentColor, width: 2)),
+      // الحدود وقت التركيز
+      focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFFFF6969), width: 2)),
+      errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Colors.red, width: 2)),
+    );
+  }
+
   Widget _buildAvatarGrid() {
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 6, crossAxisSpacing: 8, mainAxisSpacing: 8),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 6, crossAxisSpacing: 8, mainAxisSpacing: 8),
       itemCount: _availableAvatars.length,
       itemBuilder: (_, i) {
         final emoji = _availableAvatars[i];
@@ -252,18 +223,11 @@ class _EditChildProfileScreenState extends State<EditChildProfileScreen> {
           onTap: () => setState(() => _selectedAvatar = emoji),
           child: Container(
             decoration: BoxDecoration(
-              color: isSelected
-                  ? const Color(0xFFFF6969).withOpacity(0.1)
-                  : Colors.white,
+              color: isSelected ? const Color(0xFFFF6969).withOpacity(0.1) : Colors.white,
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                  color: isSelected
-                      ? const Color(0xFFFF6969)
-                      : const Color(0xFFDDDDDD),
-                  width: 2),
+              border: Border.all(color: isSelected ? const Color(0xFFFF6969) : const Color(0xFFDDDDDD), width: 2),
             ),
-            child: Center(
-                child: Text(emoji, style: const TextStyle(fontSize: 24))),
+            child: Center(child: Text(emoji, style: const TextStyle(fontSize: 24))),
           ),
         );
       },
@@ -273,16 +237,12 @@ class _EditChildProfileScreenState extends State<EditChildProfileScreen> {
   Widget _buildSuccessBanner() {
     return Container(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-          color: const Color(0xFFEAF7ED),
-          borderRadius: BorderRadius.circular(10)),
+      decoration: BoxDecoration(color: const Color(0xFFEAF7ED), borderRadius: BorderRadius.circular(10)),
       child: const Row(
         children: [
-          Icon(Icons.check_circle_outline,
-              color: Color(0xFF4CAF50), size: 18),
+          Icon(Icons.check_circle_outline, color: Color(0xFF4CAF50), size: 18),
           SizedBox(width: 8),
-          Text('تم تحديث الملف الشخصي بنجاح!',
-              style: TextStyle(color: Color(0xFF2E7D32), fontSize: 13)),
+          Text('تم تحديث الملف الشخصي بنجاح!', style: TextStyle(color: Color(0xFF2E7D32), fontSize: 13)),
         ],
       ),
     );
@@ -300,13 +260,7 @@ class _EditChildProfileScreenState extends State<EditChildProfileScreen> {
               shape: const StadiumBorder(),
               padding: const EdgeInsets.symmetric(vertical: 14),
             ),
-            child: _isSaving
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                        color: Colors.white, strokeWidth: 2))
-                : const Text('حفظ التغييرات'),
+            child: _isSaving ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Text('حفظ التغييرات'),
           ),
         ),
         const SizedBox(width: 12),
@@ -325,183 +279,72 @@ class _EditChildProfileScreenState extends State<EditChildProfileScreen> {
       ],
     );
   }
-
-  InputDecoration _inputDecoration(String hint) => InputDecoration(
-        hintText: hint,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(
-                color: const Color(0xFF511281).withOpacity(0.2), width: 2)),
-        focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide:
-                const BorderSide(color: Color(0xFFFF6969), width: 2)),
-        errorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: const BorderSide(color: Colors.red, width: 2)),
-        focusedErrorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: const BorderSide(color: Colors.red, width: 2)),
-      );
 }
 
-// ─── DOB Picker ───────────────────────────────────────────────────────────────
-// ─── DOB Picker (نسخة محدثة بدعم حالة التركيز) ────────────────────────────────
-// ─── DOB Picker (نسخة تفاعلية متطابقة مع صفحة التعديل) ───
-class _DobPicker extends StatefulWidget {
+// ─── DOB Picker المطور ───
+class _DobPicker extends StatelessWidget {
   final DateTime? selectedDate;
-  final bool hasError;
+  final bool isActive;
   final ValueChanged<DateTime> onChanged;
+  final VoidCallback onTap;
 
-  const _DobPicker({
-    required this.selectedDate,
-    required this.hasError,
-    required this.onChanged,
-  });
-
-  @override
-  State<_DobPicker> createState() => _DobPickerState();
-}
-
-class _DobPickerState extends State<_DobPicker> {
-  // متغير للتحكم في اللون الأحمر عند الضغط
-  bool _isActive = false;
-
-  Future<void> _pick(BuildContext context) async {
-    // تفعيل اللون الأحمر فور الضغط
-    setState(() => _isActive = true);
-
-    final now = DateTime.now();
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: widget.selectedDate ?? DateTime(now.year - 8),
-      firstDate: DateTime(now.year - 13),
-      lastDate: DateTime(now.year - 5),
-      builder: (context, child) => Theme(
-        data: Theme.of(context).copyWith(
-          colorScheme: const ColorScheme.light(
-            primary: Color(0xFF511281),
-            onPrimary: Colors.white,
-            surface: Colors.white,
-            onSurface: Color(0xFF1A1A1A),
-          ),
-        ),
-        child: child!,
-      ),
-    );
-
-    if (picked != null) widget.onChanged(picked);
-    
-    // إعادة اللون للحالة الطبيعية بعد إغلاق نافذة التاريخ
-    setState(() => _isActive = false);
-  }
+  const _DobPicker({required this.selectedDate, required this.isActive, required this.onChanged, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    final hasDate = widget.selectedDate != null;
-
-    // تحديد لون الحافة: أحمر إذا كان هناك خطأ أو إذا كان الحقل مضغوطاً الآن
-    Color borderColor;
-    if (widget.hasError) {
-      borderColor = Colors.red;
-    } else if (_isActive) {
-      borderColor = const Color(0xFFFF6969); // الأحمر المطلوب عند الضغط
-    } else {
-      // البنفسجي الشفاف في الحالة الطبيعية (حتى لو تم اختيار تاريخ)
-      borderColor = const Color(0xFF511281).withOpacity(0.3);
-    }
+    final hasDate = selectedDate != null;
+    // اللون أحمر إذا كان isActive، وإلا بنفسجي شفاف
+    final Color currentColor = isActive ? const Color(0xFFFF6969) : const Color(0xFF511281).withOpacity(0.2);
 
     return GestureDetector(
-      onTap: () => _pick(context),
+      onTap: () async {
+        onTap();
+        final picked = await showDatePicker(
+          context: context,
+          initialDate: selectedDate ?? DateTime.now().subtract(const Duration(days: 365 * 8)),
+          firstDate: DateTime(2000),
+          lastDate: DateTime.now(),
+        );
+        if (picked != null) onChanged(picked);
+      },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: borderColor,
-            width: 2,
-          ),
+          border: Border.all(color: currentColor, width: 2),
         ),
         child: Row(
           children: [
-            Icon(Icons.calendar_today_rounded,
-                color: widget.hasError ? Colors.red : const Color(0xFF511281),
-                size: 18),
+            Icon(Icons.calendar_today_rounded, color: isActive ? const Color(0xFFFF6969) : const Color(0xFF511281), size: 18),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                hasDate
-                    ? '${widget.selectedDate!.year}/${widget.selectedDate!.month.toString().padLeft(2, '0')}/${widget.selectedDate!.day.toString().padLeft(2, '0')}'
-                    : 'اختر تاريخ الميلاد',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: hasDate ? const Color(0xFF1A1A1A) : Colors.grey,
-                ),
+                hasDate ? "${selectedDate!.year}/${selectedDate!.month}/${selectedDate!.day}" : 'اختر تاريخ الميلاد',
+                style: TextStyle(fontSize: 14, color: hasDate ? Colors.black : Colors.grey),
               ),
             ),
-            Icon(Icons.arrow_drop_down_rounded,
-                color: widget.hasError ? Colors.red : const Color(0xFF511281)),
           ],
         ),
       ),
     );
   }
 }
-// ─── Header ───────────────────────────────────────────────────────────────────
+
 class _EditHeader extends StatelessWidget {
   final VoidCallback onBack;
   const _EditHeader({required this.onBack});
-
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient:
-            LinearGradient(colors: [Color(0xFF511281), Color(0xFF7A3FA8)]),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black26, blurRadius: 8, offset: Offset(0, 2))
-        ],
-      ),
-      padding: EdgeInsets.only(
-          top: MediaQuery.of(context).padding.top + 8,
-          bottom: 12,
-          right: 16,
-          left: 16),
-      child: Row(
-        children: [
-          IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: onBack),
-          const Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('تعديل ملف الطفل',
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold)),
-              Text('تحديث المعلومات الشخصية',
-                  style: TextStyle(color: Colors.white70, fontSize: 12)),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => Container(
+        padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top + 8, bottom: 12, right: 16, left: 16),
+        decoration: const BoxDecoration(gradient: LinearGradient(colors: [Color(0xFF511281), Color(0xFF7A3FA8)])),
+        child: Row(children: [IconButton(icon: const Icon(Icons.arrow_back, color: Colors.white), onPressed: onBack), const Text('تعديل ملف الطفل', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold))]),
+      );
 }
 
-// ─── Field Label ──────────────────────────────────────────────────────────────
 class _FieldLabel extends StatelessWidget {
   final String text;
   const _FieldLabel(this.text);
   @override
-  Widget build(BuildContext context) => Text(text,
-      style: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
-          color: Color(0xFF444444)));
+  Widget build(BuildContext context) => Text(text, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF444444)));
 }
