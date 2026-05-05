@@ -134,33 +134,37 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: const Text('تأكيد تسجيل الخروج', style: TextStyle(fontWeight: FontWeight.bold)),
           content: const Text('هل أنت متأكد أنك تريد تسجيل الخروج؟'),
-         actions: [
-            //  زر تسجيل الخروج سيكون أولاً (جهة اليمين)
+          
+          // ── التعديل هنا لتباعد الأزرار ──
+          actionsAlignment: MainAxisAlignment.spaceBetween, // يوزعهم واحد يمين وواحد يسار
+          
+          actions: [
+            // زر تسجيل الخروج (سيكون في اليمين)
             ElevatedButton(
-  onPressed: () async {
-    await _authService.signOut();
-    if (ctx.mounted) {
-      Navigator.of(ctx, rootNavigator: true).pushNamedAndRemoveUntil('/', (route) => false);
-    }
-  },
-  style: ElevatedButton.styleFrom(
-    backgroundColor: _pink,
-    foregroundColor: Colors.white,
-    elevation: 2, // إضافة ظل خفيف ليتطابق مع الداشبورد
-    // 1️⃣ هنا التغيير لجعل الحواف دائرية بالكامل (Stadium)
-    shape: const StadiumBorder(), 
-    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-  ),
-  child: const Text(
-    'تسجيل الخروج',
-    style: TextStyle(fontWeight: FontWeight.bold),
-  ),
-),
+              onPressed: () async {
+                await _authService.signOut();
+                if (ctx.mounted) {
+                  Navigator.of(ctx, rootNavigator: true).pushNamedAndRemoveUntil('/', (route) => false);
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _pink,
+                foregroundColor: Colors.white,
+                elevation: 0, // ليكون مظهره "أنظف" مع التصميم الجديد
+                shape: const StadiumBorder(),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+              ),
+              child: const Text('تسجيل الخروج', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
 
-            //  زر الإلغاء سيكون ثانياً (جهة اليسار)
+            // زر الإلغاء (سيكون في اليسار)
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('إلغاء', style: TextStyle(color: Colors.grey)),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.grey,
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+              ),
+              child: const Text('إلغاء', style: TextStyle(fontWeight: FontWeight.bold)),
             ),
           ],
         ),
