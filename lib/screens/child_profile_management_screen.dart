@@ -343,6 +343,7 @@ class _ProfileHeader extends StatelessWidget {
   final String name;
   final String avatar;
   final int age;
+
   const _ProfileHeader({
     this.childId,
     required this.onDelete,
@@ -355,49 +356,64 @@ class _ProfileHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: FaseehStyle.headerDecoration,
-      padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + 10,
-        bottom: 20,
-        right: 16,
-        left: 16,
-      ),
+      padding: FaseehStyle.getStandardPadding(
+        context,
+      ), // top: status+8, bottom:12, left/right:20
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
+          // Back button – standard IconButton (size 24, tap area ~48)
           IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () => Navigator.pop(context),
           ),
-          Text(avatar, style: const TextStyle(fontSize: 32)),
+          const SizedBox(width: 8),
+          // Avatar – larger to fit the bigger header
+          Text(
+            avatar,
+            style: const TextStyle(fontSize: 32), // increased from 28
+          ),
           const SizedBox(width: 12),
+          // Text column – bigger fonts (18 / 14) to match _EditHeader
           Expanded(
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   name,
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 18,
+                    fontSize: 18, // matched with _EditHeader
                     fontWeight: FontWeight.bold,
+                    fontFamily: 'Tajawal',
                   ),
                 ),
                 Text(
                   '$age سنوات | متفاعل',
-                  style: const TextStyle(color: Colors.white70, fontSize: 11),
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 14, // matched with _EditHeader subtitle style
+                    fontFamily: 'Tajawal',
+                  ),
                 ),
               ],
             ),
           ),
+          // Edit button – standard IconButton
           IconButton(
             icon: const Icon(Icons.edit_outlined, color: Colors.white),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) =>
-                    EditChildProfileScreen(childId: childId ?? ''),
-              ),
-            ),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      EditChildProfileScreen(childId: childId ?? ''),
+                ),
+              );
+            },
           ),
+          // Delete button – standard IconButton
           IconButton(
             icon: const Icon(Icons.delete_outline_rounded, color: Colors.white),
             onPressed: onDelete,
@@ -424,7 +440,7 @@ class _StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: FaseehStyle.getStandardPadding(context), // <--- Use this,
       decoration: _cardDecoration(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

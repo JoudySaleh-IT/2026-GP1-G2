@@ -249,45 +249,48 @@ class _ExercisesScreenState extends State<ExercisesScreen> {
 
 // ─── Header ───────────────────────────────────────────────────────────────────
 class _ExercisesHeader extends StatelessWidget {
+  const _ExercisesHeader();
+
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: double.infinity,
       decoration: FaseehStyle.headerDecoration,
-      padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + 10,
-        bottom: 20,
-        right: 20,
-        left: 20,
-      ),
+      padding: FaseehStyle.getStandardPadding(
+        context,
+      ), // consistent larger padding
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Expanded(
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: const [
                 Text(
                   'هيا نتدرب!',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w700,
+                    fontSize: 18, // larger, matches EditHeader title
+                    fontWeight: FontWeight.bold,
                     fontFamily: 'Tajawal',
                   ),
                 ),
-                SizedBox(height: 3),
                 Text(
                   'اختر حرفاً للتمرن عليه',
                   style: TextStyle(
                     color: Colors.white70,
-                    fontSize: 14,
+                    fontSize: 14, // larger, matches EditHeader subtitle
                     fontFamily: 'Tajawal',
                   ),
                 ),
               ],
             ),
           ),
-          const Icon(Icons.menu_book_rounded, color: Colors.white, size: 32),
+          // Standard IconButton (larger tap area, icon size 24)
+          IconButton(
+            icon: const Icon(Icons.menu_book_rounded, color: Colors.white),
+            onPressed: () {}, // placeholder, no action needed
+          ),
         ],
       ),
     );

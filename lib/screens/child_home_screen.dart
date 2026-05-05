@@ -104,9 +104,9 @@ class ChildHomeScreen extends StatelessWidget {
                 _ChildHeader(
                   name: data['name'] ?? 'بطل فصيح',
                   avatar: data['avatar'] ?? '🦁',
-                  level: (hasCompletedPlacement) 
-      ? (data['gradeLevel'] ?? 'مبتدئ') 
-      : 'بدون تصنيف',
+                  level: (hasCompletedPlacement)
+                      ? (data['gradeLevel'] ?? 'مبتدئ')
+                      : 'بدون تصنيف',
                 ),
                 Expanded(
                   child: SingleChildScrollView(
@@ -200,11 +200,9 @@ class _ChildHeader extends StatelessWidget {
   });
 
   void _showLogoutDialog(BuildContext context) {
-    // Parent password dialog
     showDialog(context: context, builder: (_) => const _ParentPasswordDialog());
   }
 
-  // ─── UPDATED: Confirmation Dialog for Child Device ────────────────────────
   void _showChildLogoutConfirmation(
     BuildContext context,
     SharedPreferences prefs,
@@ -238,9 +236,7 @@ class _ChildHeader extends StatelessWidget {
             ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pop(
-                  dialogContext,
-                ), // Cancel simply pops the dialog
+                onPressed: () => Navigator.pop(dialogContext),
                 style: TextButton.styleFrom(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
@@ -257,21 +253,12 @@ class _ChildHeader extends StatelessWidget {
               ),
               ElevatedButton(
                 onPressed: () async {
-                  // 1. Capture the Navigator using the dialog's context BEFORE any awaits
                   final nav = Navigator.of(dialogContext, rootNavigator: true);
-
-                  // 2. Clear session data from SharedPreferences
                   await prefs.remove('saved_childId');
                   await prefs.remove('saved_parentId');
                   await prefs.remove('isChildLoggedIn');
                   ChildSession.currentChildId = null;
-
-                  // 3. Navigate away FIRST!
-                  // We do NOT call Navigator.pop(). This push will automatically
-                  // clear the dialog AND the home screen in one action.
                   nav.pushNamedAndRemoveUntil('/', (route) => false);
-
-                  // 4. Sign out SECOND!
                   await FirebaseAuth.instance.signOut();
                 },
                 style: ElevatedButton.styleFrom(
@@ -294,17 +281,12 @@ class _ChildHeader extends StatelessWidget {
     );
   }
 
-  // ─── Smart Logout Logic ──────────────────────────────────────────
   Future<void> _handleLogout(BuildContext context) async {
     final prefs = await SharedPreferences.getInstance();
     final isChildLoggedIn = prefs.getBool('isChildLoggedIn') ?? false;
-
     if (isChildLoggedIn) {
-      // Flow 1: Child Device (Logged in via 6-digit code)
-      // We removed context.mounted check here to prevent silent failures in stateless widgets
       _showChildLogoutConfirmation(context, prefs);
     } else {
-      // Flow 2: Parent Device (Logged in from parent dashboard)
       _showLogoutDialog(context);
     }
   }
@@ -313,56 +295,48 @@ class _ChildHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: FaseehStyle.headerDecoration,
-      padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + 8,
-        bottom: 12,
-        right: 16,
-        left: 16,
-      ),
+      padding: FaseehStyle.getStandardPadding(
+        context,
+      ), // consistent larger padding
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Avatar
-          Text(avatar, style: const TextStyle(fontSize: 30)),
-          const SizedBox(width: 10),
-
-          // Name + level
+          // Avatar – larger to match bigger header
+          Text(
+            avatar,
+            style: const TextStyle(fontSize: 32), // increased from 30
+          ),
+          const SizedBox(width: 12),
+          // Name + level – larger fonts (18/14)
           Expanded(
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'مرحبا $name!',
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 18, // larger, matches _EditHeader title
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Tajawal',
                   ),
                 ),
                 Text(
                   level,
-                  style: const TextStyle(color: Colors.white70, fontSize: 12),
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 14, // larger, matches _EditHeader subtitle
+                    fontFamily: 'Tajawal',
+                  ),
                 ),
               ],
             ),
           ),
-
-          // Logout button
-          InkWell(
-            onTap: () => _handleLogout(context),
-            borderRadius: BorderRadius.circular(8),
-            child: Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(
-                Icons.logout_rounded,
-                color: Colors.white,
-                size: 18,
-              ),
-            ),
+          // Logout button – standard IconButton (larger tap area, icon 24)
+          IconButton(
+            icon: const Icon(Icons.logout_rounded, color: Colors.white),
+            onPressed: () => _handleLogout(context),
           ),
         ],
       ),

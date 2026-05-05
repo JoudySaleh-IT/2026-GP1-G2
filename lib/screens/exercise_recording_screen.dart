@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'style_constants.dart';
+import 'style_constants.dart';
 
 // ---------------------------------------------------------------------------
 // Data model
@@ -230,61 +231,48 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
   // ✅ New _buildHeader() with back button
   Widget _buildHeader() {
     return Container(
-      width: double.infinity,
-      padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + 12,
-        bottom: 12,
-        right: 16,
-        left: 16,
-      ),
       decoration: FaseehStyle.headerDecoration,
+      padding: FaseehStyle.getStandardPadding(
+        context,
+      ), // consistent larger padding
       child: Row(
-        textDirection: TextDirection.rtl,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // ── Back button — RIGHT side in RTL ──
-          InkWell(
-            onTap: () => Navigator.pushNamed(
+          // Back button – standard IconButton (matches other screens)
+          IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () => Navigator.pushNamed(
               context,
               '/child/letter-levels',
               arguments: {'letter': widget.letter, 'childId': widget.childId},
             ),
-            borderRadius: BorderRadius.circular(8),
-            child: Container(
-              width: 34,
-              height: 34,
-              alignment: Alignment.center,
-              child: const Icon(
-                Icons.arrow_back,
-                color: Colors.white,
-                size: 25,
-              ),
-            ),
           ),
-          const SizedBox(width: 12),
-
-          // ── Title + subtitle ──
-          const Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'تمارين التسجيل الصوتي',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'Tajawal',
+          const SizedBox(width: 8),
+          // Text column – larger fonts (18/14) to match other headers
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                Text(
+                  'تمارين التسجيل الصوتي',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Tajawal',
+                  ),
                 ),
-              ),
-              SizedBox(height: 2),
-              Text(
-                'سجل صوتك وحسن نطقك',
-                style: TextStyle(
-                  color: Colors.white70,
-                  fontSize: 12,
-                  fontFamily: 'Tajawal',
+                Text(
+                  'سجل صوتك وحسن نطقك',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 14, // increased from 12 to match others
+                    fontFamily: 'Tajawal',
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
