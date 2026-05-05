@@ -17,11 +17,11 @@ const _mockChild = (
 );
 
 // ─── Screen ──────────────────────────────────────────────────────────────────
-
 class ChildHomeScreen extends StatelessWidget {
   final String childId;
 
   const ChildHomeScreen({super.key, required this.childId});
+
   // ✅ دالة التحقق من إتمام التمارين (درجات الحروف >= 70)
   bool _canReassess(Map<String, dynamic> data) {
     final Map<String, dynamic> scores = data['letterScores'] ?? {};
@@ -54,8 +54,45 @@ class ChildHomeScreen extends StatelessWidget {
 
         var data = snapshot.data!.data() as Map<String, dynamic>;
         final bool hasCompletedPlacement = data['placementDone'] ?? false;
-// ✅ حساب هل يحق له إعادة التقييم
+
+        // ✅ حساب هل يحق له إعادة التقييم
         final bool canReassess = _canReassess(data);
+
+        // 🌟 1. Dynamic Daily Goal Logic
+        int assignedLettersCount = 0;
+
+        if (data['letterScores'] != null) {
+          final Map<dynamic, dynamic> scores = data['letterScores'] as Map;
+          // ✅ Only count letters where the score is strictly less than 70
+          assignedLettersCount = scores.values.where((score) {
+            final num scoreValue = (score is num) ? score : 0;
+            return scoreValue < 70;
+          }).length;
+        } else if (data['assignedLetters'] != null) {
+          assignedLettersCount = (data['assignedLetters'] as List).length;
+        }
+
+        // Default to a fallback goal (e.g., 3) if the test hasn't assigned letters yet
+        final int dynamicTodayGoal = assignedLettersCount > 0
+            ? assignedLettersCount
+            : 3;
+        final int todayCompleted = data['todayExercises'] ?? 0;
+
+        // 🌟 2. Mock Data Fallbacks for Stats
+        // Uses Firestore data if available and > 0, otherwise falls back to the _mockChild constants
+        final String displayStreak =
+            (data['streak'] != null && data['streak'] > 0)
+            ? data['streak'].toString()
+            : _mockChild.streak.toString();
+
+        final String displayPoints =
+            (data['points'] != null && data['points'] > 0)
+            ? data['points'].toString()
+            : _mockChild.points.toString();
+
+        final String displayRank = (data['rank'] != null && data['rank'] > 0)
+            ? '#${data['rank']}'
+            : '#${_mockChild.rank}';
 
         return Directionality(
           textDirection: TextDirection.rtl,
@@ -81,34 +118,65 @@ class ChildHomeScreen extends StatelessWidget {
                             if (hasCompletedPlacement && !canReassess) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content: Text('أكمل تمارينك أولاً لتتمكن من إعادة التقييم! 💪'),
+                                  content: Text(
+                                    'أكمل تمارينك أولاً لتتمكن من إعادة التقييم! 💪',
+                                  ),
                                   backgroundColor: Color(0xFF511281),
                                 ),
                               );
                               return;
                             }
-                            Navigator.pushNamed(context, '/child/placement-test', arguments: childId);
+                            Navigator.pushNamed(
+                              context,
+                              '/child/placement-test',
+                              arguments: childId,
+                            );
                           },
                         ),
                         const SizedBox(height: 16),
                         Row(
                           children: [
-                            Expanded(child: _StatCard(icon: Icons.local_fire_department, value: (data['streak'] ?? 0).toString(), label: 'المواظبة')),
+                            Expanded(
+                              child: _StatCard(
+                                icon: Icons.local_fire_department,
+                                value: displayStreak,
+                                label: 'المواظبة',
+                              ),
+                            ),
                             const SizedBox(width: 8),
-                            Expanded(child: _StatCard(icon: Icons.star, value: (data['points'] ?? 0).toString(), label: 'النقاط')),
+                            Expanded(
+                              child: _StatCard(
+                                icon: Icons.star,
+                                value: displayPoints,
+                                label: 'النقاط',
+                              ),
+                            ),
                             const SizedBox(width: 8),
-                            Expanded(child: _StatCard(icon: Icons.emoji_events, value: '#${data['rank'] ?? '-'}', label: 'الترتيب')),
+                            Expanded(
+                              child: _StatCard(
+                                icon: Icons.emoji_events,
+                                value: displayRank,
+                                label: 'الترتيب',
+                              ),
+                            ),
                           ],
                         ),
                         const SizedBox(height: 12),
-                        _TodayGoalCard(done: data['todayExercises'] ?? 0, goal: data['todayGoal'] ?? 5),
+                        // 🌟 Injecting the dynamic variables here:
+                        _TodayGoalCard(
+                          done: todayCompleted,
+                          goal: dynamicTodayGoal,
+                        ),
                       ],
                     ),
                   ),
                 ),
               ],
             ),
-            bottomNavigationBar: _ChildBottomNav(currentRoute: '/child/home', childId: childId),
+            bottomNavigationBar: _ChildBottomNav(
+              currentRoute: '/child/home',
+              childId: childId,
+            ),
           ),
         );
       },
@@ -533,38 +601,57 @@ class _TestBanner extends StatefulWidget {
   final bool isReassessment;
   final bool isLocked;
   final VoidCallback onTap;
-  const _TestBanner({required this.isReassessment, required this.onTap, this.isLocked = false});
+  const _TestBanner({
+    required this.isReassessment,
+    required this.onTap,
+    this.isLocked = false,
+  });
 
   @override
   State<_TestBanner> createState() => _TestBannerState();
 }
 
-class _TestBannerState extends State<_TestBanner> with SingleTickerProviderStateMixin {
+class _TestBannerState extends State<_TestBanner>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _ctrl;
   late final Animation<double> _scale;
 
   @override
   void initState() {
     super.initState();
-    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 100));
-    _scale = Tween<double>(begin: 1.0, end: 0.97).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 100),
+    );
+    _scale = Tween<double>(
+      begin: 1.0,
+      end: 0.97,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
   }
 
   @override
-  void dispose() { _ctrl.dispose(); super.dispose(); }
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final Color bgColor = widget.isLocked 
-        ? Colors.grey.shade400 
-        : (widget.isReassessment ? const Color(0xFF511281) : const Color(0xFFFF6969));
+    final Color bgColor = widget.isLocked
+        ? Colors.grey.shade400
+        : (widget.isReassessment
+              ? const Color(0xFF511281)
+              : const Color(0xFFFF6969));
 
     return AnimatedBuilder(
       animation: _scale,
       builder: (_, child) => Transform.scale(scale: _scale.value, child: child),
       child: GestureDetector(
         onTapDown: (_) => widget.isLocked ? null : _ctrl.forward(),
-        onTapUp: (_) { _ctrl.reverse(); widget.onTap(); },
+        onTapUp: (_) {
+          _ctrl.reverse();
+          widget.onTap();
+        },
         onTapCancel: () => _ctrl.reverse(),
         child: Opacity(
           opacity: widget.isLocked ? 0.8 : 1.0,
@@ -574,7 +661,13 @@ class _TestBannerState extends State<_TestBanner> with SingleTickerProviderState
             decoration: BoxDecoration(
               color: bgColor,
               borderRadius: BorderRadius.circular(32),
-              boxShadow: [BoxShadow(color: bgColor.withOpacity(0.3), blurRadius: 12, offset: const Offset(0, 4))],
+              boxShadow: [
+                BoxShadow(
+                  color: bgColor.withOpacity(0.3),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -583,18 +676,35 @@ class _TestBannerState extends State<_TestBanner> with SingleTickerProviderState
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      widget.isLocked ? 'إعادة التقييم ' : (widget.isReassessment ? 'إعادة تقييم المستوى' : 'تحديد المستوى'),
-                      style: const TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.bold),
+                      widget.isLocked
+                          ? 'إعادة التقييم '
+                          : (widget.isReassessment
+                                ? 'إعادة تقييم المستوى'
+                                : 'تحديد المستوى'),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 19,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      widget.isLocked ? 'أنهِ تمارينك لفتح الاختبار' : 'استكشف مستواك اللغوي!',
-                      style: const TextStyle(color: Colors.white70, fontSize: 13),
+                      widget.isLocked
+                          ? 'أنهِ تمارينك لفتح الاختبار'
+                          : 'استكشف مستواك اللغوي!',
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 13,
+                      ),
                     ),
                   ],
                 ),
                 Icon(
-                  widget.isLocked ? Icons.lock_outline_rounded : (widget.isReassessment ? Icons.refresh_rounded : Icons.play_circle_fill),
+                  widget.isLocked
+                      ? Icons.lock_outline_rounded
+                      : (widget.isReassessment
+                            ? Icons.refresh_rounded
+                            : Icons.play_circle_fill),
                   color: Colors.white,
                   size: 50,
                 ),

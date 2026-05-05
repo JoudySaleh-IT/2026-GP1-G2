@@ -32,10 +32,16 @@ class _LevelInfo {
 class LetterLevelsScreen extends StatelessWidget {
   final String letter;
   final String childId;
-  const LetterLevelsScreen({super.key, required this.letter, required this.childId});
+  const LetterLevelsScreen({
+    super.key,
+    required this.letter,
+    required this.childId,
+  });
 
   List<_LevelInfo> _buildLevels() {
-    final p = _levelProgress[letter] ?? (mcq: false, listening: false, recording: false);
+    final p =
+        _levelProgress[letter] ??
+        (mcq: false, listening: false, recording: false);
 
     // ✅ منطق التسلسل:
     // 1. المستوى الأول (MCQ) مفتوح دائماً
@@ -111,7 +117,9 @@ class LetterLevelsScreen extends StatelessWidget {
                             if (entry.value.isLocked) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content: Text('يجب عليك إنهاء المستوى السابق أولاً!'),
+                                  content: Text(
+                                    'يجب عليك إنهاء المستوى السابق أولاً!',
+                                  ),
                                   duration: Duration(seconds: 1),
                                 ),
                               );
@@ -122,13 +130,19 @@ class LetterLevelsScreen extends StatelessWidget {
                               Navigator.pushNamed(
                                 context,
                                 '/child/letter-introduction',
-                                arguments: {'letter': letter, 'childId': childId},
+                                arguments: {
+                                  'letter': letter,
+                                  'childId': childId,
+                                },
                               );
                             } else {
                               Navigator.pushNamed(
                                 context,
                                 '/child/exercise/${entry.value.id}',
-                                arguments: {'letter': letter, 'childId': childId},
+                                arguments: {
+                                  'letter': letter,
+                                  'childId': childId,
+                                },
                               );
                             }
                           },
@@ -168,7 +182,9 @@ class _LetterLevelsHeader extends StatelessWidget {
           begin: Alignment.centerRight,
           end: Alignment.centerLeft,
         ),
-        boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 2))],
+        boxShadow: [
+          BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 2)),
+        ],
       ),
       padding: EdgeInsets.only(
         top: MediaQuery.of(context).padding.top + 8,
@@ -180,12 +196,20 @@ class _LetterLevelsHeader extends StatelessWidget {
         children: [
           _HeaderIconBtn(
             icon: Icons.arrow_back,
-            onTap: () => Navigator.pushNamed(context, '/child/exercises', arguments: childId),
+            onTap: () => Navigator.pushNamed(
+              context,
+              '/child/exercises',
+              arguments: childId,
+            ),
           ),
           const SizedBox(width: 12),
           Text(
             letter,
-            style: const TextStyle(fontSize: 52, color: Colors.white, height: 1.1),
+            style: const TextStyle(
+              fontSize: 52,
+              color: Colors.white,
+              height: 1.1,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -194,7 +218,11 @@ class _LetterLevelsHeader extends StatelessWidget {
               children: [
                 Text(
                   'تمارين حرف $letter',
-                  style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 Text(
                   '$completedCount من $totalCount مستويات مكتملة',
@@ -214,21 +242,32 @@ class _LevelCard extends StatefulWidget {
   final int number;
   final VoidCallback onTap;
 
-  const _LevelCard({required this.level, required this.number, required this.onTap});
+  const _LevelCard({
+    required this.level,
+    required this.number,
+    required this.onTap,
+  });
 
   @override
   State<_LevelCard> createState() => _LevelCardState();
 }
 
-class _LevelCardState extends State<_LevelCard> with SingleTickerProviderStateMixin {
+class _LevelCardState extends State<_LevelCard>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _ctrl;
   late final Animation<double> _scale;
 
   @override
   void initState() {
     super.initState();
-    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 100));
-    _scale = Tween<double>(begin: 1.0, end: 0.96).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 100),
+    );
+    _scale = Tween<double>(
+      begin: 1.0,
+      end: 0.96,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
   }
 
   @override
@@ -240,7 +279,9 @@ class _LevelCardState extends State<_LevelCard> with SingleTickerProviderStateMi
   @override
   Widget build(BuildContext context) {
     // ✅ إذا كان المستوى مغلقاً، نستخدم اللون الرمادي
-    final Color mainColor = widget.level.isLocked ? Colors.grey : widget.level.color;
+    final Color mainColor = widget.level.isLocked
+        ? Colors.grey
+        : widget.level.color;
 
     return AnimatedBuilder(
       animation: _scale,
@@ -260,7 +301,13 @@ class _LevelCardState extends State<_LevelCard> with SingleTickerProviderStateMi
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: mainColor.withOpacity(0.15), width: 2),
-              boxShadow: const [BoxShadow(color: Color(0x0D000000), blurRadius: 8, offset: Offset(0, 2))],
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x0D000000),
+                  blurRadius: 8,
+                  offset: Offset(0, 2),
+                ),
+              ],
             ),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
             child: Row(
@@ -269,11 +316,18 @@ class _LevelCardState extends State<_LevelCard> with SingleTickerProviderStateMi
                 Container(
                   width: 44,
                   height: 44,
-                  decoration: BoxDecoration(color: mainColor, shape: BoxShape.circle),
+                  decoration: BoxDecoration(
+                    color: mainColor,
+                    shape: BoxShape.circle,
+                  ),
                   child: Center(
                     child: Text(
                       '${widget.number}',
-                      style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
@@ -282,9 +336,14 @@ class _LevelCardState extends State<_LevelCard> with SingleTickerProviderStateMi
                 Container(
                   width: 52,
                   height: 52,
-                  decoration: BoxDecoration(color: mainColor.withOpacity(0.12), shape: BoxShape.circle),
+                  decoration: BoxDecoration(
+                    color: mainColor.withOpacity(0.12),
+                    shape: BoxShape.circle,
+                  ),
                   child: Icon(
-                    widget.level.isLocked ? Icons.lock_outline_rounded : widget.level.icon, // ✅ عرض قفل
+                    widget.level.isLocked
+                        ? Icons.lock_outline_rounded
+                        : widget.level.icon, // ✅ عرض قفل
                     color: mainColor,
                     size: 26,
                   ),
@@ -297,19 +356,32 @@ class _LevelCardState extends State<_LevelCard> with SingleTickerProviderStateMi
                     children: [
                       Text(
                         widget.level.title,
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: mainColor),
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: mainColor,
+                        ),
                       ),
                       Text(
-                        widget.level.isLocked ? 'أكمل المستوى السابق للفتح' : widget.level.description,
-                        style: const TextStyle(fontSize: 12, color: Color(0xFF888888)),
+                        widget.level.isLocked
+                            ? 'أكمل المستوى السابق للفتح'
+                            : widget.level.description,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF888888),
+                        ),
                       ),
                     ],
                   ),
                 ),
                 // سهم أو علامة صح
                 Icon(
-                  widget.level.completed ? Icons.check_circle : Icons.arrow_forward_ios_rounded,
-                  color: widget.level.completed ? Colors.green : Colors.grey.shade300,
+                  widget.level.completed
+                      ? Icons.check_circle
+                      : Icons.arrow_forward_ios_rounded,
+                  color: widget.level.completed
+                      ? Colors.green
+                      : Colors.grey.shade300,
                   size: 18,
                 ),
               ],
@@ -328,8 +400,12 @@ class _HeaderIconBtn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: SizedBox(width: 34, height: 34, child: Icon(icon, color: Colors.white, size: 25)),
-      );
+    onTap: onTap,
+    borderRadius: BorderRadius.circular(8),
+    child: SizedBox(
+      width: 34,
+      height: 34,
+      child: Icon(icon, color: Colors.white, size: 25),
+    ),
+  );
 }
