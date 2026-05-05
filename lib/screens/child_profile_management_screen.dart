@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/auth_service.dart';
 import 'edit_child_profile_screen.dart';
+import 'style_constants.dart';
 
 // ─── Mock Data ────────────────────────────────────────────────────────────────
 class _WeekDay {
@@ -94,9 +95,15 @@ class _ChildProfileManagementScreenState
                 foregroundColor: Colors.white,
                 shape: const StadiumBorder(), // شكل دائري متناسق مع الداشبورد
                 elevation: 2,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 10,
+                ),
               ),
-              child: const Text('حذف', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: const Text(
+                'حذف',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
 
             //  زر "إلغاء" سيكون في جهة اليسار (نص فقط بدون بوكس)
@@ -347,13 +354,7 @@ class _ProfileHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFF6A3A9E), Color(0xFF511281)],
-          begin: Alignment.topRight,
-          end: Alignment.bottomLeft,
-        ),
-      ),
+      decoration: FaseehStyle.headerDecoration,
       padding: EdgeInsets.only(
         top: MediaQuery.of(context).padding.top + 10,
         bottom: 20,

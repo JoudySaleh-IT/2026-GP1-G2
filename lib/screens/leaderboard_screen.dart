@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/auth_service.dart';
+import 'style_constants.dart';
 
 // ─── Mock Data Models ─────────────────────────────────────────────────────────
 class _Player {
@@ -126,16 +127,7 @@ class LeaderboardScreen extends StatelessWidget {
   // ── Header ──
   Widget _buildHeader(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topRight,
-          end: Alignment.bottomLeft,
-          colors: [_purple2, _purple],
-        ),
-        boxShadow: [
-          BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 2)),
-        ],
-      ),
+      decoration: FaseehStyle.headerDecoration,
       child: SafeArea(
         bottom: false,
         child: Padding(

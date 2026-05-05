@@ -3,8 +3,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '/services/ChildSession.dart';
+import 'style_constants.dart';
+import 'style_constants.dart'; // ─── Mock Data ───────────────────────────────────────────────────────────────
 
-// ─── Mock Data ───────────────────────────────────────────────────────────────
 const _mockChild = (
   name: 'أحمد',
   avatar: '🦁',
@@ -309,16 +310,7 @@ class _ChildHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFF6A3A9E), Color(0xFF511281)],
-          begin: Alignment.topRight,
-          end: Alignment.bottomLeft,
-        ),
-        boxShadow: [
-          BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 2)),
-        ],
-      ),
+      decoration: FaseehStyle.headerDecoration,
       padding: EdgeInsets.only(
         top: MediaQuery.of(context).padding.top + 8,
         bottom: 12,
@@ -575,18 +567,18 @@ class _ParentPasswordDialogState extends State<_ParentPasswordDialog> {
                   )
                 : const Text('دخول'),
           ),
-          
+
           //  زر "إلغاء" سيكون ثانياً ليظهر في جهة اليسار
           TextButton(
-  onPressed: () => Navigator.pop(context),
-  style: TextButton.styleFrom(
-    foregroundColor: Colors.grey, // لون النص رمادي هادئ
-  ),
-  child: const Text(
-    'إلغاء',
-    style: TextStyle(fontWeight: FontWeight.bold),
-  ),
-),
+            onPressed: () => Navigator.pop(context),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.grey, // لون النص رمادي هادئ
+            ),
+            child: const Text(
+              'إلغاء',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
         ],
       ),
     );

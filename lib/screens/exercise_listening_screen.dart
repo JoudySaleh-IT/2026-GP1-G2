@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'style_constants.dart';
 
 // ─── Model ────────────────────────────────────────────────────────────────────
 class _Exercise {
@@ -412,11 +413,7 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
 
   Widget _buildHeader() {
     return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFF511281), Color(0xFF7A3FA8)],
-        ),
-      ),
+      decoration: FaseehStyle.headerDecoration,
       padding: EdgeInsets.only(
         top: MediaQuery.of(context).padding.top + 4,
         bottom: 8,

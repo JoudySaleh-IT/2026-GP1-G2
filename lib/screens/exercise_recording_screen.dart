@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'style_constants.dart';
 
 // ---------------------------------------------------------------------------
 // Data model
@@ -73,7 +74,11 @@ enum RecordingState { idle, recording, analyzing, recorded }
 class ExerciseRecordingScreen extends StatefulWidget {
   final String letter;
   final String childId;
-  const ExerciseRecordingScreen({super.key, required this.letter, required this.childId});
+  const ExerciseRecordingScreen({
+    super.key,
+    required this.letter,
+    required this.childId,
+  });
 
   @override
   State<ExerciseRecordingScreen> createState() =>
@@ -185,7 +190,6 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
           'type': 'تسجيل',
           'questions': questionsData,
           'childId': widget.childId,
-
         },
       );
     }
@@ -223,78 +227,69 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
 
   // ── Header ────────────────────────────────────────────────────────────────
 
- // ✅ New _buildHeader() with back button
-Widget _buildHeader() {
-  return Container(
-    width: double.infinity,
-    padding: EdgeInsets.only(
-      top: MediaQuery.of(context).padding.top + 12,
-      bottom: 12,
-      right: 16,
-      left: 16,
-    ),
-    decoration: const BoxDecoration(
-      gradient: LinearGradient(
-        colors: [Color(0xFF511281), Color(0xFF7A3FA8)],
-        begin: Alignment.centerRight,
-        end: Alignment.centerLeft,
+  // ✅ New _buildHeader() with back button
+  Widget _buildHeader() {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.only(
+        top: MediaQuery.of(context).padding.top + 12,
+        bottom: 12,
+        right: 16,
+        left: 16,
       ),
-      boxShadow: [
-        BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(0, 3)),
-      ],
-    ),
-    child: Row(
-      textDirection: TextDirection.rtl,
-      children: [
-        // ── Back button — RIGHT side in RTL ──
-        InkWell(
-          onTap: () => Navigator.pushNamed(
-            context,
-            '/child/letter-levels',
-            arguments: {'letter': widget.letter, 'childId': widget.childId},
-
-          ),
-          borderRadius: BorderRadius.circular(8),
-          child: Container(
-            width: 34,
-            height: 34,
-            alignment: Alignment.center,
-            child: const Icon(
-              Icons.arrow_back,
-              color: Colors.white,
-              size: 25,
+      decoration: FaseehStyle.headerDecoration,
+      child: Row(
+        textDirection: TextDirection.rtl,
+        children: [
+          // ── Back button — RIGHT side in RTL ──
+          InkWell(
+            onTap: () => Navigator.pushNamed(
+              context,
+              '/child/letter-levels',
+              arguments: {'letter': widget.letter, 'childId': widget.childId},
             ),
-          ),
-        ),
-        const SizedBox(width: 12),
-
-        // ── Title + subtitle ──
-        const Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'تمارين التسجيل الصوتي',
-              style: TextStyle(
+            borderRadius: BorderRadius.circular(8),
+            child: Container(
+              width: 34,
+              height: 34,
+              alignment: Alignment.center,
+              child: const Icon(
+                Icons.arrow_back,
                 color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                fontFamily: 'Tajawal',
+                size: 25,
               ),
             ),
-            SizedBox(height: 2),
-            Text(
-              'سجل صوتك وحسن نطقك',
-              style: TextStyle(
+          ),
+          const SizedBox(width: 12),
+
+          // ── Title + subtitle ──
+          const Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'تمارين التسجيل الصوتي',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Tajawal',
+                ),
+              ),
+              SizedBox(height: 2),
+              Text(
+                'سجل صوتك وحسن نطقك',
+                style: TextStyle(
                   color: Colors.white70,
                   fontSize: 12,
-                  fontFamily: 'Tajawal'),
-            ),
-          ],
-        ),
-      ],
-    ),
-  );
-}
+                  fontFamily: 'Tajawal',
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 
   // ── Main card ─────────────────────────────────────────────────────────────
 
