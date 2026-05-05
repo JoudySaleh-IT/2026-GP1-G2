@@ -26,7 +26,7 @@ class ChildHomeScreen extends StatelessWidget {
   bool _canReassess(Map<String, dynamic> data) {
     final Map<String, dynamic> scores = data['letterScores'] ?? {};
     if (scores.isEmpty) return false;
-    // إذا وجدنا أي حرف درجته أقل من 70، يعني لسه ما خلص
+    // The threshold logic: returns true only if ALL scores are >= 70%
     return !scores.values.any((score) => (score as num) < 70);
   }
 
@@ -554,30 +554,14 @@ class _ParentPasswordDialogState extends State<_ParentPasswordDialog> {
           ],
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            style: TextButton.styleFrom(
-              side: BorderSide(
-                color: const Color(0xFF511281).withOpacity(0.2),
-                width: 1.5,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            ),
-            child: const Text(
-              'إلغاء',
-              style: TextStyle(color: Color(0xFF511281)),
-            ),
-          ),
+          //  زر "دخول" سيكون أولاً ليظهر في جهة اليمين
           ElevatedButton(
             onPressed: _loading ? null : _signInParent,
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFFF6969),
               foregroundColor: Colors.white,
               elevation: 2,
-              shape: const StadiumBorder(),
+              shape: const StadiumBorder(), // محافظين على التصميم الدائري
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             ),
             child: _loading
@@ -591,6 +575,18 @@ class _ParentPasswordDialogState extends State<_ParentPasswordDialog> {
                   )
                 : const Text('دخول'),
           ),
+          
+          //  زر "إلغاء" سيكون ثانياً ليظهر في جهة اليسار
+          TextButton(
+  onPressed: () => Navigator.pop(context),
+  style: TextButton.styleFrom(
+    foregroundColor: Colors.grey, // لون النص رمادي هادئ
+  ),
+  child: const Text(
+    'إلغاء',
+    style: TextStyle(fontWeight: FontWeight.bold),
+  ),
+),
         ],
       ),
     );

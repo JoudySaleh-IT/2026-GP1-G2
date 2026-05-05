@@ -348,22 +348,58 @@ class _EditChildProfileScreenState extends State<EditChildProfileScreen> {
 }
 
 // ─── DOB Picker ───────────────────────────────────────────────────────────────
-class _DobPicker extends StatelessWidget {
+// ─── DOB Picker (نسخة محدثة بدعم حالة التركيز) ────────────────────────────────
+class _DobPicker extends StatefulWidget {
   final DateTime? selectedDate;
   final bool hasError;
   final ValueChanged<DateTime> onChanged;
 
   const _DobPicker({
+    Key? key,
     required this.selectedDate,
     required this.hasError,
     required this.onChanged,
-  });
+  }) : super(key: key);
+
+  @override
+  State<_DobPicker> createState() => _DobPickerState();
+}
+
+class _DobPickerState extends State<_DobPicker> {
+  // 1. تعريف عقدة تركيز مخصصة
+  final FocusNode _focusNode = FocusNode();
+  // 2. حالة لتتبع ما إذا كان الحقل مفعلاً/مضغوطاً
+  bool _isFocused = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // 3. إضافة مستمع لتحديث الحالة عند تغير التركيز
+    _focusNode.addListener(_onFocusChange);
+  }
+
+  @override
+  void dispose() {
+    // 4. تخلص من عقدة التركيز لتجنب تسرب الذاكرة
+    _focusNode.removeListener(_onFocusChange);
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  void _onFocusChange() {
+    setState(() {
+      _isFocused = _focusNode.hasFocus;
+    });
+  }
 
   Future<void> _pick(BuildContext context) async {
+    // 5. عند الضغط، اطلب التركيز يدوياً
+    _focusNode.requestFocus();
+    
     final now = DateTime.now();
     final picked = await showDatePicker(
       context: context,
-      initialDate: selectedDate ?? DateTime(now.year - 8),
+      initialDate: widget.selectedDate ?? DateTime(now.year - 8),
       firstDate: DateTime(now.year - 13),
       lastDate: DateTime(now.year - 5),
       builder: (context, child) => Theme(
@@ -378,53 +414,65 @@ class _DobPicker extends StatelessWidget {
         child: child!,
       ),
     );
-    if (picked != null) onChanged(picked);
+    if (picked != null) widget.onChanged(picked);
+    
+    // 6. بعد الانتهاء، قم بإزالة التركيز (اختياري، لكن يطابق سلوك حقول الإدخال بعد الضغط)
+    _focusNode.unfocus();
   }
 
   @override
   Widget build(BuildContext context) {
-    final hasDate = selectedDate != null;
+    final hasDate = widget.selectedDate != null;
+    
+    // 7. تحديد لون الحافة بناءً على الحالة
+    Color borderColor;
+    if (widget.hasError) {
+      borderColor = Colors.red; // حالة الخطأ دائماً حمراء
+    } else if (_isFocused) {
+      borderColor = Colors.red; // التعديل هنا: أحمر عند التركيز (عند الضغط)
+    } else {
+      borderColor = const Color(0xFF511281).withOpacity(0.2); // الحالة الطبيعية
+    }
+
     return GestureDetector(
       onTap: () => _pick(context),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: hasError
-                ? Colors.red
-                : hasDate
-                    ? const Color(0xFFFF6969)
-                    : const Color(0xFF511281).withOpacity(0.2),
-            width: 2,
-          ),
-        ),
-        child: Row(
-          children: [
-            Icon(Icons.calendar_today_rounded,
-                color: hasError ? Colors.red : const Color(0xFF511281),
-                size: 18),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                hasDate
-                    ? '${selectedDate!.year}/${selectedDate!.month.toString().padLeft(2, '0')}/${selectedDate!.day.toString().padLeft(2, '0')}'
-                    : 'اختر تاريخ الميلاد',
-                style: TextStyle(
-                    fontSize: 14,
-                    color: hasDate ? const Color(0xFF1A1A1A) : Colors.grey),
-              ),
+      child: Focus( // 8. لف الـ Container بـ Focus widget
+        focusNode: _focusNode,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: borderColor,
+              width: 2,
             ),
-            Icon(Icons.arrow_drop_down_rounded,
-                color: hasError ? Colors.red : const Color(0xFF511281)),
-          ],
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.calendar_today_rounded,
+                  color: widget.hasError ? Colors.red : const Color(0xFF511281),
+                  size: 18),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  hasDate
+                      ? '${widget.selectedDate!.year}/${widget.selectedDate!.month.toString().padLeft(2, '0')}/${widget.selectedDate!.day.toString().padLeft(2, '0')}'
+                      : 'اختر تاريخ الميلاد',
+                  style: TextStyle(
+                      fontSize: 14,
+                      color: hasDate ? const Color(0xFF1A1A1A) : Colors.grey),
+                ),
+              ),
+              Icon(Icons.arrow_drop_down_rounded,
+                  color: widget.hasError ? Colors.red : const Color(0xFF511281)),
+            ],
+          ),
         ),
       ),
     );
   }
 }
-
 // ─── Header ───────────────────────────────────────────────────────────────────
 class _EditHeader extends StatelessWidget {
   final VoidCallback onBack;

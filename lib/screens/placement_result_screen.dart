@@ -47,11 +47,10 @@ class PlacementResultScreen extends StatefulWidget {
 }
 
 class _PlacementResultScreenState extends State<PlacementResultScreen> {
-  // ✅ الحروف التي تحتاج تدريب (تجمع الضعيف والمتوسط: أي حرف درجته أقل من 70%)
-  List<LetterScore> get _lettersToPractice =>
+// Identifying letters for practice (score < 70) and categorizing performance
+ List<LetterScore> get _lettersToPractice =>
       widget.letterScores.where((ls) => ls.score < 70).toList();
 
-  // ✅ الحروف المتقنة (التي درجتها 70% وما فوق)
   List<LetterScore> get _masteredLetters =>
       widget.letterScores.where((ls) => ls.score >= 70).toList();
 
@@ -560,7 +559,7 @@ class _PlacementResultScreenState extends State<PlacementResultScreen> {
   }
 
   Widget _buildScoreRow(LetterScore item) {
-    // ✅ تطبيق العتبات الجديدة والمسميات هنا في قائمة التفاصيل
+    // Categorizing child performance based on AI accuracy scores
     final String label = item.score >= 70
         ? 'متقن 🌟'
         : item.score >= 40

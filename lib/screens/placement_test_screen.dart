@@ -140,10 +140,10 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
 
   void _handleRecordToggle() async {
     if (_isRecording) {
-      // إيقاف التسجيل
+      // 1. Stop recording and capture audio path
       final path = await _recordingService.stop();
       
-      // حفظ بيانات الكلمة الحالية
+      // save data for current Word Text
       final currentWordText = _currentWord.text;
       final currentWordLetter = _currentWord.targetLetter;
 
@@ -151,21 +151,21 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
         _lastRecordedPath = path;
         _isRecording = false;
         _recorded[_currentIndex] = true;
-        _showNext = true; //  نظهر زر التالي فوراً بدون أي انتظار!
-        _pendingEvaluations++; // نزيد عداد التقييمات المعلقة
+        _showNext = true; //  Fluid UI: Show next button immediately
+        _pendingEvaluations++; // Increment pending tasks count
       });
 
       _pulseController.stop();
       _pulseController.reset();
 
       if (path != null) {
-        //  إضافة الكلمة لطابور المعالجة وتشغيله في الخلفية
+       // 2. Add recording to the "Smart Queue" for background AI analysis
         _evaluationQueue.add({
           'path': path,
           'word': currentWordText,
           'letter': currentWordLetter,
         });
-        _processQueue();
+        _processQueue(); // Start background server processing
       }
 
     } else {
@@ -223,6 +223,7 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
       if (response.statusCode == 200) {
         var data = jsonDecode(response.body);
 
+// Receiving and rounding the AI accuracy score
         if (data['status'] == 'success' && data.containsKey('score')) {
           double wordScore = (data['score'] as num).toDouble();
 
@@ -273,11 +274,12 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
   }
 
   void _navigateToResults() {
+    // 1. Calculating the total overall proficiency percentage
     double finalPlacementPercentage = _placementWords.isEmpty 
         ? 0 
         : _totalAccumulatedScore / _placementWords.length;
 
-    // تجميع درجات الكلمات حسب الحرف المستهدف لتصبح 6 حروف فقط
+    // 2. Grouping word-level scores by their target Arabic letter
     Map<String, List<int>> groupedScores = {};
     for (var item in _individualScores) {
       String letter = item['letter'];
@@ -289,7 +291,7 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
       groupedScores[letter]!.add(score);
     }
 
-    // حساب المتوسط لكل حرف
+    // 3. Calculating the average mastery score for each target letter
     List<Map<String, dynamic>> finalLetterScores = [];
     groupedScores.forEach((letter, scores) {
       double average = scores.reduce((a, b) => a + b) / scores.length;
@@ -299,7 +301,7 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
       });
     });
 
-    // الانتقال لشاشة النتائج
+    // 4. Navigating to results with finalized child proficiency data
     Navigator.pushReplacementNamed(
       context,
       '/child/placement-result',

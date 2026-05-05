@@ -41,15 +41,13 @@ async def process_audio(
         with open(temp_raw, "wb") as buffer:
             buffer.write(await file.read())
 
-        # 1. المعالجة الصوتية (Audio Preprocessing)
+        # 1. Digital Signal Processing (Preprocessing)
         y, sr = librosa.load(temp_raw, sr=16000)
         
-        # مرشح تمرير عالي لإزالة الضجيج في الترددات المنخفضة
         b, a = signal.butter(4, 80, 'hp', fs=sr)
         y_hp = signal.filtfilt(b, a, y)
         
-        # قص الصمت (متساهل مع الأطفال)
-        y_trimmed, _ = librosa.effects.trim(y_hp, top_db=35) 
+        y_trimmed, _ = librosa.effects.trim(y_hp, top_db=35) # Silence removal
         
         if len(y_trimmed) < (sr * 0.2): 
             y_final = librosa.util.normalize(y_hp)
@@ -58,7 +56,7 @@ async def process_audio(
 
         sf.write(temp_clean, y_final, sr)
 
-        # 2. استخراج النص باستخدام الموديل المخصص
+        # 2. AI Transcription
         inputs = processor(y_final, sampling_rate=16000, return_tensors="pt", padding=True)
         with torch.no_grad():
             logits = model(inputs.input_values).logits
@@ -66,27 +64,26 @@ async def process_audio(
         predicted_ids = torch.argmax(logits, dim=-1)
         transcription = processor.batch_decode(predicted_ids)[0].strip()
 
-       # 3. خوارزمية التقييم "الدقة المجردة"
         final_score = 0.0
-
+        # 3. Targeted Scoring Algorithm
         if not transcription:
-            # الحالة الثالثة: صمت أو ضجيج
-            final_score = 0.0 
+           
+            final_score = 0.0 # Strict failure if target letter is missed
             
         elif target_letter in transcription:
-            # الحالة الأولى: الحرف موجود (التقييم بناءً على الدقة فقط)
+            # Calculating accuracy based on phonetic distance
             mistakes = editdistance.eval(target_word, transcription)
             total_letters = len(target_word)
             
-            # حساب الدقة الفعلية (بدون رفعها لـ 75)
+            # Accuracy is calculated as the true percentage of correct phonemes
             accuracy = max(0, 100 - ((mistakes / total_letters) * 100))
             
-            # هنا الدرجة هي الدقة الحقيقية مهما كانت منخفضة
+            # Final Score reflects the real accuracy, no matter how low it is
             final_score = accuracy
             
         else:
-            # الحالة الثانية: الحرف غير موجود
-            # الدرجة صفر لأن الهدف الرئيسي لم يتحقق
+            # 3. Fallback: Target letter missing
+            # The score is strictly zero because the primary educational goal was not met
             final_score = 0.0
             
         # 4. الرفع إلى Firebase Storage

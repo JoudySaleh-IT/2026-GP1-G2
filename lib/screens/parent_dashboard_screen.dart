@@ -88,14 +88,14 @@ class ParentDashboardScreen extends StatelessWidget {
           ),
         ],
       ),
-      // 1️⃣ هنا نتحكم في الحجم الكلي للهيدر
+      //  هنا نتحكم في الحجم الكلي للهيدر
       padding: EdgeInsets.only(
         top: MediaQuery.of(context).padding.top + 8, // مساحة علوية بسيطة
         bottom: 12, // مسافة سفلية قليلة لجعله نحيفاً
         right: 16,
         left: 16,
       ),
-      // 2️⃣ ابدئي بالـ Row مباشرة واحذفي الـ SafeArea والـ Padding اللي كانوا هنا
+      //  ابدئي بالـ Row مباشرة واحذفي الـ SafeArea والـ Padding اللي كانوا هنا
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -275,16 +275,12 @@ class ParentDashboardScreen extends StatelessWidget {
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
           content: const Text('هل أنت متأكد أنك تريد تسجيل الخروج؟'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('إلغاء', style: TextStyle(color: Colors.grey)),
-            ),
+         actions: [
+            //  زر تسجيل الخروج (سيكون على اليمين)
             ElevatedButton(
               onPressed: () async {
                 await FirebaseAuth.instance.signOut();
                 if (ctx.mounted) {
-                  // Clear the whole stack and go to splash screen
                   Navigator.of(
                     ctx,
                     rootNavigator: true,
@@ -296,6 +292,12 @@ class ParentDashboardScreen extends StatelessWidget {
                 foregroundColor: Colors.white,
               ),
               child: const Text('تسجيل الخروج'),
+            ),
+
+            //  زر الإلغاء (سيكون على اليسار)
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('إلغاء', style: TextStyle(color: Colors.grey)),
             ),
           ],
         ),
