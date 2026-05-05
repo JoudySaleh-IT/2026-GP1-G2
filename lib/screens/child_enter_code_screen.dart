@@ -21,12 +21,12 @@ class _ChildEnterCodeScreenState extends State<ChildEnterCodeScreen> {
 
   // ─── No changes to _verifyCode or _showError functions ───
   Future<void> _verifyCode(String enteredCode) async {
-    // ... your existing logic remains exactly the same ...
     setState(() => _isLoading = true);
     try {
       if (FirebaseAuth.instance.currentUser == null) {
         await FirebaseAuth.instance.signInAnonymously();
       }
+      // Querying Firestore for the matching code and checking expiration
       final query = await FirebaseFirestore.instance
           .collection('pairing_codes')
           .where('code', isEqualTo: enteredCode)
@@ -44,11 +44,13 @@ class _ChildEnterCodeScreenState extends State<ChildEnterCodeScreen> {
       final childId = data['childId'] as String;
       final parentId = data['parentId'] as String;
       final childName = data['childName'] as String? ?? 'بطلنا';
+      // Saving session data locally
       ChildSession.currentChildId = childId;
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('saved_childId', childId);
       await prefs.setString('saved_parentId', parentId);
       await prefs.setBool('isChildLoggedIn', true);
+      // Deleting the code from the database after success
       await doc.reference.delete();
       if (!mounted) return;
       ScaffoldMessenger.of(

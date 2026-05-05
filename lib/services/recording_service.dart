@@ -48,12 +48,12 @@ class RecordingService {
     try {
       var request = http.MultipartRequest('POST', apiUrl);
 
-      // 1. إرفاق ملف الصوت
+      // Attaching the audio file and the word to be verified
       request.files.add(
         await http.MultipartFile.fromPath('file', audioFilePath),
       );
 
-      // 2. إرفاق الكلمة المستهدفة لتقييم الذكاء الاصطناعي
+      
       request.fields['target_word'] = targetWord;
 
       print('جاري إرسال الصوت للسيرفر...');
@@ -62,10 +62,9 @@ class RecordingService {
 
       // إذا نجح الاتصال بالسيرفر
       if (response.statusCode == 200) {
-        // تحويل النتيجة من صيغة النص إلى قاموس (Map)
-        var responseData = json.decode(response.body);
+        
+        var responseData = json.decode(response.body);// Returns the AI accuracy score
 
-        // إرجاع البيانات لواجهة المستخدم (النسبة، الرابط، الكلمة المسموعة)
         return responseData;
       } else {
         print('فشل الاتصال بالسيرفر. رمز الخطأ: ${response.statusCode}');

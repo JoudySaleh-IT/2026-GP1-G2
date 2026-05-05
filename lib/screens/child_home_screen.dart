@@ -26,7 +26,7 @@ class ChildHomeScreen extends StatelessWidget {
   bool _canReassess(Map<String, dynamic> data) {
     final Map<String, dynamic> scores = data['letterScores'] ?? {};
     if (scores.isEmpty) return false;
-    // إذا وجدنا أي حرف درجته أقل من 70، يعني لسه ما خلص
+    // The threshold logic: returns true only if ALL scores are >= 70%
     return !scores.values.any((score) => (score as num) < 70);
   }
 
