@@ -70,13 +70,7 @@ class _ChildProfileManagementScreenState
           ),
           content: const Text('سيتم حذف ملف الطفل وجميع بياناته بشكل نهائي.'),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text(
-                'إلغاء',
-                style: TextStyle(color: Color(0xFF511281)),
-              ),
-            ),
+            //  زر "حذف" سيكون في جهة اليمين
             ElevatedButton(
               onPressed: () async {
                 try {
@@ -97,8 +91,24 @@ class _ChildProfileManagementScreenState
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFFF6969),
+                foregroundColor: Colors.white,
+                shape: const StadiumBorder(), // شكل دائري متناسق مع الداشبورد
+                elevation: 2,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               ),
-              child: const Text('حذف'),
+              child: const Text('حذف', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+
+            //  زر "إلغاء" سيكون في جهة اليسار (نص فقط بدون بوكس)
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.grey, // لون رمادي هادئ لتقليل التشتيت
+              ),
+              child: const Text(
+                'إلغاء',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
           ],
         ),

@@ -134,17 +134,33 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: const Text('تأكيد تسجيل الخروج', style: TextStyle(fontWeight: FontWeight.bold)),
           content: const Text('هل أنت متأكد أنك تريد تسجيل الخروج؟'),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء', style: TextStyle(color: Colors.grey))),
+         actions: [
+            //  زر تسجيل الخروج سيكون أولاً (جهة اليمين)
             ElevatedButton(
-              onPressed: () async {
-                await _authService.signOut();
-                if (ctx.mounted) {
-                  Navigator.of(ctx, rootNavigator: true).pushNamedAndRemoveUntil('/', (route) => false);
-                }
-              },
-              style: ElevatedButton.styleFrom(backgroundColor: _pink, foregroundColor: Colors.white),
-              child: const Text('تسجيل الخروج'),
+  onPressed: () async {
+    await _authService.signOut();
+    if (ctx.mounted) {
+      Navigator.of(ctx, rootNavigator: true).pushNamedAndRemoveUntil('/', (route) => false);
+    }
+  },
+  style: ElevatedButton.styleFrom(
+    backgroundColor: _pink,
+    foregroundColor: Colors.white,
+    elevation: 2, // إضافة ظل خفيف ليتطابق مع الداشبورد
+    // 1️⃣ هنا التغيير لجعل الحواف دائرية بالكامل (Stadium)
+    shape: const StadiumBorder(), 
+    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+  ),
+  child: const Text(
+    'تسجيل الخروج',
+    style: TextStyle(fontWeight: FontWeight.bold),
+  ),
+),
+
+            //  زر الإلغاء سيكون ثانياً (جهة اليسار)
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('إلغاء', style: TextStyle(color: Colors.grey)),
             ),
           ],
         ),
