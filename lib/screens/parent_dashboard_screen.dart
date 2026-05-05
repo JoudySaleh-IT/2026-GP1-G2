@@ -275,8 +275,12 @@ class ParentDashboardScreen extends StatelessWidget {
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
           content: const Text('هل أنت متأكد أنك تريد تسجيل الخروج؟'),
-         actions: [
-            //  زر تسجيل الخروج (سيكون على اليمين)
+          
+          // ── 1. إضافة خاصية التباعد بين الأزرار ──
+          actionsAlignment: MainAxisAlignment.spaceBetween, 
+
+          actions: [
+            // ── 2. زر تسجيل الخروج (سيكون في جهة اليمين) ──
             ElevatedButton(
               onPressed: () async {
                 await FirebaseAuth.instance.signOut();
@@ -290,14 +294,27 @@ class ParentDashboardScreen extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFFF6969),
                 foregroundColor: Colors.white,
+                shape: const StadiumBorder(), // حواف دائرية بالكامل
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               ),
-              child: const Text('تسجيل الخروج'),
+              child: const Text(
+                'تسجيل الخروج',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
 
-            //  زر الإلغاء (سيكون على اليسار)
+            // ── 3. زر الإلغاء (سيكون في جهة اليسار - نص فقط بدون بوكس) ──
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('إلغاء', style: TextStyle(color: Colors.grey)),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.grey, // لون هادئ لتقليل التشتيت
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+              ),
+              child: const Text(
+                'إلغاء',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
           ],
         ),

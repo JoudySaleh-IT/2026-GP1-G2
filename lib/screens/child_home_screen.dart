@@ -104,7 +104,9 @@ class ChildHomeScreen extends StatelessWidget {
                 _ChildHeader(
                   name: data['name'] ?? 'بطل فصيح',
                   avatar: data['avatar'] ?? '🦁',
-                  level: data['gradeLevel'] ?? 'مبتدئ',
+                  level: (hasCompletedPlacement) 
+      ? (data['gradeLevel'] ?? 'مبتدئ') 
+      : 'بدون تصنيف',
                 ),
                 Expanded(
                   child: SingleChildScrollView(
