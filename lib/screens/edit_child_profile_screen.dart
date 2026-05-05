@@ -349,53 +349,30 @@ class _EditChildProfileScreenState extends State<EditChildProfileScreen> {
 
 // ─── DOB Picker ───────────────────────────────────────────────────────────────
 // ─── DOB Picker (نسخة محدثة بدعم حالة التركيز) ────────────────────────────────
+// ─── DOB Picker (نسخة تفاعلية متطابقة مع صفحة التعديل) ───
 class _DobPicker extends StatefulWidget {
   final DateTime? selectedDate;
   final bool hasError;
   final ValueChanged<DateTime> onChanged;
 
   const _DobPicker({
-    Key? key,
     required this.selectedDate,
     required this.hasError,
     required this.onChanged,
-  }) : super(key: key);
+  });
 
   @override
   State<_DobPicker> createState() => _DobPickerState();
 }
 
 class _DobPickerState extends State<_DobPicker> {
-  // 1. تعريف عقدة تركيز مخصصة
-  final FocusNode _focusNode = FocusNode();
-  // 2. حالة لتتبع ما إذا كان الحقل مفعلاً/مضغوطاً
-  bool _isFocused = false;
-
-  @override
-  void initState() {
-    super.initState();
-    // 3. إضافة مستمع لتحديث الحالة عند تغير التركيز
-    _focusNode.addListener(_onFocusChange);
-  }
-
-  @override
-  void dispose() {
-    // 4. تخلص من عقدة التركيز لتجنب تسرب الذاكرة
-    _focusNode.removeListener(_onFocusChange);
-    _focusNode.dispose();
-    super.dispose();
-  }
-
-  void _onFocusChange() {
-    setState(() {
-      _isFocused = _focusNode.hasFocus;
-    });
-  }
+  // متغير للتحكم في اللون الأحمر عند الضغط
+  bool _isActive = false;
 
   Future<void> _pick(BuildContext context) async {
-    // 5. عند الضغط، اطلب التركيز يدوياً
-    _focusNode.requestFocus();
-    
+    // تفعيل اللون الأحمر فور الضغط
+    setState(() => _isActive = true);
+
     final now = DateTime.now();
     final picked = await showDatePicker(
       context: context,
@@ -414,60 +391,60 @@ class _DobPickerState extends State<_DobPicker> {
         child: child!,
       ),
     );
+
     if (picked != null) widget.onChanged(picked);
     
-    // 6. بعد الانتهاء، قم بإزالة التركيز (اختياري، لكن يطابق سلوك حقول الإدخال بعد الضغط)
-    _focusNode.unfocus();
+    // إعادة اللون للحالة الطبيعية بعد إغلاق نافذة التاريخ
+    setState(() => _isActive = false);
   }
 
   @override
   Widget build(BuildContext context) {
     final hasDate = widget.selectedDate != null;
-    
-    // 7. تحديد لون الحافة بناءً على الحالة
+
+    // تحديد لون الحافة: أحمر إذا كان هناك خطأ أو إذا كان الحقل مضغوطاً الآن
     Color borderColor;
     if (widget.hasError) {
-      borderColor = Colors.red; // حالة الخطأ دائماً حمراء
-    } else if (_isFocused) {
-      borderColor = Colors.red; // التعديل هنا: أحمر عند التركيز (عند الضغط)
+      borderColor = Colors.red;
+    } else if (_isActive) {
+      borderColor = const Color(0xFFFF6969); // الأحمر المطلوب عند الضغط
     } else {
-      borderColor = const Color(0xFF511281).withOpacity(0.2); // الحالة الطبيعية
+      // البنفسجي الشفاف في الحالة الطبيعية (حتى لو تم اختيار تاريخ)
+      borderColor = const Color(0xFF511281).withOpacity(0.3);
     }
 
     return GestureDetector(
       onTap: () => _pick(context),
-      child: Focus( // 8. لف الـ Container بـ Focus widget
-        focusNode: _focusNode,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: borderColor,
-              width: 2,
-            ),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: borderColor,
+            width: 2,
           ),
-          child: Row(
-            children: [
-              Icon(Icons.calendar_today_rounded,
-                  color: widget.hasError ? Colors.red : const Color(0xFF511281),
-                  size: 18),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  hasDate
-                      ? '${widget.selectedDate!.year}/${widget.selectedDate!.month.toString().padLeft(2, '0')}/${widget.selectedDate!.day.toString().padLeft(2, '0')}'
-                      : 'اختر تاريخ الميلاد',
-                  style: TextStyle(
-                      fontSize: 14,
-                      color: hasDate ? const Color(0xFF1A1A1A) : Colors.grey),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.calendar_today_rounded,
+                color: widget.hasError ? Colors.red : const Color(0xFF511281),
+                size: 18),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                hasDate
+                    ? '${widget.selectedDate!.year}/${widget.selectedDate!.month.toString().padLeft(2, '0')}/${widget.selectedDate!.day.toString().padLeft(2, '0')}'
+                    : 'اختر تاريخ الميلاد',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: hasDate ? const Color(0xFF1A1A1A) : Colors.grey,
                 ),
               ),
-              Icon(Icons.arrow_drop_down_rounded,
-                  color: widget.hasError ? Colors.red : const Color(0xFF511281)),
-            ],
-          ),
+            ),
+            Icon(Icons.arrow_drop_down_rounded,
+                color: widget.hasError ? Colors.red : const Color(0xFF511281)),
+          ],
         ),
       ),
     );
