@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
+import 'style_constants.dart';
 
 // ── القائمة المتاحة للصور الرمزية ──
 const _avatars = ['🦁', '🐯', '🐼', '🦊', '🐻', '🐨', '🦝', '🐰'];
@@ -8,8 +9,7 @@ const _avatars = ['🦁', '🐯', '🐼', '🦊', '🐻', '🐨', '🦝', '🐰'
 int _calcAge(DateTime dob) {
   final now = DateTime.now();
   int age = now.year - dob.year;
-  if (now.month < dob.month ||
-      (now.month == dob.month && now.day < dob.day)) {
+  if (now.month < dob.month || (now.month == dob.month && now.day < dob.day)) {
     age--;
   }
   return age;
@@ -53,12 +53,12 @@ class _CreateChildProfileScreenState extends State<CreateChildProfileScreen> {
         !_genderError &&
         !_avatarError &&
         !_dobError) {
-      
       showDialog(
         context: context,
         barrierDismissible: false,
         builder: (_) => const Center(
-            child: CircularProgressIndicator(color: Color(0xFF511281))),
+          child: CircularProgressIndicator(color: Color(0xFF511281)),
+        ),
       );
 
       try {
@@ -75,14 +75,18 @@ class _CreateChildProfileScreenState extends State<CreateChildProfileScreen> {
 
         if (success && mounted) {
           Navigator.pushNamedAndRemoveUntil(
-              context, '/parent/dashboard', (route) => false);
+            context,
+            '/parent/dashboard',
+            (route) => false,
+          );
         }
       } catch (e) {
         if (mounted) Navigator.pop(context);
         String message = 'حدث خطأ أثناء حفظ البيانات، يرجى المحاولة لاحقاً';
         if (mounted) {
-          ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text(message)));
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(message)));
         }
       }
     }
@@ -105,13 +109,15 @@ class _CreateChildProfileScreenState extends State<CreateChildProfileScreen> {
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                        color: const Color(0xFF511281).withOpacity(0.1),
-                        width: 2),
+                      color: const Color(0xFF511281).withOpacity(0.1),
+                      width: 2,
+                    ),
                     boxShadow: const [
                       BoxShadow(
-                          color: Color(0x0D000000),
-                          blurRadius: 8,
-                          offset: Offset(0, 2))
+                        color: Color(0x0D000000),
+                        blurRadius: 8,
+                        offset: Offset(0, 2),
+                      ),
                     ],
                   ),
                   padding: const EdgeInsets.all(24),
@@ -124,13 +130,19 @@ class _CreateChildProfileScreenState extends State<CreateChildProfileScreen> {
                           child: Container(
                             padding: const EdgeInsets.all(20),
                             decoration: BoxDecoration(
-                                color: const Color(0xFF511281).withOpacity(0.1),
-                                shape: BoxShape.circle),
+                              color: const Color(0xFF511281).withOpacity(0.1),
+                              shape: BoxShape.circle,
+                            ),
                             child: _selectedAvatar.isEmpty
-                                ? const Icon(Icons.person_add_alt_1_rounded,
-                                    size: 52, color: Color(0xFF511281))
-                                : Text(_selectedAvatar,
-                                    style: const TextStyle(fontSize: 52)),
+                                ? const Icon(
+                                    Icons.person_add_alt_1_rounded,
+                                    size: 52,
+                                    color: Color(0xFF511281),
+                                  )
+                                : Text(
+                                    _selectedAvatar,
+                                    style: const TextStyle(fontSize: 52),
+                                  ),
                           ),
                         ),
                         const SizedBox(height: 24),
@@ -142,8 +154,9 @@ class _CreateChildProfileScreenState extends State<CreateChildProfileScreen> {
                           validator: (v) {
                             final val = v?.trim() ?? '';
                             if (val.isEmpty) return 'يرجى إدخال اسم الطفل';
-                            final nameRegExp =
-                                RegExp(r'^[a-zA-Z\s\u0600-\u06FF]+$');
+                            final nameRegExp = RegExp(
+                              r'^[a-zA-Z\s\u0600-\u06FF]+$',
+                            );
                             if (!nameRegExp.hasMatch(val)) {
                               return 'يجب أن يحتوي الاسم على حروف فقط';
                             }
@@ -157,18 +170,18 @@ class _CreateChildProfileScreenState extends State<CreateChildProfileScreen> {
                         _DobPicker(
                           selectedDate: _dob,
                           hasError: _dobError,
-                          onChanged: (date) =>
-                              setState(() {
-                                _dob = date;
-                                _dobError = false;
-                              }),
+                          onChanged: (date) => setState(() {
+                            _dob = date;
+                            _dobError = false;
+                          }),
                         ),
                         if (_dobError)
                           const Padding(
                             padding: EdgeInsets.only(top: 6, right: 4),
-                            child: Text('يرجى اختيار تاريخ الميلاد',
-                                style: TextStyle(
-                                    fontSize: 12, color: Colors.red)),
+                            child: Text(
+                              'يرجى اختيار تاريخ الميلاد',
+                              style: TextStyle(fontSize: 12, color: Colors.red),
+                            ),
                           ),
                         if (_dob != null)
                           Padding(
@@ -188,18 +201,18 @@ class _CreateChildProfileScreenState extends State<CreateChildProfileScreen> {
                         _GenderSelector(
                           selected: _gender,
                           hasError: _genderError,
-                          onChanged: (v) => setState(
-                              () {
-                                _gender = v;
-                                _genderError = false;
-                              }),
+                          onChanged: (v) => setState(() {
+                            _gender = v;
+                            _genderError = false;
+                          }),
                         ),
                         if (_genderError)
                           const Padding(
                             padding: EdgeInsets.only(top: 4),
-                            child: Text('يرجى اختيار الجنس',
-                                style: TextStyle(
-                                    fontSize: 12, color: Colors.red)),
+                            child: Text(
+                              'يرجى اختيار الجنس',
+                              style: TextStyle(fontSize: 12, color: Colors.red),
+                            ),
                           ),
                         const SizedBox(height: 16),
                         const _FieldLabel('اختر الصورة الرمزية'),
@@ -209,9 +222,10 @@ class _CreateChildProfileScreenState extends State<CreateChildProfileScreen> {
                           physics: const NeverScrollableScrollPhysics(),
                           gridDelegate:
                               const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 4,
-                                  crossAxisSpacing: 10,
-                                  mainAxisSpacing: 10),
+                                crossAxisCount: 4,
+                                crossAxisSpacing: 10,
+                                mainAxisSpacing: 10,
+                              ),
                           itemCount: _avatars.length,
                           itemBuilder: (_, i) {
                             final emoji = _avatars[i];
@@ -229,15 +243,18 @@ class _CreateChildProfileScreenState extends State<CreateChildProfileScreen> {
                                       : Colors.white,
                                   borderRadius: BorderRadius.circular(10),
                                   border: Border.all(
-                                      color: isSelected
-                                          ? const Color(0xFFFF6969)
-                                          : const Color(0xFFDDDDDD),
-                                      width: 2),
+                                    color: isSelected
+                                        ? const Color(0xFFFF6969)
+                                        : const Color(0xFFDDDDDD),
+                                    width: 2,
+                                  ),
                                 ),
                                 child: Center(
-                                    child: Text(emoji,
-                                        style:
-                                            const TextStyle(fontSize: 28))),
+                                  child: Text(
+                                    emoji,
+                                    style: const TextStyle(fontSize: 28),
+                                  ),
+                                ),
                               ),
                             );
                           },
@@ -245,9 +262,10 @@ class _CreateChildProfileScreenState extends State<CreateChildProfileScreen> {
                         if (_avatarError)
                           const Padding(
                             padding: EdgeInsets.only(top: 4),
-                            child: Text('يرجى اختيار صورة رمزية',
-                                style: TextStyle(
-                                    fontSize: 12, color: Colors.red)),
+                            child: Text(
+                              'يرجى اختيار صورة رمزية',
+                              style: TextStyle(fontSize: 12, color: Colors.red),
+                            ),
                           ),
                         const SizedBox(height: 28),
                         SizedBox(
@@ -260,7 +278,13 @@ class _CreateChildProfileScreenState extends State<CreateChildProfileScreen> {
                               foregroundColor: Colors.white,
                               shape: const StadiumBorder(),
                             ),
-                            child: const Text('إنشاء الملف', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                            child: const Text(
+                              'إنشاء الملف',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
                         ),
                       ],
@@ -276,24 +300,28 @@ class _CreateChildProfileScreenState extends State<CreateChildProfileScreen> {
   }
 
   InputDecoration _inputDecoration(String hint) => InputDecoration(
-        hintText: hint,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(
-                color: const Color(0xFF511281).withOpacity(0.3), width: 2)),
-        focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide:
-                const BorderSide(color: Color(0xFFFF6969), width: 2)),
-        errorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: const BorderSide(color: Colors.red, width: 2)),
-        focusedErrorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: const BorderSide(color: Colors.red, width: 2)),
-      );
+    hintText: hint,
+    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide: BorderSide(
+        color: const Color(0xFF511281).withOpacity(0.3),
+        width: 2,
+      ),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide: const BorderSide(color: Color(0xFFFF6969), width: 2),
+    ),
+    errorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide: const BorderSide(color: Colors.red, width: 2),
+    ),
+    focusedErrorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide: const BorderSide(color: Colors.red, width: 2),
+    ),
+  );
 }
 
 // ─── DOB Picker ───
@@ -325,8 +353,7 @@ class _DobPicker extends StatelessWidget {
     return GestureDetector(
       onTap: () => _pick(context),
       child: Container(
-        padding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(10),
@@ -334,16 +361,18 @@ class _DobPicker extends StatelessWidget {
             color: hasError
                 ? Colors.red
                 : hasDate
-                    ? const Color(0xFFFF6969)
-                    : const Color(0xFF511281).withOpacity(0.3),
+                ? const Color(0xFFFF6969)
+                : const Color(0xFF511281).withOpacity(0.3),
             width: 2,
           ),
         ),
         child: Row(
           children: [
-            Icon(Icons.calendar_today_rounded,
-                color: hasError ? Colors.red : const Color(0xFF511281),
-                size: 18),
+            Icon(
+              Icons.calendar_today_rounded,
+              color: hasError ? Colors.red : const Color(0xFF511281),
+              size: 18,
+            ),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
@@ -356,8 +385,10 @@ class _DobPicker extends StatelessWidget {
                 ),
               ),
             ),
-            Icon(Icons.arrow_drop_down_rounded,
-                color: hasError ? Colors.red : const Color(0xFF511281)),
+            Icon(
+              Icons.arrow_drop_down_rounded,
+              color: hasError ? Colors.red : const Color(0xFF511281),
+            ),
           ],
         ),
       ),
@@ -372,37 +403,36 @@ class _CreateChildHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-            colors: [Color(0xFF511281), Color(0xFF7A3FA8)]),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black26, blurRadius: 8, offset: Offset(0, 2))
-        ],
-      ),
+      decoration: FaseehStyle.headerDecoration,
       padding: EdgeInsets.only(
-          top: MediaQuery.of(context).padding.top + 8,
-          bottom: 12,
-          right: 16,
-          left: 16),
+        top: MediaQuery.of(context).padding.top + 8,
+        bottom: 12,
+        right: 16,
+        left: 16,
+      ),
       child: Row(
         children: [
           // ✅ تم تغيير الزر ليطابق صفحة المانجمنت وبدون خلفية بيضاء
           _HeaderIconBtn(
-            icon: Icons.arrow_back, 
+            icon: Icons.arrow_back,
             onTap: () => Navigator.pop(context),
           ),
           const SizedBox(width: 12),
           const Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('إنشاء ملف الطفل',
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold)),
-              Text('أضف طفلاً جديداً إلى حسابك',
-                  style: TextStyle(color: Colors.white70, fontSize: 12)),
+              Text(
+                'إنشاء ملف الطفل',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                'أضف طفلاً جديداً إلى حسابك',
+                style: TextStyle(color: Colors.white70, fontSize: 12),
+              ),
             ],
           ),
         ],
@@ -419,35 +449,39 @@ class _HeaderIconBtn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Container(
-          width: 34,
-          height: 34,
-          child: Icon(icon, color: Colors.white, size: 25),
-        ),
-      );
+    onTap: onTap,
+    borderRadius: BorderRadius.circular(8),
+    child: Container(
+      width: 34,
+      height: 34,
+      child: Icon(icon, color: Colors.white, size: 25),
+    ),
+  );
 }
 
 class _FieldLabel extends StatelessWidget {
   final String text;
   const _FieldLabel(this.text);
   @override
-  Widget build(BuildContext context) => Text(text,
-      style: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.bold,
-          color: Color(0xFF444444)));
+  Widget build(BuildContext context) => Text(
+    text,
+    style: const TextStyle(
+      fontSize: 14,
+      fontWeight: FontWeight.bold,
+      color: Color(0xFF444444),
+    ),
+  );
 }
 
 class _GenderSelector extends StatelessWidget {
   final String selected;
   final bool hasError;
   final ValueChanged<String> onChanged;
-  const _GenderSelector(
-      {required this.selected,
-      required this.hasError,
-      required this.onChanged});
+  const _GenderSelector({
+    required this.selected,
+    required this.hasError,
+    required this.onChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -473,18 +507,15 @@ class _GenderSelector extends StatelessWidget {
                 : Colors.white,
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
-                color: isSelected
-                    ? const Color(0xFFFF6969)
-                    : (hasError ? Colors.red : const Color(0xFFDDDDDD)),
-                width: 2),
+              color: isSelected
+                  ? const Color(0xFFFF6969)
+                  : (hasError ? Colors.red : const Color(0xFFDDDDDD)),
+              width: 2,
+            ),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(icon),
-              const SizedBox(width: 8),
-              Text(label)
-            ],
+            children: [Text(icon), const SizedBox(width: 8), Text(label)],
           ),
         ),
       ),

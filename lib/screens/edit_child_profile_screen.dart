@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/auth_service.dart';
+import 'style_constants.dart';
 
 // ── حساب العمر من تاريخ الميلاد ──
 int _calcAge(DateTime dob) {
@@ -25,21 +26,28 @@ class _EditChildProfileScreenState extends State<EditChildProfileScreen> {
   final AuthService _authService = AuthService();
 
   late final TextEditingController _nameController = TextEditingController();
-  
+
   String _selectedAvatar = '🦁';
   DateTime? _dob;
   bool _dobError = false;
-  
+
   // ── متغيرات التحكم في ثبات اللون الأحمر ──
   bool _isNameActive = false; // هل تم لمس أو تعديل حقل الاسم؟
-  bool _isDobActive = false;  // هل تم لمس أو تعديل حقل التاريخ؟
-  
+  bool _isDobActive = false; // هل تم لمس أو تعديل حقل التاريخ؟
+
   bool _isSaving = false;
   bool _showSuccess = false;
   bool _isLoadingData = true;
 
   final List<String> _availableAvatars = [
-    '🦁', '🐯', '🐼', '🦊', '🐻', '🐨', '🦝', '🐰'
+    '🦁',
+    '🐯',
+    '🐼',
+    '🦊',
+    '🐻',
+    '🐨',
+    '🦝',
+    '🐰',
   ];
 
   @override
@@ -68,8 +76,9 @@ class _EditChildProfileScreenState extends State<EditChildProfileScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('خطأ في تحميل البيانات')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('خطأ في تحميل البيانات')));
       }
     }
   }
@@ -119,7 +128,9 @@ class _EditChildProfileScreenState extends State<EditChildProfileScreen> {
       child: Scaffold(
         backgroundColor: const Color(0xFFFCF9EA),
         body: _isLoadingData
-            ? const Center(child: CircularProgressIndicator(color: Color(0xFF511281)))
+            ? const Center(
+                child: CircularProgressIndicator(color: Color(0xFF511281)),
+              )
             : Column(
                 children: [
                   _EditHeader(onBack: () => Navigator.pop(context)),
@@ -131,14 +142,23 @@ class _EditChildProfileScreenState extends State<EditChildProfileScreen> {
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: const Color(0xFF511281).withOpacity(0.1), width: 2),
+                          border: Border.all(
+                            color: const Color(0xFF511281).withOpacity(0.1),
+                            width: 2,
+                          ),
                         ),
                         child: Form(
                           key: _formKey,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('المعلومات الشخصية', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                              const Text(
+                                'المعلومات الشخصية',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                               const Divider(height: 24),
 
                               // ── حقل اسم الطفل ──
@@ -147,10 +167,18 @@ class _EditChildProfileScreenState extends State<EditChildProfileScreen> {
                               TextFormField(
                                 controller: _nameController,
                                 // تفعيل اللون الأحمر عند البدء بالكتابة أو اللمس
-                                onChanged: (v) => setState(() => _isNameActive = true),
-                                onTap: () => setState(() => _isNameActive = true),
-                                decoration: _inputDecoration('أدخل اسم الطفل', _isNameActive),
-                                validator: (v) => (v == null || v.trim().isEmpty) ? 'يرجى إدخال اسم الطفل' : null,
+                                onChanged: (v) =>
+                                    setState(() => _isNameActive = true),
+                                onTap: () =>
+                                    setState(() => _isNameActive = true),
+                                decoration: _inputDecoration(
+                                  'أدخل اسم الطفل',
+                                  _isNameActive,
+                                ),
+                                validator: (v) =>
+                                    (v == null || v.trim().isEmpty)
+                                    ? 'يرجى إدخال اسم الطفل'
+                                    : null,
                               ),
                               const SizedBox(height: 16),
 
@@ -160,7 +188,8 @@ class _EditChildProfileScreenState extends State<EditChildProfileScreen> {
                               _DobPicker(
                                 selectedDate: _dob,
                                 isActive: _isDobActive || _dobError,
-                                onTap: () => setState(() => _isDobActive = true),
+                                onTap: () =>
+                                    setState(() => _isDobActive = true),
                                 onChanged: (date) => setState(() {
                                   _dob = date;
                                   _dobError = false;
@@ -191,22 +220,27 @@ class _EditChildProfileScreenState extends State<EditChildProfileScreen> {
   // تعديل الـ Decoration ليدعم اللون الأحمر الثابت
   InputDecoration _inputDecoration(String hint, bool isActive) {
     // اللون يكون أحمر إذا كان الحقل نشطاً، وإلا بنفسجي شفاف
-    final Color currentColor = isActive ? const Color(0xFFFF6969) : const Color(0xFF511281).withOpacity(0.2);
-    
+    final Color currentColor = isActive
+        ? const Color(0xFFFF6969)
+        : const Color(0xFF511281).withOpacity(0.2);
+
     return InputDecoration(
       hintText: hint,
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       // الحدود العادية (تتغير للأحمر إذا صار isActive)
       enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: currentColor, width: 2)),
+        borderRadius: BorderRadius.circular(10),
+        borderSide: BorderSide(color: currentColor, width: 2),
+      ),
       // الحدود وقت التركيز
       focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFFFF6969), width: 2)),
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: Color(0xFFFF6969), width: 2),
+      ),
       errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Colors.red, width: 2)),
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: Colors.red, width: 2),
+      ),
     );
   }
 
@@ -214,7 +248,11 @@ class _EditChildProfileScreenState extends State<EditChildProfileScreen> {
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 6, crossAxisSpacing: 8, mainAxisSpacing: 8),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 6,
+        crossAxisSpacing: 8,
+        mainAxisSpacing: 8,
+      ),
       itemCount: _availableAvatars.length,
       itemBuilder: (_, i) {
         final emoji = _availableAvatars[i];
@@ -223,11 +261,20 @@ class _EditChildProfileScreenState extends State<EditChildProfileScreen> {
           onTap: () => setState(() => _selectedAvatar = emoji),
           child: Container(
             decoration: BoxDecoration(
-              color: isSelected ? const Color(0xFFFF6969).withOpacity(0.1) : Colors.white,
+              color: isSelected
+                  ? const Color(0xFFFF6969).withOpacity(0.1)
+                  : Colors.white,
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: isSelected ? const Color(0xFFFF6969) : const Color(0xFFDDDDDD), width: 2),
+              border: Border.all(
+                color: isSelected
+                    ? const Color(0xFFFF6969)
+                    : const Color(0xFFDDDDDD),
+                width: 2,
+              ),
             ),
-            child: Center(child: Text(emoji, style: const TextStyle(fontSize: 24))),
+            child: Center(
+              child: Text(emoji, style: const TextStyle(fontSize: 24)),
+            ),
           ),
         );
       },
@@ -237,12 +284,18 @@ class _EditChildProfileScreenState extends State<EditChildProfileScreen> {
   Widget _buildSuccessBanner() {
     return Container(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: const Color(0xFFEAF7ED), borderRadius: BorderRadius.circular(10)),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEAF7ED),
+        borderRadius: BorderRadius.circular(10),
+      ),
       child: const Row(
         children: [
           Icon(Icons.check_circle_outline, color: Color(0xFF4CAF50), size: 18),
           SizedBox(width: 8),
-          Text('تم تحديث الملف الشخصي بنجاح!', style: TextStyle(color: Color(0xFF2E7D32), fontSize: 13)),
+          Text(
+            'تم تحديث الملف الشخصي بنجاح!',
+            style: TextStyle(color: Color(0xFF2E7D32), fontSize: 13),
+          ),
         ],
       ),
     );
@@ -260,7 +313,16 @@ class _EditChildProfileScreenState extends State<EditChildProfileScreen> {
               shape: const StadiumBorder(),
               padding: const EdgeInsets.symmetric(vertical: 14),
             ),
-            child: _isSaving ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Text('حفظ التغييرات'),
+            child: _isSaving
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
+                : const Text('حفظ التغييرات'),
           ),
         ),
         const SizedBox(width: 12),
@@ -288,20 +350,29 @@ class _DobPicker extends StatelessWidget {
   final ValueChanged<DateTime> onChanged;
   final VoidCallback onTap;
 
-  const _DobPicker({required this.selectedDate, required this.isActive, required this.onChanged, required this.onTap});
+  const _DobPicker({
+    required this.selectedDate,
+    required this.isActive,
+    required this.onChanged,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     final hasDate = selectedDate != null;
     // اللون أحمر إذا كان isActive، وإلا بنفسجي شفاف
-    final Color currentColor = isActive ? const Color(0xFFFF6969) : const Color(0xFF511281).withOpacity(0.2);
+    final Color currentColor = isActive
+        ? const Color(0xFFFF6969)
+        : const Color(0xFF511281).withOpacity(0.2);
 
     return GestureDetector(
       onTap: () async {
         onTap();
         final picked = await showDatePicker(
           context: context,
-          initialDate: selectedDate ?? DateTime.now().subtract(const Duration(days: 365 * 8)),
+          initialDate:
+              selectedDate ??
+              DateTime.now().subtract(const Duration(days: 365 * 8)),
           firstDate: DateTime(2000),
           lastDate: DateTime.now(),
         );
@@ -316,12 +387,23 @@ class _DobPicker extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Icon(Icons.calendar_today_rounded, color: isActive ? const Color(0xFFFF6969) : const Color(0xFF511281), size: 18),
+            Icon(
+              Icons.calendar_today_rounded,
+              color: isActive
+                  ? const Color(0xFFFF6969)
+                  : const Color(0xFF511281),
+              size: 18,
+            ),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                hasDate ? "${selectedDate!.year}/${selectedDate!.month}/${selectedDate!.day}" : 'اختر تاريخ الميلاد',
-                style: TextStyle(fontSize: 14, color: hasDate ? Colors.black : Colors.grey),
+                hasDate
+                    ? "${selectedDate!.year}/${selectedDate!.month}/${selectedDate!.day}"
+                    : 'اختر تاريخ الميلاد',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: hasDate ? Colors.black : Colors.grey,
+                ),
               ),
             ),
           ],
@@ -336,15 +418,42 @@ class _EditHeader extends StatelessWidget {
   const _EditHeader({required this.onBack});
   @override
   Widget build(BuildContext context) => Container(
-        padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top + 8, bottom: 12, right: 16, left: 16),
-        decoration: const BoxDecoration(gradient: LinearGradient(colors: [Color(0xFF511281), Color(0xFF7A3FA8)])),
-        child: Row(children: [IconButton(icon: const Icon(Icons.arrow_back, color: Colors.white), onPressed: onBack), const Text('تعديل ملف الطفل', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold))]),
-      );
+    padding: EdgeInsets.only(
+      top: MediaQuery.of(context).padding.top + 8,
+      bottom: 12,
+      right: 16,
+      left: 16,
+    ),
+    decoration: FaseehStyle.headerDecoration,
+    child: Row(
+      children: [
+        IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: onBack,
+        ),
+        const Text(
+          'تعديل ملف الطفل',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    ),
+  );
 }
 
 class _FieldLabel extends StatelessWidget {
   final String text;
   const _FieldLabel(this.text);
   @override
-  Widget build(BuildContext context) => Text(text, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF444444)));
+  Widget build(BuildContext context) => Text(
+    text,
+    style: const TextStyle(
+      fontSize: 14,
+      fontWeight: FontWeight.w500,
+      color: Color(0xFF444444),
+    ),
+  );
 }
