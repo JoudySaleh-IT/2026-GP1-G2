@@ -215,43 +215,19 @@ class _ChildHeader extends StatelessWidget {
           textDirection: TextDirection.rtl,
           child: AlertDialog(
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(16), // تم تعديله ليكون 16 مثل الأب
             ),
-            title: Row(
-              children: const [
-                Icon(Icons.logout_rounded, color: Color(0xFF511281)),
-                SizedBox(width: 8),
-                Text(
-                  'تسجيل الخروج',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF222222),
-                  ),
-                ),
-              ],
+            title: const Text(
+              'تأكيد تسجيل الخروج', // نفس نص الأب بدون أيقونات إضافية
+              style: TextStyle(fontWeight: FontWeight.bold),
             ),
             content: const Text(
-              'هل أنت متأكد أنك تريد الخروج والعودة إلى شاشة البداية؟',
-              style: TextStyle(fontSize: 14, color: Colors.black87),
+              'هل أنت متأكد أنك تريد تسجيل الخروج؟', // توحيد النص مع الأب
             ),
+            // إضافة خاصية التباعد لتوزيع الأزرار (واحد يمين وواحد يسار)
+            actionsAlignment: MainAxisAlignment.spaceBetween, 
             actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(dialogContext),
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 10,
-                  ),
-                ),
-                child: const Text(
-                  'إلغاء',
-                  style: TextStyle(
-                    color: Colors.grey,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
+              // زر تسجيل الخروج (سيكون في اليمين)
               ElevatedButton(
                 onPressed: () async {
                   final nav = Navigator.of(dialogContext, rootNavigator: true);
@@ -265,15 +241,28 @@ class _ChildHeader extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFFF6969),
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+                  shape: const StadiumBorder(), // شكل دائري أنيق متناسق
+                  elevation: 0,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 20,
                     vertical: 10,
                   ),
                 ),
-                child: const Text('نعم، خروج'),
+                child: const Text(
+                  'تسجيل الخروج', // تغيير "نعم، خروج" لتطابق الأب
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              // زر الإلغاء (سيكون في اليسار)
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                ),
+                child: const Text(
+                  'إلغاء',
+                  style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),
+                ),
               ),
             ],
           ),
@@ -281,7 +270,6 @@ class _ChildHeader extends StatelessWidget {
       },
     );
   }
-
   Future<void> _handleLogout(BuildContext context) async {
     final prefs = await SharedPreferences.getInstance();
     final isChildLoggedIn = prefs.getBool('isChildLoggedIn') ?? false;
@@ -514,16 +502,18 @@ class _ParentPasswordDialogState extends State<_ParentPasswordDialog> {
             const SizedBox(height: 4),
           ],
         ),
+        // داخل AlertDialog في كلاس _ParentPasswordDialog
+        actionsAlignment: MainAxisAlignment.spaceBetween, // 1️⃣ توزيع الأزرار (واحد يمين وواحد يسار)
         actions: [
-          //  زر "دخول" سيكون أولاً ليظهر في جهة اليمين
+          // 2️⃣ زر "دخول" (سيكون في جهة اليمين)
           ElevatedButton(
             onPressed: _loading ? null : _signInParent,
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFFF6969),
               foregroundColor: Colors.white,
-              elevation: 2,
-              shape: const StadiumBorder(), // محافظين على التصميم الدائري
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              elevation: 0, // مظهر أنظف بدون ظل ثقيل
+              shape: const StadiumBorder(), // تصميم دائري متناسق مع هوية التطبيق
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
             ),
             child: _loading
                 ? const SizedBox(
@@ -534,14 +524,18 @@ class _ParentPasswordDialogState extends State<_ParentPasswordDialog> {
                       color: Colors.white,
                     ),
                   )
-                : const Text('دخول'),
+                : const Text(
+                    'دخول',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
           ),
 
-          //  زر "إلغاء" سيكون ثانياً ليظهر في جهة اليسار
+          // 3️⃣ زر "إلغاء" (سيكون في جهة اليسار)
           TextButton(
             onPressed: () => Navigator.pop(context),
             style: TextButton.styleFrom(
-              foregroundColor: Colors.grey, // لون النص رمادي هادئ
+              foregroundColor: Colors.grey, // لون هادئ لزر ثانوي
+              padding: const EdgeInsets.symmetric(horizontal: 20),
             ),
             child: const Text(
               'إلغاء',
