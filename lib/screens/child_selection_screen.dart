@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/ChildSession.dart';
+import '../services/notification_service.dart';
 import 'style_constants.dart'; // add this line with the other imports
 
 // ─── Helper: تحويل الأرقام إلى العربية ────────────────
@@ -103,9 +104,17 @@ class ChildSelectionScreen extends StatelessWidget {
     }
   }
 
-  void _onChildSelected(BuildContext context, String childId) {
+  void _onChildSelected(
+    BuildContext context,
+    String childId,
+    String childName,
+  ) {
     ChildSession.currentChildId = childId;
     Navigator.pushNamed(context, '/child/home', arguments: childId);
+
+    NotificationService.showSuccessSnackBar(
+      'اهلًا $childName! جاهز تكون فصيح؟',
+    );
   }
 
   @override
@@ -164,7 +173,7 @@ class ChildSelectionScreen extends StatelessWidget {
                         avatar: data['avatar'] ?? '👦',
                         age: data['age'] ?? 0,
                         level: data['level'] ?? 'مبتدئ',
-                        onTap: () => _onChildSelected(context, docId),
+                        onTap: () => _onChildSelected(context, docId, name),
                         onPairingTap: () =>
                             _showPairingDialog(context, docId, name),
                       );

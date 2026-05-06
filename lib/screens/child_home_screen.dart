@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '/services/ChildSession.dart';
 import 'style_constants.dart';
 import 'style_constants.dart'; // ─── Mock Data ───────────────────────────────────────────────────────────────
+import '../services/notification_service.dart';
 
 const _mockChild = (
   name: 'أحمد',
@@ -401,16 +402,8 @@ class _ParentPasswordDialogState extends State<_ParentPasswordDialog> {
       // Dismiss the dialog
       if (mounted) navigator.pop();
 
-      // Show success message
-      messenger.showSnackBar(
-        const SnackBar(
-          content: Text(
-            'تم التحقق.. جاري العودة لصفحة ولي الأمر',
-            style: TextStyle(fontFamily: 'Tajawal'),
-          ),
-          backgroundColor: Color(0xFF511281),
-          behavior: SnackBarBehavior.floating,
-        ),
+      NotificationService.showSuccessSnackBar(
+        'تم التحقق، يتم إعادة التوجيه لصفحة ولي الامر',
       );
 
       // Navigate to parent dashboard and clear all previous routes

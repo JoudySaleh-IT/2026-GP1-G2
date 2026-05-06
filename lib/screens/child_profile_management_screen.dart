@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/auth_service.dart';
+import '../services/notification_service.dart';
 import 'edit_child_profile_screen.dart';
 import 'style_constants.dart';
 
@@ -84,6 +85,10 @@ class _ChildProfileManagementScreenState
                       (route) => false,
                     );
                   }
+                  // 1. Show the global snackbar
+                  NotificationService.showSuccessSnackBar(
+                    'تم حذف ملف الطفل الشخصي بنجاح!',
+                  );
                 } catch (e) {
                   ScaffoldMessenger.of(
                     context,

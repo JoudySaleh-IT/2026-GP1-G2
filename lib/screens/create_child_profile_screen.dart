@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import 'style_constants.dart';
+import '../services/notification_service.dart';
 
 // ── القائمة المتاحة للصور الرمزية ──
 const _avatars = ['🦁', '🐯', '🐼', '🦊', '🐻', '🐨', '🦝', '🐰'];
@@ -72,6 +73,11 @@ class _CreateChildProfileScreenState extends State<CreateChildProfileScreen> {
         );
 
         if (mounted) Navigator.pop(context); // إغلاق لودينج
+
+        // 1. Show the global snackbar
+        NotificationService.showSuccessSnackBar(
+          'تم إضافة ملف الطفل الشخصي بنجاح!',
+        );
 
         if (success && mounted) {
           Navigator.pushNamedAndRemoveUntil(
