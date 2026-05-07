@@ -74,10 +74,27 @@ class _CreateChildProfileScreenState extends State<CreateChildProfileScreen> {
 
         if (mounted) Navigator.pop(context); // إغلاق لودينج
 
-        // 1. Show the global snackbar
-        NotificationService.showSuccessSnackBar(
-          'تم إضافة ملف الطفل الشخصي بنجاح!',
-        );
+        // ─── NEW: Dual Notification Logic ───
+        // 1. Get the arguments passed from the previous screen
+        final args =
+            ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+
+        // 2. Check if they came from registration (defaults to false if not provided)
+        final bool isFromRegistration = args?['isFromRegistration'] ?? false;
+        final String parentName = args?['parentName'] ?? '';
+
+        // 3. Show the correct SnackBar
+        if (isFromRegistration) {
+          final String displayName = parentName.isNotEmpty ? parentName : 'بك';
+          NotificationService.showSuccessSnackBar(
+            'أهلاً يا $displayName! مرحباً بك في فصيح',
+          );
+        } else {
+          NotificationService.showSuccessSnackBar(
+            'تم إضافة ملف الطفل الشخصي بنجاح!',
+          );
+        }
+        // ────────────────────────────────────
 
         if (success && mounted) {
           Navigator.pushNamedAndRemoveUntil(

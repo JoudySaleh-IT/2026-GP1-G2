@@ -240,7 +240,6 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> {
                               ),
                             ),
                           ],
-
                           const SizedBox(height: 16),
 
                           Row(
