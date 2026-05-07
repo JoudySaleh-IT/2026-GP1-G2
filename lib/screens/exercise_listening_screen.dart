@@ -414,35 +414,43 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
   Widget _buildHeader() {
     return Container(
       decoration: FaseehStyle.headerDecoration,
-      padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + 4,
-        bottom: 8,
-        right: 16,
-        left: 16,
-      ),
+      padding: FaseehStyle.getStandardPadding(
+        context,
+      ), // top: status+8, bottom:12
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          _HeaderIconBtn(
-            icon: Icons.arrow_back,
-            onTap: () => Navigator.pop(context),
+          // Back button – standard IconButton
+          IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () => Navigator.pop(context),
           ),
-          const SizedBox(width: 12),
-          const Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'تمارين الاستماع',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
+          const SizedBox(width: 8),
+          // Text column – larger fonts (18/14) to match other headers
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                Text(
+                  'تمارين الاستماع',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Tajawal',
+                  ),
                 ),
-              ),
-              Text(
-                'استمع واختر الإجابة الصحيحة',
-                style: TextStyle(color: Colors.white70, fontSize: 11),
-              ),
-            ],
+                Text(
+                  'استمع واختر الإجابة الصحيحة',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 14,
+                    fontFamily: 'Tajawal',
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -535,19 +543,4 @@ class _FeedbackBanner extends StatelessWidget {
       ),
     );
   }
-}
-
-class _HeaderIconBtn extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-  const _HeaderIconBtn({required this.icon, required this.onTap});
-  @override
-  Widget build(BuildContext context) => InkWell(
-    onTap: onTap,
-    child: SizedBox(
-      width: 38,
-      height: 38,
-      child: Icon(icon, color: Colors.white, size: 24),
-    ),
-  );
 }

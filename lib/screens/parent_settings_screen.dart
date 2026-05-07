@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/auth_service.dart';
+import '../services/notification_service.dart';
 
 class ParentSettingsScreen extends StatefulWidget {
   const ParentSettingsScreen({super.key});
@@ -12,7 +13,7 @@ class ParentSettingsScreen extends StatefulWidget {
 
 class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
   final AuthService _authService = AuthService();
-  
+
   // ── المفاتيح (Keys) للتحقق من المداخل ──
   final _profileFormKey = GlobalKey<FormState>();
   final _passwordFormKey = GlobalKey<FormState>();
@@ -81,15 +82,16 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
         await FirebaseFirestore.instance.collection('parents').doc(uid).update({
           'fullName': _nameController.text.trim(),
         });
-        setState(() {
-          _profileName = _nameController.text.trim();
-          _profileMessage = 'تم تحديث الاسم بنجاح!';
-        });
+
         Future.delayed(const Duration(seconds: 2), () {
           if (mounted) setState(() => _showProfileForm = false);
         });
+
+        NotificationService.showSuccessSnackBar('تم تحديث الاسم بنجاح!');
       } catch (e) {
-        setState(() => _profileMessage = 'فشل التحديث: تأكد من اتصالك بالإنترنت');
+        setState(
+          () => _profileMessage = 'فشل التحديث: تأكد من اتصالك بالإنترنت',
+        );
       } finally {
         if (mounted) setState(() => _isProfileLoading = false);
       }
@@ -101,16 +103,17 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
     if (_passwordFormKey.currentState!.validate()) {
       setState(() => _isPasswordLoading = true);
       try {
-        await _authService.currentUser!.updatePassword(_newPasswordController.text.trim());
-        setState(() {
-          _passwordMessage = 'تم تغيير كلمة المرور بنجاح!';
-          _isPasswordMessageError = false;
-        });
+        await _authService.currentUser!.updatePassword(
+          _newPasswordController.text.trim(),
+        );
+
         _newPasswordController.clear();
         _confirmPasswordController.clear();
         Future.delayed(const Duration(seconds: 2), () {
           if (mounted) setState(() => _showPasswordForm = false);
         });
+
+        NotificationService.showSuccessSnackBar('تم تحديث كلمة السر بنجاح!');
       } on FirebaseAuthException catch (e) {
         setState(() {
           _isPasswordMessageError = true;
@@ -131,20 +134,29 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
       builder: (ctx) => Directionality(
         textDirection: TextDirection.rtl,
         child: AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Text('تأكيد تسجيل الخروج', style: TextStyle(fontWeight: FontWeight.bold)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: const Text(
+            'تأكيد تسجيل الخروج',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
           content: const Text('هل أنت متأكد أنك تريد تسجيل الخروج؟'),
-          
+
           // ── التعديل هنا لتباعد الأزرار ──
-          actionsAlignment: MainAxisAlignment.spaceBetween, // يوزعهم واحد يمين وواحد يسار
-          
+          actionsAlignment:
+              MainAxisAlignment.spaceBetween, // يوزعهم واحد يمين وواحد يسار
+
           actions: [
             // زر تسجيل الخروج (سيكون في اليمين)
             ElevatedButton(
               onPressed: () async {
                 await _authService.signOut();
                 if (ctx.mounted) {
-                  Navigator.of(ctx, rootNavigator: true).pushNamedAndRemoveUntil('/', (route) => false);
+                  Navigator.of(
+                    ctx,
+                    rootNavigator: true,
+                  ).pushNamedAndRemoveUntil('/', (route) => false);
                 }
               },
               style: ElevatedButton.styleFrom(
@@ -152,9 +164,15 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
                 foregroundColor: Colors.white,
                 elevation: 0, // ليكون مظهره "أنظف" مع التصميم الجديد
                 shape: const StadiumBorder(),
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 10,
+                ),
               ),
-              child: const Text('تسجيل الخروج', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: const Text(
+                'تسجيل الخروج',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
 
             // زر الإلغاء (سيكون في اليسار)
@@ -164,7 +182,10 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
                 foregroundColor: Colors.grey,
                 padding: const EdgeInsets.symmetric(horizontal: 20),
               ),
-              child: const Text('إلغاء', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: const Text(
+                'إلغاء',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
           ],
         ),
@@ -205,19 +226,52 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
   Widget _buildHeader(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
-        gradient: LinearGradient(colors: [_deepPurple, Color(0xFF7A3FA8)], begin: Alignment.centerRight, end: Alignment.centerLeft),
-        boxShadow: [BoxShadow(color: Color(0x33000000), blurRadius: 8, offset: Offset(0, 4))],
+        gradient: LinearGradient(
+          colors: [_deepPurple, Color(0xFF7A3FA8)],
+          begin: Alignment.centerRight,
+          end: Alignment.centerLeft,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Color(0x33000000),
+            blurRadius: 8,
+            offset: Offset(0, 4),
+          ),
+        ],
       ),
-      padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top + 8, bottom: 12, right: 16, left: 16),
+      padding: EdgeInsets.only(
+        top: MediaQuery.of(context).padding.top + 8,
+        bottom: 12,
+        right: 16,
+        left: 16,
+      ),
       child: Row(
         children: [
-          _HeaderIconBtn(icon: Icons.arrow_back, onTap: () => Navigator.pop(context)),
+          _HeaderIconBtn(
+            icon: Icons.arrow_back,
+            onTap: () => Navigator.pop(context),
+          ),
           const SizedBox(width: 12),
           const Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('الإعدادات', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'Tajawal')),
-              Text('إدارة الحساب والتفضيلات', style: TextStyle(color: Colors.white70, fontSize: 11, fontFamily: 'Tajawal')),
+              Text(
+                'الإعدادات',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Tajawal',
+                ),
+              ),
+              Text(
+                'إدارة الحساب والتفضيلات',
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 11,
+                  fontFamily: 'Tajawal',
+                ),
+              ),
             ],
           ),
         ],
@@ -233,8 +287,24 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(children: [_iconCircle(Icons.person_outline), const SizedBox(width: 10), const Text('تعديل الملف الشخصي', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600))]),
-              TextButton(onPressed: () => setState(() => _showProfileForm = !_showProfileForm), child: Text(_showProfileForm ? 'إلغاء' : 'تعديل', style: const TextStyle(color: _pink))),
+              Row(
+                children: [
+                  _iconCircle(Icons.person_outline),
+                  const SizedBox(width: 10),
+                  const Text(
+                    'تعديل الملف الشخصي',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
+              TextButton(
+                onPressed: () =>
+                    setState(() => _showProfileForm = !_showProfileForm),
+                child: Text(
+                  _showProfileForm ? 'إلغاء' : 'تعديل',
+                  style: const TextStyle(color: _pink),
+                ),
+              ),
             ],
           ),
           if (_showProfileForm) ...[
@@ -244,7 +314,10 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('الاسم الكامل الجديد', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                  const Text(
+                    'الاسم الكامل الجديد',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                  ),
                   const SizedBox(height: 6),
                   TextFormField(
                     controller: _nameController,
@@ -253,17 +326,31 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
                     validator: (v) {
                       final val = v?.trim() ?? '';
                       if (val.isEmpty) return 'الرجاء إدخال الاسم';
-                      if (val.split(RegExp(r'\s+')).where((s) => s.isNotEmpty).length < 2) return 'يرجى إدخال اسمين على الأقل';
-                      if (!RegExp(r'^[a-zA-Z\s\u0600-\u06FF]+$').hasMatch(val)) return 'الحروف فقط مسموحة (عربي/إنجليزي)';
+                      if (val
+                              .split(RegExp(r'\s+'))
+                              .where((s) => s.isNotEmpty)
+                              .length <
+                          2)
+                        return 'يرجى إدخال اسمين على الأقل';
+                      if (!RegExp(r'^[a-zA-Z\s\u0600-\u06FF]+$').hasMatch(val))
+                        return 'الحروف فقط مسموحة (عربي/إنجليزي)';
                       return null;
                     },
                   ),
                 ],
               ),
             ),
-            if (_profileMessage.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 10), child: _buildMessage(_profileMessage, isError: false)),
+            if (_profileMessage.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 10),
+                child: _buildMessage(_profileMessage, isError: false),
+              ),
             const SizedBox(height: 12),
-            _buildFullButton('حفظ التغييرات', _handleProfileUpdate, _isProfileLoading),
+            _buildFullButton(
+              'حفظ التغييرات',
+              _handleProfileUpdate,
+              _isProfileLoading,
+            ),
           ],
         ],
       ),
@@ -278,8 +365,24 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(children: [_iconCircle(Icons.lock_outline), const SizedBox(width: 10), const Text('تغيير كلمة المرور', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600))]),
-              TextButton(onPressed: () => setState(() => _showPasswordForm = !_showPasswordForm), child: Text(_showPasswordForm ? 'إلغاء' : 'تغيير', style: const TextStyle(color: _pink))),
+              Row(
+                children: [
+                  _iconCircle(Icons.lock_outline),
+                  const SizedBox(width: 10),
+                  const Text(
+                    'تغيير كلمة المرور',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
+              TextButton(
+                onPressed: () =>
+                    setState(() => _showPasswordForm = !_showPasswordForm),
+                child: Text(
+                  _showPasswordForm ? 'إلغاء' : 'تغيير',
+                  style: const TextStyle(color: _pink),
+                ),
+              ),
             ],
           ),
           if (_showPasswordForm) ...[
@@ -294,12 +397,16 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
                     show: _showNew,
                     onToggle: () => setState(() => _showNew = !_showNew),
                     validator: (v) {
-                      if (v == null || v.isEmpty) return 'الرجاء إدخال كلمة المرور';
+                      if (v == null || v.isEmpty)
+                        return 'الرجاء إدخال كلمة المرور';
                       List<String> reqs = [];
                       if (v.length < 8) reqs.add('• ٨ خانات على الأقل');
-                      if (!RegExp(r'[A-Z]').hasMatch(v)) reqs.add('• حرف كبير واحد (A-Z)');
-                      if (!RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(v)) reqs.add('• رمز خاص واحد (@، #، !)');
-                      if (reqs.isNotEmpty) return 'المطلوب:\n${reqs.join('\n')}';
+                      if (!RegExp(r'[A-Z]').hasMatch(v))
+                        reqs.add('• حرف كبير واحد (A-Z)');
+                      if (!RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(v))
+                        reqs.add('• رمز خاص واحد (@، #، !)');
+                      if (reqs.isNotEmpty)
+                        return 'المطلوب:\n${reqs.join('\n')}';
                       return null;
                     },
                   ),
@@ -308,18 +415,31 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
                     controller: _confirmPasswordController,
                     hint: 'تأكيد كلمة المرور',
                     show: _showConfirm,
-                    onToggle: () => setState(() => _showConfirm = !_showConfirm),
+                    onToggle: () =>
+                        setState(() => _showConfirm = !_showConfirm),
                     validator: (v) {
-                      if (v != _newPasswordController.text) return 'كلمتا المرور غير متطابقتين';
+                      if (v != _newPasswordController.text)
+                        return 'كلمتا المرور غير متطابقتين';
                       return null;
                     },
                   ),
                 ],
               ),
             ),
-            if (_passwordMessage.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 10), child: _buildMessage(_passwordMessage, isError: _isPasswordMessageError)),
+            if (_passwordMessage.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 10),
+                child: _buildMessage(
+                  _passwordMessage,
+                  isError: _isPasswordMessageError,
+                ),
+              ),
             const SizedBox(height: 16),
-            _buildFullButton('تغيير كلمة المرور', _handlePasswordChange, _isPasswordLoading),
+            _buildFullButton(
+              'تغيير كلمة المرور',
+              _handlePasswordChange,
+              _isPasswordLoading,
+            ),
           ],
         ],
       ),
@@ -328,33 +448,153 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
 
   Widget _buildLogoutCard() {
     return _buildCard(
-      child: InkWell(onTap: _showLogoutDialog, child: Row(children: [_iconCircle(Icons.logout_rounded), const SizedBox(width: 10), const Text('تسجيل الخروج  ', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: _pink))])),
+      child: InkWell(
+        onTap: _showLogoutDialog,
+        child: Row(
+          children: [
+            _iconCircle(Icons.logout_rounded),
+            const SizedBox(width: 10),
+            const Text(
+              'تسجيل الخروج  ',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: _pink,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
   // ── المكونات المساعدة (Helpers) ──
   Widget _buildCard({required Widget child}) {
-    return Container(width: double.infinity, padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8)]), child: child);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8),
+        ],
+      ),
+      child: child,
+    );
   }
 
   Widget _iconCircle(IconData icon) {
-    return Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: _pink.withOpacity(0.1), shape: BoxShape.circle), child: Icon(icon, size: 20, color: _pink));
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: _pink.withOpacity(0.1),
+        shape: BoxShape.circle,
+      ),
+      child: Icon(icon, size: 20, color: _pink),
+    );
   }
 
   Widget _buildFullButton(String label, VoidCallback onTap, bool isLoading) {
-    return SizedBox(width: double.infinity, height: 46, child: ElevatedButton(onPressed: isLoading ? null : onTap, style: ElevatedButton.styleFrom(backgroundColor: _pink, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))), child: isLoading ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : Text(label)));
+    return SizedBox(
+      width: double.infinity,
+      height: 46,
+      child: ElevatedButton(
+        onPressed: isLoading ? null : onTap,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: _pink,
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+        child: isLoading
+            ? const SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2,
+                ),
+              )
+            : Text(label),
+      ),
+    );
   }
 
-  Widget _buildPasswordFormField({required TextEditingController controller, required String hint, required bool show, required VoidCallback onToggle, required String? Function(String?)? validator}) {
-    return TextFormField(controller: controller, obscureText: !show, textAlign: TextAlign.right, validator: validator, decoration: _inputDecoration(hint).copyWith(suffixIcon: IconButton(icon: Icon(show ? Icons.visibility_off : Icons.visibility, color: Colors.grey, size: 20), onPressed: onToggle)));
+  Widget _buildPasswordFormField({
+    required TextEditingController controller,
+    required String hint,
+    required bool show,
+    required VoidCallback onToggle,
+    required String? Function(String?)? validator,
+  }) {
+    return TextFormField(
+      controller: controller,
+      obscureText: !show,
+      textAlign: TextAlign.right,
+      validator: validator,
+      decoration: _inputDecoration(hint).copyWith(
+        suffixIcon: IconButton(
+          icon: Icon(
+            show ? Icons.visibility_off : Icons.visibility,
+            color: Colors.grey,
+            size: 20,
+          ),
+          onPressed: onToggle,
+        ),
+      ),
+    );
   }
 
   InputDecoration _inputDecoration(String hint) {
-    return InputDecoration(hintText: hint, contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12), border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Colors.grey)), focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: _pink, width: 2)), errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Colors.red)), focusedErrorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Colors.red, width: 2)));
+    return InputDecoration(
+      hintText: hint,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: const BorderSide(color: Colors.grey),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: const BorderSide(color: _pink, width: 2),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: const BorderSide(color: Colors.red),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: const BorderSide(color: Colors.red, width: 2),
+      ),
+    );
   }
 
   Widget _buildMessage(String message, {required bool isError}) {
-    return Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: isError ? Colors.red.shade50 : Colors.green.shade50, borderRadius: BorderRadius.circular(8)), child: Row(children: [Icon(isError ? Icons.error_outline : Icons.check_circle_outline, color: isError ? Colors.red : Colors.green, size: 18), const SizedBox(width: 8), Expanded(child: Text(message, style: TextStyle(fontSize: 13, color: isError ? Colors.red : Colors.green.shade700)))]));
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: isError ? Colors.red.shade50 : Colors.green.shade50,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            isError ? Icons.error_outline : Icons.check_circle_outline,
+            color: isError ? Colors.red : Colors.green,
+            size: 18,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(
+                fontSize: 13,
+                color: isError ? Colors.red : Colors.green.shade700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -363,5 +603,13 @@ class _HeaderIconBtn extends StatelessWidget {
   final VoidCallback onTap;
   const _HeaderIconBtn({required this.icon, required this.onTap});
   @override
-  Widget build(BuildContext context) => InkWell(onTap: onTap, borderRadius: BorderRadius.circular(8), child: SizedBox(width: 34, height: 34, child: Icon(icon, color: Colors.white, size: 25)));
+  Widget build(BuildContext context) => InkWell(
+    onTap: onTap,
+    borderRadius: BorderRadius.circular(8),
+    child: SizedBox(
+      width: 34,
+      height: 34,
+      child: Icon(icon, color: Colors.white, size: 25),
+    ),
+  );
 }

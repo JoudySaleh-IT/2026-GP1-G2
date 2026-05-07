@@ -125,47 +125,51 @@ class LeaderboardScreen extends StatelessWidget {
   }
 
   // ── Header ──
+  // ── Header ──
+  // ── Header ──
+  // ── Header ──
   Widget _buildHeader(BuildContext context) {
     return Container(
       decoration: FaseehStyle.headerDecoration,
-      child: SafeArea(
-        bottom: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          child: Row(
-            children: [
-              // Trophy icon + title
-              const Icon(
-                Icons.emoji_events_rounded,
-                color: Colors.white,
-                size: 26,
-              ),
-              const SizedBox(width: 8),
-              const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'لوحة المتصدرين',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'Tajawal',
-                    ),
-                  ),
-                  Text(
-                    'تنافس مع المتعلمين من حولك',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 12,
-                      fontFamily: 'Tajawal',
-                    ),
-                  ),
-                ],
-              ),
-            ],
+      padding: FaseehStyle.getStandardPadding(
+        context,
+      ), // top: status+8, bottom:12
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Trophy icon – standard IconButton (larger tap area, icon size 24)
+          IconButton(
+            icon: const Icon(Icons.emoji_events_rounded, color: Colors.white),
+            onPressed: () {}, // optional, no action needed
           ),
-        ),
+          const SizedBox(width: 8),
+          // Text column – larger fonts (18/14) to match EditHeader
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                Text(
+                  'لوحة المتصدرين',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18, // larger, matches EditHeader title
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Tajawal',
+                  ),
+                ),
+                Text(
+                  'تنافس مع المتعلمين من حولك',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 14, // larger, matches EditHeader subtitle
+                    fontFamily: 'Tajawal',
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

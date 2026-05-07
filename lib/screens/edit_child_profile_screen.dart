@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/auth_service.dart';
+import '../services/notification_service.dart';
 import 'style_constants.dart';
 
 // ── حساب العمر من تاريخ الميلاد ──
@@ -36,7 +37,6 @@ class _EditChildProfileScreenState extends State<EditChildProfileScreen> {
   bool _isDobActive = false; // هل تم لمس أو تعديل حقل التاريخ؟
 
   bool _isSaving = false;
-  bool _showSuccess = false;
   bool _isLoadingData = true;
 
   final List<String> _availableAvatars = [
@@ -76,6 +76,7 @@ class _EditChildProfileScreenState extends State<EditChildProfileScreen> {
       }
     } catch (e) {
       if (mounted) {
+        // You can also change this one to your new NotificationService if you want!
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text('خطأ في تحميل البيانات')));
@@ -107,14 +108,17 @@ class _EditChildProfileScreenState extends State<EditChildProfileScreen> {
       if (mounted) {
         setState(() {
           _isSaving = false;
-          _showSuccess = true;
-          // إعادة الألوان للطبيعي بعد الحفظ
           _isNameActive = false;
           _isDobActive = false;
         });
-        Future.delayed(const Duration(milliseconds: 1500), () {
-          if (mounted) Navigator.pop(context, true);
-        });
+
+        // 1. Show the global snackbar
+        NotificationService.showSuccessSnackBar(
+          'تم تحديث ملف الطفل الشخصي بنجاح!',
+        );
+
+        // 2. Immediately pop back to the previous screen
+        Navigator.pop(context, true);
       }
     } catch (e) {
       setState(() => _isSaving = false);
@@ -202,8 +206,7 @@ class _EditChildProfileScreenState extends State<EditChildProfileScreen> {
                               const SizedBox(height: 10),
                               _buildAvatarGrid(),
                               const SizedBox(height: 20),
-                              if (_showSuccess) _buildSuccessBanner(),
-                              const SizedBox(height: 12),
+                              // Removed the inline success banner from here
                               _buildActionButtons(),
                             ],
                           ),
@@ -278,26 +281,6 @@ class _EditChildProfileScreenState extends State<EditChildProfileScreen> {
           ),
         );
       },
-    );
-  }
-
-  Widget _buildSuccessBanner() {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFEAF7ED),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: const Row(
-        children: [
-          Icon(Icons.check_circle_outline, color: Color(0xFF4CAF50), size: 18),
-          SizedBox(width: 8),
-          Text(
-            'تم تحديث الملف الشخصي بنجاح!',
-            style: TextStyle(color: Color(0xFF2E7D32), fontSize: 13),
-          ),
-        ],
-      ),
     );
   }
 

@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '/services/ChildSession.dart';
 import 'style_constants.dart';
 import 'style_constants.dart'; // ─── Mock Data ───────────────────────────────────────────────────────────────
+import '../services/notification_service.dart';
 
 const _mockChild = (
   name: 'أحمد',
@@ -104,9 +105,9 @@ class ChildHomeScreen extends StatelessWidget {
                 _ChildHeader(
                   name: data['name'] ?? 'بطل فصيح',
                   avatar: data['avatar'] ?? '🦁',
-                  level: (hasCompletedPlacement) 
-      ? (data['gradeLevel'] ?? 'مبتدئ') 
-      : 'بدون تصنيف',
+                  level: (hasCompletedPlacement)
+                      ? (data['gradeLevel'] ?? 'مبتدئ')
+                      : 'بدون تصنيف',
                 ),
                 Expanded(
                   child: SingleChildScrollView(
@@ -200,11 +201,9 @@ class _ChildHeader extends StatelessWidget {
   });
 
   void _showLogoutDialog(BuildContext context) {
-    // Parent password dialog
     showDialog(context: context, builder: (_) => const _ParentPasswordDialog());
   }
 
-  // ─── UPDATED: Confirmation Dialog for Child Device ────────────────────────
   void _showChildLogoutConfirmation(
     BuildContext context,
     SharedPreferences prefs,
@@ -216,76 +215,54 @@ class _ChildHeader extends StatelessWidget {
           textDirection: TextDirection.rtl,
           child: AlertDialog(
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(16), // تم تعديله ليكون 16 مثل الأب
             ),
-            title: Row(
-              children: const [
-                Icon(Icons.logout_rounded, color: Color(0xFF511281)),
-                SizedBox(width: 8),
-                Text(
-                  'تسجيل الخروج',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF222222),
-                  ),
-                ),
-              ],
+            title: const Text(
+              'تأكيد تسجيل الخروج', // نفس نص الأب بدون أيقونات إضافية
+              style: TextStyle(fontWeight: FontWeight.bold),
             ),
             content: const Text(
-              'هل أنت متأكد أنك تريد الخروج والعودة إلى شاشة البداية؟',
-              style: TextStyle(fontSize: 14, color: Colors.black87),
+              'هل أنت متأكد أنك تريد تسجيل الخروج؟', // توحيد النص مع الأب
             ),
+            // إضافة خاصية التباعد لتوزيع الأزرار (واحد يمين وواحد يسار)
+            actionsAlignment: MainAxisAlignment.spaceBetween, 
             actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(
-                  dialogContext,
-                ), // Cancel simply pops the dialog
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 10,
-                  ),
-                ),
-                child: const Text(
-                  'إلغاء',
-                  style: TextStyle(
-                    color: Colors.grey,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
+              // زر تسجيل الخروج (سيكون في اليمين)
               ElevatedButton(
                 onPressed: () async {
-                  // 1. Capture the Navigator using the dialog's context BEFORE any awaits
                   final nav = Navigator.of(dialogContext, rootNavigator: true);
-
-                  // 2. Clear session data from SharedPreferences
                   await prefs.remove('saved_childId');
                   await prefs.remove('saved_parentId');
                   await prefs.remove('isChildLoggedIn');
                   ChildSession.currentChildId = null;
-
-                  // 3. Navigate away FIRST!
-                  // We do NOT call Navigator.pop(). This push will automatically
-                  // clear the dialog AND the home screen in one action.
                   nav.pushNamedAndRemoveUntil('/', (route) => false);
-
-                  // 4. Sign out SECOND!
                   await FirebaseAuth.instance.signOut();
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFFF6969),
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+                  shape: const StadiumBorder(), // شكل دائري أنيق متناسق
+                  elevation: 0,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 20,
                     vertical: 10,
                   ),
                 ),
-                child: const Text('نعم، خروج'),
+                child: const Text(
+                  'تسجيل الخروج', // تغيير "نعم، خروج" لتطابق الأب
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              // زر الإلغاء (سيكون في اليسار)
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                ),
+                child: const Text(
+                  'إلغاء',
+                  style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),
+                ),
               ),
             ],
           ),
@@ -293,18 +270,12 @@ class _ChildHeader extends StatelessWidget {
       },
     );
   }
-
-  // ─── Smart Logout Logic ──────────────────────────────────────────
   Future<void> _handleLogout(BuildContext context) async {
     final prefs = await SharedPreferences.getInstance();
     final isChildLoggedIn = prefs.getBool('isChildLoggedIn') ?? false;
-
     if (isChildLoggedIn) {
-      // Flow 1: Child Device (Logged in via 6-digit code)
-      // We removed context.mounted check here to prevent silent failures in stateless widgets
       _showChildLogoutConfirmation(context, prefs);
     } else {
-      // Flow 2: Parent Device (Logged in from parent dashboard)
       _showLogoutDialog(context);
     }
   }
@@ -313,56 +284,48 @@ class _ChildHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: FaseehStyle.headerDecoration,
-      padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + 8,
-        bottom: 12,
-        right: 16,
-        left: 16,
-      ),
+      padding: FaseehStyle.getStandardPadding(
+        context,
+      ), // consistent larger padding
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Avatar
-          Text(avatar, style: const TextStyle(fontSize: 30)),
-          const SizedBox(width: 10),
-
-          // Name + level
+          // Avatar – larger to match bigger header
+          Text(
+            avatar,
+            style: const TextStyle(fontSize: 32), // increased from 30
+          ),
+          const SizedBox(width: 12),
+          // Name + level – larger fonts (18/14)
           Expanded(
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'مرحبا $name!',
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 18, // larger, matches _EditHeader title
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Tajawal',
                   ),
                 ),
                 Text(
                   level,
-                  style: const TextStyle(color: Colors.white70, fontSize: 12),
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 14, // larger, matches _EditHeader subtitle
+                    fontFamily: 'Tajawal',
+                  ),
                 ),
               ],
             ),
           ),
-
-          // Logout button
-          InkWell(
-            onTap: () => _handleLogout(context),
-            borderRadius: BorderRadius.circular(8),
-            child: Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(
-                Icons.logout_rounded,
-                color: Colors.white,
-                size: 18,
-              ),
-            ),
+          // Logout button – standard IconButton (larger tap area, icon 24)
+          IconButton(
+            icon: const Icon(Icons.logout_rounded, color: Colors.white),
+            onPressed: () => _handleLogout(context),
           ),
         ],
       ),
@@ -427,16 +390,8 @@ class _ParentPasswordDialogState extends State<_ParentPasswordDialog> {
       // Dismiss the dialog
       if (mounted) navigator.pop();
 
-      // Show success message
-      messenger.showSnackBar(
-        const SnackBar(
-          content: Text(
-            'تم التحقق.. جاري العودة لصفحة ولي الأمر',
-            style: TextStyle(fontFamily: 'Tajawal'),
-          ),
-          backgroundColor: Color(0xFF511281),
-          behavior: SnackBarBehavior.floating,
-        ),
+      NotificationService.showSuccessSnackBar(
+        'تم التحقق، يتم إعادة التوجيه لصفحة ولي الامر',
       );
 
       // Navigate to parent dashboard and clear all previous routes
@@ -547,16 +502,18 @@ class _ParentPasswordDialogState extends State<_ParentPasswordDialog> {
             const SizedBox(height: 4),
           ],
         ),
+        // داخل AlertDialog في كلاس _ParentPasswordDialog
+        actionsAlignment: MainAxisAlignment.spaceBetween, // 1️⃣ توزيع الأزرار (واحد يمين وواحد يسار)
         actions: [
-          //  زر "دخول" سيكون أولاً ليظهر في جهة اليمين
+          // 2️⃣ زر "دخول" (سيكون في جهة اليمين)
           ElevatedButton(
             onPressed: _loading ? null : _signInParent,
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFFF6969),
               foregroundColor: Colors.white,
-              elevation: 2,
-              shape: const StadiumBorder(), // محافظين على التصميم الدائري
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              elevation: 0, // مظهر أنظف بدون ظل ثقيل
+              shape: const StadiumBorder(), // تصميم دائري متناسق مع هوية التطبيق
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
             ),
             child: _loading
                 ? const SizedBox(
@@ -567,14 +524,18 @@ class _ParentPasswordDialogState extends State<_ParentPasswordDialog> {
                       color: Colors.white,
                     ),
                   )
-                : const Text('دخول'),
+                : const Text(
+                    'دخول',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
           ),
 
-          //  زر "إلغاء" سيكون ثانياً ليظهر في جهة اليسار
+          // 3️⃣ زر "إلغاء" (سيكون في جهة اليسار)
           TextButton(
             onPressed: () => Navigator.pop(context),
             style: TextButton.styleFrom(
-              foregroundColor: Colors.grey, // لون النص رمادي هادئ
+              foregroundColor: Colors.grey, // لون هادئ لزر ثانوي
+              padding: const EdgeInsets.symmetric(horizontal: 20),
             ),
             child: const Text(
               'إلغاء',

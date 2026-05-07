@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/ChildSession.dart';
+import '../services/notification_service.dart';
+import 'style_constants.dart'; // add this line with the other imports
 
 // ─── Helper: تحويل الأرقام إلى العربية ────────────────
 String toArabicNumbers(int num) {
@@ -102,9 +104,17 @@ class ChildSelectionScreen extends StatelessWidget {
     }
   }
 
-  void _onChildSelected(BuildContext context, String childId) {
+  void _onChildSelected(
+    BuildContext context,
+    String childId,
+    String childName,
+  ) {
     ChildSession.currentChildId = childId;
     Navigator.pushNamed(context, '/child/home', arguments: childId);
+
+    NotificationService.showSuccessSnackBar(
+      'اهلًا $childName! جاهز تكون فصيح؟',
+    );
   }
 
   @override
@@ -163,7 +173,7 @@ class ChildSelectionScreen extends StatelessWidget {
                         avatar: data['avatar'] ?? '👦',
                         age: data['age'] ?? 0,
                         level: data['level'] ?? 'مبتدئ',
-                        onTap: () => _onChildSelected(context, docId),
+                        onTap: () => _onChildSelected(context, docId, name),
                         onPairingTap: () =>
                             _showPairingDialog(context, docId, name),
                       );
@@ -216,54 +226,52 @@ class ChildSelectionScreen extends StatelessWidget {
 }
 
 // ─── Header Widget ───
+// ─── Header Widget (now consistent with FaseehStyle) ───
+// ─── Header Widget (using larger style matching _EditHeader) ───
 class _ChildSelectionHeader extends StatelessWidget {
   const _ChildSelectionHeader();
+
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFF511281), Color(0xFF7A3FA8)],
-          begin: Alignment.centerRight,
-          end: Alignment.centerLeft,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Color(0x33000000),
-            blurRadius: 8,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
-      padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + 8,
-        bottom: 16, // Increased slightly for tablet balance
-        right: 20,
-        left: 20,
-      ),
+      decoration: FaseehStyle.headerDecoration,
+      padding: FaseehStyle.getStandardPadding(
+        context,
+      ), // top: status+8, bottom:12
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          _HeaderIconBtn(
-            icon: Icons.arrow_back,
-            onTap: () => Navigator.pop(context),
+          // Back button – standard IconButton (larger, matches _EditHeader)
+          IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () => Navigator.pop(context),
           ),
-          const SizedBox(width: 16),
-          const Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'من سيتعلم اليوم؟',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 20, // Slightly larger for clarity
-                  fontWeight: FontWeight.w600,
+          const SizedBox(width: 8),
+          // Text column – larger fonts (18 / 14)
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                Text(
+                  'من سيتعلم اليوم؟',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18, // larger, matches _EditHeader title
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Tajawal',
+                  ),
                 ),
-              ),
-              Text(
-                'اختر طفلاً للمتابعة',
-                style: TextStyle(color: Colors.white70, fontSize: 14),
-              ),
-            ],
+                Text(
+                  'اختر طفلاً للمتابعة',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 14, // larger, matches _EditHeader subtitle
+                    fontFamily: 'Tajawal',
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -271,18 +279,24 @@ class _ChildSelectionHeader extends StatelessWidget {
   }
 }
 
+// ─── Icon button matching the exact size/style used everywhere ───
 class _HeaderIconBtn extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
   const _HeaderIconBtn({required this.icon, required this.onTap});
+
   @override
   Widget build(BuildContext context) => InkWell(
     onTap: onTap,
     borderRadius: BorderRadius.circular(8),
-    child: SizedBox(
-      width: 40,
-      height: 40,
-      child: Icon(icon, color: Colors.white, size: 28),
+    child: Container(
+      width: 36,
+      height: 36,
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Icon(icon, color: Colors.white, size: 18), // ★ size 18, not 28
     ),
   );
 }

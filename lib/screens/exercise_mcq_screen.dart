@@ -346,26 +346,25 @@ class _ExerciseMCQScreenState extends State<ExerciseMCQScreen> {
   Widget _buildHeader() {
     return Container(
       decoration: FaseehStyle.headerDecoration,
-
-      padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + 4,
-        bottom: 8,
-        right: 16,
-        left: 16,
-      ),
+      padding: FaseehStyle.getStandardPadding(
+        context,
+      ), // top: status+8, bottom:12
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          _HeaderIconBtn(
-            icon: Icons.arrow_back,
-            onTap: () => Navigator.pop(context),
+          // Back button – standard IconButton (larger tap area, icon 24)
+          IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () => Navigator.pop(context),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 8),
+          // Title – larger font (18) to match other screens
           const Text(
             'تمارين الاختيار من متعدد',
             style: TextStyle(
               color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
               fontFamily: 'Tajawal',
             ),
           ),
@@ -470,20 +469,4 @@ class _FeedbackBanner extends StatelessWidget {
       ),
     );
   }
-}
-
-class _HeaderIconBtn extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-  const _HeaderIconBtn({required this.icon, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) => InkWell(
-    onTap: onTap,
-    child: SizedBox(
-      width: 38,
-      height: 38,
-      child: Icon(icon, color: Colors.white, size: 24),
-    ),
-  );
 }

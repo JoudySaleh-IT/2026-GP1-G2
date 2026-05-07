@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/ChildSession.dart';
+import '../services/notification_service.dart';
 
 class ChildEnterCodeScreen extends StatefulWidget {
   const ChildEnterCodeScreen({super.key});
@@ -53,9 +54,12 @@ class _ChildEnterCodeScreenState extends State<ChildEnterCodeScreen> {
       // Deleting the code from the database after success
       await doc.reference.delete();
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('مرحباً بك يا $childName!')));
+      ScaffoldMessenger.of(context);
+
+      // 1. Show the global snackbar
+      NotificationService.showSuccessSnackBar(
+        'اهلًا $childName! جاهز تكون فصيح؟',
+      );
       Navigator.pushReplacementNamed(
         context,
         '/child/home',

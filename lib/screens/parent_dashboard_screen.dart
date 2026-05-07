@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/ChildSession.dart';
+import 'style_constants.dart';
 
 class ParentDashboardScreen extends StatelessWidget {
   const ParentDashboardScreen({super.key});
@@ -74,58 +75,46 @@ class ParentDashboardScreen extends StatelessWidget {
 
   Widget _buildHeader(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFF511281), Color(0xFF7A3FA8)],
-          begin: Alignment.centerRight,
-          end: Alignment.centerLeft,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Color(0x33000000),
-            blurRadius: 8,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
-      //  هنا نتحكم في الحجم الكلي للهيدر
-      padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + 8, // مساحة علوية بسيطة
-        bottom: 12, // مسافة سفلية قليلة لجعله نحيفاً
-        right: 16,
-        left: 16,
-      ),
-      //  ابدئي بالـ Row مباشرة واحذفي الـ SafeArea والـ Padding اللي كانوا هنا
+      decoration: FaseehStyle.headerDecoration,
+      padding: FaseehStyle.getStandardPadding(
+        context,
+      ), // top: status+8, bottom:12
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'لوحة تحكم الأهل',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ), // تصغير الخط لـ 18 أجمل
-              ),
-              Text(
-                'إدارة تعلم الأطفال',
-                style: TextStyle(fontSize: 11, color: Colors.white70),
-              ),
-            ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                Text(
+                  'لوحة تحكم الأهل',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18, // larger, matches _EditHeader
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Tajawal',
+                  ),
+                ),
+                Text(
+                  'إدارة تعلم الأطفال',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 14, // larger, matches _EditHeader subtitle
+                    fontFamily: 'Tajawal',
+                  ),
+                ),
+              ],
+            ),
           ),
           Row(
             children: [
-              _headerIconButton(
-                Icons.settings_outlined,
-                () => Navigator.pushNamed(context, '/parent/settings'),
+              IconButton(
+                icon: const Icon(Icons.settings_outlined, color: Colors.white),
+                onPressed: () =>
+                    Navigator.pushNamed(context, '/parent/settings'),
               ),
-              const SizedBox(width: 8),
-              _headerIconButton(
-                Icons.logout_rounded,
-                () => _handleLogout(context),
+              IconButton(
+                icon: const Icon(Icons.logout_rounded, color: Colors.white),
+                onPressed: () => _handleLogout(context),
               ),
             ],
           ),
@@ -134,16 +123,19 @@ class ParentDashboardScreen extends StatelessWidget {
     );
   }
 
+  // Update _headerIconButton to match the EXACT size and style of _ChildHeader logout button
   Widget _headerIconButton(IconData icon, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
       child: Container(
-        padding: const EdgeInsets.all(8),
+        width: 36,
+        height: 36,
         decoration: BoxDecoration(
-          color: Colors.white10,
-          borderRadius: BorderRadius.circular(10),
+          color: Colors.white.withOpacity(0.15),
+          borderRadius: BorderRadius.circular(8),
         ),
-        child: Icon(icon, color: Colors.white, size: 22),
+        child: Icon(icon, color: Colors.white, size: 18), // size 18, not 22
       ),
     );
   }
@@ -275,9 +267,9 @@ class ParentDashboardScreen extends StatelessWidget {
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
           content: const Text('هل أنت متأكد أنك تريد تسجيل الخروج؟'),
-          
+
           // ── 1. إضافة خاصية التباعد بين الأزرار ──
-          actionsAlignment: MainAxisAlignment.spaceBetween, 
+          actionsAlignment: MainAxisAlignment.spaceBetween,
 
           actions: [
             // ── 2. زر تسجيل الخروج (سيكون في جهة اليمين) ──
@@ -296,7 +288,10 @@ class ParentDashboardScreen extends StatelessWidget {
                 foregroundColor: Colors.white,
                 shape: const StadiumBorder(), // حواف دائرية بالكامل
                 elevation: 0,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 10,
+                ),
               ),
               child: const Text(
                 'تسجيل الخروج',

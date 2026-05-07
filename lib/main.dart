@@ -28,6 +28,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
 import 'screens/child_enter_code_screen.dart';
 import 'services/childSession.dart';
+import 'services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -52,6 +53,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'فصيح',
+      scaffoldMessengerKey: rootScaffoldMessengerKey,
       scrollBehavior: NoStretchScrollBehavior(),
       initialRoute: '/',
       //home: Wrapper(),
