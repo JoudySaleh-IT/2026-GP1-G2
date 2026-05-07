@@ -57,7 +57,7 @@ class _ChildProfileManagementScreenState
     super.dispose();
   }
 
-  void _confirmDelete() {
+ void _confirmDelete() {
     showDialog(
       context: context,
       builder: (_) => Directionality(
@@ -71,8 +71,12 @@ class _ChildProfileManagementScreenState
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
           content: const Text('سيتم حذف ملف الطفل وجميع بياناته بشكل نهائي.'),
+          
+          // ── 1. توزيع الأزرار واحد يمين وواحد يسار ──
+          actionsAlignment: MainAxisAlignment.spaceBetween,
+
           actions: [
-            //  زر "حذف" سيكون في جهة اليمين
+            // ── 2. زر "حذف" (جهة اليمين) ──
             ElevatedButton(
               onPressed: () async {
                 try {
@@ -85,7 +89,7 @@ class _ChildProfileManagementScreenState
                       (route) => false,
                     );
                   }
-                  // 1. Show the global snackbar
+                  // Show the global snackbar
                   NotificationService.showSuccessSnackBar(
                     'تم حذف ملف الطفل الشخصي بنجاح!',
                   );
@@ -98,10 +102,10 @@ class _ChildProfileManagementScreenState
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFFF6969),
                 foregroundColor: Colors.white,
-                shape: const StadiumBorder(), // شكل دائري متناسق مع الداشبورد
-                elevation: 2,
+                shape: const StadiumBorder(), // شكل دائري (Rounded)
+                elevation: 0, // ليكون مظهره أنظف
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
+                  horizontal: 24,
                   vertical: 10,
                 ),
               ),
@@ -111,11 +115,12 @@ class _ChildProfileManagementScreenState
               ),
             ),
 
-            //  زر "إلغاء" سيكون في جهة اليسار (نص فقط بدون بوكس)
+            // ── 3. زر "إلغاء" (جهة اليسار) ──
             TextButton(
               onPressed: () => Navigator.pop(context),
               style: TextButton.styleFrom(
-                foregroundColor: Colors.grey, // لون رمادي هادئ لتقليل التشتيت
+                foregroundColor: Colors.grey, // لون رمادي لتقليل التشتيت
+                padding: const EdgeInsets.symmetric(horizontal: 20),
               ),
               child: const Text(
                 'إلغاء',
