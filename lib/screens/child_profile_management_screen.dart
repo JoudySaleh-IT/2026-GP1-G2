@@ -158,14 +158,15 @@ class _ChildProfileManagementScreenState
           child: Scaffold(
             backgroundColor: const Color(0xFFFCF9EA),
             body: Column(
-              children: [
-                _ProfileHeader(
-                  childId: widget.childId,
-                  onDelete: _confirmDelete,
-                  name: realData['name'] ?? 'بدون اسم',
-                  avatar: realData['avatar'] ?? '🦁',
-                  age: realData['age'] ?? 0,
-                ),
+             children: [
+  _ProfileHeader(
+    childId: widget.childId,
+    onDelete: _confirmDelete,
+    name: realData['name'] ?? 'بدون اسم',
+    avatar: realData['avatar'] ?? '🦁',
+    age: realData['age'] ?? 0,
+    level: realData['level'] ?? 'لم يتم تحديد المستوى', // تأكدي من وجود الفاصلة هنا
+  ),
                 Expanded(
                   child: Scrollbar(
                     controller: _scrollController,
@@ -353,6 +354,7 @@ class _ProfileHeader extends StatelessWidget {
   final String name;
   final String avatar;
   final int age;
+  final String level;
 
   const _ProfileHeader({
     this.childId,
@@ -360,6 +362,7 @@ class _ProfileHeader extends StatelessWidget {
     required this.name,
     required this.avatar,
     required this.age,
+    required this.level,
   });
 
   @override
@@ -399,14 +402,15 @@ class _ProfileHeader extends StatelessWidget {
                     fontFamily: 'Tajawal',
                   ),
                 ),
-                Text(
-                  '$age سنوات | متفاعل',
+               Text(
+                  // 3️⃣ استبدال كلمة 'متفاعل' بالـ level
+                  '$age سنوات | $level', 
                   style: const TextStyle(
                     color: Colors.white70,
-                    fontSize: 14, // matched with _EditHeader subtitle style
+                    fontSize: 14,
                     fontFamily: 'Tajawal',
                   ),
-                ),
+                   ),
               ],
             ),
           ),

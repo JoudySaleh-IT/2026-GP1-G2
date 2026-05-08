@@ -63,6 +63,7 @@ class AuthService {
   }
 
   // ─── إضافة ملف طفل جديد (يدعم تعدد الأطفال) ───
+  // ─── إضافة ملف طفل جديد (تحديث القيم الابتدائية) ───
   Future<bool> createChildProfile({
     required String name,
     required int age,
@@ -74,7 +75,6 @@ class AuthService {
       final String? currentParentId = _auth.currentUser?.uid;
       if (currentParentId == null) return false;
 
-      // تم إزالة شرط "الطفل الواحد" للسماح بإضافة أكثر من طفل
       await _db.collection('children').add({
         'parentId': currentParentId, 
         'name': name,
@@ -83,7 +83,9 @@ class AuthService {
         'gender': gender,
         'avatar': avatar,
         'progress': 0,
-        'level': 'مبتدئ',
+        // 1️⃣ القيمة الابتدائية التي ستظهر في لوحة تحكم الأهل
+        'level': 'لم يتم تحديد المستوى ', 
+        // 2️⃣ حقل أساسي لتمييز هل الطفل أجرى الاختبار أم لا
         'placementDone': false,
         'createdAt': FieldValue.serverTimestamp(),
       });
@@ -94,7 +96,6 @@ class AuthService {
       rethrow;
     }
   }
-
   // ─── مزامنة عمر الطفل بناءً على تاريخ الميلاد ───
   Future<void> syncChildAge(String childId) async {
     try {

@@ -61,15 +61,23 @@ class _PlacementResultScreenState extends State<PlacementResultScreen> {
     _markPlacementDone();
   }
 
- Future<void> _markPlacementDone() async {
+Future<void> _markPlacementDone() async {
   try {
-    // 1. تحويل قائمة الكائنات (LetterScore objects) إلى خريطة (Map) يفهمها الفايربيس
-    // سيتم حفظها بصيغة: {'أ': 50, 'ب': 80, ...}
     Map<String, int> scoresMap = {
       for (var item in widget.letterScores) item.letter: item.score
     };
 
-    // 2. تحديث مستند الطفل في Firestore
+    // 1️⃣ استخراج المسمى النصي للمستوى بناءً على الدرجة (بدون إيموجي للحفظ في القاعدة)
+    String levelToSave;
+    if (widget.score >= 70) {
+      levelToSave = 'خبير';
+    } else if (widget.score >= 40) {
+      levelToSave = 'متوسط';
+    } else {
+      levelToSave = 'مبتدئ';
+    }
+
+    // 2️⃣ تحديث مستند الطفل ليشمل الحقل 'level'
     await FirebaseFirestore.instance
         .collection('children')
         .doc(widget.childId)
@@ -77,10 +85,11 @@ class _PlacementResultScreenState extends State<PlacementResultScreen> {
       'placementDone': true,
       'placementScore': widget.score,
       'placementDate': FieldValue.serverTimestamp(),
-      'letterScores': scoresMap, // ✅ هذا هو السطر الناقص اللي بيحل مشكلة التمارين!
+      'letterScores': scoresMap,
+      'level': levelToSave, // ✅ تحديث المستوى النصي ليظهر عند الأب
     });
     
-    debugPrint('✅ تم حفظ نتائج اختبار المستوى وتفاصيل الحروف بنجاح');
+    debugPrint('✅ تم حفظ نتائج المستوى وحقل level بنجاح');
   } catch (e) {
     debugPrint('❌ خطأ أثناء تحديث بيانات الاختبار: $e');
   }

@@ -225,10 +225,12 @@ class ParentDashboardScreen extends StatelessWidget {
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'المستوى: ${data['level'] ?? 'مبتدئ'}',
-              style: const TextStyle(fontSize: 12, color: Colors.grey),
-            ),
+           // داخل دالة _buildChildCard
+Text(
+  // 3️⃣ إذا كان حقل level غير موجود أو فارغ، نعرض "لم يتم تحديد المستوى"
+  'المستوى: ${data['level'] ?? 'لم يتم تحديد المستوى بعد'}',
+  style: const TextStyle(fontSize: 12, color: Colors.grey),
+),
             const SizedBox(height: 8),
             ClipRRect(
               borderRadius: BorderRadius.circular(10),
