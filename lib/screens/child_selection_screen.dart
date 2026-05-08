@@ -156,7 +156,6 @@ class ChildSelectionScreen extends StatelessWidget {
                       vertical: 24,
                     ),
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      // 3 columns for tablets, 2 for phones
                       crossAxisCount: isTablet ? 3 : 2,
                       crossAxisSpacing: 16,
                       mainAxisSpacing: 16,
@@ -168,11 +167,19 @@ class ChildSelectionScreen extends StatelessWidget {
                       final String docId = docs[index].id;
                       final String name = data['name'] ?? 'بدون اسم';
 
+                      // 1. 👈 استخراج حالة اكتمال الاختبار
+                      final bool hasCompletedPlacement =
+                          data['placementDone'] ?? false;
+
                       return _ChildCard(
                         name: name,
                         avatar: data['avatar'] ?? '👦',
                         age: data['age'] ?? 0,
                         level: data['level'] ?? 'مبتدئ',
+
+                        // 2. 👈 تمرير الحالة للبطاقة
+                        hasCompletedPlacement: hasCompletedPlacement,
+
                         onTap: () => _onChildSelected(context, docId, name),
                         onPairingTap: () =>
                             _showPairingDialog(context, docId, name),
@@ -302,11 +309,13 @@ class _HeaderIconBtn extends StatelessWidget {
 }
 
 // ─── Child Card Widget ───
+// ─── Child Card Widget ───
 class _ChildCard extends StatefulWidget {
   final String name;
   final String avatar;
   final int age;
   final String level;
+  final bool hasCompletedPlacement; // 👈 إضافة المتغير الجديد هنا
   final VoidCallback onTap;
   final VoidCallback onPairingTap;
 
@@ -315,6 +324,7 @@ class _ChildCard extends StatefulWidget {
     required this.avatar,
     required this.age,
     required this.level,
+    required this.hasCompletedPlacement, // 👈 إضافته للمُنشئ
     required this.onTap,
     required this.onPairingTap,
   });
@@ -346,6 +356,11 @@ class _ChildCardState extends State<_ChildCard>
 
   @override
   Widget build(BuildContext context) {
+    // 👈 تحديد اللون بناءً على حالة الاختبار (بنفسجي للمكتمل، أحمر للمتبقي)
+    final Color badgeColor = widget.hasCompletedPlacement
+        ? const Color(0xFF511281)
+        : const Color(0xFFFF6969);
+
     return ScaleTransition(
       scale: _scaleAnim,
       child: GestureDetector(
@@ -375,8 +390,6 @@ class _ChildCardState extends State<_ChildCard>
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // Using a flexible layout for the avatar so it doesn't
-                      // push the text out on smaller tablets
                       Flexible(
                         child: Text(
                           widget.avatar,
@@ -404,22 +417,26 @@ class _ChildCardState extends State<_ChildCard>
                         ),
                       ),
                       const SizedBox(height: 8),
+                      // 👈 الحفاظ على نفس تصميم "الكبسولة" مع نصوص وألوان ديناميكية
                       Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
+                          horizontal: 10,
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFF6969).withOpacity(0.1),
+                          color: badgeColor.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
-                          widget.level,
-                          style: const TextStyle(
-                            fontSize: 11,
-                            color: Color(0xFFFF6969),
+                          widget.hasCompletedPlacement
+                              ? 'المستوى: ${widget.level} 🌟'
+                              : 'لم يتم تحديد المستوى', // نص قصير ليناسب حجم البطاقة
+                          style: TextStyle(
+                            fontSize: 10, // تصغير الخط قليلاً لتجنب التكدس
+                            color: badgeColor,
                             fontWeight: FontWeight.w600,
                           ),
+                          textAlign: TextAlign.center,
                         ),
                       ),
                     ],

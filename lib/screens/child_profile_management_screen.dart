@@ -57,7 +57,7 @@ class _ChildProfileManagementScreenState
     super.dispose();
   }
 
- void _confirmDelete() {
+  void _confirmDelete() {
     showDialog(
       context: context,
       builder: (_) => Directionality(
@@ -71,7 +71,7 @@ class _ChildProfileManagementScreenState
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
           content: const Text('سيتم حذف ملف الطفل وجميع بياناته بشكل نهائي.'),
-          
+
           // ── 1. توزيع الأزرار واحد يمين وواحد يسار ──
           actionsAlignment: MainAxisAlignment.spaceBetween,
 
@@ -153,20 +153,28 @@ class _ChildProfileManagementScreenState
             ? snapshot.data!.data() as Map<String, dynamic>
             : {'name': 'تحميل...', 'avatar': '👤', 'age': 0};
 
+        // 1. 👈 استخراج حالة اكتمال الاختبار
+        final bool hasCompletedPlacement = realData['placementDone'] ?? false;
+
+        // 2. 👈 تنسيق النص بناءً على الحالة
+        final String formattedLevel = hasCompletedPlacement
+            ? 'المستوى: ${realData['level'] ?? 'مبتدئ'} 🌟'
+            : 'لم يتم تحديد المستوى';
+
         return Directionality(
           textDirection: TextDirection.rtl,
           child: Scaffold(
             backgroundColor: const Color(0xFFFCF9EA),
             body: Column(
-             children: [
-  _ProfileHeader(
-    childId: widget.childId,
-    onDelete: _confirmDelete,
-    name: realData['name'] ?? 'بدون اسم',
-    avatar: realData['avatar'] ?? '🦁',
-    age: realData['age'] ?? 0,
-    level: realData['level'] ?? 'لم يتم تحديد المستوى', // تأكدي من وجود الفاصلة هنا
-  ),
+              children: [
+                _ProfileHeader(
+                  childId: widget.childId,
+                  onDelete: _confirmDelete,
+                  name: realData['name'] ?? 'بدون اسم',
+                  avatar: realData['avatar'] ?? '🦁',
+                  age: realData['age'] ?? 0,
+                  level: formattedLevel, // 3. 👈 تمرير النص المنسق هنا
+                ),
                 Expanded(
                   child: Scrollbar(
                     controller: _scrollController,
@@ -402,15 +410,15 @@ class _ProfileHeader extends StatelessWidget {
                     fontFamily: 'Tajawal',
                   ),
                 ),
-               Text(
+                Text(
                   // 3️⃣ استبدال كلمة 'متفاعل' بالـ level
-                  '$age سنوات | $level', 
+                  '$age سنوات | $level',
                   style: const TextStyle(
                     color: Colors.white70,
-                    fontSize: 14,
+                    fontSize: 13,
                     fontFamily: 'Tajawal',
                   ),
-                   ),
+                ),
               ],
             ),
           ),

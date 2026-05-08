@@ -199,6 +199,9 @@ class ParentDashboardScreen extends StatelessWidget {
     Map<String, dynamic> data,
   ) {
     final int progress = data['progress'] ?? 0;
+    // 1. 👈 استخراج حالة اكتمال الاختبار من قاعدة البيانات
+    final bool hasCompletedPlacement = data['placementDone'] ?? false;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -225,12 +228,22 @@ class ParentDashboardScreen extends StatelessWidget {
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-           // داخل دالة _buildChildCard
-Text(
-  // 3️⃣ إذا كان حقل level غير موجود أو فارغ، نعرض "لم يتم تحديد المستوى"
-  'المستوى: ${data['level'] ?? 'لم يتم تحديد المستوى بعد'}',
-  style: const TextStyle(fontSize: 12, color: Colors.grey),
-),
+            const SizedBox(height: 4),
+            // 2. 👈 تحديث واجهة المستوى بناءً على حالة الاختبار مع ألوان ديناميكية
+            Text(
+              hasCompletedPlacement
+                  ? 'المستوى: ${data['level'] ?? 'مبتدئ'} 🌟'
+                  : 'لم يتم تحديد المستوى ',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'Tajawal',
+                // إذا لم يكمل الاختبار، يظهر باللون الأحمر/البرتقالي للتنبيه، وإلا باللون البنفسجي
+                color: hasCompletedPlacement
+                    ? const Color(0xFF511281)
+                    : const Color.fromARGB(147, 255, 105, 105),
+              ),
+            ),
             const SizedBox(height: 8),
             ClipRRect(
               borderRadius: BorderRadius.circular(10),

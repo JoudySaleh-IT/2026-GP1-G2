@@ -105,8 +105,8 @@ class ChildHomeScreen extends StatelessWidget {
                 _ChildHeader(
                   name: data['name'] ?? 'بطل فصيح',
                   avatar: data['avatar'] ?? '🦁',
-                  level: (hasCompletedPlacement)
-                      ? (data['gradeLevel'] ?? 'مبتدئ')
+                  level: hasCompletedPlacement
+                      ? 'المستوى: ${data['level'] ?? 'مبتدئ'} 🌟'
                       : 'لم يتم تحديد المستوى ',
                 ),
                 Expanded(
@@ -215,7 +215,9 @@ class _ChildHeader extends StatelessWidget {
           textDirection: TextDirection.rtl,
           child: AlertDialog(
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16), // تم تعديله ليكون 16 مثل الأب
+              borderRadius: BorderRadius.circular(
+                16,
+              ), // تم تعديله ليكون 16 مثل الأب
             ),
             title: const Text(
               'تأكيد تسجيل الخروج', // نفس نص الأب بدون أيقونات إضافية
@@ -225,7 +227,7 @@ class _ChildHeader extends StatelessWidget {
               'هل أنت متأكد أنك تريد تسجيل الخروج؟', // توحيد النص مع الأب
             ),
             // إضافة خاصية التباعد لتوزيع الأزرار (واحد يمين وواحد يسار)
-            actionsAlignment: MainAxisAlignment.spaceBetween, 
+            actionsAlignment: MainAxisAlignment.spaceBetween,
             actions: [
               // زر تسجيل الخروج (سيكون في اليمين)
               ElevatedButton(
@@ -261,7 +263,10 @@ class _ChildHeader extends StatelessWidget {
                 ),
                 child: const Text(
                   'إلغاء',
-                  style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    color: Colors.grey,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ],
@@ -270,6 +275,7 @@ class _ChildHeader extends StatelessWidget {
       },
     );
   }
+
   Future<void> _handleLogout(BuildContext context) async {
     final prefs = await SharedPreferences.getInstance();
     final isChildLoggedIn = prefs.getBool('isChildLoggedIn') ?? false;
@@ -311,12 +317,19 @@ class _ChildHeader extends StatelessWidget {
                     fontFamily: 'Tajawal',
                   ),
                 ),
-                Text(
-                  level,
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 14, // larger, matches _EditHeader subtitle
-                    fontFamily: 'Tajawal',
+                // 👇 Wrapped the level in a distinct visual badge!
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  child: Text(
+                    level,
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 14, // larger, matches _EditHeader subtitle
+                      fontFamily: 'Tajawal',
+                    ),
                   ),
                 ),
               ],
@@ -503,7 +516,8 @@ class _ParentPasswordDialogState extends State<_ParentPasswordDialog> {
           ],
         ),
         // داخل AlertDialog في كلاس _ParentPasswordDialog
-        actionsAlignment: MainAxisAlignment.spaceBetween, // 1️⃣ توزيع الأزرار (واحد يمين وواحد يسار)
+        actionsAlignment: MainAxisAlignment
+            .spaceBetween, // 1️⃣ توزيع الأزرار (واحد يمين وواحد يسار)
         actions: [
           // 2️⃣ زر "دخول" (سيكون في جهة اليمين)
           ElevatedButton(
@@ -512,7 +526,8 @@ class _ParentPasswordDialogState extends State<_ParentPasswordDialog> {
               backgroundColor: const Color(0xFFFF6969),
               foregroundColor: Colors.white,
               elevation: 0, // مظهر أنظف بدون ظل ثقيل
-              shape: const StadiumBorder(), // تصميم دائري متناسق مع هوية التطبيق
+              shape:
+                  const StadiumBorder(), // تصميم دائري متناسق مع هوية التطبيق
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
             ),
             child: _loading
