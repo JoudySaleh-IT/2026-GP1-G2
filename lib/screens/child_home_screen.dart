@@ -106,7 +106,7 @@ class ChildHomeScreen extends StatelessWidget {
                   name: data['name'] ?? 'بطل فصيح',
                   avatar: data['avatar'] ?? '🦁',
                   level: hasCompletedPlacement
-                      ? 'المستوى: ${data['level'] ?? 'مبتدئ'} 🌟'
+                      ? 'المستوى: ${data['level'] ?? 'مبتدئ'} '
                       : 'لم يتم تحديد المستوى ',
                 ),
                 Expanded(

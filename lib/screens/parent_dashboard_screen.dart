@@ -247,7 +247,7 @@ class ParentDashboardScreen extends StatelessWidget {
             // 2. 👈 تحديث واجهة المستوى بناءً على حالة الاختبار مع ألوان ديناميكية
             Text(
               hasCompletedPlacement
-                  ? 'المستوى: ${data['level'] ?? 'مبتدئ'} 🌟'
+                  ? 'المستوى: ${data['level'] ?? 'مبتدئ'} '
                   : 'لم يتم تحديد المستوى ',
               style: TextStyle(
                 fontSize: 12,

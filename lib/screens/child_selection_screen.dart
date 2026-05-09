@@ -429,7 +429,7 @@ class _ChildCardState extends State<_ChildCard>
                         ),
                         child: Text(
                           widget.hasCompletedPlacement
-                              ? 'المستوى: ${widget.level} 🌟'
+                              ? 'المستوى: ${widget.level} '
                               : 'لم يتم تحديد المستوى', // نص قصير ليناسب حجم البطاقة
                           style: TextStyle(
                             fontSize: 10, // تصغير الخط قليلاً لتجنب التكدس
