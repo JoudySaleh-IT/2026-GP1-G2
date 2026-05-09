@@ -47,8 +47,8 @@ class PlacementResultScreen extends StatefulWidget {
 }
 
 class _PlacementResultScreenState extends State<PlacementResultScreen> {
-// Identifying letters for practice (score < 70) and categorizing performance
- List<LetterScore> get _lettersToPractice =>
+  // Identifying letters for practice (score < 70) and categorizing performance
+  List<LetterScore> get _lettersToPractice =>
       widget.letterScores.where((ls) => ls.score < 70).toList();
 
   List<LetterScore> get _masteredLetters =>
@@ -61,39 +61,39 @@ class _PlacementResultScreenState extends State<PlacementResultScreen> {
     _markPlacementDone();
   }
 
-Future<void> _markPlacementDone() async {
-  try {
-    Map<String, int> scoresMap = {
-      for (var item in widget.letterScores) item.letter: item.score
-    };
+  Future<void> _markPlacementDone() async {
+    try {
+      Map<String, int> scoresMap = {
+        for (var item in widget.letterScores) item.letter: item.score,
+      };
 
-    // 1️⃣ استخراج المسمى النصي للمستوى بناءً على الدرجة (بدون إيموجي للحفظ في القاعدة)
-    String levelToSave;
-    if (widget.score >= 70) {
-      levelToSave = 'خبير';
-    } else if (widget.score >= 40) {
-      levelToSave = 'متوسط';
-    } else {
-      levelToSave = 'مبتدئ';
+      // 1️⃣ استخراج المسمى النصي للمستوى بناءً على الدرجة (بدون إيموجي للحفظ في القاعدة)
+      String levelToSave;
+      if (widget.score >= 70) {
+        levelToSave = 'خبير';
+      } else if (widget.score >= 40) {
+        levelToSave = 'متوسط';
+      } else {
+        levelToSave = 'مبتدئ';
+      }
+
+      // 2️⃣ تحديث مستند الطفل ليشمل الحقل 'level'
+      await FirebaseFirestore.instance
+          .collection('children')
+          .doc(widget.childId)
+          .update({
+            'placementDone': true,
+            'placementScore': widget.score,
+            'placementDate': FieldValue.serverTimestamp(),
+            'letterScores': scoresMap,
+            'level': levelToSave, // ✅ تحديث المستوى النصي ليظهر عند الأب
+          });
+
+      debugPrint('✅ تم حفظ نتائج المستوى وحقل level بنجاح');
+    } catch (e) {
+      debugPrint('❌ خطأ أثناء تحديث بيانات الاختبار: $e');
     }
-
-    // 2️⃣ تحديث مستند الطفل ليشمل الحقل 'level'
-    await FirebaseFirestore.instance
-        .collection('children')
-        .doc(widget.childId)
-        .update({
-      'placementDone': true,
-      'placementScore': widget.score,
-      'placementDate': FieldValue.serverTimestamp(),
-      'letterScores': scoresMap,
-      'level': levelToSave, // ✅ تحديث المستوى النصي ليظهر عند الأب
-    });
-    
-    debugPrint('✅ تم حفظ نتائج المستوى وحقل level بنجاح');
-  } catch (e) {
-    debugPrint('❌ خطأ أثناء تحديث بيانات الاختبار: $e');
   }
-}
 
   // ── Constants ──
   static const _purple = Color(0xFF511281);
@@ -104,8 +104,8 @@ Future<void> _markPlacementDone() async {
   // ── Overall Child Level ──
   // ── Overall Child Level ──
   String get _overallLevel {
-    if (widget.score >= 70) return 'مستوى خبير 🌟';
-    if (widget.score >= 40) return 'مستوى متوسط 👍';
+    if (widget.score >= 70) return 'مستوى خبير ';
+    if (widget.score >= 40) return 'مستوى متوسط ';
     return 'مستوى مبتدئ ';
   }
 
@@ -572,8 +572,8 @@ Future<void> _markPlacementDone() async {
     final String label = item.score >= 70
         ? 'متقن 🌟'
         : item.score >= 40
-            ? 'في الطريق الصحيح 👍'
-            : 'يحتاج تدريب ✍️';
+        ? 'في الطريق الصحيح 👍'
+        : 'يحتاج تدريب ✍️';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),

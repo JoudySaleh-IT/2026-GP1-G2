@@ -158,7 +158,7 @@ class _ChildProfileManagementScreenState
 
         // 2. 👈 تنسيق النص بناءً على الحالة
         final String formattedLevel = hasCompletedPlacement
-            ? 'المستوى: ${realData['level'] ?? 'مبتدئ'} 🌟'
+            ? 'المستوى: ${realData['level'] ?? 'مبتدئ'} '
             : 'لم يتم تحديد المستوى';
 
         return Directionality(

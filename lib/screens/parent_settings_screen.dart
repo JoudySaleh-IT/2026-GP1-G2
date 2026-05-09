@@ -79,15 +79,16 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
       setState(() => _isProfileLoading = true);
       try {
         final String? uid = _authService.currentUser?.uid;
+
         await FirebaseFirestore.instance.collection('parents').doc(uid).update({
           'fullName': _nameController.text.trim(),
         });
 
-        Future.delayed(const Duration(seconds: 2), () {
-          if (mounted) setState(() => _showProfileForm = false);
-        });
-
         NotificationService.showSuccessSnackBar('تم تحديث الاسم بنجاح!');
+
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, '/parent/dashboard');
+        }
       } catch (e) {
         setState(
           () => _profileMessage = 'فشل التحديث: تأكد من اتصالك بالإنترنت',

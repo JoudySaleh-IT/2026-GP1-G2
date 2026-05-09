@@ -74,35 +74,50 @@ class ParentDashboardScreen extends StatelessWidget {
   }
 
   Widget _buildHeader(BuildContext context) {
+    final String? userId = FirebaseAuth.instance.currentUser?.uid;
+
     return Container(
       decoration: FaseehStyle.headerDecoration,
-      padding: FaseehStyle.getStandardPadding(
-        context,
-      ), // top: status+8, bottom:12
+      padding: FaseehStyle.getStandardPadding(context),
       child: Row(
         children: [
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                Text(
-                  'لوحة تحكم الأهل',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18, // larger, matches _EditHeader
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'Tajawal',
-                  ),
-                ),
-                Text(
-                  'إدارة تعلم الأطفال',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 14, // larger, matches _EditHeader subtitle
-                    fontFamily: 'Tajawal',
-                  ),
-                ),
-              ],
+            child: StreamBuilder<DocumentSnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('parents')
+                  .doc(userId)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                String parentName = '';
+
+                if (snapshot.hasData && snapshot.data!.exists) {
+                  final data = snapshot.data!.data() as Map<String, dynamic>?;
+                  parentName = data?['fullName'] ?? '';
+                }
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      parentName.isNotEmpty ? 'أهلاً $parentName' : 'أهلاً',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Tajawal',
+                      ),
+                    ),
+                    const Text(
+                      'إدارة تعلم الأطفال',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 14,
+                        fontFamily: 'Tajawal',
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
           ),
           Row(
