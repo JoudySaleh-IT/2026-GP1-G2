@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart'; // ✅ ضروري لاستخدام kDebugMode
+import 'package:flutter/foundation.dart';
 import '../services/auth_service.dart';
+import '../services/notification_service.dart';
 
 class ParentLoginScreen extends StatefulWidget {
   const ParentLoginScreen({super.key});
@@ -39,6 +40,10 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> {
         );
 
         if (mounted) Navigator.pop(context);
+
+        NotificationService.showSuccessSnackBar(
+          'تم تسجيل الدخول بنجاح، أهلًا بك في فصيح!',
+        );
 
         if (mounted) {
           Navigator.pushNamedAndRemoveUntil(
