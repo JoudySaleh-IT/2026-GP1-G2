@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/ChildSession.dart';
+import '../services/notification_service.dart';
 import 'style_constants.dart';
 
 class ParentDashboardScreen extends StatelessWidget {
@@ -312,6 +313,10 @@ class ParentDashboardScreen extends StatelessWidget {
                     rootNavigator: true,
                   ).pushNamedAndRemoveUntil('/', (route) => false);
                 }
+
+                NotificationService.showSuccessSnackBar(
+                  'تم تسجيل خروجك بنجاح!',
+                );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFFF6969),

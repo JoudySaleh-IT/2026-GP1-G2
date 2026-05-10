@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../services/notification_service.dart';
 
 class ParentRegisterScreen extends StatefulWidget {
   const ParentRegisterScreen({super.key});
@@ -53,6 +54,10 @@ class _ParentRegisterScreenState extends State<ParentRegisterScreen> {
 
         // 3. إغلاق مؤشر التحميل بعد النجاح
         if (mounted) Navigator.pop(context);
+
+        NotificationService.showSuccessSnackBar(
+          'تم إنشاء الحساب بنجاح! أهلًا بك في فصيح.',
+        );
 
         if (user != null) {
           if (mounted)
