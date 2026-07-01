@@ -12,15 +12,15 @@ class NotificationService {
       SnackBar(
         content: Text(
           message,
-          style: const TextStyle(fontFamily: 'Tajawal'), // Your custom font
+          style: const TextStyle(fontFamily: 'Tajawal'), 
         ),
-        backgroundColor: const Color(0xFF511281), // Your Faseh primary color
+        backgroundColor: const Color(0xFF511281), 
         behavior: SnackBarBehavior.floating,
       ),
     );
   }
 
-  // Optional: You can also add an error snackbar method with a red color!
+  // Optional: We can also add an error snackbar method with a red color!
   static void showErrorSnackBar(String message) {
     rootScaffoldMessengerKey.currentState?.showSnackBar(
       SnackBar(
