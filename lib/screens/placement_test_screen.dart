@@ -219,6 +219,8 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
 
       var streamedResponse = await request.send();
       var response = await http.Response.fromStream(streamedResponse);
+      print(" كود الاستجابة: ${response.statusCode}");
+      print(" محتوى الرد: ${response.body}");
 
       if (response.statusCode == 200) {
         var data = jsonDecode(response.body);

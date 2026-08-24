@@ -103,12 +103,12 @@ class ChildHomeScreen extends StatelessWidget {
             body: Column(
               children: [
                 _ChildHeader(
-                  name: data['name'] ?? 'بطل فصيح',
-                  avatar: data['avatar'] ?? '🦁',
-                  level: hasCompletedPlacement
-                      ? 'المستوى: ${data['level'] ?? 'مبتدئ'} '
-                      : 'لم يتم تحديد المستوى ',
-                ),
+  name: data['name'] ?? 'بطل فصيح',
+  avatar: data['avatar'] ?? '🦁',
+  level: (hasCompletedPlacement)
+      ? (data['level'] ?? 'مبتدئ') 
+      : 'لم يتم تحديد المستوى',
+),
                 Expanded(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
