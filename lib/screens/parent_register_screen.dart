@@ -152,7 +152,7 @@ class _ParentRegisterScreenState extends State<ParentRegisterScreen> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           const Text(
-                            'تسجيل ولي الأمر',
+                            'إنشاء حساب ولي الأمر',
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 22,
@@ -162,10 +162,10 @@ class _ParentRegisterScreenState extends State<ParentRegisterScreen> {
                           ),
                           const SizedBox(height: 8),
                           const Text(
-                            'أنشئ حسابك لإدارة ملفات أطفالك',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(fontSize: 14, color: Colors.grey),
-                          ),
+  'أنشئ حسابك لمتابعة تقدّم أطفالك',
+  textAlign: TextAlign.center,
+  style: TextStyle(fontSize: 14, color: Colors.grey),
+),
                           const SizedBox(height: 28),
 
                           // ── الاسم الكامل (مع قيد الاسمين) ──
@@ -175,7 +175,7 @@ class _ParentRegisterScreenState extends State<ParentRegisterScreen> {
                           const SizedBox(height: 6),
                           _buildTextField(
                             controller: _fullNameController,
-                            hint: 'الاسم الأول والعائلة',
+                            hint: 'الاسم الأول واسم العائلة',
                             validator: (v) {
                               // 1. تنظيف المدخل من المسافات الزائدة
                               final val = v?.trim() ?? '';

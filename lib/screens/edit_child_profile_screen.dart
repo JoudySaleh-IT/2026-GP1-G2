@@ -3,6 +3,29 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/auth_service.dart';
 import '../services/notification_service.dart';
 import 'style_constants.dart';
+import '../utils/arabic_numbers.dart';
+
+
+String _formatArabicDate(DateTime date) {
+  const months = [
+    'يناير',
+    'فبراير',
+    'مارس',
+    'أبريل',
+    'مايو',
+    'يونيو',
+    'يوليو',
+    'أغسطس',
+    'سبتمبر',
+    'أكتوبر',
+    'نوفمبر',
+    'ديسمبر',
+  ];
+
+  return '${toArabicDigits(date.day)} '
+    '${months[date.month - 1]} '
+    '${toArabicDigits(date.year)}';
+}
 
 // ── حساب العمر من تاريخ الميلاد ──
 int _calcAge(DateTime dob) {
@@ -353,6 +376,7 @@ class _DobPicker extends StatelessWidget {
         onTap();
         final picked = await showDatePicker(
           context: context,
+          locale: const Locale('ar', 'SA'),
           initialDate:
               selectedDate ??
               DateTime.now().subtract(const Duration(days: 365 * 8)),
@@ -381,7 +405,7 @@ class _DobPicker extends StatelessWidget {
             Expanded(
               child: Text(
                 hasDate
-                    ? "${selectedDate!.year}/${selectedDate!.month}/${selectedDate!.day}"
+                    ? _formatArabicDate(selectedDate!)
                     : 'اختر تاريخ الميلاد',
                 style: TextStyle(
                   fontSize: 14,

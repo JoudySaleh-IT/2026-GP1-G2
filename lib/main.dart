@@ -1,4 +1,5 @@
 import 'package:faseh/wrapper.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'screens/splash_screen.dart';
@@ -58,7 +59,17 @@ class MyApp extends StatelessWidget {
       initialRoute: '/',
       //home: Wrapper(),
       debugShowCheckedModeBanner: false,
-      locale: const Locale('ar'),
+      locale: const Locale('ar', 'SA'),
+
+supportedLocales: const [
+  Locale('ar', 'SA'),
+],
+
+localizationsDelegates: const [
+  GlobalMaterialLocalizations.delegate,
+  GlobalWidgetsLocalizations.delegate,
+  GlobalCupertinoLocalizations.delegate,
+],
       builder: (context, child) {
         return Directionality(textDirection: TextDirection.rtl, child: child!);
       },

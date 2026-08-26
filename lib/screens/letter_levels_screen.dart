@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import '../utils/arabic_numbers.dart';
 const _levelProgress = {
   'ض': (mcq: true, listening: true, recording: false),
   'خ': (mcq: true, listening: true, recording: true),
@@ -225,7 +225,7 @@ class _LetterLevelsHeader extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  '$completedCount من $totalCount مستويات مكتملة',
+                  '${toArabicDigits(completedCount)} من ${toArabicDigits(totalCount)} مستويات مكتملة',
                   style: const TextStyle(color: Colors.white70, fontSize: 12),
                 ),
               ],
@@ -322,7 +322,7 @@ class _LevelCardState extends State<_LevelCard>
                   ),
                   child: Center(
                     child: Text(
-                      '${widget.number}',
+                      toArabicDigits(widget.number),
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 18,

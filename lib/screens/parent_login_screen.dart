@@ -145,7 +145,7 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> {
                           ),
                           const SizedBox(height: 8),
                           const Text(
-                            'سجل دخولك للوصول إلى لوحة التحكم',
+                            'سجّل دخولك لمتابعة أطفالك',
                             textAlign: TextAlign.center,
                             style: TextStyle(fontSize: 14, color: Colors.grey),
                           ),
@@ -263,7 +263,7 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> {
                                   '/parent/register',
                                 ),
                                 child: const Text(
-                                  'إنشاء حساب',
+                                  'أنشئ حسابًا',
                                   style: TextStyle(
                                     fontSize: 14,
                                     color: Color(0xFF511281),

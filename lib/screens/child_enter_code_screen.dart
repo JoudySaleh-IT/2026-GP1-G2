@@ -3,10 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/ChildSession.dart'; // Ensure this matches your project structure
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import '../services/ChildSession.dart';
 import '../services/notification_service.dart';
+import '../utils/arabic_numbers.dart';
 
 class ChildEnterCodeScreen extends StatefulWidget {
   const ChildEnterCodeScreen({super.key});
@@ -107,7 +105,7 @@ class _ChildEnterCodeScreenState extends State<ChildEnterCodeScreen> {
                 ),
                 const Spacer(),
                 const Text(
-                  '🚀 أدخل كود الدخول',
+                  '🚀 أدخل رمز الدخول',
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
@@ -116,7 +114,7 @@ class _ChildEnterCodeScreenState extends State<ChildEnterCodeScreen> {
                 ),
                 const SizedBox(height: 10),
                 const Text(
-                  'اطلب الكود المكون من ٦ أرقام من ولي أمرك',
+                  'اطلب من ولي أمرك رمز الدخول المكوّن من ٦ أرقام',
                   style: TextStyle(fontSize: 14, color: Colors.grey),
                 ),
                 const SizedBox(height: 40),
@@ -186,7 +184,7 @@ class _ChildEnterCodeScreenState extends State<ChildEnterCodeScreen> {
                                   ],
                                 ),
                                 child: Text(
-                                  char,
+                                  toArabicDigits(char),
                                   style: const TextStyle(
                                     fontSize: 24,
                                     fontWeight: FontWeight.bold,
@@ -210,7 +208,7 @@ class _ChildEnterCodeScreenState extends State<ChildEnterCodeScreen> {
                   Text(
                     _codeController.text.length == 6
                         ? "جاري التحقق..."
-                        : "بانتظار الأرقام الستة...",
+                        : "أدخل رمزك المكوّن من ٦ أرقام",
                     style: const TextStyle(color: Colors.grey),
                   ),
                 const Spacer(flex: 2),

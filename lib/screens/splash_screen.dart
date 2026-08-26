@@ -146,7 +146,7 @@ class _SplashScreenState extends State<SplashScreen>
                                     ),
                                   ),
                                   child: const Text(
-                                    'ابدأ كـ ولي أمر',
+                                    'ابدأ كـولي أمر',
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w600,
@@ -176,7 +176,7 @@ class _SplashScreenState extends State<SplashScreen>
                                     ),
                                   ),
                                   child: const Text(
-                                    'تسجيل الدخول كـ ولي أمر',
+                                    'تسجيل الدخول كـولي أمر',
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w600,
@@ -218,7 +218,7 @@ class _SplashScreenState extends State<SplashScreen>
                                       ),
                                       SizedBox(width: 10),
                                       Text(
-                                        'أنا طفل - دخول بالكود',
+                                        'أنا طفل - الدخول بالرمز',
                                         style: TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.w600,

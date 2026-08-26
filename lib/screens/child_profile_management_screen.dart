@@ -4,6 +4,7 @@ import '../services/auth_service.dart';
 import '../services/notification_service.dart';
 import 'edit_child_profile_screen.dart';
 import 'style_constants.dart';
+import '../utils/arabic_numbers.dart';
 
 // ─── Mock Data ────────────────────────────────────────────────────────────────
 class _WeekDay {
@@ -153,13 +154,13 @@ class _ChildProfileManagementScreenState
             ? snapshot.data!.data() as Map<String, dynamic>
             : {'name': 'تحميل...', 'avatar': '👤', 'age': 0};
 
-        // 1. 👈 استخراج حالة اكتمال الاختبار
+        // 1.  استخراج حالة اكتمال الاختبار
         final bool hasCompletedPlacement = realData['placementDone'] ?? false;
 
-        // 2. 👈 تنسيق النص بناءً على الحالة
+        // 2.  تنسيق النص بناءً على الحالة
         final String formattedLevel = hasCompletedPlacement
             ? 'المستوى: ${realData['level'] ?? 'مبتدئ'} '
-            : 'لم يتم تحديد المستوى';
+            : 'لم يُحدَّد المستوى بعد';
 
         return Directionality(
           textDirection: TextDirection.rtl,
@@ -188,7 +189,7 @@ class _ChildProfileManagementScreenState
                           key: ValueKey('stat_exercises'),
                           icon: Icons.menu_book_rounded,
                           title: 'التمارين المنجزة',
-                          value: '42',
+                          value: '٤٢',
                           subtitle: 'أداء رائع هذا الشهر',
                         ),
                         SizedBox(height: 12),
@@ -196,14 +197,14 @@ class _ChildProfileManagementScreenState
                           key: ValueKey('stat_streak'),
                           icon: Icons.emoji_events_rounded,
                           title: 'سلسلة الأيام',
-                          value: '12 يوم',
+                          value: '١٢ يومًا',
                           subtitle: 'بطل فصيح مستمر',
                         ),
                         SizedBox(height: 12),
                         _ProgressCard(progress: 74),
                         SizedBox(height: 24),
                         Text(
-                          'حروف تحتاج تحسين',
+                          'حروف تحتاج إلى مزيد من التدريب',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -332,7 +333,7 @@ class _LetterListTile extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      '$completed/$total تمارين',
+  '${toArabicDigits('$completed/$total')} تمارين',
                       style: const TextStyle(fontSize: 11, color: Colors.grey),
                     ),
                   ],
@@ -373,6 +374,13 @@ class _ProfileHeader extends StatelessWidget {
     required this.level,
   });
 
+
+String formatAge(int age) {
+  final arabicAge = toArabicDigits(age);
+
+  // فصيح يستهدف عمر 5–13
+  return age >= 11 ? '$arabicAge سنة' : '$arabicAge سنوات';
+}
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -411,8 +419,8 @@ class _ProfileHeader extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  // 3️⃣ استبدال كلمة 'متفاعل' بالـ level
-                  '$age سنوات | $level',
+           
+                  '${formatAge(age)} | $level',
                   style: const TextStyle(
                     color: Colors.white70,
                     fontSize: 13,
@@ -516,7 +524,7 @@ class _ProgressCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            '$progress%',
+            toArabicDigits('$progress٪'),
             style: const TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 10),

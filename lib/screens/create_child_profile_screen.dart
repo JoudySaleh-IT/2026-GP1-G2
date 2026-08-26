@@ -2,9 +2,32 @@ import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import 'style_constants.dart';
 import '../services/notification_service.dart';
+import '../utils/arabic_numbers.dart';
 
 // ── القائمة المتاحة للصور الرمزية ──
 const _avatars = ['🦁', '🐯', '🐼', '🦊', '🐻', '🐨', '🦝', '🐰'];
+
+
+String _formatArabicDate(DateTime date) {
+  const months = [
+    'يناير',
+    'فبراير',
+    'مارس',
+    'أبريل',
+    'مايو',
+    'يونيو',
+    'يوليو',
+    'أغسطس',
+    'سبتمبر',
+    'أكتوبر',
+    'نوفمبر',
+    'ديسمبر',
+  ];
+
+  return '${toArabicDigits(date.day)} '
+    '${months[date.month - 1]} '
+    '${toArabicDigits(date.year)}';
+}
 
 // ── حساب العمر من تاريخ الميلاد ──
 int _calcAge(DateTime dob) {
@@ -210,7 +233,7 @@ class _CreateChildProfileScreenState extends State<CreateChildProfileScreen> {
                           Padding(
                             padding: const EdgeInsets.only(top: 6, right: 4),
                             child: Text(
-                              'العمر: ${_calcAge(_dob!)} سنة',
+                              'العمر: ${toArabicDigits(_calcAge(_dob!))} ${_calcAge(_dob!) >= 11 ? 'سنة' : 'سنوات'}',
                               style: const TextStyle(
                                 fontSize: 13,
                                 color: Color(0xFF511281),
@@ -238,7 +261,7 @@ class _CreateChildProfileScreenState extends State<CreateChildProfileScreen> {
                             ),
                           ),
                         const SizedBox(height: 16),
-                        const _FieldLabel('اختر الصورة الرمزية'),
+                        const _FieldLabel('اختر صورة رمزية'),
                         const SizedBox(height: 8),
                         GridView.builder(
                           shrinkWrap: true,
@@ -302,7 +325,7 @@ class _CreateChildProfileScreenState extends State<CreateChildProfileScreen> {
                               shape: const StadiumBorder(),
                             ),
                             child: const Text(
-                              'إنشاء الملف',
+                              'إنشاء ملف الطفل',
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
@@ -363,6 +386,7 @@ class _DobPicker extends StatelessWidget {
     final now = DateTime.now();
     final picked = await showDatePicker(
       context: context,
+      locale: const Locale('ar', 'SA'),
       initialDate: selectedDate ?? DateTime(now.year - 8),
       firstDate: DateTime(now.year - 13),
       lastDate: DateTime(now.year - 5),
@@ -400,8 +424,7 @@ class _DobPicker extends StatelessWidget {
             Expanded(
               child: Text(
                 hasDate
-                    ? '${selectedDate!.year}/${selectedDate!.month.toString().padLeft(2, '0')}/${selectedDate!.day.toString().padLeft(2, '0')}'
-                    : 'اختر تاريخ الميلاد',
+? _formatArabicDate(selectedDate!)                    : 'اختر تاريخ الميلاد',
                 style: TextStyle(
                   fontSize: 14,
                   color: hasDate ? const Color(0xFF1A1A1A) : Colors.grey,

@@ -4,17 +4,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/ChildSession.dart';
 import '../services/notification_service.dart';
 import 'style_constants.dart';
+import '../utils/arabic_numbers.dart';
 
 class ParentDashboardScreen extends StatelessWidget {
   const ParentDashboardScreen({super.key});
 
-  String toArabicNumbers(int num) {
-    const arabic = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
-    return num.toString().replaceAllMapped(
-      RegExp(r'\d'),
-      (m) => arabic[int.parse(m.group(0)!)],
-    );
-  }
+ 
 
   @override
   Widget build(BuildContext context) {
@@ -100,7 +95,7 @@ class ParentDashboardScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      parentName.isNotEmpty ? 'أهلاً $parentName' : 'أهلاً',
+                      parentName.isNotEmpty ? 'أهلًا، $parentName' : 'أهلًا،',
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 18,
@@ -109,7 +104,7 @@ class ParentDashboardScreen extends StatelessWidget {
                       ),
                     ),
                     const Text(
-                      'إدارة تعلم الأطفال',
+                      'متابعة تقدّم أطفالك',
                       style: TextStyle(
                         color: Colors.white70,
                         fontSize: 14,
@@ -165,7 +160,7 @@ class ParentDashboardScreen extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         const Text(
-          'ملفات الأطفال',
+          'ملفات أطفالك',
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         if (showAddButton)
@@ -195,7 +190,7 @@ class ParentDashboardScreen extends StatelessWidget {
         onPressed: () => Navigator.pushNamed(context, '/parent/select-child'),
         icon: const Icon(Icons.swap_horiz_rounded),
         label: const Text(
-          'التبديل لوضع الطفل',
+          'الانتقال إلى وضع الطفل',
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         style: ElevatedButton.styleFrom(
@@ -249,7 +244,7 @@ class ParentDashboardScreen extends StatelessWidget {
             Text(
               hasCompletedPlacement
                   ? 'المستوى: ${data['level'] ?? 'مبتدئ'} '
-                  : 'لم يتم تحديد المستوى ',
+                  : 'لم يُحدَّد المستوى بعد',
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
@@ -274,7 +269,7 @@ class ParentDashboardScreen extends StatelessWidget {
             ),
           ],
         ),
-        trailing: Text('${toArabicNumbers(progress)}٪'),
+        trailing: Text('${toArabicDigits(progress)}٪'),
         onTap: () => Navigator.pushNamed(
           context,
           '/parent/child-profile',

@@ -212,7 +212,7 @@ class _ExercisesScreenState extends State<ExercisesScreen> {
             ),
             const SizedBox(height: 8),
             const Text(
-              "يرجى أخذ اختبار تحديد المستوى\nمن الصفحة الرئيسية لنبدأ التمارين.",
+              "ابدأ باختبار تحديد المستوى من الصفحة الرئيسية، وبعدها نبدأ التمارين!  ",
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontFamily: 'Tajawal',
@@ -267,7 +267,7 @@ class _ExercisesHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: const [
                 Text(
-                  'هيا نتدرب!',
+                  'هيا نتدرّب!',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 18, // larger, matches EditHeader title
@@ -276,7 +276,7 @@ class _ExercisesHeader extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  'اختر حرفاً للتمرن عليه',
+                  'اختر حرفًا لتتدرّب عليه',
                   style: TextStyle(
                     color: Colors.white70,
                     fontSize: 14, // larger, matches EditHeader subtitle

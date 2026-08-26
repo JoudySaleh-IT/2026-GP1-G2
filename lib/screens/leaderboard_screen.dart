@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/auth_service.dart';
 import 'style_constants.dart';
+import '../utils/arabic_numbers.dart';
 
 // ─── Mock Data Models ─────────────────────────────────────────────────────────
 class _Player {
@@ -159,7 +159,7 @@ class LeaderboardScreen extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  'تنافس مع المتعلمين من حولك',
+                  'تحدَّ نفسك وتقدّم في الترتيب!',
                   style: TextStyle(
                     color: Colors.white70,
                     fontSize: 14, // larger, matches EditHeader subtitle
@@ -223,18 +223,18 @@ class LeaderboardScreen extends StatelessWidget {
                   _statChip(
                     icon: Icons.emoji_events_rounded,
                     label:
-                        'لاعب نشط', // بما أن الترتيب يتطلب حساب كل اللاعبين، يمكن وضع وصف مؤقت
+                        'متعلّم نشط', // بما أن الترتيب يتطلب حساب كل اللاعبين، يمكن وضع وصف مؤقت
                   ),
                   const SizedBox(width: 10),
                   _statChip(
                     icon: Icons.star_rounded,
-                    label: '$points نقطة',
+                    label: '${toArabicDigits(points)} نقطة',
                     iconColor: const Color(0xFFFF6969),
                   ),
                   const SizedBox(width: 10),
                   _statChip(
                     icon: Icons.local_fire_department_rounded,
-                    label: '$streak يوم',
+                    label: '${toArabicDigits(streak)} يوم',
                     iconColor: const Color(0xFFFF6969),
                   ),
                 ],
@@ -297,7 +297,7 @@ class LeaderboardScreen extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 const Text(
-                  'أفضل اللاعبين',
+                  'المتصدرون',
                   style: TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.bold,
@@ -385,7 +385,7 @@ class LeaderboardScreen extends StatelessWidget {
                     const Icon(Icons.star_rounded, size: 13, color: _coral),
                     const SizedBox(width: 3),
                     Text(
-                      '${player.points} نقطة',
+                      '${toArabicDigits(player.points)} نقطة',
                       style: const TextStyle(
                         fontSize: 12,
                         color: Color(0xFF666666),
@@ -400,7 +400,7 @@ class LeaderboardScreen extends StatelessWidget {
                     ),
                     const SizedBox(width: 3),
                     Text(
-                      '${player.streak} يوم',
+                      '${toArabicDigits(player.streak)} يوم',
                       style: const TextStyle(
                         fontSize: 12,
                         color: Color(0xFF666666),
@@ -447,7 +447,7 @@ class LeaderboardScreen extends StatelessWidget {
         ),
         alignment: Alignment.center,
         child: Text(
-          '$rank',
+          toArabicDigits(rank),
           style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
@@ -459,7 +459,7 @@ class LeaderboardScreen extends StatelessWidget {
 
     // Regular rank text
     return Text(
-      '#$rank',
+      toArabicDigits(rank),
       style: const TextStyle(
         fontSize: 16,
         fontWeight: FontWeight.w600,

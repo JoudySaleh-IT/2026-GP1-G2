@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../utils/arabic_numbers.dart';
 
 // ─── Letter Name Helper ───────────────────────────────────────────────────────
 String _getLetterName(String letter) {
@@ -331,7 +332,7 @@ class _PlacementResultScreenState extends State<PlacementResultScreen> {
           ),
           const SizedBox(height: 10),
           Text(
-            '${widget.score}%',
+              '${toArabicDigits(widget.score)}٪',
             style: const TextStyle(
               fontSize: 60,
               fontWeight: FontWeight.bold,
@@ -630,7 +631,7 @@ class _PlacementResultScreenState extends State<PlacementResultScreen> {
           ),
           const Spacer(),
           Text(
-            '${item.score}%',
+           '${toArabicDigits(item.score)}٪',
             style: const TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,

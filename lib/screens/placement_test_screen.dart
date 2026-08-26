@@ -5,6 +5,8 @@ import '../services/recording_service.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import '../utils/arabic_numbers.dart';
+
 
 // ─── Data Model ──────────────────────────────────────────────────────────────
 class PlacementWord {
@@ -431,7 +433,7 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
                       ),
                     ),
                     Text(
-                      'الكلمة ${_currentIndex + 1} من ${_placementWords.length}',
+                      'الكلمة ${toArabicDigits(_currentIndex + 1)} من ${toArabicDigits(_placementWords.length)}',
                       style: const TextStyle(
                         color: Colors.white70,
                         fontSize: 12,
@@ -510,7 +512,7 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
               ),
             ),
             Text(
-              '$percent%',
+             '${toArabicDigits(percent)}٪',
               style: const TextStyle(
                 color: _purple,
                 fontWeight: FontWeight.bold,

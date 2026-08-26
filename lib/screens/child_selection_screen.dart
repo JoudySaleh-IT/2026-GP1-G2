@@ -4,16 +4,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/ChildSession.dart';
 import '../services/notification_service.dart';
-import 'style_constants.dart'; // add this line with the other imports
+import 'style_constants.dart'; 
+import '../utils/arabic_numbers.dart';
 
-// ─── Helper: تحويل الأرقام إلى العربية ────────────────
-String toArabicNumbers(int num) {
-  const arabicDigits = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
-  return num.toString().replaceAllMapped(
-    RegExp(r'\d'),
-    (m) => arabicDigits[int.parse(m[0]!)],
-  );
-}
+
 
 class ChildSelectionScreen extends StatelessWidget {
   const ChildSelectionScreen({super.key});
@@ -68,7 +62,7 @@ class ChildSelectionScreen extends StatelessWidget {
                       ),
                     ),
                     child: Text(
-                      pairingCode,
+                      toArabicDigits(pairingCode),
                       style: const TextStyle(
                         fontSize: 32,
                         fontWeight: FontWeight.bold,
@@ -261,7 +255,7 @@ class _ChildSelectionHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: const [
                 Text(
-                  'من سيتعلم اليوم؟',
+                  'من سيتعلّم اليوم؟',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 18, // larger, matches _EditHeader title
@@ -410,7 +404,7 @@ class _ChildCardState extends State<_ChildCard>
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'العمر: ${toArabicNumbers(widget.age)} سنوات',
+                        'العمر: ${toArabicDigits(widget.age)} ${widget.age >= 11 ? 'سنة' : 'سنوات'}',
                         style: const TextStyle(
                           fontSize: 12,
                           color: Color(0xFFFF6969),
@@ -430,7 +424,7 @@ class _ChildCardState extends State<_ChildCard>
                         child: Text(
                           widget.hasCompletedPlacement
                               ? 'المستوى: ${widget.level} '
-                              : 'لم يتم تحديد المستوى', // نص قصير ليناسب حجم البطاقة
+                              : 'لم يُحدَّد المستوى بعد', // نص قصير ليناسب حجم البطاقة
                           style: TextStyle(
                             fontSize: 10, // تصغير الخط قليلاً لتجنب التكدس
                             color: badgeColor,

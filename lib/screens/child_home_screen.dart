@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import '../utils/arabic_numbers.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '/services/ChildSession.dart';
-import 'style_constants.dart';
 import 'style_constants.dart'; // ─── Mock Data ───────────────────────────────────────────────────────────────
 import '../services/notification_service.dart';
 
@@ -60,7 +60,7 @@ class ChildHomeScreen extends StatelessWidget {
         // ✅ حساب هل يحق له إعادة التقييم
         final bool canReassess = _canReassess(data);
 
-        // 🌟 1. Dynamic Daily Goal Logic
+        //  1. Dynamic Daily Goal Logic
         int assignedLettersCount = 0;
 
         if (data['letterScores'] != null) {
@@ -80,21 +80,25 @@ class ChildHomeScreen extends StatelessWidget {
             : 3;
         final int todayCompleted = data['todayExercises'] ?? 0;
 
-        // 🌟 2. Mock Data Fallbacks for Stats
+        //  2. Mock Data Fallbacks for Stats
         // Uses Firestore data if available and > 0, otherwise falls back to the _mockChild constants
-        final String displayStreak =
-            (data['streak'] != null && data['streak'] > 0)
-            ? data['streak'].toString()
-            : _mockChild.streak.toString();
+        final String displayStreak = toArabicDigits(
+  (data['streak'] != null && data['streak'] > 0)
+      ? data['streak']
+      : _mockChild.streak,
+);
 
-        final String displayPoints =
-            (data['points'] != null && data['points'] > 0)
-            ? data['points'].toString()
-            : _mockChild.points.toString();
+        final String displayPoints = toArabicDigits(
+  (data['points'] != null && data['points'] > 0)
+      ? data['points']
+      : _mockChild.points,
+);
 
-        final String displayRank = (data['rank'] != null && data['rank'] > 0)
-            ? '#${data['rank']}'
-            : '#${_mockChild.rank}';
+        final String displayRank = toArabicDigits(
+  (data['rank'] != null && data['rank'] > 0)
+      ? '#${data['rank']}'
+      : '#${_mockChild.rank}',
+);
 
         return Directionality(
           textDirection: TextDirection.rtl,
@@ -107,7 +111,7 @@ class ChildHomeScreen extends StatelessWidget {
   avatar: data['avatar'] ?? '🦁',
   level: (hasCompletedPlacement)
       ? (data['level'] ?? 'مبتدئ') 
-      : 'لم يتم تحديد المستوى',
+      : 'لم يُحدَّد المستوى بعد',
 ),
                 Expanded(
                   child: SingleChildScrollView(
@@ -309,7 +313,7 @@ class _ChildHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'مرحبا $name!',
+                  'مرحبًا $name!',
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18, // larger, matches _EditHeader title
@@ -317,7 +321,7 @@ class _ChildHeader extends StatelessWidget {
                     fontFamily: 'Tajawal',
                   ),
                 ),
-                // 👇 Wrapped the level in a distinct visual badge!
+                //  Wrapped the level in a distinct visual badge!
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 10,
@@ -657,7 +661,7 @@ class _TestBannerState extends State<_TestBanner>
                     Text(
                       widget.isLocked
                           ? 'أنهِ تمارينك لفتح الاختبار'
-                          : 'استكشف مستواك اللغوي!',
+                          : 'اكتشف مستوى نطقك!',
                       style: const TextStyle(
                         color: Colors.white70,
                         fontSize: 13,
@@ -777,7 +781,7 @@ class _TodayGoalCard extends StatelessWidget {
                 ),
               ),
               Text(
-                '$done/$goal',
+                toArabicDigits('$done/$goal'),
                 style: const TextStyle(
                   fontSize: 12,
                   color: Color(0xFFFF6969),
