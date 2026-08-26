@@ -48,6 +48,7 @@ class PlacementResultScreen extends StatefulWidget {
 }
 
 class _PlacementResultScreenState extends State<PlacementResultScreen> {
+  String _childName = '';
   // Identifying letters for practice (score < 70) and categorizing performance
   List<LetterScore> get _lettersToPractice =>
       widget.letterScores.where((ls) => ls.score < 70).toList();
@@ -57,10 +58,28 @@ class _PlacementResultScreenState extends State<PlacementResultScreen> {
 
   // ── Write placementDone = true to Firestore when result screen opens ────────
   @override
-  void initState() {
-    super.initState();
-    _markPlacementDone();
+void initState() {
+  super.initState();
+  _loadChildName();
+  _markPlacementDone();
+}
+Future<void> _loadChildName() async {
+  try {
+    final doc = await FirebaseFirestore.instance
+        .collection('children')
+        .doc(widget.childId)
+        .get();
+
+    if (doc.exists && mounted) {
+      final data = doc.data();
+      setState(() {
+        _childName = data?['name'] ?? '';
+      });
+    }
+  } catch (e) {
+    debugPrint(' خطأ أثناء جلب اسم الطفل: $e');
   }
+}
 
   Future<void> _markPlacementDone() async {
     try {
@@ -111,11 +130,18 @@ class _PlacementResultScreenState extends State<PlacementResultScreen> {
   }
 
   // ── Encouragement message ──
-  String get _encouragementMessage {
-    if (widget.score >= 70) return 'ممتاز يا بطل! 👏';
-    if (widget.score >= 40) return 'أحسنت! في الطريق الصحيح 🌟';
-    return 'بداية جميلة! سنتدرب معًا 💜';
+// ── Encouragement message ──
+String get _encouragementMessage {
+  if (_childName.isEmpty) {
+    if (widget.score >= 70) return 'ممتاز! 👏';
+    if (widget.score >= 40) return 'أحسنت! 🌟';
+    return 'بداية جميلة! سنتدرّب معًا 💜';
   }
+
+  if (widget.score >= 70) return 'ممتاز يا $_childName! 👏';
+  if (widget.score >= 40) return 'أحسنت يا $_childName! 🌟';
+  return 'بداية جميلة يا $_childName! سنتدرّب معًا 💜';
+}
 
   // ── Sorted letter scores (ascending) ──
   List<LetterScore> get _sortedScores =>
