@@ -7,7 +7,6 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../utils/arabic_numbers.dart';
 
-
 // ─── Data Model ──────────────────────────────────────────────────────────────
 class PlacementWord {
   final String wordId;
@@ -35,6 +34,7 @@ class PlacementTestScreen extends StatefulWidget {
 class _PlacementTestScreenState extends State<PlacementTestScreen>
     with SingleTickerProviderStateMixin {
   static const _purple = Color(0xFF511281);
+  static const _purple2 = Color(0xFF6A3A9E);
   static const _coral = Color(0xFFFF6969);
   static const _bgColor = Color(0xFFFCF9EA);
 
@@ -45,15 +45,13 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
   List<bool> _recorded = [];
   bool _isRecording = false;
   bool _showNext = false;
-  
+  bool _isValidatingAudio = false;
+
+  // Track attempts per current word (Max 3)
+  int _currentWordAttempts = 0;
+
   double _totalAccumulatedScore = 0.0;
   List<Map<String, dynamic>> _individualScores = [];
-  
-  //  نظام "الطابور الذكي" لمعالجة الكلمات في الخلفية دون إيقاف الطفل
-  final List<Map<String, String>> _evaluationQueue = [];
-  bool _isProcessingQueue = false;
-  int _pendingEvaluations = 0; 
-  bool _isCalculatingFinalScore = false;
 
   final RecordingService _recordingService = RecordingService();
   String? _lastRecordedPath;
@@ -120,7 +118,7 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
         _isLoading = false;
       });
     } catch (e) {
-      print("Error fetching words: $e");
+      debugPrint("Error fetching words: $e");
       setState(() => _isLoading = false);
     }
   }
@@ -142,36 +140,30 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
 
   void _handleRecordToggle() async {
     if (_isRecording) {
-      // 1. Stop recording and capture audio path
+      // Stop recording
       final path = await _recordingService.stop();
-      
-      // save data for current Word Text
-      final currentWordText = _currentWord.text;
-      final currentWordLetter = _currentWord.targetLetter;
-
-      setState(() {
-        _lastRecordedPath = path;
-        _isRecording = false;
-        _recorded[_currentIndex] = true;
-        _showNext = true; //  Fluid UI: Show next button immediately
-        _pendingEvaluations++; // Increment pending tasks count
-      });
 
       _pulseController.stop();
       _pulseController.reset();
 
-      if (path != null) {
-       // 2. Add recording to the "Smart Queue" for background AI analysis
-        _evaluationQueue.add({
-          'path': path,
-          'word': currentWordText,
-          'letter': currentWordLetter,
-        });
-        _processQueue(); // Start background server processing
-      }
+      setState(() {
+        _lastRecordedPath = path;
+        _isRecording = false;
+        _isValidatingAudio = true;
+      });
 
+      if (path != null) {
+        await _evaluateAndValidateRecording(
+          path,
+          _currentWord.text,
+          _currentWord.targetLetter,
+        );
+      } else {
+        setState(() => _isValidatingAudio = false);
+        _handleInvalidAudioAttempt();
+      }
     } else {
-      // بدء التسجيل
+      // Start recording
       final hasPermission = await _recordingService.checkPermission();
       if (hasPermission) {
         await _recordingService.start(
@@ -189,73 +181,290 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
     }
   }
 
-  //  دالة الطابور الذكي: تعالج الكلمات واحدة تلو الأخرى في الخلفية لكي لا يتعطل السيرفر
-  Future<void> _processQueue() async {
-    if (_isProcessingQueue) return; // إذا كان المعالج يعمل، اتركه يكمل عمله
-    _isProcessingQueue = true;
-
-    while (_evaluationQueue.isNotEmpty) {
-      final item = _evaluationQueue.first;
-      
-      // نرسل الكلمة للسيرفر وننتظره (بينما الطفل يكمل اللعب بحرية)
-      await _startPreprocessing(item['path']!, item['word']!, item['letter']!);
-      
-      // بعد استلام النتيجة، نحذف الكلمة من الطابور
-      _evaluationQueue.removeAt(0);
-    }
-
-    _isProcessingQueue = false;
-  }
-
-  Future<void> _startPreprocessing(String path, String targetWord, String targetLetter) async {
-    const String baseUrl = "https://faseeh-api-816737402071.me-central1.run.app";
+  Future<void> _evaluateAndValidateRecording(
+    String path,
+    String targetWord,
+    String targetLetter,
+  ) async {
+    const String baseUrl =
+        "https://faseeh-api-816737402071.me-central1.run.app";
     final url = Uri.parse('$baseUrl/process-audio/');
 
-    print("🚀 جاري تقييم: $targetWord");
+    debugPrint("🚀 جاري إرسال وتقييم: $targetWord");
 
     try {
       var request = http.MultipartRequest('POST', url);
       request.files.add(await http.MultipartFile.fromPath('file', path));
       request.fields['target_word'] = targetWord;
-      request.fields['target_letter'] = targetLetter; // إرسال الحرف المستهدف الصحيح
+      request.fields['target_letter'] = targetLetter;
 
       var streamedResponse = await request.send();
       var response = await http.Response.fromStream(streamedResponse);
-      print(" كود الاستجابة: ${response.statusCode}");
-      print(" محتوى الرد: ${response.body}");
+
+      if (!mounted) return;
 
       if (response.statusCode == 200) {
         var data = jsonDecode(response.body);
 
-// Receiving and rounding the AI accuracy score
+        // Case 1: Backend Audio Validation Failed (Empty, Silence, or < 0.2s)
+        if (data['status'] == 'invalid_audio') {
+          setState(() => _isValidatingAudio = false);
+          _handleInvalidAudioAttempt();
+          return;
+        }
+
+        // Case 2: Success
         if (data['status'] == 'success' && data.containsKey('score')) {
           double wordScore = (data['score'] as num).toDouble();
 
           setState(() {
+            _isValidatingAudio = false;
             _totalAccumulatedScore += wordScore;
             _individualScores.add({
               'letter': targetLetter,
               'score': wordScore.round(),
             });
+            _recorded[_currentIndex] = true;
+            _showNext = true;
+            _currentWordAttempts = 0; // Reset for next word
           });
-          print("⭐ نتيجة $targetWord: $wordScore%");
+          return;
         }
       }
+
+      // If unexpected backend error, treat as invalid attempt
+      setState(() => _isValidatingAudio = false);
+      _handleInvalidAudioAttempt();
     } catch (e) {
-      print("⚠️ خطأ في الاتصال: $e");
-    } finally {
-      // نقلل عداد الانتظار في النهاية
+      debugPrint("⚠️ خطأ في الاتصال بالسيرفر: $e");
       if (mounted) {
-        setState(() {
-          _pendingEvaluations--;
-        });
-        
-        // إذا كان الطفل قد أنهى الاختبار، والآن انتهت آخر كلمة في الطابور
-        if (_isCalculatingFinalScore && _pendingEvaluations == 0) {
-          _navigateToResults();
-        }
+        setState(() => _isValidatingAudio = false);
+        _handleInvalidAudioAttempt();
       }
     }
+  }
+
+  void _handleInvalidAudioAttempt() {
+    _currentWordAttempts++;
+
+    if (_currentWordAttempts < 3) {
+      // Show Re-recording dialog with remaining attempts
+      _showReRecordingDialog(remainingAttempts: 3 - _currentWordAttempts);
+    } else {
+      // 3 attempts reached: assign 0% and allow child to continue
+      _showMaxAttemptsExhaustedDialog();
+    }
+  }
+
+  // ─── Pop-up Dialog 1: Re-recording Request (Attempts 1 & 2) ───────────────────
+  void _showReRecordingDialog({required int remainingAttempts}) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(28),
+          ),
+          backgroundColor: Colors.white,
+          elevation: 10,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Top Icon Badge
+                Container(
+                  width: 76,
+                  height: 76,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: [_coral, _coral.withOpacity(0.8)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: _coral.withOpacity(0.35),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.mic_off_rounded,
+                    color: Colors.white,
+                    size: 38,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'لم نسمعك بوضوح! 🎤',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: _purple,
+                    fontFamily: 'Tajawal',
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  'تحدث بصوت واضح بالقرب من الهاتف يا بطل.\nالمحاولات المتبقية: (${toArabicDigits(remainingAttempts)})',
+                  style: const TextStyle(
+                    fontSize: 15,
+                    color: Color(0xFF6B5A7A),
+                    fontFamily: 'Tajawal',
+                    height: 1.5,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      setState(() {
+                        _recorded[_currentIndex] = false;
+                        _showNext = false;
+                      });
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _coral,
+                      foregroundColor: Colors.white,
+                      elevation: 3,
+                      shadowColor: _coral.withOpacity(0.4),
+                      shape: const StadiumBorder(),
+                    ),
+                    child: const Text(
+                      'أعد التسجيل 🔁',
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Tajawal',
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ─── Pop-up Dialog 2: Max Attempts Reached (3rd Failure -> 0%) ───────────────
+  void _showMaxAttemptsExhaustedDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(28),
+          ),
+          backgroundColor: Colors.white,
+          elevation: 10,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Top Icon Badge
+                Container(
+                  width: 76,
+                  height: 76,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: const LinearGradient(
+                      colors: [_purple2, _purple],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: _purple.withOpacity(0.3),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.sentiment_satisfied_alt_rounded,
+                    color: Colors.white,
+                    size: 40,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'لا بأس يا بطل! 🌟',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: _purple,
+                    fontFamily: 'Tajawal',
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 10),
+                const Text(
+                  'استنفدت محاولات التسجيل لهذه الكلمة. سننتقل معاً للكلمة التالية!',
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: Color(0xFF6B5A7A),
+                    fontFamily: 'Tajawal',
+                    height: 1.5,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      setState(() {
+                        // Assign 0% score strictly
+                        _totalAccumulatedScore += 0.0;
+                        _individualScores.add({
+                          'letter': _currentWord.targetLetter,
+                          'score': 0,
+                        });
+                        _recorded[_currentIndex] = true;
+                        _showNext = true;
+                        _currentWordAttempts = 0;
+                      });
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _purple,
+                      foregroundColor: Colors.white,
+                      elevation: 3,
+                      shadowColor: _purple.withOpacity(0.4),
+                      shape: const StadiumBorder(),
+                    ),
+                    child: const Text(
+                      'متابعة ➡️',
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Tajawal',
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   void _handleNext() {
@@ -264,48 +473,35 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
         _currentIndex++;
         _showNext = false;
         _isRecording = false;
+        _currentWordAttempts = 0;
       });
     } else {
-      // انتهى الاختبار! هل الطابور في الخلفية ما زال يعالج كلمات؟
-      if (_pendingEvaluations > 0) {
-        setState(() {
-          _isCalculatingFinalScore = true; // نعرض شاشة التحميل النهاية الأنيقة
-        });
-      } else {
-        _navigateToResults(); // كل شيء جاهز، ننتقل فوراً لشاشة النتائج
-      }
+      _navigateToResults();
     }
   }
 
   void _navigateToResults() {
-    // 1. Calculating the total overall proficiency percentage
-    double finalPlacementPercentage = _placementWords.isEmpty 
-        ? 0 
+    double finalPlacementPercentage = _placementWords.isEmpty
+        ? 0
         : _totalAccumulatedScore / _placementWords.length;
 
-    // 2. Grouping word-level scores by their target Arabic letter
     Map<String, List<int>> groupedScores = {};
     for (var item in _individualScores) {
       String letter = item['letter'];
       int score = item['score'] as int;
-      
+
       if (!groupedScores.containsKey(letter)) {
         groupedScores[letter] = [];
       }
       groupedScores[letter]!.add(score);
     }
 
-    // 3. Calculating the average mastery score for each target letter
     List<Map<String, dynamic>> finalLetterScores = [];
     groupedScores.forEach((letter, scores) {
       double average = scores.reduce((a, b) => a + b) / scores.length;
-      finalLetterScores.add({
-        'letter': letter,
-        'score': average.round(),
-      });
+      finalLetterScores.add({'letter': letter, 'score': average.round()});
     });
 
-    // 4. Navigating to results with finalized child proficiency data
     Navigator.pushReplacementNamed(
       context,
       '/child/placement-result',
@@ -325,57 +521,24 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
         backgroundColor: _bgColor,
         body: _isLoading
             ? const Center(child: CircularProgressIndicator(color: _purple))
-            : _isCalculatingFinalScore 
-                ? _buildFinalCalculatingScreen() 
-                : _placementWords.isEmpty
-                    ? const Center(
-                        child: Text(
-                          'لا توجد كلمات في قاعدة البيانات',
-                          style: TextStyle(fontFamily: 'Tajawal', fontSize: 18),
-                        ),
-                      )
-                    : Column(
-                        children: [
-                          _buildHeader(),
-                          Expanded(
-                            child: SingleChildScrollView(
-                              padding: const EdgeInsets.all(16),
-                              child: _buildCard(),
-                            ),
-                          ),
-                        ],
-                      ),
-      ),
-    );
-  }
-
-  Widget _buildFinalCalculatingScreen() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(color: _purple.withOpacity(0.2), blurRadius: 20, spreadRadius: 5)
-              ]
-            ),
-            child: const CircularProgressIndicator(color: _purple, strokeWidth: 4),
-          ),
-          const SizedBox(height: 30),
-          const Text(
-            'جاري إعداد نتيجتك يا بطل... 🚀',
-            style: TextStyle(
-              color: _purple,
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'Tajawal',
-            ),
-          ),
-        ],
+            : _placementWords.isEmpty
+            ? const Center(
+                child: Text(
+                  'لا توجد كلمات في قاعدة البيانات',
+                  style: TextStyle(fontFamily: 'Tajawal', fontSize: 18),
+                ),
+              )
+            : Column(
+                children: [
+                  _buildHeader(),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(16),
+                      child: _buildCard(),
+                    ),
+                  ),
+                ],
+              ),
       ),
     );
   }
@@ -405,9 +568,8 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
                   (route) => false,
                   arguments: widget.childId,
                 ),
-                // تم تغيير الأيقونة هنا لتؤشر لليمين (الخلف في نظام RTL)
                 icon: const Icon(
-                  Icons.chevron_left, 
+                  Icons.chevron_left,
                   color: Colors.white,
                   size: 28,
                 ),
@@ -449,7 +611,7 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
       ),
     );
   }
-  
+
   Widget _buildCard() {
     return Container(
       decoration: BoxDecoration(
@@ -512,7 +674,7 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
               ),
             ),
             Text(
-             '${toArabicDigits(percent)}٪',
+              '${toArabicDigits(percent)}٪',
               style: const TextStyle(
                 color: _purple,
                 fontWeight: FontWeight.bold,
@@ -626,12 +788,48 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
   Widget _buildRecordingSection() {
     return Column(
       children: [
-        if (!_recorded[_currentIndex])
+        if (_isValidatingAudio)
+          _buildValidatingIndicator()
+        else if (!_recorded[_currentIndex])
           _buildRecordButton()
         else
           _buildSuccessIndicator(),
-        if (_showNext) ...[const SizedBox(height: 14), _buildNextButton()],
+        if (_showNext && !_isValidatingAudio) ...[
+          const SizedBox(height: 14),
+          _buildNextButton(),
+        ],
       ],
+    );
+  }
+
+  Widget _buildValidatingIndicator() {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+      decoration: BoxDecoration(
+        color: _purple.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: _purple.withOpacity(0.2), width: 1.5),
+      ),
+      child: const Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(strokeWidth: 2.5, color: _purple),
+          ),
+          SizedBox(width: 12),
+          Text(
+            'جاري التحقق من وضوح الصوت... 🔍',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: _purple,
+              fontFamily: 'Tajawal',
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -727,7 +925,6 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // النص يكون على اليمين
             Text(
               isLast ? 'عرض النتائج' : 'الكلمة التالية',
               style: const TextStyle(
@@ -736,20 +933,17 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
                 fontFamily: 'Tajawal',
               ),
             ),
-            // مسافة بسيطة ثم السهم على اليسار
             if (!isLast) ...[
               const SizedBox(width: 8),
               const Icon(
-                Icons.arrow_back_rounded, 
+                Icons.arrow_back_rounded,
                 size: 22,
-                // إجبار السهم على التأشير لليسار دائماً
-                textDirection: TextDirection.ltr, 
+                textDirection: TextDirection.ltr,
               ),
             ] else ...[
-              // أيقونة مختلفة لزر عرض النتائج (اختياري)
               const SizedBox(width: 8),
               const Icon(Icons.check_circle_outline_rounded, size: 22),
-            ]
+            ],
           ],
         ),
       ),

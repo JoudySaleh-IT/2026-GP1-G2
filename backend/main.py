@@ -41,14 +41,23 @@ async def process_audio(
         with open(temp_raw, "wb") as buffer:
             buffer.write(await file.read())
 
-        # 1. Digital Signal Processing (Preprocessing)
+# 1. Digital Signal Processing (Preprocessing)
         y, sr = librosa.load(temp_raw, sr=16000)
+        
+        # Validation Rule 1: Check minimum duration threshold
+        duration = librosa.get_duration(y=y, sr=sr)
+        if duration < 0.2:
+            return {"status": "invalid_audio", "message": "Recording is too short."}
         
         b, a = signal.butter(4, 80, 'hp', fs=sr)
         y_hp = signal.filtfilt(b, a, y)
         
         y_trimmed, _ = librosa.effects.trim(y_hp, top_db=35) # Silence removal
         
+        # Validation Rule 2: Check for empty recording after trimming
+        if len(y_trimmed) == 0:
+            return {"status": "invalid_audio", "message": "No speech detected."}
+            
         if len(y_trimmed) < (sr * 0.2): 
             y_final = librosa.util.normalize(y_hp)
         else:
