@@ -14,91 +14,142 @@ class ChildSelectionScreen extends StatelessWidget {
   const ChildSelectionScreen({super.key});
 
   void _showPairingDialog(
-    BuildContext context,
-    String childId,
-    String childName,
-  ) async {
-    final String pairingCode = (Random().nextInt(900000) + 100000).toString();
-    final String? userId = FirebaseAuth.instance.currentUser?.uid;
+  BuildContext context,
+  String childId,
+  String childName,
+) async {
+  final String? userId = FirebaseAuth.instance.currentUser?.uid;
 
-    try {
-      await AuthService().ensureChildFasehIdentity(childId);
-      await FirebaseFirestore.instance.collection('pairing_codes').add({
-        'code': pairingCode,
-        'parentId': userId,
-        'childId': childId,
-        'childName': childName,
-        'createdAt': FieldValue.serverTimestamp(),
-        'expiresAt': DateTime.now().add(const Duration(minutes: 10)),
+  try {
+    // Ensure the child has a Faseh ID first
+    await AuthService().ensureChildFasehIdentity(childId);
+
+    String? pairingCode;
+
+    const int maxAttempts = 10;
+
+    for (int attempt = 0; attempt < maxAttempts; attempt++) {
+      final String candidate =
+          (Random().nextInt(900000) + 100000).toString();
+
+      final codeRef = FirebaseFirestore.instance
+          .collection('pairing_codes')
+          .doc(candidate);
+
+      final bool created = await FirebaseFirestore.instance
+          .runTransaction<bool>((transaction) async {
+        final existing = await transaction.get(codeRef);
+
+        // If this code already exists, try another one
+        if (existing.exists) {
+          return false;
+        }
+
+        transaction.set(codeRef, {
+          'code': candidate,
+          'parentId': userId,
+          'childId': childId,
+          'childName': childName,
+          'createdAt': FieldValue.serverTimestamp(),
+          'expiresAt': Timestamp.fromDate(
+            DateTime.now().add(
+              const Duration(minutes: 10),
+            ),
+          ),
+        });
+
+        return true;
       });
 
-      if (!context.mounted) return;
-      showDialog(
-        context: context,
-        builder: (context) => Directionality(
-          textDirection: TextDirection.rtl,
-          child: AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-            title: const Text('ربط جهاز جديد', textAlign: TextAlign.center),
-            content: ConstrainedBox(
-              // Prevents the dialog from stretching too wide on tablets
-              constraints: const BoxConstraints(maxWidth: 400),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'أدخل هذا الكود في جهاز $childName:',
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 20),
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF3E5F5),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: const Color(0xFF511281),
-                        width: 2,
-                      ),
+      if (created) {
+        pairingCode = candidate;
+        break;
+      }
+    }
+
+    if (pairingCode == null) {
+      throw Exception('Could not generate pairing code');
+    }
+
+    if (!context.mounted) return;
+
+    showDialog(
+      context: context,
+      builder: (context) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Text(
+            'ربط جهاز جديد',
+            textAlign: TextAlign.center,
+          ),
+          content: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 400),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'أدخل هذا الكود في جهاز $childName:',
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 20),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF3E5F5),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: const Color(0xFF511281),
+                      width: 2,
                     ),
-                    child: Text(
-                      toArabicDigits(pairingCode),
-                      style: const TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 8,
-                        color: Color(0xFF511281),
-                      ),
+                  ),
+                  child: Text(
+                    toArabicDigits(pairingCode!),
+                    style: const TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 8,
+                      color: Color(0xFF511281),
                     ),
                   ),
-                  const SizedBox(height: 15),
-                  const Text(
-                    'هذا الكود صالح لمدة ١٠ دقائق فقط',
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+                const SizedBox(height: 15),
+                const Text(
+                  'هذا الكود صالح لمدة ١٠ دقائق فقط',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey,
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text(
-                  'تم',
-                  style: TextStyle(color: Color(0xFF511281)),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text(
+                'تم',
+                style: TextStyle(
+                  color: Color(0xFF511281),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('حدث خطأ في إنشاء الكود')));
-    }
+      ),
+    );
+  } catch (e) {
+    if (!context.mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('حدث خطأ في إنشاء الكود'),
+      ),
+    );
   }
+}
 
   Future<void> _onChildSelected(
   BuildContext context,

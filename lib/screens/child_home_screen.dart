@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '/services/ChildSession.dart';
 import 'style_constants.dart'; // ─── Mock Data ───────────────────────────────────────────────────────────────
 import '../services/notification_service.dart';
+import '../services/friend_service.dart';
 
 const _mockChild = (
   name: 'أحمد',
@@ -31,7 +32,100 @@ class ChildHomeScreen extends StatelessWidget {
     // The threshold logic: returns true only if ALL scores are >= 70%
     return !scores.values.any((score) => (score as num) < 70);
   }
+Future<void> _showFriendRequestTestDialog(
+  BuildContext context,
+) async {
+  String enteredId = '';
 
+  await showDialog(
+    context: context,
+    builder: (dialogContext) {
+      return AlertDialog(
+        title: const Text('اختبار طلب صداقة'),
+        content: TextField(
+          onChanged: (value) {
+            enteredId = value;
+          },
+          decoration: const InputDecoration(
+            hintText: 'FSH-XXXX-XXXX',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('إلغاء'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              try {
+                await FriendService().sendFriendRequestByFasehId(
+                  currentChildId: childId,
+                  enteredFasehId: enteredId,
+                );
+
+                if (!dialogContext.mounted) return;
+
+                Navigator.pop(dialogContext);
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('تم إرسال طلب الصداقة ✅'),
+                  ),
+                );
+              } on FirebaseException catch (e) {
+  print('Friend request test error: $e');
+
+  if (!dialogContext.mounted) return;
+
+  String message = 'تعذر إرسال طلب الصداقة، حاول مرة أخرى';
+
+  if (e.code == 'permission-denied') {
+    message =
+        'تم إرسال طلب صداقة لهذا الطفل مسبقًا أو أنكما أصدقاء بالفعل';
+  }
+
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(message),
+      backgroundColor: const Color(0xFF511281),
+    ),
+  );
+} catch (e) {
+  print('Friend request test error: $e');
+
+  if (!dialogContext.mounted) return;
+
+  String message = 'تعذر إرسال طلب الصداقة، حاول مرة أخرى';
+
+  final error = e.toString();
+
+  if (error.contains('CANNOT_ADD_SELF')) {
+    message = 'لا يمكنك إضافة نفسك كصديق';
+  } else if (error.contains('FASEH_ID_NOT_FOUND')) {
+    message = 'لم يتم العثور على طفل بهذا المعرّف';
+  } else if (error.contains('INVALID_FASEH_ID')) {
+    message = 'يرجى إدخال معرّف فصيح صحيح';
+  } else if (error.contains('NOT_AUTHENTICATED')) {
+    message = 'يجب تسجيل الدخول أولًا';
+  } else if (error.contains('PUBLIC_PROFILE_NOT_FOUND')) {
+    message = 'تعذر العثور على ملف الطفل';
+  }
+
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(message),
+      backgroundColor: const Color(0xFF511281),
+    ),
+  );
+}
+            },
+            child: const Text('إرسال'),
+          ),
+        ],
+      );
+    },
+  );
+}
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<DocumentSnapshot>(
@@ -175,6 +269,12 @@ class ChildHomeScreen extends StatelessWidget {
                           done: todayCompleted,
                           goal: dynamicTodayGoal,
                         ),
+                        const SizedBox(height: 16),
+
+ElevatedButton(
+  onPressed: () => _showFriendRequestTestDialog(context),
+  child: const Text('اختبار إضافة صديق'),
+),
                       ],
                     ),
                   ),
@@ -236,14 +336,41 @@ class _ChildHeader extends StatelessWidget {
               // زر تسجيل الخروج (سيكون في اليمين)
               ElevatedButton(
                 onPressed: () async {
-                  final nav = Navigator.of(dialogContext, rootNavigator: true);
-                  await prefs.remove('saved_childId');
-                  await prefs.remove('saved_parentId');
-                  await prefs.remove('isChildLoggedIn');
-                  ChildSession.currentChildId = null;
-                  nav.pushNamedAndRemoveUntil('/', (route) => false);
-                  await FirebaseAuth.instance.signOut();
-                },
+  final nav =
+      Navigator.of(dialogContext, rootNavigator: true);
+
+  try {
+    final user = FirebaseAuth.instance.currentUser;
+
+    // If this is a paired anonymous child device,
+    // remove its Firestore authorization first.
+    if (user != null && user.isAnonymous) {
+      await FirebaseFirestore.instance
+          .collection('child_device_links')
+          .doc(user.uid)
+          .delete();
+    }
+
+    // Clear local child session.
+    await prefs.remove('saved_childId');
+    await prefs.remove('saved_parentId');
+    await prefs.remove('isChildLoggedIn');
+
+    ChildSession.currentChildId = null;
+    ChildSession.currentParentId = null;
+
+    // Sign out only AFTER deleting the device link,
+    // because Firestore rules require this UID to delete its own link.
+    await FirebaseAuth.instance.signOut();
+
+    nav.pushNamedAndRemoveUntil(
+      '/',
+      (route) => false,
+    );
+  } catch (e) {
+    print('Child logout error: $e');
+  }
+},
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFFF6969),
                   foregroundColor: Colors.white,

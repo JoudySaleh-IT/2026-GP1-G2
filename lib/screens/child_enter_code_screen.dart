@@ -20,55 +20,154 @@ class _ChildEnterCodeScreenState extends State<ChildEnterCodeScreen> {
 
   // ─── No changes to _verifyCode or _showError functions ───
   Future<void> _verifyCode(String enteredCode) async {
-    setState(() => _isLoading = true);
-    try {
-      if (FirebaseAuth.instance.currentUser == null) {
-        await FirebaseAuth.instance.signInAnonymously();
-      }
-      // Querying Firestore for the matching code and checking expiration
-      final query = await FirebaseFirestore.instance
-          .collection('pairing_codes')
-          .where('code', isEqualTo: enteredCode)
-          .where('expiresAt', isGreaterThan: Timestamp.now())
-          .limit(1)
-          .get();
+  setState(() => _isLoading = true);
 
-      if (query.docs.isEmpty) {
-        _showError("الكود غير صحيح أو انتهت صلاحيته");
-        setState(() => _isLoading = false);
-        return;
-      }
-      final doc = query.docs.first;
-      final data = doc.data();
-      final childId = data['childId'] as String;
-      final parentId = data['parentId'] as String;
-      final childName = data['childName'] as String? ?? 'بطلنا';
-      // Saving session data locally
-      ChildSession.currentChildId = childId;
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('saved_childId', childId);
-      await prefs.setString('saved_parentId', parentId);
-      await prefs.setBool('isChildLoggedIn', true);
-      // Deleting the code from the database after success
-      await doc.reference.delete();
-      if (!mounted) return;
-      ScaffoldMessenger.of(context);
+  try {
+    // ─── 1. Make sure this is an anonymous child account ───
+    User? user = FirebaseAuth.instance.currentUser;
 
-      // 1. Show the global snackbar
-      NotificationService.showSuccessSnackBar(
-        'اهلًا $childName! جاهز تكون فصيح؟',
+    if (user == null) {
+      final credential =
+          await FirebaseAuth.instance.signInAnonymously();
+
+      user = credential.user;
+    }
+
+    if (user == null || !user.isAnonymous) {
+      _showError('تعذر تسجيل دخول جهاز الطفل.');
+      return;
+    }
+
+    final FirebaseFirestore db =
+        FirebaseFirestore.instance;
+
+    final codeRef =
+        db.collection('pairing_codes').doc(enteredCode);
+
+    final deviceLinkRef =
+        db.collection('child_device_links').doc(user.uid);
+
+    // ─── 2. Validate code + securely bind device to child ───
+    final result =
+        await db.runTransaction<Map<String, String>>(
+      (transaction) async {
+        // ALL READS FIRST
+        final codeSnapshot =
+            await transaction.get(codeRef);
+
+        final deviceLinkSnapshot =
+            await transaction.get(deviceLinkRef);
+
+        if (!codeSnapshot.exists) {
+          throw Exception('INVALID_PAIRING_CODE');
+        }
+
+        final data = codeSnapshot.data()!;
+
+        final Timestamp? expiresAt =
+            data['expiresAt'] as Timestamp?;
+
+        if (expiresAt == null ||
+            expiresAt.toDate().isBefore(DateTime.now())) {
+          throw Exception('INVALID_PAIRING_CODE');
+        }
+
+        if (deviceLinkSnapshot.exists) {
+          throw Exception('DEVICE_ALREADY_LINKED');
+        }
+
+        final String childId =
+            data['childId'] as String;
+
+        final String parentId =
+            data['parentId'] as String;
+
+        final String childName =
+            data['childName'] as String? ?? 'بطلنا';
+
+        // ALL WRITES AFTER READS
+
+        // Securely link this anonymous Firebase account
+        // to the child selected by the parent.
+        transaction.set(deviceLinkRef, {
+          'childId': childId,
+          'parentId': parentId,
+          'pairingCode': enteredCode,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+
+        // Pairing code is one-time use.
+        transaction.delete(codeRef);
+
+        return {
+          'childId': childId,
+          'parentId': parentId,
+          'childName': childName,
+        };
+      },
+    );
+
+    final String childId = result['childId']!;
+    final String parentId = result['parentId']!;
+    final String childName = result['childName']!;
+  
+
+    // ─── 3. Save local child session ───
+    ChildSession.currentChildId = childId;
+    ChildSession.currentParentId = parentId;
+
+    final prefs = await SharedPreferences.getInstance();
+
+    await prefs.setString(
+      'saved_childId',
+      childId,
+    );
+
+    await prefs.setString(
+      'saved_parentId',
+      parentId,
+    );
+
+    await prefs.setBool(
+      'isChildLoggedIn',
+      true,
+    );
+
+    if (!mounted) return;
+
+    NotificationService.showSuccessSnackBar(
+      'اهلًا $childName! جاهز تكون فصيح؟',
+    );
+
+    Navigator.pushReplacementNamed(
+      context,
+      '/child/home',
+      arguments: childId,
+    );
+  } catch (e) {
+    print('Pairing error: $e');
+
+    if (!mounted) return;
+
+    if (e.toString().contains('INVALID_PAIRING_CODE')) {
+      _showError(
+        'الكود غير صحيح أو انتهت صلاحيته',
       );
-      Navigator.pushReplacementNamed(
-        context,
-        '/child/home',
-        arguments: childId,
+    } else if (e.toString().contains('DEVICE_ALREADY_LINKED')) {
+      _showError(
+        'هذا الجهاز مرتبط بطفل بالفعل',
       );
-    } catch (e) {
-      _showError('حدث خطأ أثناء التحقق من الكود. حاول مرة أخرى.');
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+    } else {
+      _showError(
+        'حدث خطأ أثناء التحقق من الكود. حاول مرة أخرى.',
+      );
+    }
+  } finally {
+    if (mounted) {
+      setState(() => _isLoading = false);
     }
   }
+}
 
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
