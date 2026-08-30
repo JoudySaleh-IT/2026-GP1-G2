@@ -1,9 +1,11 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'faseh_id_service.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _db = FirebaseFirestore.instance;
+  final FasehIdService _fasehIdService = FasehIdService();
 
   // ─── تسجيل ولي الأمر (Parent Registration) ───
   Future<User?> registerParent({
@@ -64,38 +66,226 @@ class AuthService {
 
   // ─── إضافة ملف طفل جديد (يدعم تعدد الأطفال) ───
   // ─── إضافة ملف طفل جديد (تحديث القيم الابتدائية) ───
-  Future<bool> createChildProfile({
-    required String name,
-    required int age,
-    required DateTime dob,
-    required String gender,
-    required String avatar,
-  }) async {
-    try {
-      final String? currentParentId = _auth.currentUser?.uid;
-      if (currentParentId == null) return false;
+Future<bool> createChildProfile({
+  required String name,
+  required int age,
+  required DateTime dob,
+  required String gender,
+  required String avatar,
+}) async {
+  try {
+    final String? currentParentId = _auth.currentUser?.uid;
 
-      await _db.collection('children').add({
-        'parentId': currentParentId, 
-        'name': name,
-        'dob': Timestamp.fromDate(dob),
-        'age': age,
-        'gender': gender,
-        'avatar': avatar,
-        'progress': 0,
-        // 1️⃣ القيمة الابتدائية التي ستظهر في لوحة تحكم الأهل
-        'level': 'لم يتم تحديد المستوى ', 
-        // 2️⃣ حقل أساسي لتمييز هل الطفل أجرى الاختبار أم لا
-        'placementDone': false,
-        'createdAt': FieldValue.serverTimestamp(),
-      });
-
-      return true;
-    } catch (e) {
-      print("Error creating child: $e");
-      rethrow;
+    if (currentParentId == null) {
+      return false;
     }
+
+    const int maxAttempts = 10;
+
+    for (int attempt = 0; attempt < maxAttempts; attempt++) {
+      // Generate a candidate public Faseh ID.
+      final String fasehId =
+          await _fasehIdService.generateUniqueFasehId();
+
+      // Reserve the child document ID before writing anything.
+      final DocumentReference<Map<String, dynamic>> childRef =
+          _db.collection('children').doc();
+
+      final DocumentReference<Map<String, dynamic>> fasehIdRef =
+          _db.collection('faseh_ids').doc(fasehId);
+
+      final DocumentReference<Map<String, dynamic>> publicProfileRef =
+          _db.collection('child_public_profiles').doc(childRef.id);
+
+      try {
+        await _db.runTransaction((transaction) async {
+          // Final uniqueness check inside the transaction.
+          final fasehIdSnapshot =
+              await transaction.get(fasehIdRef);
+
+          if (fasehIdSnapshot.exists) {
+            throw Exception('FASEH_ID_COLLISION');
+          }
+
+          // 1. Private child document
+          transaction.set(childRef, {
+            'parentId': currentParentId,
+            'name': name,
+            'dob': Timestamp.fromDate(dob),
+            'age': age,
+            'gender': gender,
+            'avatar': avatar,
+            'progress': 0,
+            'level': 'لم يتم تحديد المستوى ',
+            'placementDone': false,
+            'fasehId': fasehId,
+            'createdAt': FieldValue.serverTimestamp(),
+          });
+
+          // 2. Faseh ID lookup document
+          transaction.set(fasehIdRef, {
+            'childId': childRef.id,
+            'createdAt': FieldValue.serverTimestamp(),
+          });
+
+          // 3. Safe public profile
+          transaction.set(publicProfileRef, {
+            'fasehId': fasehId,
+            'name': name,
+            'avatar': avatar,
+            'createdAt': FieldValue.serverTimestamp(),
+          });
+        });
+
+        // Everything was created successfully.
+        return true;
+      } catch (e) {
+        if (e.toString().contains('FASEH_ID_COLLISION')) {
+          // Extremely unlikely, but generate another ID and retry.
+          continue;
+        }
+
+        rethrow;
+      }
+    }
+
+    throw Exception('Failed to generate a unique Faseh ID.');
+  } catch (e) {
+    print("Error creating child: $e");
+    rethrow;
   }
+}
+
+// ─── إنشاء Faseh ID للأطفال الموجودين مسبقاً ───
+Future<String> ensureChildFasehIdentity(String childId) async {
+  try {
+    final String? currentParentId = _auth.currentUser?.uid;
+
+    if (currentParentId == null) {
+      throw Exception('Parent is not authenticated.');
+    }
+
+    final DocumentReference<Map<String, dynamic>> childRef =
+        _db.collection('children').doc(childId);
+
+    // Read the existing child first.
+    final childSnapshot = await childRef.get();
+
+    if (!childSnapshot.exists) {
+      throw Exception('Child does not exist.');
+    }
+
+    final childData = childSnapshot.data()!;
+
+    // Make sure this child belongs to the logged-in parent.
+    if (childData['parentId'] != currentParentId) {
+      throw Exception('You do not own this child profile.');
+    }
+
+    // If the child already has a Faseh ID, do nothing.
+    final String? existingFasehId =
+        childData['fasehId'] as String?;
+
+    if (existingFasehId != null &&
+        existingFasehId.trim().isNotEmpty) {
+      return existingFasehId;
+    }
+
+    const int maxAttempts = 10;
+
+    for (int attempt = 0; attempt < maxAttempts; attempt++) {
+      final String fasehId =
+          await _fasehIdService.generateUniqueFasehId();
+
+      final DocumentReference<Map<String, dynamic>> fasehIdRef =
+          _db.collection('faseh_ids').doc(fasehId);
+
+      final DocumentReference<Map<String, dynamic>> publicProfileRef =
+          _db.collection('child_public_profiles').doc(childId);
+
+      try {
+        final String result =
+            await _db.runTransaction<String>((transaction) async {
+          // Re-read inside the transaction in case something changed.
+          final latestChildSnapshot =
+              await transaction.get(childRef);
+
+          if (!latestChildSnapshot.exists) {
+            throw Exception('Child does not exist.');
+          }
+
+          final latestChildData =
+              latestChildSnapshot.data()!;
+
+          if (latestChildData['parentId'] != currentParentId) {
+            throw Exception(
+              'You do not own this child profile.',
+            );
+          }
+
+          // Another process may have already assigned one.
+          final String? currentFasehId =
+              latestChildData['fasehId'] as String?;
+
+          if (currentFasehId != null &&
+              currentFasehId.trim().isNotEmpty) {
+            return currentFasehId;
+          }
+
+          // Final uniqueness check.
+          final fasehIdSnapshot =
+              await transaction.get(fasehIdRef);
+
+          if (fasehIdSnapshot.exists) {
+            throw Exception('FASEH_ID_COLLISION');
+          }
+
+          final String childName =
+              (latestChildData['name'] ?? '').toString();
+
+          final String childAvatar =
+              (latestChildData['avatar'] ?? '').toString();
+
+          // 1. Add fasehId to the EXISTING private child document.
+          transaction.update(childRef, {
+            'fasehId': fasehId,
+          });
+
+          // 2. Create lookup document.
+          transaction.set(fasehIdRef, {
+            'childId': childId,
+            'createdAt': FieldValue.serverTimestamp(),
+          });
+
+          // 3. Create safe public profile.
+          transaction.set(publicProfileRef, {
+            'fasehId': fasehId,
+            'name': childName,
+            'avatar': childAvatar,
+            'createdAt': FieldValue.serverTimestamp(),
+          });
+
+          return fasehId;
+        });
+
+        return result;
+      } catch (e) {
+        if (e.toString().contains('FASEH_ID_COLLISION')) {
+          continue;
+        }
+
+        rethrow;
+      }
+    }
+
+    throw Exception(
+      'Failed to generate a unique Faseh ID.',
+    );
+  } catch (e) {
+    print('Error ensuring child Faseh identity: $e');
+    rethrow;
+  }
+}
   // ─── مزامنة عمر الطفل بناءً على تاريخ الميلاد ───
   Future<void> syncChildAge(String childId) async {
     try {
@@ -154,35 +344,127 @@ class AuthService {
   User? get currentUser => _auth.currentUser;
 
   // ─── تحديث بيانات الطفل (تم حذف gradeLevel تماماً) ───
-  Future<void> updateChildProfile({
-    required String childId,
-    required String name,
-    required int age,
-    required String avatar,
-    required DateTime dob,
-  }) async {
-    try {
-      await _db.collection('children').doc(childId).update({
+ Future<void> updateChildProfile({
+  required String childId,
+  required String name,
+  required int age,
+  required String avatar,
+  required DateTime dob,
+}) async {
+  try {
+    final String? currentParentId = _auth.currentUser?.uid;
+
+    if (currentParentId == null) {
+      throw Exception('Parent is not authenticated.');
+    }
+
+    final childRef =
+        _db.collection('children').doc(childId);
+
+    final publicProfileRef =
+        _db.collection('child_public_profiles').doc(childId);
+
+    await _db.runTransaction((transaction) async {
+      // ─── ALL READS FIRST ───
+
+      final childSnapshot =
+          await transaction.get(childRef);
+
+      final publicProfileSnapshot =
+          await transaction.get(publicProfileRef);
+
+      if (!childSnapshot.exists) {
+        throw Exception('Child does not exist.');
+      }
+
+      final childData = childSnapshot.data()!;
+
+      if (childData['parentId'] != currentParentId) {
+        throw Exception(
+          'You do not own this child profile.',
+        );
+      }
+
+      // ─── ALL WRITES AFTER READS ───
+
+      transaction.update(childRef, {
         'name': name,
         'age': age,
         'dob': Timestamp.fromDate(dob),
         'avatar': avatar,
         'updatedAt': FieldValue.serverTimestamp(),
       });
-    } catch (e) {
-      print("Error updating child: $e");
-      throw Exception("فشل في تحديث بيانات الطفل");
-    }
+
+      // Keep the safe public profile synchronized.
+      if (publicProfileSnapshot.exists) {
+        transaction.update(publicProfileRef, {
+          'name': name,
+          'avatar': avatar,
+        });
+      }
+    });
+  } catch (e) {
+    print("Error updating child: $e");
+    throw Exception("فشل في تحديث بيانات الطفل");
   }
+}
 
   // ─── حذف ملف الطفل ───
-  Future<void> deleteChild(String childId) async {
-    try {
-      await _db.collection('children').doc(childId).delete();
-    } catch (e) {
-      rethrow;
+ Future<void> deleteChild(String childId) async {
+  try {
+    final String? currentParentId = _auth.currentUser?.uid;
+
+    if (currentParentId == null) {
+      throw Exception('Parent is not authenticated.');
     }
+
+    final childRef =
+        _db.collection('children').doc(childId);
+
+    final publicProfileRef =
+        _db.collection('child_public_profiles').doc(childId);
+
+    await _db.runTransaction((transaction) async {
+      // ─── READ FIRST ───
+      final childSnapshot =
+          await transaction.get(childRef);
+
+      if (!childSnapshot.exists) {
+        throw Exception('Child does not exist.');
+      }
+
+      final childData = childSnapshot.data()!;
+
+      if (childData['parentId'] != currentParentId) {
+        throw Exception(
+          'You do not own this child profile.',
+        );
+      }
+
+      final String? fasehId =
+          childData['fasehId'] as String?;
+
+      // ─── WRITES AFTER READ ───
+
+      // Remove public profile.
+      transaction.delete(publicProfileRef);
+
+      // Remove Faseh ID lookup if the child has one.
+      if (fasehId != null && fasehId.trim().isNotEmpty) {
+        final fasehIdRef =
+            _db.collection('faseh_ids').doc(fasehId);
+
+        transaction.delete(fasehIdRef);
+      }
+
+      // Finally remove the private child document.
+      transaction.delete(childRef);
+    });
+  } catch (e) {
+    print('Error deleting child: $e');
+    rethrow;
   }
+}
 
   // ─── جلب ID أول طفل (للتوافق) ───
   Future<String?> getFirstChildId() async {

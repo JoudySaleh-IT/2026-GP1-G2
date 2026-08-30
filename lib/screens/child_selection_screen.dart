@@ -6,6 +6,7 @@ import '../services/ChildSession.dart';
 import '../services/notification_service.dart';
 import 'style_constants.dart'; 
 import '../utils/arabic_numbers.dart';
+import '../services/auth_service.dart';
 
 
 
@@ -21,6 +22,7 @@ class ChildSelectionScreen extends StatelessWidget {
     final String? userId = FirebaseAuth.instance.currentUser?.uid;
 
     try {
+      await AuthService().ensureChildFasehIdentity(childId);
       await FirebaseFirestore.instance.collection('pairing_codes').add({
         'code': pairingCode,
         'parentId': userId,
@@ -98,18 +100,40 @@ class ChildSelectionScreen extends StatelessWidget {
     }
   }
 
-  void _onChildSelected(
-    BuildContext context,
-    String childId,
-    String childName,
-  ) {
+  Future<void> _onChildSelected(
+  BuildContext context,
+  String childId,
+  String childName,
+) async {
+  try {
+    // Give existing children a Faseh ID if they don't have one yet.
+    await AuthService().ensureChildFasehIdentity(childId);
+
+    if (!context.mounted) return;
+
     ChildSession.currentChildId = childId;
-    Navigator.pushNamed(context, '/child/home', arguments: childId);
+
+    Navigator.pushNamed(
+      context,
+      '/child/home',
+      arguments: childId,
+    );
 
     NotificationService.showSuccessSnackBar(
       'اهلًا $childName! جاهز تكون فصيح؟',
     );
+  } catch (e) {
+    if (!context.mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'حدث خطأ أثناء تجهيز ملف الطفل. حاول مرة أخرى.',
+        ),
+      ),
+    );
   }
+}
 
   @override
   Widget build(BuildContext context) {
