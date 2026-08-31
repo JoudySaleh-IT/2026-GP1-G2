@@ -176,6 +176,7 @@ class _ChildEnterCodeScreenState extends State<ChildEnterCodeScreen> {
   }
 
   @override
+  @override
   Widget build(BuildContext context) {
     return Directionality(
       textDirection: TextDirection.rtl,
@@ -189,130 +190,369 @@ class _ChildEnterCodeScreenState extends State<ChildEnterCodeScreen> {
               colors: [Color(0xFFFFFDF5), Color(0xFFFCF9EA), Color(0xFFF6F0D5)],
             ),
           ),
-          child: SafeArea(
-            child: Column(
-              children: [
-                Align(
-                  alignment: Alignment.topRight,
-                  child: IconButton(
-                    icon: const Icon(
-                      Icons.arrow_back,
-                      color: Color(0xFF511281),
-                    ),
-                    onPressed: () => Navigator.pop(context),
+          child: Stack(
+            children: [
+              // ─────────────────────────────────────────────
+              // BACKGROUND DECORATIONS
+              // ─────────────────────────────────────────────
+              Positioned(
+                top: -45,
+                left: -35,
+                child: Container(
+                  width: 140,
+                  height: 140,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: const Color(0xFFB39DDB).withOpacity(0.14),
                   ),
                 ),
-                const Spacer(),
-                const Text(
-                  '🚀 أدخل رمز الدخول',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF511281),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                const Text(
-                  'اطلب من ولي أمرك رمز الدخول المكوّن من ٦ أرقام',
-                  style: TextStyle(fontSize: 14, color: Colors.grey),
-                ),
-                const SizedBox(height: 40),
+              ),
 
-                // ─── NEW SEPARATE DIGIT BOXES UI ───
-                // ─── UPDATED SEPARATE DIGIT BOXES UI ───
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  // Wrap ONLY the input area with LTR so digits flow left-to-right
-                  child: Directionality(
-                    textDirection: TextDirection.ltr,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        // Hidden TextField to handle keyboard input
-                        Opacity(
-                          opacity: 0,
-                          child: TextField(
-                            controller: _codeController,
-                            focusNode: _focusNode,
-                            keyboardType: TextInputType.number,
-                            maxLength: 6,
-                            onChanged: (value) {
-                              setState(() {});
-                              if (value.length == 6) {
-                                _verifyCode(value);
-                              }
-                            },
+              Positioned(
+                top: 110,
+                left: 30,
+                child: Transform.rotate(
+                  angle: -0.2,
+                  child: Icon(
+                    Icons.pets_rounded,
+                    size: 34,
+                    color: const Color(0xFF511281).withOpacity(0.09),
+                  ),
+                ),
+              ),
+
+              Positioned(
+                top: 145,
+                right: 28,
+                child: Icon(
+                  Icons.auto_awesome_rounded,
+                  size: 30,
+                  color: const Color(0xFF511281).withOpacity(0.10),
+                ),
+              ),
+
+              Positioned(
+                top: 215,
+                right: 55,
+                child: Container(
+                  width: 18,
+                  height: 18,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: const Color(0xFFB39DDB).withOpacity(0.22),
+                  ),
+                ),
+              ),
+
+              Positioned(
+                top: 250,
+                left: 22,
+                child: Container(
+                  width: 24,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: const Color(0xFF511281).withOpacity(0.06),
+                  ),
+                ),
+              ),
+
+              Positioned(
+                bottom: 160,
+                left: 28,
+                child: Transform.rotate(
+                  angle: 0.25,
+                  child: Icon(
+                    Icons.star_rounded,
+                    size: 34,
+                    color: const Color(0xFF511281).withOpacity(0.08),
+                  ),
+                ),
+              ),
+
+              Positioned(
+                bottom: 120,
+                right: 40,
+                child: Transform.rotate(
+                  angle: -0.25,
+                  child: Icon(
+                    Icons.pets_rounded,
+                    size: 40,
+                    color: const Color(0xFF511281).withOpacity(0.08),
+                  ),
+                ),
+              ),
+
+              Positioned(
+                bottom: 55,
+                left: 55,
+                child: Icon(
+                  Icons.auto_awesome_rounded,
+                  size: 24,
+                  color: const Color(0xFFB39DDB).withOpacity(0.28),
+                ),
+              ),
+
+              Positioned(
+                bottom: -70,
+                right: -50,
+                child: Container(
+                  width: 180,
+                  height: 180,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: const Color(0xFF511281).withOpacity(0.06),
+                  ),
+                ),
+              ),
+
+              // ─────────────────────────────────────────────
+              // MAIN CONTENT
+              // ─────────────────────────────────────────────
+              SafeArea(
+                child: Column(
+                  children: [
+                    Align(
+                      alignment: Alignment.topRight,
+                      child: Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.75),
+                            shape: BoxShape.circle,
+                          ),
+                          child: IconButton(
+                            icon: const Icon(
+                              Icons.arrow_back,
+                              color: Color(0xFF511281),
+                            ),
+                            onPressed: () => Navigator.pop(context),
                           ),
                         ),
-                        // Visual digit boxes
-                        GestureDetector(
-                          onTap: () => _focusNode.requestFocus(),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: List.generate(6, (index) {
-                              String char = "";
-                              // Logic stays the same, but the Row now renders LTR
-                              if (_codeController.text.length > index) {
-                                char = _codeController.text[index];
-                              }
-                              bool isFocused =
-                                  _codeController.text.length == index;
+                      ),
+                    ),
 
-                              return Container(
-                                width: 45,
-                                height: 55,
-                                alignment: Alignment.center,
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: isFocused
-                                        ? const Color(0xFF511281)
-                                        : const Color(0xFFB39DDB),
-                                    width: isFocused ? 2.5 : 1.5,
+                    const Spacer(),
+
+                    // Top decorative bubble instead of mascot
+                    const SizedBox(height: 15),
+
+                    const Text(
+                      '🚀 أدخل رمز الدخول',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF511281),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 35),
+                      child: Text(
+                        'اطلب من ولي أمرك رمز الدخول المكوّن من ٦ أرقام',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 14,
+                          height: 1.6,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 30),
+
+                    // Code Card
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Container(
+                        padding: const EdgeInsets.fromLTRB(14, 22, 14, 24),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.93),
+                          borderRadius: BorderRadius.circular(28),
+                          border: Border.all(
+                            color: const Color(0xFFB39DDB).withOpacity(0.30),
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF511281).withOpacity(0.08),
+                              blurRadius: 24,
+                              offset: const Offset(0, 10),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          children: [
+                            // Small decorative chips
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Container(
+                                  width: 10,
+                                  height: 10,
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFF511281),
+                                    shape: BoxShape.circle,
                                   ),
-                                  boxShadow: [
-                                    if (isFocused)
-                                      BoxShadow(
-                                        color: const Color(
-                                          0xFF511281,
-                                        ).withOpacity(0.2),
-                                        blurRadius: 8,
-                                        spreadRadius: 1,
+                                ),
+                                const SizedBox(width: 8),
+                                Container(
+                                  width: 34,
+                                  height: 6,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFB39DDB),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Container(
+                                  width: 10,
+                                  height: 10,
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFF511281),
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 22),
+
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 4,
+                              ),
+                              child: Directionality(
+                                textDirection: TextDirection.ltr,
+                                child: Stack(
+                                  alignment: Alignment.center,
+                                  children: [
+                                    Opacity(
+                                      opacity: 0,
+                                      child: TextField(
+                                        controller: _codeController,
+                                        focusNode: _focusNode,
+                                        keyboardType: TextInputType.number,
+                                        maxLength: 6,
+                                        onChanged: (value) {
+                                          setState(() {});
+                                          if (value.length == 6) {
+                                            _verifyCode(value);
+                                          }
+                                        },
                                       ),
+                                    ),
+                                    GestureDetector(
+                                      onTap: () => _focusNode.requestFocus(),
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceEvenly,
+                                        children: List.generate(6, (index) {
+                                          String char = "";
+                                          if (_codeController.text.length >
+                                              index) {
+                                            char = _codeController.text[index];
+                                          }
+
+                                          bool isFocused =
+                                              _codeController.text.length ==
+                                              index;
+                                          bool hasValue =
+                                              _codeController.text.length >
+                                              index;
+
+                                          return AnimatedContainer(
+                                            duration: const Duration(
+                                              milliseconds: 180,
+                                            ),
+                                            width: 45,
+                                            height: 58,
+                                            alignment: Alignment.center,
+                                            decoration: BoxDecoration(
+                                              color: hasValue
+                                                  ? const Color(0xFFF8F4FC)
+                                                  : Colors.white,
+                                              borderRadius:
+                                                  BorderRadius.circular(16),
+                                              border: Border.all(
+                                                color: isFocused
+                                                    ? const Color(0xFF511281)
+                                                    : hasValue
+                                                    ? const Color(0xFFB39DDB)
+                                                    : const Color(0xFFE3DDEC),
+                                                width: isFocused ? 2.5 : 1.5,
+                                              ),
+                                              boxShadow: [
+                                                if (isFocused)
+                                                  BoxShadow(
+                                                    color: const Color(
+                                                      0xFF511281,
+                                                    ).withOpacity(0.16),
+                                                    blurRadius: 10,
+                                                    spreadRadius: 1,
+                                                  ),
+                                              ],
+                                            ),
+                                            child: Text(
+                                              toArabicDigits(char),
+                                              style: const TextStyle(
+                                                fontSize: 24,
+                                                fontWeight: FontWeight.bold,
+                                                color: Color(0xFF511281),
+                                              ),
+                                            ),
+                                          );
+                                        }),
+                                      ),
+                                    ),
                                   ],
                                 ),
-                                child: Text(
-                                  toArabicDigits(char),
-                                  style: const TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF511281),
-                                  ),
-                                ),
-                              );
-                            }),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+                              ),
+                            ),
 
-                // ─── END OF NEW UI ───
-                const SizedBox(height: 40),
-                if (_isLoading)
-                  const CircularProgressIndicator(color: Color(0xFF511281))
-                else
-                  Text(
-                    _codeController.text.length == 6
-                        ? "جاري التحقق..."
-                        : "أدخل رمزك المكوّن من ٦ أرقام",
-                    style: const TextStyle(color: Colors.grey),
-                  ),
-                const Spacer(flex: 2),
-              ],
-            ),
+                            const SizedBox(height: 18),
+
+                            if (_isLoading)
+                              const SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 3,
+                                  color: Color(0xFF511281),
+                                ),
+                              )
+                            else
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.pets_rounded,
+                                    size: 18,
+                                    color: const Color(
+                                      0xFF511281,
+                                    ).withOpacity(0.55),
+                                  ),
+                                  const SizedBox(width: 7),
+                                  Text(
+                                    _codeController.text.length == 6
+                                        ? "جاري التحقق..."
+                                        : "أدخل رمزك المكوّن من ٦ أرقام",
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    const Spacer(flex: 2),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ),
