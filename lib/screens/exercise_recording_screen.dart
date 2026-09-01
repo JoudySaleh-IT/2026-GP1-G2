@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:math';
+
 import 'package:flutter/material.dart';
-import 'style_constants.dart';
 import 'style_constants.dart';
 
 // ---------------------------------------------------------------------------
@@ -75,6 +75,7 @@ enum RecordingState { idle, recording, analyzing, recorded }
 class ExerciseRecordingScreen extends StatefulWidget {
   final String letter;
   final String childId;
+
   const ExerciseRecordingScreen({
     super.key,
     required this.letter,
@@ -88,26 +89,28 @@ class ExerciseRecordingScreen extends StatefulWidget {
 
 class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
     with SingleTickerProviderStateMixin {
-  // Colors
-  static const Color _purple = Color(0xFF6A3A9E);
   static const Color _deepPurple = Color(0xFF511281);
   static const Color _red = Color(0xFFFF6969);
   static const Color _bgYellow = Color(0xFFFCF9EA);
 
   int _currentExercise = 0;
+
   RecordingState _recordingState = RecordingState.idle;
+
   int _lastScore = 0;
+
   final List<int> _exerciseScores = [];
+
   int _recordingTime = 0;
 
   Timer? _recordingTimer;
 
-  // Spinner animation
   late final AnimationController _spinController;
 
   @override
   void initState() {
     super.initState();
+
     _spinController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 1),
@@ -126,7 +129,13 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
   // -------------------------------------------------------------------------
 
   double get _progress => (_currentExercise + 1) / recordingExercises.length;
+
   RecordingExercise get _exercise => recordingExercises[_currentExercise];
+
+  // -------------------------------------------------------------------------
+  // Recording functionality
+  // بدون تغيير
+  // -------------------------------------------------------------------------
 
   void _startRecording() {
     setState(() {
@@ -135,7 +144,10 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
     });
 
     _recordingTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      setState(() => _recordingTime++);
+      setState(() {
+        _recordingTime++;
+      });
+
       if (_recordingTime >= 5) {
         timer.cancel();
         _stopRecording();
@@ -145,10 +157,14 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
 
   void _stopRecording() {
     _recordingTimer?.cancel();
-    setState(() => _recordingState = RecordingState.analyzing);
+
+    setState(() {
+      _recordingState = RecordingState.analyzing;
+    });
 
     Future.delayed(const Duration(seconds: 2), () {
       final mockScore = Random().nextInt(30) + 70;
+
       setState(() {
         _lastScore = mockScore;
         _recordingState = RecordingState.recorded;
@@ -157,9 +173,12 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
   }
 
   void _handleNext() {
-    if (_recordingState != RecordingState.recorded) return;
+    if (_recordingState != RecordingState.recorded) {
+      return;
+    }
 
     final updatedScores = [..._exerciseScores, _lastScore];
+
     _exerciseScores.add(_lastScore);
 
     if (_currentExercise < recordingExercises.length - 1) {
@@ -169,7 +188,6 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
         _recordingTime = 0;
       });
     } else {
-      // All done – compute average and navigate to feedback
       final avgScore =
           (updatedScores.reduce((a, b) => a + b) / recordingExercises.length)
               .round();
@@ -209,15 +227,24 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
         body: Column(
           children: [
             _buildHeader(),
+
             Expanded(
-              child: ScrollConfiguration(
-                behavior: ScrollConfiguration.of(
-                  context,
-                ).copyWith(overscroll: false),
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
-                  child: _buildCard(),
-                ),
+              child: Stack(
+                children: [
+                  const Positioned.fill(
+                    child: IgnorePointer(child: _PronunciationBackground()),
+                  ),
+
+                  ScrollConfiguration(
+                    behavior: ScrollConfiguration.of(
+                      context,
+                    ).copyWith(overscroll: false),
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(16, 14, 16, 70),
+                      child: _buildCard(),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -226,19 +253,18 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
     );
   }
 
-  // ── Header ────────────────────────────────────────────────────────────────
+  // -------------------------------------------------------------------------
+  // Header
+  // نفس الهيدر والـ functionality
+  // -------------------------------------------------------------------------
 
-  // ✅ New _buildHeader() with back button
   Widget _buildHeader() {
     return Container(
       decoration: FaseehStyle.headerDecoration,
-      padding: FaseehStyle.getStandardPadding(
-        context,
-      ), // consistent larger padding
+      padding: FaseehStyle.getStandardPadding(context),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Back button – standard IconButton (matches other screens)
           IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () => Navigator.pushNamed(
@@ -247,15 +273,16 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
               arguments: {'letter': widget.letter, 'childId': widget.childId},
             ),
           ),
+
           const SizedBox(width: 8),
-          // Text column – larger fonts (18/14) to match other headers
-          Expanded(
+
+          const Expanded(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
+              children: [
                 Text(
-                  'تمارين التسجيل الصوتي',
+                  'تمارين النطق',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 18,
@@ -263,11 +290,12 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
                     fontFamily: 'Tajawal',
                   ),
                 ),
+
                 Text(
-                  'سجل صوتك وحسن نطقك',
+                  'انطق وسجّل صوتك',
                   style: TextStyle(
                     color: Colors.white70,
-                    fontSize: 14, // increased from 12 to match others
+                    fontSize: 14,
                     fontFamily: 'Tajawal',
                   ),
                 ),
@@ -279,164 +307,216 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
     );
   }
 
-  // ── Main card ─────────────────────────────────────────────────────────────
+  // -------------------------------------------------------------------------
+  // Main content
+  // -------------------------------------------------------------------------
 
   Widget _buildCard() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: _deepPurple.withOpacity(0.1), width: 2),
-        boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            _buildCardHeader(),
-            const SizedBox(height: 16),
-            _buildExercisePanel(),
-            const SizedBox(height: 16),
-            _buildNextButton(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCardHeader() {
     return Column(
       children: [
-        Text(
-          'تمرين ${_currentExercise + 1} من ${recordingExercises.length}',
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
-          ),
-          textAlign: TextAlign.center,
-        ),
+        _buildCardHeader(),
+
         const SizedBox(height: 12),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text(
-              'التقدم',
-              style: TextStyle(fontSize: 13, color: Colors.grey),
-            ),
-            Text(
-              '${_currentExercise + 1}/${recordingExercises.length}',
-              style: const TextStyle(
-                fontSize: 13,
-                color: _red,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 6),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(4),
-          child: LinearProgressIndicator(
-            value: _progress,
-            backgroundColor: Colors.grey.shade200,
-            color: _red,
-            minHeight: 8,
-          ),
-        ),
+
+        _buildExercisePanel(),
+
+        const SizedBox(height: 14),
+
+        _buildNextButton(),
       ],
     );
   }
 
-  // ── Exercise panel ────────────────────────────────────────────────────────
+  // -------------------------------------------------------------------------
+  // Progress
+  // -------------------------------------------------------------------------
+
+  Widget _buildCardHeader() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.92),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: _deepPurple.withOpacity(0.07)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x09000000),
+            blurRadius: 7,
+            offset: Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'تقدّمك',
+                style: TextStyle(
+                  fontFamily: 'Tajawal',
+                  fontSize: 11,
+                  color: Color(0xFF777777),
+                ),
+              ),
+
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF3EBFA),
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: Text(
+                  'تمرين ${_currentExercise + 1} من ${recordingExercises.length}',
+                  style: const TextStyle(
+                    fontFamily: 'Tajawal',
+                    fontSize: 11,
+                    color: _deepPurple,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 9),
+
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: LinearProgressIndicator(
+              value: _progress,
+              backgroundColor: const Color(0xFFF0EBF3),
+              valueColor: const AlwaysStoppedAnimation<Color>(_red),
+              minHeight: 7,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // -------------------------------------------------------------------------
+  // Exercise Panel
+  // -------------------------------------------------------------------------
 
   Widget _buildExercisePanel() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      width: double.infinity,
+      padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
-        color: _red.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: _red.withOpacity(0.2)),
+        color: const Color(0xFFF8F2FF),
+        borderRadius: BorderRadius.circular(26),
+        border: Border.all(color: _deepPurple.withOpacity(0.08)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x09000000),
+            blurRadius: 8,
+            offset: Offset(0, 3),
+          ),
+        ],
       ),
       child: Column(
         children: [
           _buildInstructionRow(),
-          const SizedBox(height: 16),
+
+          const SizedBox(height: 13),
+
           _buildWordDisplay(),
-          const SizedBox(height: 16),
+
+          const SizedBox(height: 13),
+
           _buildRecordingBox(),
         ],
       ),
     );
   }
 
-  Widget _buildInstructionRow() {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 32,
-          height: 32,
-          decoration: const BoxDecoration(color: _red, shape: BoxShape.circle),
-          alignment: Alignment.center,
-          child: Text(
-            '${_currentExercise + 1}',
-            style: const TextStyle(color: Colors.white, fontSize: 14),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                _exercise.instruction,
-                style: const TextStyle(fontSize: 14, color: Colors.black87),
-              ),
-              Text(
-                _exercise.transliteration,
-                style: const TextStyle(fontSize: 12, color: Colors.grey),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
+  // -------------------------------------------------------------------------
+  // Instruction
+  // -------------------------------------------------------------------------
 
-  Widget _buildWordDisplay() {
+  Widget _buildInstructionRow() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: _deepPurple.withOpacity(0.1), width: 2),
-      ),
-      child: Column(
+      constraints: const BoxConstraints(minHeight: 90),
+      child: Row(
         children: [
-          Text(
-            _exercise.text,
-            style: const TextStyle(fontSize: 48),
-            textAlign: TextAlign.center,
+          // Cute character
+          const SizedBox(
+            width: 76,
+            height: 90,
+            child: _CutePronunciationCharacter(),
           ),
-          const SizedBox(height: 12),
-          OutlinedButton.icon(
-            onPressed: () {
-              /* play audio */
-            },
-            icon: const Icon(Icons.volume_up, color: _red, size: 16),
-            label: const Text(
-              'استمع إلى المثال',
-              style: TextStyle(color: _red, fontSize: 13),
-            ),
-            style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: _red),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
+
+          const SizedBox(width: 12),
+
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 29,
+                      height: 29,
+                      alignment: Alignment.center,
+                      decoration: const BoxDecoration(
+                        color: _red,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Text(
+                        '${_currentExercise + 1}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Tajawal',
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(width: 7),
+
+                    const Text(
+                      'هيا ننطق!',
+                      style: TextStyle(
+                        fontFamily: 'Tajawal',
+                        fontSize: 14,
+                        color: _deepPurple,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 6),
+
+                Text(
+                  _exercise.instruction,
+                  style: const TextStyle(
+                    fontFamily: 'Tajawal',
+                    fontSize: 12.5,
+                    height: 1.4,
+                    color: Color(0xFF444444),
+                  ),
+                ),
+
+                const SizedBox(height: 2),
+
+                Text(
+                  _exercise.transliteration,
+                  style: const TextStyle(
+                    fontFamily: 'Tajawal',
+                    fontSize: 10.5,
+                    color: Color(0xFF999999),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -444,16 +524,74 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
     );
   }
 
-  // ── Recording box (state machine) ─────────────────────────────────────────
+  // -------------------------------------------------------------------------
+  // Word Display
+  // -------------------------------------------------------------------------
+
+  Widget _buildWordDisplay() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 21, horizontal: 14),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.94),
+        borderRadius: BorderRadius.circular(21),
+        border: Border.all(color: _deepPurple.withOpacity(0.07)),
+      ),
+      child: Column(
+        children: [
+          Text(
+            _exercise.text,
+            style: const TextStyle(
+              fontSize: 43,
+              color: _deepPurple,
+              fontWeight: FontWeight.w600,
+              fontFamily: 'Tajawal',
+              height: 1.25,
+            ),
+            textAlign: TextAlign.center,
+          ),
+
+          const SizedBox(height: 13),
+
+          OutlinedButton.icon(
+            onPressed: () {
+              /* play audio */
+            },
+            icon: const Icon(Icons.volume_up_rounded, color: _red, size: 17),
+            label: const Text(
+              'استمع إلى المثال',
+              style: TextStyle(
+                color: _red,
+                fontSize: 11.5,
+                fontFamily: 'Tajawal',
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            style: OutlinedButton.styleFrom(
+              side: BorderSide(color: _red.withOpacity(0.45)),
+              backgroundColor: const Color(0xFFFFF6F7),
+              shape: const StadiumBorder(),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // -------------------------------------------------------------------------
+  // Recording Box
+  // -------------------------------------------------------------------------
 
   Widget _buildRecordingBox() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(24),
+      constraints: const BoxConstraints(minHeight: 175),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 17),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: _deepPurple.withOpacity(0.1), width: 2),
+        color: const Color(0xFFFFFAFB),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: _red.withOpacity(0.10)),
       ),
       child: switch (_recordingState) {
         RecordingState.idle => _buildIdleState(),
@@ -464,85 +602,179 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
     );
   }
 
+  // -------------------------------------------------------------------------
+  // Idle
+  // -------------------------------------------------------------------------
+
   Widget _buildIdleState() {
     return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
         GestureDetector(
           onTap: _startRecording,
-          child: Container(
-            width: 96,
-            height: 96,
-            decoration: const BoxDecoration(
-              color: _red,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black26,
-                  blurRadius: 8,
-                  offset: Offset(0, 4),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Container(
+                width: 102,
+                height: 102,
+                decoration: BoxDecoration(
+                  color: _red.withOpacity(0.08),
+                  shape: BoxShape.circle,
                 ),
-              ],
-            ),
-            child: const Icon(Icons.mic, color: Colors.white, size: 48),
+              ),
+
+              Container(
+                width: 82,
+                height: 82,
+                decoration: BoxDecoration(
+                  color: _red,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: _red.withOpacity(0.22),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.mic_rounded,
+                  color: Colors.white,
+                  size: 39,
+                ),
+              ),
+            ],
           ),
         ),
-        const SizedBox(height: 12),
+
+        const SizedBox(height: 10),
+
         const Text(
-          'اضغط لبدء التسجيل',
-          style: TextStyle(fontSize: 13, color: Colors.grey),
+          'اضغط وابدأ النطق',
+          style: TextStyle(
+            fontFamily: 'Tajawal',
+            fontSize: 13,
+            color: _deepPurple,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+
+        const SizedBox(height: 2),
+
+        const Text(
+          'سجّل صوتك بوضوح',
+          style: TextStyle(
+            fontFamily: 'Tajawal',
+            fontSize: 10.5,
+            color: Color(0xFF999999),
+          ),
         ),
       ],
     );
   }
+
+  // -------------------------------------------------------------------------
+  // Recording
+  // -------------------------------------------------------------------------
 
   Widget _buildRecordingState() {
     return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
         GestureDetector(
           onTap: _stopRecording,
-          child: Container(
-            width: 96,
-            height: 96,
-            decoration: const BoxDecoration(
-              color: Colors.red,
-              shape: BoxShape.circle,
-            ),
+          child: Stack(
             alignment: Alignment.center,
-            child: const Text(
-              'إيقاف',
-              style: TextStyle(color: Colors.white, fontSize: 16),
+            children: [
+              Container(
+                width: 102,
+                height: 102,
+                decoration: BoxDecoration(
+                  color: _red.withOpacity(0.10),
+                  shape: BoxShape.circle,
+                ),
+              ),
+
+              Container(
+                width: 82,
+                height: 82,
+                decoration: const BoxDecoration(
+                  color: _red,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.stop_rounded,
+                  color: Colors.white,
+                  size: 38,
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 10),
+
+        const Text(
+          'جاري تسجيل صوتك...',
+          style: TextStyle(
+            fontFamily: 'Tajawal',
+            fontSize: 13,
+            color: _deepPurple,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+
+        const SizedBox(height: 5),
+
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 4),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFFECEF),
+            borderRadius: BorderRadius.circular(15),
+          ),
+          child: Text(
+            '${_recordingTime}ث',
+            style: const TextStyle(
+              fontFamily: 'Tajawal',
+              fontSize: 15,
+              color: _red,
+              fontWeight: FontWeight.bold,
             ),
           ),
         ),
-        const SizedBox(height: 12),
+
+        const SizedBox(height: 5),
+
         const Text(
-          'جاري التسجيل...',
-          style: TextStyle(fontSize: 18, color: Colors.black87),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          '${_recordingTime}ث',
-          style: const TextStyle(
-            fontSize: 22,
-            color: Colors.red,
-            fontWeight: FontWeight.bold,
+          'اضغط على زر الإيقاف عند الانتهاء',
+          style: TextStyle(
+            fontFamily: 'Tajawal',
+            fontSize: 9.5,
+            color: Color(0xFF999999),
           ),
         ),
       ],
     );
   }
 
+  // -------------------------------------------------------------------------
+  // Analyzing
+  // -------------------------------------------------------------------------
+
   Widget _buildAnalyzingState() {
     return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
         AnimatedBuilder(
           animation: _spinController,
           builder: (_, __) => Transform.rotate(
             angle: _spinController.value * 2 * pi,
             child: Container(
-              width: 64,
-              height: 64,
+              width: 68,
+              height: 68,
               decoration: BoxDecoration(
+                color: const Color(0xFFF8F0FF),
                 shape: BoxShape.circle,
                 border: Border.all(
                   color: _red,
@@ -554,59 +786,124 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
             ),
           ),
         ),
-        const SizedBox(height: 12),
+
+        const SizedBox(height: 13),
+
         const Text(
-          'جاري تحليل النطق...',
-          style: TextStyle(fontSize: 16, color: Colors.black87),
+          'جاري تحليل نطقك...',
+          style: TextStyle(
+            fontFamily: 'Tajawal',
+            fontSize: 14,
+            color: _deepPurple,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+
+        const SizedBox(height: 3),
+
+        const Text(
+          'لحظات قليلة',
+          style: TextStyle(
+            fontFamily: 'Tajawal',
+            fontSize: 10.5,
+            color: Color(0xFF999999),
+          ),
         ),
       ],
     );
   }
+
+  // -------------------------------------------------------------------------
+  // Recorded
+  // -------------------------------------------------------------------------
 
   Widget _buildRecordedState() {
     return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Icon(Icons.check_circle_rounded, color: Colors.green, size: 64),
+        Container(
+          width: 72,
+          height: 72,
+          decoration: const BoxDecoration(
+            color: Color(0xFFEAF7EF),
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(
+            Icons.check_rounded,
+            color: Color(0xFF67AF82),
+            size: 38,
+          ),
+        ),
+
         const SizedBox(height: 8),
+
         Text(
           '$_lastScore%',
           style: const TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
-            color: Colors.green,
+            fontFamily: 'Tajawal',
+            fontSize: 27,
+            fontWeight: FontWeight.w800,
+            color: _deepPurple,
           ),
         ),
-        const SizedBox(height: 4),
+
+        const SizedBox(height: 2),
+
         const Text(
-          'نتيجة التمرين',
-          style: TextStyle(fontSize: 13, color: Colors.grey),
+          'أحسنت! هذه نتيجة نطقك',
+          style: TextStyle(
+            fontFamily: 'Tajawal',
+            fontSize: 11.5,
+            color: Color(0xFF6E6E6E),
+          ),
         ),
       ],
     );
   }
 
-  // ── Next button ───────────────────────────────────────────────────────────
+  // -------------------------------------------------------------------------
+  // Next Button
+  // بدون تغيير في الـ functionality
+  // -------------------------------------------------------------------------
 
   Widget _buildNextButton() {
     final isLast = _currentExercise == recordingExercises.length - 1;
-    return Align(
-      alignment: Alignment.centerLeft,
+
+    return SizedBox(
+      width: double.infinity,
       child: ElevatedButton(
         onPressed: _recordingState == RecordingState.recorded
             ? _handleNext
             : null,
         style: ElevatedButton.styleFrom(
           backgroundColor: _red,
-          disabledBackgroundColor: Colors.grey.shade300,
+          disabledBackgroundColor: const Color(0xFFE1DDE3),
           foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          disabledForegroundColor: Colors.white,
+          elevation: 0,
+          shape: const StadiumBorder(),
+          padding: const EdgeInsets.symmetric(vertical: 13),
         ),
-        child: Text(
-          isLast ? 'إنهاء' : 'التالي',
-          style: const TextStyle(fontSize: 15),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              isLast ? 'إنهاء' : 'التالي',
+              style: const TextStyle(
+                fontFamily: 'Tajawal',
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+
+            const SizedBox(width: 5),
+
+            Icon(
+              isLast ? Icons.check_rounded : Icons.arrow_back_rounded,
+              size: 18,
+            ),
+          ],
         ),
       ),
     );
@@ -614,7 +911,286 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
 }
 
 // ---------------------------------------------------------------------------
-// Spinner arc painter (matches the CSS border-t-transparent trick)
+// Pastel Background
+// ---------------------------------------------------------------------------
+
+class _PronunciationBackground extends StatelessWidget {
+  const _PronunciationBackground();
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        Positioned(
+          top: 40,
+          right: -55,
+          child: _circle(145, const Color(0xFFDCC9F5).withOpacity(0.18)),
+        ),
+
+        Positioned(
+          top: 240,
+          left: -55,
+          child: _circle(145, const Color(0xFFDDF2E3).withOpacity(0.26)),
+        ),
+
+        Positioned(
+          top: 500,
+          right: -45,
+          child: _circle(115, const Color(0xFFFFDCE3).withOpacity(0.24)),
+        ),
+
+        Positioned(
+          top: 710,
+          left: 25,
+          child: _circle(21, const Color(0xFFD4BDEA).withOpacity(0.35)),
+        ),
+      ],
+    );
+  }
+
+  Widget _circle(double size, Color color) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Cute Pronunciation Character
+// ---------------------------------------------------------------------------
+
+class _CutePronunciationCharacter extends StatelessWidget {
+  const _CutePronunciationCharacter();
+
+  @override
+  Widget build(BuildContext context) {
+    const Color faceColor = Color(0xFFFFDCE7);
+    const Color purple = Color(0xFF8B55B3);
+    const Color pink = Color(0xFFFF96AC);
+
+    return Stack(
+      alignment: Alignment.center,
+      clipBehavior: Clip.none,
+      children: [
+        // Right ear
+        Positioned(
+          top: 0,
+          right: 11,
+          child: Container(
+            width: 18,
+            height: 35,
+            decoration: BoxDecoration(
+              color: faceColor,
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Center(
+              child: Container(
+                width: 7,
+                height: 22,
+                decoration: BoxDecoration(
+                  color: pink.withOpacity(0.48),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+          ),
+        ),
+
+        // Left ear
+        Positioned(
+          top: 0,
+          left: 11,
+          child: Container(
+            width: 18,
+            height: 35,
+            decoration: BoxDecoration(
+              color: faceColor,
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Center(
+              child: Container(
+                width: 7,
+                height: 22,
+                decoration: BoxDecoration(
+                  color: pink.withOpacity(0.48),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+          ),
+        ),
+
+        // Body
+        Positioned(
+          bottom: 0,
+          child: Container(
+            width: 44,
+            height: 27,
+            decoration: const BoxDecoration(
+              color: purple,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(22),
+                topRight: Radius.circular(22),
+                bottomLeft: Radius.circular(9),
+                bottomRight: Radius.circular(9),
+              ),
+            ),
+          ),
+        ),
+
+        // Head
+        Positioned(
+          top: 25,
+          child: Container(
+            width: 56,
+            height: 52,
+            decoration: BoxDecoration(
+              color: faceColor,
+              borderRadius: BorderRadius.circular(26),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Stack(
+              children: [
+                // Eyes
+                Positioned(
+                  top: 18,
+                  right: 13,
+                  child: Container(
+                    width: 6,
+                    height: 7,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF4D3855),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+
+                Positioned(
+                  top: 18,
+                  left: 13,
+                  child: Container(
+                    width: 6,
+                    height: 7,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF4D3855),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+
+                // Cheeks
+                Positioned(
+                  top: 30,
+                  right: 6,
+                  child: Container(
+                    width: 9,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: pink.withOpacity(0.45),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+
+                Positioned(
+                  top: 30,
+                  left: 6,
+                  child: Container(
+                    width: 9,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: pink.withOpacity(0.45),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+
+                // Nose
+                Positioned(
+                  top: 26,
+                  left: 24,
+                  child: Container(
+                    width: 7,
+                    height: 5,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFFF7890),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+
+                // Smile
+                Positioned(
+                  top: 32,
+                  left: 20,
+                  child: Container(
+                    width: 16,
+                    height: 7,
+                    decoration: const BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(
+                          color: Color(0xFF4D3855),
+                          width: 1.4,
+                        ),
+                      ),
+                      borderRadius: BorderRadius.only(
+                        bottomLeft: Radius.circular(10),
+                        bottomRight: Radius.circular(10),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        // Tiny microphone
+        Positioned(
+          right: 0,
+          bottom: 7,
+          child: Transform.rotate(
+            angle: -0.25,
+            child: Column(
+              children: [
+                Container(
+                  width: 10,
+                  height: 17,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFF6969),
+                    borderRadius: BorderRadius.circular(7),
+                  ),
+                ),
+
+                Container(width: 3, height: 7, color: const Color(0xFF745183)),
+
+                Container(
+                  width: 10,
+                  height: 2,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF745183),
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Spinner arc painter
 // ---------------------------------------------------------------------------
 
 class _ArcPainter extends CustomPainter {
@@ -629,7 +1205,7 @@ class _ArcPainter extends CustomPainter {
     canvas.drawArc(
       Rect.fromLTWH(0, 0, size.width, size.height),
       -pi / 2,
-      3 * pi / 2, // 270° visible arc, leaving a 90° "transparent" gap
+      3 * pi / 2,
       false,
       paint,
     );
