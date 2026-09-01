@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+
 import 'style_constants.dart';
+import '../widgets/child_bottom_nav.dart';
 
 const _mockLevelProgress = {
   'ض': (mcq: true, listening: true, recording: false), // 2/3
@@ -31,7 +33,11 @@ class _LetterData {
 // ─── Screen ──────────────────────────────────────────────────────────────────
 class ExercisesScreen extends StatefulWidget {
   final String childId;
-  const ExercisesScreen({super.key, required this.childId});
+
+  const ExercisesScreen({
+    super.key,
+    required this.childId,
+  });
 
   @override
   State<ExercisesScreen> createState() => _ExercisesScreenState();
@@ -64,15 +70,22 @@ class _ExercisesScreenState extends State<ExercisesScreen> {
 
         if (rawScores is Map) {
           rawScores.forEach((letter, scoreValue) {
-            int score = (scoreValue is num) ? scoreValue.toInt() : 0;
+            int score =
+                (scoreValue is num) ? scoreValue.toInt() : 0;
 
             // إظهار الحروف التي درجتها أقل من 70% فقط
             if (score < 70) {
               // ✅ حساب عدد المستويات المكتملة من الـ Mock
               final p =
                   _mockLevelProgress[letter] ??
-                  (mcq: false, listening: false, recording: false);
+                  (
+                    mcq: false,
+                    listening: false,
+                    recording: false,
+                  );
+
               int completedCount = 0;
+
               if (p.mcq) completedCount++;
               if (p.listening) completedCount++;
               if (p.recording) completedCount++;
@@ -80,10 +93,12 @@ class _ExercisesScreenState extends State<ExercisesScreen> {
               loaded.add(
                 _LetterData(
                   letter: letter.toString(),
-                  name: _getLetterName(letter.toString()),
+                  name: _getLetterName(
+                    letter.toString(),
+                  ),
                   score: score,
-                  completed: completedCount, // سيعكس 1 أو 2 أو 3
-                  total: 3, // إجمالي المستويات (اختيار، استماع، نطق)
+                  completed: completedCount,
+                  total: 3,
                 ),
               );
             }
@@ -97,7 +112,10 @@ class _ExercisesScreenState extends State<ExercisesScreen> {
       }
     } catch (e) {
       debugPrint("Error: $e");
-      setState(() => _isLoading = false);
+
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
@@ -118,72 +136,143 @@ class _ExercisesScreenState extends State<ExercisesScreen> {
       'ر': 'Raa',
       'ن': 'Noon',
     };
+
     return names[letter] ?? letter;
   }
 
   @override
   Widget build(BuildContext context) {
-    final double screenWidth = MediaQuery.of(context).size.width;
-    final bool isTablet = screenWidth > 600;
+    final double screenWidth =
+        MediaQuery.of(context).size.width;
+
+    final bool isTablet =
+        screenWidth > 600;
 
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
-        backgroundColor: const Color(0xFFFCF9EA),
+        backgroundColor:
+            const Color(0xFFFCF9EA),
+
         body: Column(
           children: [
-            _ExercisesHeader(),
+            FaseehStyle.buildLargeHeader(
+  context: context,
+  title: 'هيا نتدرّب!',
+  subtitle: 'اختر حرفًا لتتدرّب عليه',
+
+  // نفس مكان العنصر الموجود في هيدر الهوم
+  leading: const SizedBox(
+    width: 48,
+    height: 48,
+    child: Center(
+      child: Icon(
+        Icons.menu_book_rounded,
+        color: Colors.white,
+        size: 30,
+      ),
+    ),
+  ),
+
+  // نحافظ على نفس التوازن الموجود في هيدر الهوم
+  trailingActions: const [
+    SizedBox(
+      width: 48,
+      height: 48,
+    ),
+  ],
+),
+
             Expanded(
               child: _isLoading
                   ? const Center(
-                      child: CircularProgressIndicator(
-                        color: Color(0xFF511281),
+                      child:
+                          CircularProgressIndicator(
+                        color:
+                            Color(0xFF511281),
                       ),
                     )
                   : _filteredLetters.isEmpty
-                  ? _buildEmptyState()
-                  : SingleChildScrollView(
-                      padding: EdgeInsets.fromLTRB(
-                        isTablet ? screenWidth * 0.1 : 16,
-                        16,
-                        isTablet ? screenWidth * 0.1 : 16,
-                        100,
-                      ),
-                      child: GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: isTablet
-                              ? (screenWidth > 900 ? 4 : 3)
-                              : 2,
-                          crossAxisSpacing: 14,
-                          mainAxisSpacing: 14,
-                          childAspectRatio: 0.88,
-                        ),
-                        itemCount: _filteredLetters.length,
-                        itemBuilder: (context, i) {
-                          final item = _filteredLetters[i];
-                          return _LetterCard(
-                            item: item,
-                            onTap: () => Navigator.pushNamed(
-                              context,
-                              '/child/letter-levels',
-                              arguments: {
-                                'letter': item.letter,
-                                'currentProgress': item.completed,
-                                'childId': widget.childId,
-                              },
+                      ? _buildEmptyState()
+                      : SingleChildScrollView(
+                          padding:
+                              EdgeInsets.fromLTRB(
+                            isTablet
+                                ? screenWidth *
+                                    0.1
+                                : 16,
+                            16,
+                            isTablet
+                                ? screenWidth *
+                                    0.1
+                                : 16,
+                            100,
+                          ),
+                          child:
+                              GridView.builder(
+                            shrinkWrap: true,
+                            physics:
+                                const NeverScrollableScrollPhysics(),
+                            gridDelegate:
+                                SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount:
+                                  isTablet
+                                      ? (screenWidth >
+                                              900
+                                          ? 4
+                                          : 3)
+                                      : 2,
+                              crossAxisSpacing:
+                                  14,
+                              mainAxisSpacing:
+                                  14,
+                              childAspectRatio:
+                                  0.88,
                             ),
-                          );
-                        },
-                      ),
-                    ),
+                            itemCount:
+                                _filteredLetters
+                                    .length,
+                            itemBuilder:
+                                (context, i) {
+                              final item =
+                                  _filteredLetters[
+                                      i];
+
+                              return _LetterCard(
+                                item: item,
+                                onTap: () {
+                                  Navigator
+                                      .pushNamed(
+                                    context,
+                                    '/child/letter-levels',
+                                    arguments: {
+                                      'letter':
+                                          item.letter,
+                                      'currentProgress':
+                                          item.completed,
+                                      'childId':
+                                          widget
+                                              .childId,
+                                    },
+                                  );
+                                },
+                              );
+                            },
+                          ),
+                        ),
             ),
           ],
         ),
-        bottomNavigationBar: _ChildBottomNav(
-          currentRoute: '/child/exercises',
-          childId: widget.childId,
+
+        // ─────────────────────────────────────
+        // Shared Child Bottom Navigation
+        // ─────────────────────────────────────
+        bottomNavigationBar:
+            ChildBottomNav(
+          currentRoute:
+              '/child/exercises',
+          childId:
+              widget.childId,
         ),
       ),
     );
@@ -193,31 +282,49 @@ class _ExercisesScreenState extends State<ExercisesScreen> {
     if (!_hasCompletedPlacement) {
       return Center(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment:
+              MainAxisAlignment.center,
           children: [
             const Icon(
-              Icons.play_circle_outline_rounded,
+              Icons
+                  .play_circle_outline_rounded,
               size: 80,
-              color: Color(0xFF511281),
+              color:
+                  Color(0xFF511281),
             ),
+
             const SizedBox(height: 16),
+
             const Text(
               "أهلاً بك يا بطل! 🚀",
               style: TextStyle(
                 fontFamily: 'Tajawal',
                 fontSize: 22,
-                color: Color(0xFF511281),
-                fontWeight: FontWeight.bold,
+                color:
+                    Color(0xFF511281),
+                fontWeight:
+                    FontWeight.bold,
               ),
             ),
+
             const SizedBox(height: 8),
-            const Text(
-              "ابدأ باختبار تحديد المستوى من الصفحة الرئيسية، وبعدها نبدأ التمارين!  ",
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: 'Tajawal',
-                fontSize: 16,
-                color: Colors.grey,
+
+            const Padding(
+              padding:
+                  EdgeInsets.symmetric(
+                horizontal: 24,
+              ),
+              child: Text(
+                "ابدأ باختبار تحديد المستوى من الصفحة الرئيسية، وبعدها نبدأ التمارين!  ",
+                textAlign:
+                    TextAlign.center,
+                style: TextStyle(
+                  fontFamily:
+                      'Tajawal',
+                  fontSize: 16,
+                  color:
+                      Colors.grey,
+                ),
               ),
             ),
           ],
@@ -226,19 +333,30 @@ class _ExercisesScreenState extends State<ExercisesScreen> {
     }
 
     // Existing mastery state
-    return Center(
+    return const Center(
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: const [
-          Icon(Icons.stars_rounded, size: 80, color: Color(0xFF511281)),
+        mainAxisAlignment:
+            MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.stars_rounded,
+            size: 80,
+            color:
+                Color(0xFF511281),
+          ),
           SizedBox(height: 16),
           Text(
             "أنت رائع! لقد أتقنت جميع الحروف 🌟",
+            textAlign:
+                TextAlign.center,
             style: TextStyle(
-              fontFamily: 'Tajawal',
+              fontFamily:
+                  'Tajawal',
               fontSize: 20,
-              color: Color(0xFF511281),
-              fontWeight: FontWeight.bold,
+              color:
+                  Color(0xFF511281),
+              fontWeight:
+                  FontWeight.bold,
             ),
           ),
         ],
@@ -247,82 +365,54 @@ class _ExercisesScreenState extends State<ExercisesScreen> {
   }
 }
 
-// ─── Header ───────────────────────────────────────────────────────────────────
-class _ExercisesHeader extends StatelessWidget {
-  const _ExercisesHeader();
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: FaseehStyle.headerDecoration,
-      padding: FaseehStyle.getStandardPadding(
-        context,
-      ), // consistent larger padding
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                Text(
-                  'هيا نتدرّب!',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18, // larger, matches EditHeader title
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'Tajawal',
-                  ),
-                ),
-                Text(
-                  'اختر حرفًا لتتدرّب عليه',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 14, // larger, matches EditHeader subtitle
-                    fontFamily: 'Tajawal',
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // Standard IconButton (larger tap area, icon size 24)
-          IconButton(
-            icon: const Icon(Icons.menu_book_rounded, color: Colors.white),
-            onPressed: () {}, // placeholder, no action needed
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 // ─── Letter Card ──────────────────────────────────────────────────────────────
-class _LetterCard extends StatefulWidget {
+class _LetterCard
+    extends StatefulWidget {
   final _LetterData item;
   final VoidCallback onTap;
-  const _LetterCard({required this.item, required this.onTap});
+
+  const _LetterCard({
+    required this.item,
+    required this.onTap,
+  });
 
   @override
-  State<_LetterCard> createState() => _LetterCardState();
+  State<_LetterCard> createState() =>
+      _LetterCardState();
 }
 
-class _LetterCardState extends State<_LetterCard>
-    with SingleTickerProviderStateMixin {
+class _LetterCardState
+    extends State<_LetterCard>
+    with
+        SingleTickerProviderStateMixin {
   late final AnimationController _ctrl;
   late final Animation<double> _scale;
 
   @override
   void initState() {
     super.initState();
-    _ctrl = AnimationController(
+
+    _ctrl =
+        AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 100),
+      duration:
+          const Duration(
+        milliseconds: 100,
+      ),
     );
+
     _scale = Tween<double>(
       begin: 1.0,
       end: 0.95,
-    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
+    ).animate(
+      CurvedAnimation(
+        parent: _ctrl,
+        curve:
+            Curves.easeInOut,
+      ),
+    );
   }
 
   @override
@@ -332,100 +422,181 @@ class _LetterCardState extends State<_LetterCard>
   }
 
   @override
-  Widget build(BuildContext context) {
-    final percent = widget.item.completed / widget.item.total;
+  Widget build(
+    BuildContext context,
+  ) {
+    final percent =
+        widget.item.completed /
+            widget.item.total;
 
     // ✅ تحديد الألوان بناءً على نتيجة البليسمنت تست
     // أحمر للتأسيس (< 40) وبرتقالي للتطوير (>= 40 وأقل من 70)
-    final bool isCritical = widget.item.score < 40;
-    final Color statusColor = isCritical
-        ? const Color(0xFFFF6969)
-        : Colors.orange;
-    final String statusLabel = isCritical ? "تأسيس" : "تطوير";
+    final bool isCritical =
+        widget.item.score < 40;
+
+    final Color statusColor =
+        isCritical
+            ? const Color(
+                0xFFFF6969,
+              )
+            : Colors.orange;
+
+    final String statusLabel =
+        isCritical
+            ? "تأسيس"
+            : "تطوير";
 
     return AnimatedBuilder(
       animation: _scale,
-      builder: (_, child) => Transform.scale(scale: _scale.value, child: child),
+      builder: (_, child) =>
+          Transform.scale(
+        scale: _scale.value,
+        child: child,
+      ),
       child: GestureDetector(
-        onTapDown: (_) => _ctrl.forward(),
+        onTapDown: (_) =>
+            _ctrl.forward(),
         onTapUp: (_) {
           _ctrl.reverse();
           widget.onTap();
         },
-        onTapCancel: () => _ctrl.reverse(),
+        onTapCancel: () =>
+            _ctrl.reverse(),
         child: Container(
-          decoration: BoxDecoration(
+          decoration:
+              BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(24), // زوايا أنعم
+            borderRadius:
+                BorderRadius.circular(
+              24,
+            ),
             border: Border.all(
-              color: statusColor.withOpacity(
+              color:
+                  statusColor
+                      .withOpacity(
                 0.15,
-              ), // إطار خفيف جداً بلون الحالة
+              ),
               width: 1.5,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.04), // ظل هادئ جداً
+                color: Colors.black
+                    .withOpacity(
+                  0.04,
+                ),
                 blurRadius: 10,
-                offset: const Offset(0, 4),
+                offset:
+                    const Offset(
+                  0,
+                  4,
+                ),
               ),
             ],
           ),
-          padding: const EdgeInsets.all(16),
+          padding:
+              const EdgeInsets.all(
+            16,
+          ),
           child: Column(
             children: [
-              // ✅ الحرف باللون البنفسجي الأساسي لمشروعك (يعطي فخامة)
               Text(
                 widget.item.letter,
-                style: const TextStyle(
+                style:
+                    const TextStyle(
                   fontSize: 50,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF511281),
-                  fontFamily: 'Tajawal',
+                  fontWeight:
+                      FontWeight.bold,
+                  color:
+                      Color(
+                    0xFF511281,
+                  ),
+                  fontFamily:
+                      'Tajawal',
                   height: 1.1,
                 ),
               ),
-              const SizedBox(height: 4),
-              // ✅ وسام الحالة (Badge) خلفية باهتة ونص ملون
+
+              const SizedBox(
+                height: 4,
+              ),
+
               Container(
-                padding: const EdgeInsets.symmetric(
+                padding:
+                    const EdgeInsets
+                        .symmetric(
                   horizontal: 10,
                   vertical: 4,
                 ),
-                decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
+                decoration:
+                    BoxDecoration(
+                  color:
+                      statusColor
+                          .withOpacity(
+                    0.1,
+                  ),
+                  borderRadius:
+                      BorderRadius
+                          .circular(
+                    12,
+                  ),
                 ),
                 child: Text(
                   statusLabel,
-                  style: TextStyle(
+                  style:
+                      TextStyle(
                     fontSize: 11,
-                    color: statusColor,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'Tajawal',
+                    color:
+                        statusColor,
+                    fontWeight:
+                        FontWeight
+                            .bold,
+                    fontFamily:
+                        'Tajawal',
                   ),
                 ),
               ),
+
               const Spacer(),
-              // ✅ شريط التقدم أنحف
+
               Column(
                 children: [
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: LinearProgressIndicator(
-                      value: percent,
+                    borderRadius:
+                        BorderRadius
+                            .circular(
+                      10,
+                    ),
+                    child:
+                        LinearProgressIndicator(
+                      value:
+                          percent,
                       minHeight: 5,
-                      backgroundColor: const Color(0xFFF0F0F0),
-                      valueColor: AlwaysStoppedAnimation<Color>(statusColor),
+                      backgroundColor:
+                          const Color(
+                        0xFFF0F0F0,
+                      ),
+                      valueColor:
+                          AlwaysStoppedAnimation<
+                              Color>(
+                        statusColor,
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 6),
+
+                  const SizedBox(
+                    height: 6,
+                  ),
+
                   Text(
                     '${widget.item.completed}/${widget.item.total}',
-                    style: TextStyle(
+                    style:
+                        TextStyle(
                       fontSize: 10,
-                      color: Colors.grey.shade400,
-                      fontFamily: 'Tajawal',
+                      color: Colors
+                          .grey
+                          .shade400,
+                      fontFamily:
+                          'Tajawal',
                     ),
                   ),
                 ],
@@ -433,102 +604,6 @@ class _LetterCardState extends State<_LetterCard>
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-// ─── Bottom Navigation Bar ────────────────────────────────────────────────────
-class _ChildBottomNav extends StatelessWidget {
-  final String currentRoute;
-  final String childId;
-  const _ChildBottomNav({required this.currentRoute, required this.childId});
-
-  @override
-  Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: TextDirection.ltr,
-      child: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF6A3A9E), Color(0xFF511281)],
-            begin: Alignment.topRight,
-            end: Alignment.bottomLeft,
-          ),
-        ),
-        child: SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 24),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _NavItem(
-                  icon: Icons.menu_book_rounded,
-                  label: 'التمارين',
-                  isActive: currentRoute == '/child/exercises',
-                  onTap: () => Navigator.pushNamed(
-                    context,
-                    '/child/exercises',
-                    arguments: childId,
-                  ),
-                ),
-                _NavItem(
-                  icon: Icons.home_rounded,
-                  label: 'الرئيسية',
-                  isActive: currentRoute == '/child/home',
-                  onTap: () => Navigator.pushNamed(
-                    context,
-                    '/child/home',
-                    arguments: childId,
-                  ),
-                ),
-                _NavItem(
-                  icon: Icons.leaderboard_rounded,
-                  label: 'المتصدرون',
-                  isActive: currentRoute == '/child/leaderboard',
-                  onTap: () => Navigator.pushNamed(
-                    context,
-                    '/child/leaderboard',
-                    arguments: childId,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _NavItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool isActive;
-  final VoidCallback onTap;
-  const _NavItem({
-    required this.icon,
-    required this.label,
-    required this.isActive,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final color = isActive ? const Color(0xFFFF6969) : Colors.white;
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: color, size: 28),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(color: color, fontSize: 12, fontFamily: 'Tajawal'),
-          ),
-        ],
       ),
     );
   }

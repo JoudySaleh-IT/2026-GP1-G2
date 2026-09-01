@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+
 import '../services/auth_service.dart';
 import 'style_constants.dart';
 import '../utils/arabic_numbers.dart';
+import '../widgets/child_bottom_nav.dart';
 
 // ─── Mock Data Models ─────────────────────────────────────────────────────────
 class _Player {
@@ -35,22 +37,86 @@ const _currentUser = _Player(
 );
 
 const List<_Player> _topPlayers = [
-  _Player(rank: 1, name: 'ليلى', avatar: '🦄', points: 2850, streak: 25),
-  _Player(rank: 2, name: 'عمر', avatar: '🦅', points: 2640, streak: 18),
-  _Player(rank: 3, name: 'زينب', avatar: '🌟', points: 2420, streak: 22),
-  _Player(rank: 4, name: 'يوسف', avatar: '⚡', points: 2180, streak: 15),
-  _Player(rank: 5, name: 'عائشة', avatar: '🎨', points: 2050, streak: 12),
-  _Player(rank: 6, name: 'حسن', avatar: '🚀', points: 1980, streak: 20),
-  _Player(rank: 7, name: 'مريم', avatar: '🌺', points: 1820, streak: 9),
-  _Player(rank: 8, name: 'علي', avatar: '🔥', points: 1750, streak: 14),
-  _Player(rank: 9, name: 'نورا', avatar: '🦋', points: 1650, streak: 11),
-  _Player(rank: 10, name: 'خالد', avatar: '🎯', points: 1580, streak: 16),
+  _Player(
+    rank: 1,
+    name: 'ليلى',
+    avatar: '🦄',
+    points: 2850,
+    streak: 25,
+  ),
+  _Player(
+    rank: 2,
+    name: 'عمر',
+    avatar: '🦅',
+    points: 2640,
+    streak: 18,
+  ),
+  _Player(
+    rank: 3,
+    name: 'زينب',
+    avatar: '🌟',
+    points: 2420,
+    streak: 22,
+  ),
+  _Player(
+    rank: 4,
+    name: 'يوسف',
+    avatar: '⚡',
+    points: 2180,
+    streak: 15,
+  ),
+  _Player(
+    rank: 5,
+    name: 'عائشة',
+    avatar: '🎨',
+    points: 2050,
+    streak: 12,
+  ),
+  _Player(
+    rank: 6,
+    name: 'حسن',
+    avatar: '🚀',
+    points: 1980,
+    streak: 20,
+  ),
+  _Player(
+    rank: 7,
+    name: 'مريم',
+    avatar: '🌺',
+    points: 1820,
+    streak: 9,
+  ),
+  _Player(
+    rank: 8,
+    name: 'علي',
+    avatar: '🔥',
+    points: 1750,
+    streak: 14,
+  ),
+  _Player(
+    rank: 9,
+    name: 'نورا',
+    avatar: '🦋',
+    points: 1650,
+    streak: 11,
+  ),
+  _Player(
+    rank: 10,
+    name: 'خالد',
+    avatar: '🎯',
+    points: 1580,
+    streak: 16,
+  ),
 ];
 
 // ─── Leaderboard Screen ───────────────────────────────────────────────────────
 class LeaderboardScreen extends StatelessWidget {
   final String childId;
-  const LeaderboardScreen({super.key, required this.childId});
+
+  const LeaderboardScreen({
+    super.key,
+    required this.childId,
+  });
 
   // ── Constants ──
   static const _purple = Color(0xFF511281);
@@ -59,44 +125,88 @@ class LeaderboardScreen extends StatelessWidget {
   static const _bgColor = Color(0xFFFCF9EA);
 
   @override
-  // ... داخل LeaderboardScreen ...
-  @override
   Widget build(BuildContext context) {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
         backgroundColor: _bgColor,
+
         body: Column(
           children: [
-            _buildHeader(context),
+            FaseehStyle.buildLargeHeader(
+  context: context,
+  title: 'لوحة المتصدرين',
+  subtitle: 'تحدَّ نفسك وتقدّم في الترتيب!',
+
+  leading: const SizedBox(
+    width: 48,
+    height: 48,
+    child: Center(
+      child: Icon(
+        Icons.emoji_events_rounded,
+        color: Colors.white,
+        size: 30,
+      ),
+    ),
+  ),
+
+  trailingActions: const [
+    SizedBox(
+      width: 48,
+      height: 48,
+    ),
+  ],
+),
+
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+                padding: const EdgeInsets.fromLTRB(
+                  16,
+                  16,
+                  16,
+                  100,
+                ),
                 child: Column(
                   children: [
-                    // --- هنا كارد الطفل الحقيقي ---
+                    // ─────────────────────────────
+                    // Current Child Card
+                    // ─────────────────────────────
                     StreamBuilder<DocumentSnapshot>(
                       stream: FirebaseFirestore.instance
                           .collection('children')
-                          .doc(childId) // نستخدم المعرف الممرر للصفحة
+                          .doc(childId)
                           .snapshots(),
                       builder: (context, snapshot) {
-                        if (snapshot.hasError)
-                          return const Text("خطأ في التحميل");
-                        if (!snapshot.hasData || !snapshot.data!.exists) {
-                          return const CircularProgressIndicator();
+                        if (snapshot.hasError) {
+                          return const Text(
+                            'خطأ في التحميل',
+                          );
                         }
 
-                        var data =
-                            snapshot.data!.data() as Map<String, dynamic>;
+                        if (!snapshot.hasData ||
+                            !snapshot.data!.exists) {
+                          return const CircularProgressIndicator(
+                            color: _purple,
+                          );
+                        }
+
+                        final data =
+                            snapshot.data!.data()
+                                as Map<String, dynamic>;
 
                         // استخراج البيانات الحقيقية
-                        String name = data['name'] ?? 'لاعب';
-                        String avatar = data['avatar'] ?? '👤';
-                        int points = data['points'] ?? 0;
-                        int streak = data['streak'] ?? 0;
+                        final String name =
+                            data['name'] ?? 'لاعب';
 
-                        // نمرر البيانات الحقيقية للدالة التي تبني الكارد
+                        final String avatar =
+                            data['avatar'] ?? '👤';
+
+                        final int points =
+                            data['points'] ?? 0;
+
+                        final int streak =
+                            data['streak'] ?? 0;
+
                         return _buildCurrentUserCard(
                           name,
                           avatar,
@@ -108,7 +218,7 @@ class LeaderboardScreen extends StatelessWidget {
 
                     const SizedBox(height: 16),
 
-                    // بقية القائمة تبقى ثابتة (Mock Data) كما هي في كودك الأصلي
+                    // بقية القائمة تبقى Mock Data
                     _buildTopPlayersCard(),
                   ],
                 ),
@@ -116,7 +226,11 @@ class LeaderboardScreen extends StatelessWidget {
             ),
           ],
         ),
-        bottomNavigationBar: _ChildBottomNav(
+
+        // ─────────────────────────────────────
+        // Shared Child Bottom Navigation
+        // ─────────────────────────────────────
+        bottomNavigationBar: ChildBottomNav(
           currentRoute: '/child/leaderboard',
           childId: childId,
         ),
@@ -124,57 +238,11 @@ class LeaderboardScreen extends StatelessWidget {
     );
   }
 
-  // ── Header ──
-  // ── Header ──
-  // ── Header ──
-  // ── Header ──
-  Widget _buildHeader(BuildContext context) {
-    return Container(
-      decoration: FaseehStyle.headerDecoration,
-      padding: FaseehStyle.getStandardPadding(
-        context,
-      ), // top: status+8, bottom:12
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // Trophy icon – standard IconButton (larger tap area, icon size 24)
-          IconButton(
-            icon: const Icon(Icons.emoji_events_rounded, color: Colors.white),
-            onPressed: () {}, // optional, no action needed
-          ),
-          const SizedBox(width: 8),
-          // Text column – larger fonts (18/14) to match EditHeader
-          Expanded(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                Text(
-                  'لوحة المتصدرين',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18, // larger, matches EditHeader title
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'Tajawal',
-                  ),
-                ),
-                Text(
-                  'تحدَّ نفسك وتقدّم في الترتيب!',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 14, // larger, matches EditHeader subtitle
-                    fontFamily: 'Tajawal',
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
-  // ── Current User Card ──
+
+  // ─────────────────────────────────────────────
+  // Current User Card
+  // ─────────────────────────────────────────────
   Widget _buildCurrentUserCard(
     String name,
     String avatar,
@@ -187,7 +255,7 @@ class LeaderboardScreen extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: const Color(0xFF511281).withOpacity(0.1),
+          color: _purple.withOpacity(0.1),
           width: 2,
         ),
         boxShadow: const [
@@ -201,12 +269,19 @@ class LeaderboardScreen extends StatelessWidget {
       child: Row(
         children: [
           // Avatar الحقيقي
-          Text(avatar, style: const TextStyle(fontSize: 48)),
+          Text(
+            avatar,
+            style: const TextStyle(
+              fontSize: 48,
+            ),
+          ),
+
           const SizedBox(width: 14),
 
           // Info الحقيقي
           Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment:
+                CrossAxisAlignment.start,
             children: [
               Text(
                 name,
@@ -217,25 +292,33 @@ class LeaderboardScreen extends StatelessWidget {
                   fontFamily: 'Tajawal',
                 ),
               ),
+
               const SizedBox(height: 6),
+
               Row(
                 children: [
                   _statChip(
                     icon: Icons.emoji_events_rounded,
-                    label:
-                        'متعلّم نشط', // بما أن الترتيب يتطلب حساب كل اللاعبين، يمكن وضع وصف مؤقت
+                    label: 'متعلّم نشط',
                   ),
+
                   const SizedBox(width: 10),
+
                   _statChip(
                     icon: Icons.star_rounded,
-                    label: '${toArabicDigits(points)} نقطة',
-                    iconColor: const Color(0xFFFF6969),
+                    label:
+                        '${toArabicDigits(points)} نقطة',
+                    iconColor: _coral,
                   ),
+
                   const SizedBox(width: 10),
+
                   _statChip(
-                    icon: Icons.local_fire_department_rounded,
-                    label: '${toArabicDigits(streak)} يوم',
-                    iconColor: const Color(0xFFFF6969),
+                    icon: Icons
+                        .local_fire_department_rounded,
+                    label:
+                        '${toArabicDigits(streak)} يوم',
+                    iconColor: _coral,
                   ),
                 ],
               ),
@@ -253,8 +336,14 @@ class LeaderboardScreen extends StatelessWidget {
   }) {
     return Row(
       children: [
-        Icon(icon, size: 15, color: iconColor),
+        Icon(
+          icon,
+          size: 15,
+          color: iconColor,
+        ),
+
         const SizedBox(width: 3),
+
         Text(
           label,
           style: const TextStyle(
@@ -267,13 +356,18 @@ class LeaderboardScreen extends StatelessWidget {
     );
   }
 
-  // ── Top Players Card ──
+  // ─────────────────────────────────────────────
+  // Top Players Card
+  // ─────────────────────────────────────────────
   Widget _buildTopPlayersCard() {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _purple.withOpacity(0.1), width: 2),
+        border: Border.all(
+          color: _purple.withOpacity(0.1),
+          width: 2,
+        ),
         boxShadow: const [
           BoxShadow(
             color: Color(0x0D000000),
@@ -283,20 +377,28 @@ class LeaderboardScreen extends StatelessWidget {
         ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
         children: [
           // Card header
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          const Padding(
+            padding: EdgeInsets.fromLTRB(
+              16,
+              16,
+              16,
+              8,
+            ),
             child: Row(
               children: [
-                const Icon(
+                Icon(
                   Icons.emoji_events_rounded,
                   color: _purple,
                   size: 22,
                 ),
-                const SizedBox(width: 8),
-                const Text(
+
+                SizedBox(width: 8),
+
+                Text(
                   'المتصدرون',
                   style: TextStyle(
                     fontSize: 17,
@@ -312,40 +414,63 @@ class LeaderboardScreen extends StatelessWidget {
           // Player rows
           ListView.separated(
             shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+            physics:
+                const NeverScrollableScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(
+              12,
+              0,
+              12,
+              12,
+            ),
             itemCount: _topPlayers.length,
-            separatorBuilder: (_, _) => const SizedBox(height: 8),
+            separatorBuilder: (_, __) =>
+                const SizedBox(height: 8),
             itemBuilder: (context, index) =>
-                _buildPlayerRow(_topPlayers[index]),
+                _buildPlayerRow(
+              _topPlayers[index],
+            ),
           ),
         ],
       ),
     );
   }
 
-  // ── Player Row ──
+  // ─────────────────────────────────────────────
+  // Player Row
+  // ─────────────────────────────────────────────
   Widget _buildPlayerRow(_Player player) {
-    final isTop3 = player.rank <= 3;
+    final bool isTop3 =
+        player.rank <= 3;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 12,
+        vertical: 12,
+      ),
       decoration: BoxDecoration(
         gradient: isTop3
             ? const LinearGradient(
-                colors: [Color(0xFFFCF9EA), Color(0xFFF5EFD5)],
+                colors: [
+                  Color(0xFFFCF9EA),
+                  Color(0xFFF5EFD5),
+                ],
               )
             : null,
-        color: isTop3 ? null : Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        color:
+            isTop3 ? null : Colors.white,
+        borderRadius:
+            BorderRadius.circular(12),
         border: Border.all(
-          color: isTop3 ? _purple.withOpacity(0.2) : _purple.withOpacity(0.1),
+          color: isTop3
+              ? _purple.withOpacity(0.2)
+              : _purple.withOpacity(0.1),
           width: 2,
         ),
         boxShadow: isTop3
             ? [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color:
+                      Colors.black.withOpacity(0.05),
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),
@@ -354,57 +479,90 @@ class LeaderboardScreen extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // ── Rank badge (rightmost in RTL) ──
+          // ── Rank badge ──
           SizedBox(
             width: 44,
-            child: Center(child: _buildRankBadge(player.rank)),
+            child: Center(
+              child:
+                  _buildRankBadge(
+                player.rank,
+              ),
+            ),
           ),
+
           const SizedBox(width: 10),
 
           // ── Avatar ──
-          Text(player.avatar, style: const TextStyle(fontSize: 28)),
+          Text(
+            player.avatar,
+            style: const TextStyle(
+              fontSize: 28,
+            ),
+          ),
+
           const SizedBox(width: 10),
 
           // ── Name + stats ──
           Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
               children: [
                 Text(
                   player.name,
                   style: const TextStyle(
                     fontSize: 15,
                     color: Color(0xFF222222),
-                    fontWeight: FontWeight.w500,
+                    fontWeight:
+                        FontWeight.w500,
                     fontFamily: 'Tajawal',
                   ),
                 ),
+
                 const SizedBox(height: 3),
+
                 Row(
                   children: [
-                    const Icon(Icons.star_rounded, size: 13, color: _coral),
-                    const SizedBox(width: 3),
-                    Text(
-                      '${toArabicDigits(player.points)} نقطة',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF666666),
-                        fontFamily: 'Tajawal',
-                      ),
-                    ),
-                    const SizedBox(width: 10),
                     const Icon(
-                      Icons.local_fire_department_rounded,
+                      Icons.star_rounded,
                       size: 13,
                       color: _coral,
                     ),
+
                     const SizedBox(width: 3),
+
+                    Text(
+                      '${toArabicDigits(player.points)} نقطة',
+                      style:
+                          const TextStyle(
+                        fontSize: 12,
+                        color:
+                            Color(0xFF666666),
+                        fontFamily:
+                            'Tajawal',
+                      ),
+                    ),
+
+                    const SizedBox(width: 10),
+
+                    const Icon(
+                      Icons
+                          .local_fire_department_rounded,
+                      size: 13,
+                      color: _coral,
+                    ),
+
+                    const SizedBox(width: 3),
+
                     Text(
                       '${toArabicDigits(player.streak)} يوم',
-                      style: const TextStyle(
+                      style:
+                          const TextStyle(
                         fontSize: 12,
-                        color: Color(0xFF666666),
-                        fontFamily: 'Tajawal',
+                        color:
+                            Color(0xFF666666),
+                        fontFamily:
+                            'Tajawal',
                       ),
                     ),
                   ],
@@ -417,15 +575,26 @@ class LeaderboardScreen extends StatelessWidget {
     );
   }
 
-  // ── Rank Badge ──
+  // ─────────────────────────────────────────────
+  // Rank Badge
+  // ─────────────────────────────────────────────
   Widget _buildRankBadge(int rank) {
     if (rank <= 3) {
-      // Gold / Silver / Bronze gradient circles
-      final List<Color> colors = rank == 1
-          ? [const Color(0xFFFFD700), const Color(0xFFFFA500)]
-          : rank == 2
-          ? [const Color(0xFFCDD5D8), const Color(0xFF9BA7AB)]
-          : [const Color(0xFFFF8C42), const Color(0xFFCC5500)];
+      final List<Color> colors =
+          rank == 1
+              ? [
+                  const Color(0xFFFFD700),
+                  const Color(0xFFFFA500),
+                ]
+              : rank == 2
+                  ? [
+                      const Color(0xFFCDD5D8),
+                      const Color(0xFF9BA7AB),
+                    ]
+                  : [
+                      const Color(0xFFFF8C42),
+                      const Color(0xFFCC5500),
+                    ];
 
       return Container(
         width: 36,
@@ -434,14 +603,17 @@ class LeaderboardScreen extends StatelessWidget {
           shape: BoxShape.circle,
           gradient: LinearGradient(
             begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            end:
+                Alignment.bottomRight,
             colors: colors,
           ),
           boxShadow: [
             BoxShadow(
-              color: colors.last.withOpacity(0.5),
+              color: colors.last
+                  .withOpacity(0.5),
               blurRadius: 6,
-              offset: const Offset(0, 2),
+              offset:
+                  const Offset(0, 2),
             ),
           ],
         ),
@@ -450,7 +622,8 @@ class LeaderboardScreen extends StatelessWidget {
           toArabicDigits(rank),
           style: const TextStyle(
             color: Colors.white,
-            fontWeight: FontWeight.bold,
+            fontWeight:
+                FontWeight.bold,
             fontSize: 15,
           ),
         ),
@@ -465,117 +638,6 @@ class LeaderboardScreen extends StatelessWidget {
         fontWeight: FontWeight.w600,
         color: _purple,
         fontFamily: 'Tajawal',
-      ),
-    );
-  }
-}
-
-// ─── Bottom Navigation Bar (shared style) ────────────────────────────────────
-class _ChildBottomNav extends StatelessWidget {
-  final String currentRoute;
-  final String childId;
-  const _ChildBottomNav({required this.currentRoute, required this.childId});
-
-  @override
-  Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: TextDirection.ltr,
-      child: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF6A3A9E), Color(0xFF511281)],
-            begin: Alignment.topRight,
-            end: Alignment.bottomLeft,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black26,
-              blurRadius: 8,
-              offset: Offset(0, -2),
-            ),
-          ],
-        ),
-        child: SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 24),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _NavItem(
-                  icon: Icons.menu_book_rounded,
-                  label: 'التمارين',
-                  isActive: currentRoute == '/child/exercises',
-                  onTap: () => Navigator.pushNamed(
-                    context,
-                    '/child/exercises',
-                    arguments: childId, // ✅
-                  ),
-                ),
-                _NavItem(
-                  icon: Icons.home_rounded,
-                  label: 'الرئيسية',
-                  isActive: currentRoute == '/child/home',
-                  onTap: () => Navigator.pushNamed(
-                    context,
-                    '/child/home',
-                    arguments: childId, // ✅
-                  ),
-                ),
-                _NavItem(
-                  icon: Icons.leaderboard_rounded,
-                  label: 'المتصدرون',
-                  isActive: currentRoute == '/child/leaderboard',
-                  onTap: () => Navigator.pushNamed(
-                    context,
-                    '/child/leaderboard',
-                    arguments: childId, // ✅
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _NavItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool isActive;
-  final VoidCallback onTap;
-
-  const _NavItem({
-    required this.icon,
-    required this.label,
-    required this.isActive,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final color = isActive ? const Color(0xFFFF6969) : Colors.white;
-    return GestureDetector(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.all(8),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: color, size: 24),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                color: color,
-                fontSize: 11,
-                fontFamily: 'Tajawal',
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

@@ -7,7 +7,7 @@ import '/services/ChildSession.dart';
 import 'style_constants.dart'; // ─── Mock Data ───────────────────────────────────────────────────────────────
 import '../services/notification_service.dart';
 import '../services/friend_service.dart';
-
+import '../widgets/child_bottom_nav.dart';
 const _mockChild = (
   name: 'أحمد',
   avatar: '🦁',
@@ -271,20 +271,17 @@ Future<void> _showFriendRequestTestDialog(
                         ),
                         const SizedBox(height: 16),
 
-ElevatedButton(
-  onPressed: () => _showFriendRequestTestDialog(context),
-  child: const Text('اختبار إضافة صديق'),
-),
+
                       ],
                     ),
                   ),
                 ),
               ],
             ),
-            bottomNavigationBar: _ChildBottomNav(
-              currentRoute: '/child/home',
-              childId: childId,
-            ),
+            bottomNavigationBar: ChildBottomNav(
+  currentRoute: '/child/home',
+  childId: childId,
+),
           ),
         );
       },
@@ -418,63 +415,41 @@ class _ChildHeader extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: FaseehStyle.headerDecoration,
-      padding: FaseehStyle.getStandardPadding(
-        context,
-      ), // consistent larger padding
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // Avatar – larger to match bigger header
-          Text(
-            avatar,
-            style: const TextStyle(fontSize: 32), // increased from 30
+Widget build(BuildContext context) {
+  return FaseehStyle.buildLargeHeader(
+    context: context,
+    title: 'مرحبًا $name!',
+    subtitle: level,
+
+    leading: SizedBox(
+      width: 48,
+      height: 48,
+      child: Center(
+        child: Text(
+          avatar,
+          style: const TextStyle(
+            fontSize: 32,
           ),
-          const SizedBox(width: 12),
-          // Name + level – larger fonts (18/14)
-          Expanded(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'مرحبًا $name!',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18, // larger, matches _EditHeader title
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'Tajawal',
-                  ),
-                ),
-                //  Wrapped the level in a distinct visual badge!
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
-                  ),
-                  child: Text(
-                    level,
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 14, // larger, matches _EditHeader subtitle
-                      fontFamily: 'Tajawal',
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // Logout button – standard IconButton (larger tap area, icon 24)
-          IconButton(
-            icon: const Icon(Icons.logout_rounded, color: Colors.white),
-            onPressed: () => _handleLogout(context),
-          ),
-        ],
+        ),
       ),
-    );
-  }
+    ),
+
+    trailingActions: [
+      SizedBox(
+        width: 48,
+        height: 48,
+        child: IconButton(
+          icon: const Icon(
+            Icons.logout_rounded,
+            color: Colors.white,
+            size: 24,
+          ),
+          onPressed: () => _handleLogout(context),
+        ),
+      ),
+    ],
+  );
+}
 }
 
 // ─── Parent Password Dialog ───────────────────────────────────────────────────
@@ -940,107 +915,3 @@ class _TodayGoalCard extends StatelessWidget {
   }
 }
 
-// ─── Bottom Navigation Bar ────────────────────────────────────────────────────
-class _ChildBottomNav extends StatelessWidget {
-  final String currentRoute;
-  final String childId;
-
-  const _ChildBottomNav({required this.currentRoute, required this.childId});
-
-  @override
-  Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: TextDirection.ltr,
-      child: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF6A3A9E), Color(0xFF511281)],
-            begin: Alignment.topRight,
-            end: Alignment.bottomLeft,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black26,
-              blurRadius: 8,
-              offset: Offset(0, -2),
-            ),
-          ],
-        ),
-        child: SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 24),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _NavItem(
-                  icon: Icons.menu_book_rounded,
-                  label: 'التمارين',
-                  isActive: currentRoute == '/child/exercises',
-                  onTap: () => Navigator.pushNamed(
-                    context,
-                    '/child/exercises',
-                    arguments: childId,
-                  ),
-                ),
-                _NavItem(
-                  icon: Icons.home_rounded,
-                  label: 'الرئيسية',
-                  isActive: currentRoute == '/child/home',
-                  onTap: () => Navigator.pushNamed(
-                    context,
-                    '/child/home',
-                    arguments: childId,
-                  ),
-                ),
-                _NavItem(
-                  icon: Icons.leaderboard_rounded,
-                  label: 'المتصدرون',
-                  isActive: currentRoute == '/child/leaderboard',
-                  onTap: () => Navigator.pushNamed(
-                    context,
-                    '/child/leaderboard',
-                    arguments: childId,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _NavItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool isActive;
-  final VoidCallback onTap;
-
-  const _NavItem({
-    required this.icon,
-    required this.label,
-    required this.isActive,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final color = isActive ? const Color(0xFFFF6969) : Colors.white;
-    return GestureDetector(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.all(8),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: color, size: 24),
-            const SizedBox(height: 4),
-            Text(label, style: TextStyle(color: color, fontSize: 11)),
-          ],
-        ),
-      ),
-    );
-  }
-}

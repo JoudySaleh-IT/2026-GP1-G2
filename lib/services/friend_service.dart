@@ -107,4 +107,141 @@ print('==========================================');
   });
 });
   }
+Future<void> acceptFriendRequest({
+  required String currentChildId,
+  required String pairId,
+}) async {
+  final user = _auth.currentUser;
+
+  if (user == null) {
+    throw Exception('NOT_AUTHENTICATED');
+  }
+
+  final requestRef =
+      _db.collection('friend_requests').doc(pairId);
+
+  final friendshipRef =
+      _db.collection('friendships').doc(pairId);
+
+  await _db.runTransaction((transaction) async {
+    final requestSnapshot =
+        await transaction.get(requestRef);
+
+    if (!requestSnapshot.exists) {
+      throw Exception('FRIEND_REQUEST_NOT_FOUND');
+    }
+
+    final data = requestSnapshot.data();
+
+    final String? senderId =
+        data?['senderId'] as String?;
+
+    final String? receiverId =
+        data?['receiverId'] as String?;
+
+    if (senderId == null || receiverId == null) {
+      throw Exception('INVALID_FRIEND_REQUEST');
+    }
+
+    // Only the child who received the request can accept it.
+    if (receiverId != currentChildId) {
+      throw Exception('NOT_REQUEST_RECEIVER');
+    }
+
+    // Keep the IDs in one fixed order.
+    final ids = [
+      senderId,
+      receiverId,
+    ]..sort();
+
+    final String childA = ids[0];
+    final String childB = ids[1];
+
+    transaction.set(
+      friendshipRef,
+      {
+        'childA': childA,
+        'childB': childB,
+        'memberIds': [
+          childA,
+          childB,
+        ],
+        'createdAt': FieldValue.serverTimestamp(),
+      },
+    );
+
+    // Remove the pending request after acceptance.
+    transaction.delete(requestRef);
+  });
+}
+
+Future<void> declineFriendRequest({
+  required String currentChildId,
+  required String pairId,
+}) async {
+  final user = _auth.currentUser;
+
+  if (user == null) {
+    throw Exception('NOT_AUTHENTICATED');
+  }
+
+  final requestRef =
+      _db.collection('friend_requests').doc(pairId);
+
+  await _db.runTransaction((transaction) async {
+    final requestSnapshot =
+        await transaction.get(requestRef);
+
+    if (!requestSnapshot.exists) {
+      throw Exception('FRIEND_REQUEST_NOT_FOUND');
+    }
+
+    final data = requestSnapshot.data();
+
+    final String? receiverId =
+        data?['receiverId'] as String?;
+
+    if (receiverId == null) {
+      throw Exception('INVALID_FRIEND_REQUEST');
+    }
+
+    // Only the receiver can decline.
+    if (receiverId != currentChildId) {
+      throw Exception('NOT_REQUEST_RECEIVER');
+    }
+
+    transaction.delete(requestRef);
+  });
+}
+Future<void> removeFriend({
+  required String currentChildId,
+  required String friendId,
+}) async {
+  final user = _auth.currentUser;
+
+  if (user == null) {
+    throw Exception('NOT_AUTHENTICATED');
+  }
+
+  if (friendId.isEmpty || friendId == currentChildId) {
+    throw Exception('INVALID_FRIEND');
+  }
+
+  final String pairId = _buildPairId(
+    currentChildId,
+    friendId,
+  );
+
+  final friendshipRef =
+      _db.collection('friendships').doc(pairId);
+
+  final friendshipSnapshot =
+      await friendshipRef.get();
+
+  if (!friendshipSnapshot.exists) {
+    throw Exception('FRIENDSHIP_NOT_FOUND');
+  }
+
+  await friendshipRef.delete();
+}
 }
