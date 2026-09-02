@@ -3,6 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../services/friend_service.dart';
+import 'style_constants.dart';
 
 class ScanFriendQrScreen extends StatefulWidget {
   final String childId;
@@ -17,17 +18,12 @@ class ScanFriendQrScreen extends StatefulWidget {
       _ScanFriendQrScreenState();
 }
 
-class _ScanFriendQrScreenState
-    extends State<ScanFriendQrScreen> {
-  static const Color _purple =
-      Color(0xFF511281);
-  static const Color _coral =
-      Color(0xFFFF6969);
-  static const Color _background =
-      Color(0xFFFCF9EA);
+class _ScanFriendQrScreenState extends State<ScanFriendQrScreen> {
+  static const Color _purple = Color(0xFF511281);
+  static const Color _coral = Color(0xFFFF6969);
+  static const Color _background = Color(0xFFFCF9EA);
 
-  final MobileScannerController
-      _scannerController =
+  final MobileScannerController _scannerController =
       MobileScannerController();
 
   bool _processing = false;
@@ -36,44 +32,33 @@ class _ScanFriendQrScreenState
   // ─────────────────────────────────────────────
   // Standard App SnackBar
   // ─────────────────────────────────────────────
-
   void _showAppSnackBar(
     String message, {
     Color backgroundColor = _purple,
   }) {
-    final messenger =
-        ScaffoldMessenger.of(context);
+    final messenger = ScaffoldMessenger.of(context);
 
     messenger.hideCurrentSnackBar();
 
     messenger.showSnackBar(
       SnackBar(
-        backgroundColor:
-            backgroundColor,
-        behavior:
-            SnackBarBehavior.fixed,
+        backgroundColor: backgroundColor,
+        behavior: SnackBarBehavior.fixed,
         elevation: 0,
-        duration:
-            const Duration(
+        duration: const Duration(
           seconds: 3,
         ),
         content: Directionality(
-          textDirection:
-              TextDirection.rtl,
+          textDirection: TextDirection.rtl,
           child: Align(
-            alignment:
-                Alignment.centerRight,
+            alignment: Alignment.centerRight,
             child: Text(
               message,
-              textAlign:
-                  TextAlign.right,
-              style:
-                  const TextStyle(
-                fontFamily:
-                    'Tajawal',
+              textAlign: TextAlign.right,
+              style: const TextStyle(
+                fontFamily: 'Tajawal',
                 fontSize: 14,
-                color:
-                    Colors.white,
+                color: Colors.white,
               ),
             ),
           ),
@@ -85,12 +70,10 @@ class _ScanFriendQrScreenState
   // ─────────────────────────────────────────────
   // Read QR
   // ─────────────────────────────────────────────
-
   Future<void> _handleBarcode(
     BarcodeCapture capture,
   ) async {
-    if (_processing ||
-        _success) {
+    if (_processing || _success) {
       return;
     }
 
@@ -99,18 +82,13 @@ class _ScanFriendQrScreenState
     }
 
     final String? rawValue =
-        capture
-            .barcodes
-            .first
-            .rawValue;
+        capture.barcodes.first.rawValue;
 
-    if (rawValue == null ||
-        rawValue.isEmpty) {
+    if (rawValue == null || rawValue.isEmpty) {
       return;
     }
 
-    const String prefix =
-        'faseh://friend/';
+    const String prefix = 'faseh://friend/';
 
     // QR ليس خاصًا بفصيح
     if (!rawValue.startsWith(prefix)) {
@@ -122,12 +100,11 @@ class _ScanFriendQrScreenState
       return;
     }
 
-    final String fasehId =
-        rawValue
-            .substring(
-              prefix.length,
-            )
-            .trim();
+    final String fasehId = rawValue
+        .substring(
+          prefix.length,
+        )
+        .trim();
 
     if (fasehId.isEmpty) {
       _showAppSnackBar(
@@ -143,16 +120,12 @@ class _ScanFriendQrScreenState
     });
 
     // إيقاف المسح حتى لا يُقرأ الرمز أكثر من مرة
-    await _scannerController
-        .stop();
+    await _scannerController.stop();
 
     try {
-      await FriendService()
-          .sendFriendRequestByFasehId(
-        currentChildId:
-            widget.childId,
-        enteredFasehId:
-            fasehId,
+      await FriendService().sendFriendRequestByFasehId(
+        currentChildId: widget.childId,
+        enteredFasehId: fasehId,
       );
 
       if (!mounted) return;
@@ -170,8 +143,7 @@ class _ScanFriendQrScreenState
       String message =
           'تعذّر إرسال طلب الصداقة. حاول مرة أخرى';
 
-      if (e.code ==
-          'permission-denied') {
+      if (e.code == 'permission-denied') {
         message =
             'تم إرسال طلب صداقة لهذا الطفل مسبقًا أو أنكما أصدقاء بالفعل';
       }
@@ -182,8 +154,7 @@ class _ScanFriendQrScreenState
 
       _showAppSnackBar(
         message,
-        backgroundColor:
-            _coral,
+        backgroundColor: _coral,
       );
 
       await _restartScanner();
@@ -193,8 +164,7 @@ class _ScanFriendQrScreenState
     catch (e) {
       if (!mounted) return;
 
-      final String error =
-          e.toString();
+      final String error = e.toString();
 
       String message =
           'تعذّر إرسال طلب الصداقة. حاول مرة أخرى';
@@ -202,28 +172,23 @@ class _ScanFriendQrScreenState
       if (error.contains(
         'CANNOT_ADD_SELF',
       )) {
-        message =
-            'لا يمكنك إضافة نفسك كصديق';
+        message = 'لا يمكنك إضافة نفسك كصديق';
       } else if (error.contains(
         'FASEH_ID_NOT_FOUND',
       )) {
-        message =
-            'لم يتم العثور على هذا الصديق';
+        message = 'لم يتم العثور على هذا الصديق';
       } else if (error.contains(
         'INVALID_FASEH_ID',
       )) {
-        message =
-            'هذا الرمز غير صالح لإضافة صديق';
+        message = 'هذا الرمز غير صالح لإضافة صديق';
       } else if (error.contains(
         'PUBLIC_PROFILE_NOT_FOUND',
       )) {
-        message =
-            'تعذّر العثور على هذا الصديق';
+        message = 'تعذّر العثور على هذا الصديق';
       } else if (error.contains(
         'NOT_AUTHENTICATED',
       )) {
-        message =
-            'يجب تسجيل الدخول أولًا';
+        message = 'يجب تسجيل الدخول أولًا';
       }
 
       setState(() {
@@ -232,24 +197,20 @@ class _ScanFriendQrScreenState
 
       _showAppSnackBar(
         message,
-        backgroundColor:
-            _coral,
+        backgroundColor: _coral,
       );
 
       await _restartScanner();
     }
   }
 
-  Future<void>
-      _restartScanner() async {
-    if (!mounted ||
-        _success) {
+  Future<void> _restartScanner() async {
+    if (!mounted || _success) {
       return;
     }
 
     try {
-      await _scannerController
-          .start();
+      await _scannerController.start();
     } catch (_) {
       // لا نعرض رسالة تقنية للطفل
     }
@@ -268,29 +229,63 @@ class _ScanFriendQrScreenState
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
-        backgroundColor:
-            _background,
+        backgroundColor: _background,
 
-        appBar: AppBar(
-          backgroundColor: _purple,
-          foregroundColor:
-              Colors.white,
-          elevation: 0,
-          centerTitle: true,
-          title: const Text(
-            'مسح رمز صديق',
-            style: TextStyle(
-              fontWeight:
-                  FontWeight.bold,
-              fontFamily:
-                  'Tajawal',
-            ),
+        body: Column(
+          children: [
+            // ─────────────────────────────────────
+            // Unified Header
+            // ─────────────────────────────────────
+            FaseehStyle.buildLargeHeader(
+  context: context,
+  title: 'مسح رمز صديق',
+  subtitle: 'امسح رمز صديقك لإرسال طلب صداقة',
+
+  leading: Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      SizedBox(
+        width: 48,
+        height: 48,
+        child: IconButton(
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          icon: const Icon(
+            Icons.arrow_back,
+            color: Colors.white,
+            size: 25,
           ),
         ),
+      ),
 
-        body: _success
-            ? _buildSuccessView()
-            : _buildScannerView(),
+      const SizedBox(width: 8),
+
+      const SizedBox(
+        width: 48,
+        height: 48,
+        child: Center(
+          child: Icon(
+            Icons.qr_code_scanner_rounded,
+            color: Colors.white,
+            size: 30,
+          ),
+        ),
+      ),
+    ],
+  ),
+),
+
+            // ─────────────────────────────────────
+            // Page Content
+            // ─────────────────────────────────────
+            Expanded(
+              child: _success
+                  ? _buildSuccessView()
+                  : _buildScannerView(),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -298,9 +293,9 @@ class _ScanFriendQrScreenState
   // ─────────────────────────────────────────────
   // Scanner
   // ─────────────────────────────────────────────
-
   Widget _buildScannerView() {
     return SafeArea(
+      top: false,
       child: Column(
         children: [
           const SizedBox(
@@ -308,21 +303,17 @@ class _ScanFriendQrScreenState
           ),
 
           const Padding(
-            padding:
-                EdgeInsets.symmetric(
+            padding: EdgeInsets.symmetric(
               horizontal: 24,
             ),
             child: Text(
               'وجّه الكاميرا نحو رمز صديقك',
-              textAlign:
-                  TextAlign.center,
+              textAlign: TextAlign.center,
               style: TextStyle(
                 color: _purple,
                 fontSize: 19,
-                fontWeight:
-                    FontWeight.bold,
-                fontFamily:
-                    'Tajawal',
+                fontWeight: FontWeight.bold,
+                fontFamily: 'Tajawal',
               ),
             ),
           ),
@@ -332,20 +323,16 @@ class _ScanFriendQrScreenState
           ),
 
           const Padding(
-            padding:
-                EdgeInsets.symmetric(
+            padding: EdgeInsets.symmetric(
               horizontal: 30,
             ),
             child: Text(
               'سيتم إرسال طلب الصداقة بعد قراءة الرمز',
-              textAlign:
-                  TextAlign.center,
+              textAlign: TextAlign.center,
               style: TextStyle(
-                color:
-                    Colors.grey,
+                color: Colors.grey,
                 fontSize: 13,
-                fontFamily:
-                    'Tajawal',
+                fontFamily: 'Tajawal',
               ),
             ),
           ),
@@ -356,44 +343,32 @@ class _ScanFriendQrScreenState
 
           Expanded(
             child: Padding(
-              padding:
-                  const EdgeInsets
-                      .symmetric(
+              padding: const EdgeInsets.symmetric(
                 horizontal: 22,
               ),
               child: ClipRRect(
-                borderRadius:
-                    BorderRadius
-                        .circular(
+                borderRadius: BorderRadius.circular(
                   28,
                 ),
                 child: Stack(
-                  fit:
-                      StackFit.expand,
+                  fit: StackFit.expand,
                   children: [
                     MobileScanner(
-                      controller:
-                          _scannerController,
-                      onDetect:
-                          _handleBarcode,
+                      controller: _scannerController,
+                      onDetect: _handleBarcode,
                     ),
 
                     // Dark overlay
                     Container(
-                      decoration:
-                          BoxDecoration(
-                        border:
-                            Border.all(
-                          color: Colors
-                              .white
-                              .withOpacity(
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: Colors.white.withOpacity(
                             0.15,
                           ),
                           width: 2,
                         ),
                         borderRadius:
-                            BorderRadius
-                                .circular(
+                            BorderRadius.circular(
                           28,
                         ),
                       ),
@@ -401,21 +376,16 @@ class _ScanFriendQrScreenState
 
                     // QR target frame
                     Center(
-                      child:
-                          Container(
+                      child: Container(
                         width: 235,
                         height: 235,
-                        decoration:
-                            BoxDecoration(
+                        decoration: BoxDecoration(
                           borderRadius:
-                              BorderRadius
-                                  .circular(
+                              BorderRadius.circular(
                             26,
                           ),
-                          border:
-                              Border.all(
-                            color:
-                                _coral,
+                          border: Border.all(
+                            color: _coral,
                             width: 4,
                           ),
                         ),
@@ -424,15 +394,11 @@ class _ScanFriendQrScreenState
 
                     if (_processing)
                       Container(
-                        color: Colors
-                            .black38,
-                        child:
-                            const Center(
+                        color: Colors.black38,
+                        child: const Center(
                           child:
                               CircularProgressIndicator(
-                            color:
-                                Colors
-                                    .white,
+                            color: Colors.white,
                           ),
                         ),
                       ),
@@ -453,37 +419,30 @@ class _ScanFriendQrScreenState
   // ─────────────────────────────────────────────
   // Success
   // ─────────────────────────────────────────────
-
   Widget _buildSuccessView() {
     return SafeArea(
+      top: false,
       child: Padding(
-        padding:
-            const EdgeInsets.all(
+        padding: const EdgeInsets.all(
           28,
         ),
         child: Column(
           mainAxisAlignment:
-              MainAxisAlignment
-                  .center,
+              MainAxisAlignment.center,
           children: [
             Container(
               width: 110,
               height: 110,
-              decoration:
-                  BoxDecoration(
-                color: Colors.green
-                    .withOpacity(
+              decoration: BoxDecoration(
+                color: Colors.green.withOpacity(
                   0.10,
                 ),
-                shape:
-                    BoxShape.circle,
+                shape: BoxShape.circle,
               ),
               child: const Icon(
-                Icons
-                    .check_circle_rounded,
+                Icons.check_circle_rounded,
                 size: 76,
-                color:
-                    Colors.green,
+                color: Colors.green,
               ),
             ),
 
@@ -496,10 +455,8 @@ class _ScanFriendQrScreenState
               style: TextStyle(
                 color: _purple,
                 fontSize: 23,
-                fontWeight:
-                    FontWeight.bold,
-                fontFamily:
-                    'Tajawal',
+                fontWeight: FontWeight.bold,
+                fontFamily: 'Tajawal',
               ),
             ),
 
@@ -509,14 +466,11 @@ class _ScanFriendQrScreenState
 
             const Text(
               'سيظهر صديقك في قائمة الأصدقاء بعد قبول الطلب',
-              textAlign:
-                  TextAlign.center,
+              textAlign: TextAlign.center,
               style: TextStyle(
-                color:
-                    Colors.grey,
+                color: Colors.grey,
                 fontSize: 14,
-                fontFamily:
-                    'Tajawal',
+                fontFamily: 'Tajawal',
               ),
             ),
 
@@ -525,48 +479,34 @@ class _ScanFriendQrScreenState
             ),
 
             SizedBox(
-              width:
-                  double.infinity,
-              child:
-                  ElevatedButton(
+              width: double.infinity,
+              child: ElevatedButton(
                 onPressed: () {
                   Navigator.pop(
                     context,
                   );
                 },
-                style:
-                    ElevatedButton
-                        .styleFrom(
-                  backgroundColor:
-                      _coral,
-                  foregroundColor:
-                      Colors.white,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _coral,
+                  foregroundColor: Colors.white,
                   elevation: 0,
-                  padding:
-                      const EdgeInsets
-                          .symmetric(
+                  padding: const EdgeInsets.symmetric(
                     vertical: 15,
                   ),
-                  shape:
-                      RoundedRectangleBorder(
+                  shape: RoundedRectangleBorder(
                     borderRadius:
-                        BorderRadius
-                            .circular(
+                        BorderRadius.circular(
                       16,
                     ),
                   ),
                 ),
-                child:
-                    const Text(
+                child: const Text(
                   'تم',
-                  style:
-                      TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight:
-                        FontWeight
-                            .bold,
-                    fontFamily:
-                        'Tajawal',
+                        FontWeight.bold,
+                    fontFamily: 'Tajawal',
                   ),
                 ),
               ),
