@@ -230,7 +230,7 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> {
                             ),
                           ),
 
-                          /* ─── 🚀 زر المطور السحري ───
+                          /* ─── 🚀 زر المطور السحري ───*/
                           if (kDebugMode) ...[
                             const SizedBox(height: 12),
                             OutlinedButton.icon(
@@ -244,7 +244,7 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> {
                                 side: BorderSide(color: Colors.orange.shade300),
                               ),
                             ),
-                          ],*/
+                          ],
                           const SizedBox(height: 16),
 
                           Row(
