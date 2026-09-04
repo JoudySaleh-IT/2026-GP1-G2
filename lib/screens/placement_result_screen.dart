@@ -6,7 +6,6 @@ import '../utils/arabic_numbers.dart';
 String _getLetterName(String letter) {
   const names = {
     'ض': 'Dhad',
-    'ح': 'Haa',
     'خ': 'Khaa',
     'ص': 'Saad',
     'ق': 'Qaf',
@@ -27,7 +26,11 @@ String _getLetterName(String letter) {
 class LetterScore {
   final String letter;
   final int score;
-  const LetterScore({required this.letter, required this.score});
+
+  const LetterScore({
+    required this.letter,
+    required this.score,
+  });
 }
 
 // ─── Placement Result Screen ──────────────────────────────────────────────────
@@ -44,113 +47,168 @@ class PlacementResultScreen extends StatefulWidget {
   });
 
   @override
-  State<PlacementResultScreen> createState() => _PlacementResultScreenState();
+  State<PlacementResultScreen> createState() =>
+      _PlacementResultScreenState();
 }
 
 class _PlacementResultScreenState extends State<PlacementResultScreen> {
   String _childName = '';
-  // Identifying letters for practice (score < 70) and categorizing performance
-  List<LetterScore> get _lettersToPractice =>
-      widget.letterScores.where((ls) => ls.score < 70).toList();
 
-  List<LetterScore> get _masteredLetters =>
-      widget.letterScores.where((ls) => ls.score >= 70).toList();
-
-  // ── Write placementDone = true to Firestore when result screen opens ────────
-  @override
-void initState() {
-  super.initState();
-  _loadChildName();
-  _markPlacementDone();
-}
-Future<void> _loadChildName() async {
-  try {
-    final doc = await FirebaseFirestore.instance
-        .collection('children')
-        .doc(widget.childId)
-        .get();
-
-    if (doc.exists && mounted) {
-      final data = doc.data();
-      setState(() {
-        _childName = data?['name'] ?? '';
-      });
-    }
-  } catch (e) {
-    debugPrint(' خطأ أثناء جلب اسم الطفل: $e');
-  }
-}
-
-  Future<void> _markPlacementDone() async {
-    try {
-      Map<String, int> scoresMap = {
-        for (var item in widget.letterScores) item.letter: item.score,
-      };
-
-      // 1️⃣ استخراج المسمى النصي للمستوى بناءً على الدرجة (بدون إيموجي للحفظ في القاعدة)
-      String levelToSave;
-      if (widget.score >= 70) {
-        levelToSave = 'خبير';
-      } else if (widget.score >= 40) {
-        levelToSave = 'متوسط';
-      } else {
-        levelToSave = 'مبتدئ';
-      }
-
-      // 2️⃣ تحديث مستند الطفل ليشمل الحقل 'level'
-      await FirebaseFirestore.instance
-          .collection('children')
-          .doc(widget.childId)
-          .update({
-            'placementDone': true,
-            'placementScore': widget.score,
-            'placementDate': FieldValue.serverTimestamp(),
-            'letterScores': scoresMap,
-            'level': levelToSave, // ✅ تحديث المستوى النصي ليظهر عند الأب
-          });
-
-      debugPrint('✅ تم حفظ نتائج المستوى وحقل level بنجاح');
-    } catch (e) {
-      debugPrint('❌ خطأ أثناء تحديث بيانات الاختبار: $e');
-    }
-  }
-
-  // ── Constants ──
+  // ─── Constants ──────────────────────────────────────────────────────────────
   static const _purple = Color(0xFF511281);
   static const _purple2 = Color(0xFF6A3A9E);
   static const _coral = Color(0xFFFF6969);
   static const _bgColor = Color(0xFFFCF9EA);
 
-  // ── Overall Child Level ──
-  // ── Overall Child Level ──
+  // ─── Final Placement Performance Thresholds ────────────────────────────────
+  //
+  // 0–50%   = مبتدئ
+  // 51–79%  = متوسط
+  // 80–100% = متقن
+  //
+  // 50% is the research-supported lower performance point.
+  // 80% is the research-supported mastery/performance criterion.
+  // The intermediate range (51–79%) is derived as the interval
+  // between the two research-supported thresholds.
+  static const int _beginnerMaxScore = 50;
+  static const int _masteryMinScore = 80;
+
+  // ─── Letter Classification ─────────────────────────────────────────────────
+
+  // Any letter below 80% still requires practice.
+  List<LetterScore> get _lettersToPractice =>
+      widget.letterScores
+          .where((ls) => ls.score < _masteryMinScore)
+          .toList();
+
+  // A letter is considered mastered only at 80% or above.
+  List<LetterScore> get _masteredLetters =>
+      widget.letterScores
+          .where((ls) => ls.score >= _masteryMinScore)
+          .toList();
+
+  // ─── Lifecycle ──────────────────────────────────────────────────────────────
+  @override
+  void initState() {
+    super.initState();
+    _loadChildName();
+    _markPlacementDone();
+  }
+
+  // ─── Load Child Name ────────────────────────────────────────────────────────
+  Future<void> _loadChildName() async {
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('children')
+          .doc(widget.childId)
+          .get();
+
+      if (doc.exists && mounted) {
+        final data = doc.data();
+
+        setState(() {
+          _childName = data?['name'] ?? '';
+        });
+      }
+    } catch (e) {
+      debugPrint('خطأ أثناء جلب اسم الطفل: $e');
+    }
+  }
+
+  // ─── Save Placement Result ──────────────────────────────────────────────────
+  Future<void> _markPlacementDone() async {
+    try {
+      Map<String, int> scoresMap = {
+        for (var item in widget.letterScores)
+          item.letter: item.score,
+      };
+
+      // Determine the child's overall placement level.
+      //
+      // 0–50%   → مبتدئ
+      // 51–79%  → متوسط
+      // 80–100% → متقن
+      String levelToSave;
+
+      if (widget.score >= _masteryMinScore) {
+        levelToSave = 'متقن';
+      } else if (widget.score <= _beginnerMaxScore) {
+        levelToSave = 'مبتدئ';
+      } else {
+        levelToSave = 'متوسط';
+      }
+
+      await FirebaseFirestore.instance
+          .collection('children')
+          .doc(widget.childId)
+          .update({
+        'placementDone': true,
+        'placementScore': widget.score,
+        'placementDate': FieldValue.serverTimestamp(),
+        'letterScores': scoresMap,
+        'level': levelToSave,
+      });
+
+      debugPrint(
+        '✅ تم حفظ نتائج اختبار تحديد المستوى وحقل level بنجاح',
+      );
+    } catch (e) {
+      debugPrint(
+        '❌ خطأ أثناء تحديث بيانات اختبار تحديد المستوى: $e',
+      );
+    }
+  }
+
+  // ─── Overall Child Level ────────────────────────────────────────────────────
   String get _overallLevel {
-    if (widget.score >= 70) return 'مستوى خبير ';
-    if (widget.score >= 40) return 'مستوى متوسط ';
-    return 'مستوى مبتدئ ';
+    if (widget.score >= _masteryMinScore) {
+      return 'مستوى متقن';
+    }
+
+    if (widget.score <= _beginnerMaxScore) {
+      return 'مستوى مبتدئ';
+    }
+
+    return 'مستوى متوسط';
   }
 
-  // ── Encouragement message ──
-// ── Encouragement message ──
-String get _encouragementMessage {
-  if (_childName.isEmpty) {
-    if (widget.score >= 70) return 'ممتاز! 👏';
-    if (widget.score >= 40) return 'أحسنت! 🌟';
-    return 'بداية جميلة! سنتدرّب معًا 💜';
+  // ─── Encouragement Message ──────────────────────────────────────────────────
+  String get _encouragementMessage {
+    if (_childName.isEmpty) {
+      if (widget.score >= _masteryMinScore) {
+        return 'ممتاز! 👏';
+      }
+
+      if (widget.score <= _beginnerMaxScore) {
+        return 'بداية جميلة! سنتدرّب معًا 💜';
+      }
+
+      return 'أحسنت! 🌟';
+    }
+
+    if (widget.score >= _masteryMinScore) {
+      return 'ممتاز يا $_childName! 👏';
+    }
+
+    if (widget.score <= _beginnerMaxScore) {
+      return 'بداية جميلة يا $_childName! سنتدرّب معًا 💜';
+    }
+
+    return 'أحسنت يا $_childName! 🌟';
   }
 
-  if (widget.score >= 70) return 'ممتاز يا $_childName! 👏';
-  if (widget.score >= 40) return 'أحسنت يا $_childName! 🌟';
-  return 'بداية جميلة يا $_childName! سنتدرّب معًا 💜';
-}
-
-  // ── Sorted letter scores (ascending) ──
+  // ─── Sorted Letter Scores ───────────────────────────────────────────────────
   List<LetterScore> get _sortedScores =>
-      [...widget.letterScores]..sort((a, b) => a.score.compareTo(b.score));
+      [...widget.letterScores]
+        ..sort(
+          (a, b) => a.score.compareTo(b.score),
+        );
 
+  // ─── Build ──────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     return Directionality(
-      textDirection: TextDirection.rtl, // ✅ لفرض الاتجاه العربي
+      textDirection: TextDirection.rtl,
       child: Scaffold(
         backgroundColor: _bgColor,
         body: Stack(
@@ -177,7 +235,9 @@ String get _encouragementMessage {
               child: ScrollConfiguration(
                 behavior: ScrollConfiguration.of(
                   context,
-                ).copyWith(overscroll: false),
+                ).copyWith(
+                  overscroll: false,
+                ),
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.all(16),
                   child: _buildCard(context),
@@ -190,6 +250,7 @@ String get _encouragementMessage {
     );
   }
 
+  // ─── Background Bubble ──────────────────────────────────────────────────────
   Widget _bubble({
     double? top,
     double? bottom,
@@ -206,11 +267,15 @@ String get _encouragementMessage {
       child: Container(
         width: size,
         height: size,
-        decoration: BoxDecoration(shape: BoxShape.circle, color: color),
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: color,
+        ),
       ),
     );
   }
 
+  // ─── Main Card ──────────────────────────────────────────────────────────────
   Widget _buildCard(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
@@ -249,15 +314,24 @@ String get _encouragementMessage {
     );
   }
 
+  // ─── Header ─────────────────────────────────────────────────────────────────
   Widget _buildHeader() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(20, 36, 20, 24),
+      padding: const EdgeInsets.fromLTRB(
+        20,
+        36,
+        20,
+        24,
+      ),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Color(0xFFF8F1FF), Colors.white],
+          colors: [
+            Color(0xFFF8F1FF),
+            Colors.white,
+          ],
         ),
       ),
       child: Column(
@@ -270,7 +344,10 @@ String get _encouragementMessage {
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [_purple2, _purple],
+                colors: [
+                  _purple2,
+                  _purple,
+                ],
               ),
               boxShadow: [
                 BoxShadow(
@@ -301,7 +378,7 @@ String get _encouragementMessage {
             'انتهيت من اختبار الحروف',
             style: TextStyle(
               fontSize: 15,
-              color: Color(0xFF6b5a7a),
+              color: Color(0xFF6B5A7A),
               fontFamily: 'Tajawal',
             ),
           ),
@@ -320,15 +397,22 @@ String get _encouragementMessage {
     );
   }
 
+  // ─── Score Card ─────────────────────────────────────────────────────────────
   Widget _buildScoreCard() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
+      padding: const EdgeInsets.symmetric(
+        vertical: 28,
+        horizontal: 20,
+      ),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [_purple2, _purple],
+          colors: [
+            _purple2,
+            _purple,
+          ],
         ),
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
@@ -344,7 +428,11 @@ String get _encouragementMessage {
           const Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.star_rounded, color: Colors.white, size: 22),
+              Icon(
+                Icons.star_rounded,
+                color: Colors.white,
+                size: 22,
+              ),
               SizedBox(width: 8),
               Text(
                 'درجتك',
@@ -358,7 +446,7 @@ String get _encouragementMessage {
           ),
           const SizedBox(height: 10),
           Text(
-              '${toArabicDigits(widget.score)}٪',
+            '${toArabicDigits(widget.score)}٪',
             style: const TextStyle(
               fontSize: 60,
               fontWeight: FontWeight.bold,
@@ -368,9 +456,13 @@ String get _encouragementMessage {
             ),
           ),
           const SizedBox(height: 4),
-          // ✅ عرض المستوى الكلي للطفل
+
+          // Overall level
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 6,
+            ),
             decoration: BoxDecoration(
               color: Colors.white24,
               borderRadius: BorderRadius.circular(20),
@@ -385,6 +477,7 @@ String get _encouragementMessage {
               ),
             ),
           ),
+
           const SizedBox(height: 8),
           const Text(
             'هذه النتيجة من الحروف التي اختبرناها',
@@ -399,14 +492,19 @@ String get _encouragementMessage {
     );
   }
 
-  Widget _buildWeakLettersSection(BuildContext context) {
+  // ─── Letters To Practice ────────────────────────────────────────────────────
+  Widget _buildWeakLettersSection(
+    BuildContext context,
+  ) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: const Color(0xFFFFF7F3),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFFFD9CC)),
+        border: Border.all(
+          color: const Color(0xFFFFD9CC),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -421,9 +519,11 @@ String get _encouragementMessage {
             ),
           ),
           const SizedBox(height: 14),
+
           _lettersToPractice.isEmpty
               ? _emptyState(
-                  text: 'رائع! لا توجد حروف تحتاج تدريب الآن 💚',
+                  text:
+                      'رائع! لا توجد حروف تحتاج تدريب الآن 💚',
                   bgColor: Colors.green.shade50,
                   borderColor: Colors.green.shade200,
                   textColor: Colors.green.shade700,
@@ -431,20 +531,25 @@ String get _encouragementMessage {
               : _buildDynamicLetterGrid(
                   context,
                   letters: _lettersToPractice,
-                ), // ✅ استخدام الدالة الديناميكية
+                ),
         ],
       ),
     );
   }
 
-  Widget _buildStrongLettersSection(BuildContext context) {
+  // ─── Mastered Letters ───────────────────────────────────────────────────────
+  Widget _buildStrongLettersSection(
+    BuildContext context,
+  ) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: const Color(0xFFF4FFF5),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFD5F0D8)),
+        border: Border.all(
+          color: const Color(0xFFD5F0D8),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -459,9 +564,11 @@ String get _encouragementMessage {
             ),
           ),
           const SizedBox(height: 14),
+
           _masteredLetters.isEmpty
               ? _emptyState(
-                  text: 'سنعرض هنا الحروف التي أتقنتها لاحقًا',
+                  text:
+                      'سنعرض هنا الحروف التي أتقنتها لاحقًا',
                   bgColor: Colors.white,
                   borderColor: Colors.grey.shade200,
                   textColor: Colors.grey.shade600,
@@ -469,103 +576,136 @@ String get _encouragementMessage {
               : _buildDynamicLetterGrid(
                   context,
                   letters: _masteredLetters,
-                ), // ✅ استخدام الدالة الديناميكية
+                ),
         ],
       ),
     );
   }
 
-  // ✅ دالة جديدة ترسم الحرف وتعطيه وساماً (Badge) حسب درجته الفردية
+  // ─── Dynamic Letter Grid ────────────────────────────────────────────────────
   Widget _buildDynamicLetterGrid(
     BuildContext context, {
     required List<LetterScore> letters,
   }) {
     final cardWidth =
-        (MediaQuery.of(context).size.width - 32 - 40 - 20) / 3 - 2;
+        (MediaQuery.of(context).size.width -
+                    32 -
+                    40 -
+                    20) /
+                3 -
+            2;
 
     return Wrap(
       spacing: 10,
       runSpacing: 10,
-      children: letters.map((item) {
-        // تحديد مظهر البطاقة بناءً على الدرجة (متقن، تطوير، تأسيس)
-        String badge = 'متقن';
-        Color badgeBg = Colors.green.shade100;
-        Color badgeText = Colors.green.shade700;
-        Color borderColor = Colors.green.shade200;
+      children: letters.map(
+        (item) {
+          // Default: mastered
+          String badge = 'متقن';
+          Color badgeBg = Colors.green.shade100;
+          Color badgeText = Colors.green.shade700;
+          Color borderColor = Colors.green.shade200;
 
-        if (item.score < 40) {
-          badge = 'تأسيس'; // كلمة ألطف من "ضعيف" للأطفال
-          badgeBg = _coral.withOpacity(0.1);
-          badgeText = _coral;
-          borderColor = _coral.withOpacity(0.2);
-        } else if (item.score < 70) {
-          badge = 'تطوير'; // للمستوى المتوسط
-          badgeBg = Colors.orange.shade100;
-          badgeText = Colors.orange.shade800;
-          borderColor = Colors.orange.shade200;
-        }
+          // 0–50% = Beginner
+          if (item.score <= _beginnerMaxScore) {
+            badge = 'مبتدئ';
+            badgeBg = _coral.withOpacity(0.1);
+            badgeText = _coral;
+            borderColor = _coral.withOpacity(0.2);
+          }
 
-        return SizedBox(
-          width: cardWidth,
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(22),
-              border: Border.all(color: borderColor, width: 2),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 6,
-                  offset: const Offset(0, 2),
+          // 51–79% = Intermediate
+          else if (item.score < _masteryMinScore) {
+            badge = 'متوسط';
+            badgeBg = Colors.orange.shade100;
+            badgeText = Colors.orange.shade800;
+            borderColor = Colors.orange.shade200;
+          }
+
+          // 80–100% = Mastered
+          else {
+            badge = 'متقن';
+            badgeBg = Colors.green.shade100;
+            badgeText = Colors.green.shade700;
+            borderColor = Colors.green.shade200;
+          }
+
+          return SizedBox(
+            width: cardWidth,
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(
+                  color: borderColor,
+                  width: 2,
                 ),
-              ],
-            ),
-            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  item.letter,
-                  style: const TextStyle(
-                    fontSize: 36,
-                    color: _purple,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'Tajawal',
+                boxShadow: [
+                  BoxShadow(
+                    color:
+                        Colors.black.withOpacity(0.05),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
                   ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  _getLetterName(item.letter),
-                  style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: badgeBg,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    badge,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: badgeText,
+                ],
+              ),
+              padding: const EdgeInsets.symmetric(
+                vertical: 14,
+                horizontal: 8,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    item.letter,
+                    style: const TextStyle(
+                      fontSize: 36,
+                      color: _purple,
+                      fontWeight: FontWeight.bold,
                       fontFamily: 'Tajawal',
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 4),
+                  Text(
+                    _getLetterName(item.letter),
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.grey.shade500,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: badgeBg,
+                      borderRadius:
+                          BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      badge,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight:
+                            FontWeight.w600,
+                        color: badgeText,
+                        fontFamily: 'Tajawal',
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        );
-      }).toList(),
+          );
+        },
+      ).toList(),
     );
   }
 
+  // ─── Per Letter Scores ──────────────────────────────────────────────────────
   Widget _buildPerLetterScores() {
     return Container(
       width: double.infinity,
@@ -573,7 +713,9 @@ String get _encouragementMessage {
       decoration: BoxDecoration(
         color: const Color(0xFFFAF8FF),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFE7DDF5)),
+        border: Border.all(
+          color: const Color(0xFFE7DDF5),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -588,27 +730,43 @@ String get _encouragementMessage {
             ),
           ),
           const SizedBox(height: 14),
-          ..._sortedScores.map((item) => _buildScoreRow(item)),
+
+          ..._sortedScores.map(
+            (item) => _buildScoreRow(item),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildScoreRow(LetterScore item) {
-    // Categorizing child performance based on AI accuracy scores
-    final String label = item.score >= 70
-        ? 'متقن 🌟'
-        : item.score >= 40
-        ? 'في الطريق الصحيح 👍'
-        : 'يحتاج تدريب ✍️';
+  // ─── Individual Letter Score Row ────────────────────────────────────────────
+  Widget _buildScoreRow(
+    LetterScore item,
+  ) {
+    // Final performance classification:
+    //
+    // 0–50%   → مبتدئ
+    // 51–79%  → متوسط
+    // 80–100% → متقن
+
+    final String label =
+        item.score >= _masteryMinScore
+            ? 'متقن 🌟'
+            : item.score <= _beginnerMaxScore
+                ? 'مبتدئ ✍️'
+                : 'متوسط 👍';
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
+      margin: const EdgeInsets.only(
+        bottom: 10,
+      ),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: _purple.withOpacity(0.1)),
+        border: Border.all(
+          color: _purple.withOpacity(0.1),
+        ),
       ),
       child: Row(
         children: [
@@ -618,7 +776,10 @@ String get _encouragementMessage {
             decoration: BoxDecoration(
               color: _bgColor,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: _purple.withOpacity(0.2), width: 1.5),
+              border: Border.all(
+                color: _purple.withOpacity(0.2),
+                width: 1.5,
+              ),
             ),
             alignment: Alignment.center,
             child: Text(
@@ -632,8 +793,10 @@ String get _encouragementMessage {
             ),
           ),
           const SizedBox(width: 12),
+
           Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment:
+                CrossAxisAlignment.start,
             children: [
               Text(
                 _getLetterName(item.letter),
@@ -655,9 +818,11 @@ String get _encouragementMessage {
               ),
             ],
           ),
+
           const Spacer(),
+
           Text(
-           '${toArabicDigits(item.score)}٪',
+            '${toArabicDigits(item.score)}٪',
             style: const TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
@@ -670,19 +835,26 @@ String get _encouragementMessage {
     );
   }
 
-  Widget _buildActionButtons(BuildContext context) {
+  // ─── Action Buttons ─────────────────────────────────────────────────────────
+  Widget _buildActionButtons(
+    BuildContext context,
+  ) {
     return Column(
       children: [
         SizedBox(
           width: double.infinity,
           height: 56,
           child: ElevatedButton.icon(
-            onPressed: () => Navigator.pushNamed(
+            onPressed: () =>
+                Navigator.pushNamed(
               context,
               '/child/exercises',
               arguments: widget.childId,
             ),
-            icon: const Icon(Icons.menu_book_rounded, size: 22),
+            icon: const Icon(
+              Icons.menu_book_rounded,
+              size: 22,
+            ),
             label: const Text(
               'ابدأ التدريب',
               style: TextStyle(
@@ -695,17 +867,21 @@ String get _encouragementMessage {
               backgroundColor: _coral,
               foregroundColor: Colors.white,
               elevation: 4,
-              shadowColor: _coral.withOpacity(0.4),
+              shadowColor:
+                  _coral.withOpacity(0.4),
               shape: const StadiumBorder(),
             ),
           ),
         ),
+
         const SizedBox(height: 12),
+
         SizedBox(
           width: double.infinity,
           height: 56,
           child: OutlinedButton(
-            onPressed: () => Navigator.pushNamedAndRemoveUntil(
+            onPressed: () =>
+                Navigator.pushNamedAndRemoveUntil(
               context,
               '/child/home',
               (route) => false,
@@ -713,12 +889,19 @@ String get _encouragementMessage {
             ),
             style: OutlinedButton.styleFrom(
               foregroundColor: _purple,
-              side: BorderSide(color: _purple.withOpacity(0.25), width: 2),
+              side: BorderSide(
+                color:
+                    _purple.withOpacity(0.25),
+                width: 2,
+              ),
               shape: const StadiumBorder(),
             ),
             child: const Text(
               'العودة للرئيسية',
-              style: TextStyle(fontSize: 18, fontFamily: 'Tajawal'),
+              style: TextStyle(
+                fontSize: 18,
+                fontFamily: 'Tajawal',
+              ),
             ),
           ),
         ),
@@ -726,6 +909,7 @@ String get _encouragementMessage {
     );
   }
 
+  // ─── Empty State ────────────────────────────────────────────────────────────
   Widget _emptyState({
     required String text,
     required Color bgColor,
@@ -737,7 +921,9 @@ String get _encouragementMessage {
       decoration: BoxDecoration(
         color: bgColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: borderColor),
+        border: Border.all(
+          color: borderColor,
+        ),
       ),
       child: Center(
         child: Text(
