@@ -1,8 +1,12 @@
 import 'dart:async';
 import 'dart:math';
-
+import 'package:record/record.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:flutter/material.dart';
 import 'style_constants.dart';
+import 'package:audioplayers/audioplayers.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 // ---------------------------------------------------------------------------
 // Data model
@@ -14,8 +18,10 @@ class RecordingExercise {
   final String transliteration;
   final String instruction;
   final String difficulty;
+  final String audioPath;
 
   const RecordingExercise({
+    required this.audioPath,
     required this.id,
     required this.text,
     required this.transliteration,
@@ -27,38 +33,67 @@ class RecordingExercise {
 const List<RecordingExercise> recordingExercises = [
   RecordingExercise(
     id: 1,
-    text: 'ض',
-    transliteration: 'Dhad',
-    instruction: 'انطق هذا الحرف المفخم',
-    difficulty: 'أساسي',
+    text: 'خُبْز',
+    transliteration: '',
+    instruction: 'استمع إلى الكلمة ثم انطقها',
+    difficulty: 'مبتدئ',
+    audioPath: 'audio/kha/khubz.mp3',
   ),
   RecordingExercise(
     id: 2,
-    text: 'قَلَم',
-    transliteration: 'Qalam (قلم)',
-    instruction: 'اقرأ الكلمة مع الحركات الصحيحة',
-    difficulty: 'متوسط',
+    text: 'خُوخ',
+    transliteration: '',
+    instruction: 'استمع إلى الكلمة ثم انطقها',
+    difficulty: 'مبتدئ',
+    audioPath: '',
   ),
   RecordingExercise(
     id: 3,
-    text: 'مَدْرَسَة',
-    transliteration: 'Madrasa (مدرسة)',
-    instruction: 'انطق مع السكون والفتحة بشكل صحيح',
-    difficulty: 'متوسط',
+    text: 'خَرُوف',
+    transliteration: '',
+    instruction: 'استمع إلى الكلمة ثم انطقها',
+    difficulty: 'مبتدئ',
+    audioPath: 'audio/kha/kharouf.mp3',
   ),
   RecordingExercise(
     id: 4,
-    text: 'عَيْن',
-    transliteration: 'Ayn (عين)',
-    instruction: "ركز على صوت الحرف الحلقي 'ع'",
-    difficulty: 'متقدم',
+    text: 'خِيَار',
+    transliteration: '',
+    instruction: 'استمع إلى الكلمة ثم انطقها',
+    difficulty: 'مبتدئ',
+    audioPath: 'audio/kha/khiyar.mp3',
   ),
   RecordingExercise(
     id: 5,
-    text: 'الطَّالِبُ يَدْرُسُ',
-    transliteration: 'Al-Talib Yadrus (الطالب يدرس)',
-    instruction: 'اقرأ الجملة كاملة',
-    difficulty: 'متقدم',
+    text: 'خَاتَم',
+    transliteration: '',
+    instruction: 'استمع إلى الكلمة ثم انطقها',
+    difficulty: 'مبتدئ',
+    audioPath: 'audio/kha/khatam.mp3',
+  ),
+  RecordingExercise(
+    id: 6,
+    text: 'خَيْمَة',
+    transliteration: '',
+    instruction: 'استمع إلى الكلمة ثم انطقها',
+    difficulty: 'مبتدئ',
+    audioPath: 'audio/kha/khayma.mp3',
+  ),
+  RecordingExercise(
+    id: 7,
+    text: 'بَطِّيخ',
+    transliteration: '',
+    instruction: 'استمع إلى الكلمة ثم انطقها',
+    difficulty: 'مبتدئ',
+    audioPath: '',
+  ),
+  RecordingExercise(
+    id: 8,
+    text: 'نَخْلَة',
+    transliteration: '',
+    instruction: 'استمع إلى الكلمة ثم انطقها',
+    difficulty: 'مبتدئ',
+    audioPath: '',
   ),
 ];
 
@@ -89,9 +124,63 @@ class ExerciseRecordingScreen extends StatefulWidget {
 
 class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
     with SingleTickerProviderStateMixin {
+      final AudioPlayer _audioPlayer = AudioPlayer();
   static const Color _deepPurple = Color(0xFF511281);
   static const Color _red = Color(0xFFFF6969);
   static const Color _bgYellow = Color(0xFFFCF9EA);
+  final AudioRecorder _recorder = AudioRecorder();
+String? _recordedFilePath;
+Future<void> _analyzeRecording() async {
+  if (_recordedFilePath == null) return;
+
+  setState(() {
+    _recordingState = RecordingState.analyzing;
+  });
+
+  try {
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse('http://YOUR_COMPUTER_IP:8000/process-audio/'),
+    );
+
+    request.fields['target_word'] = _exercise.text;
+    request.fields['target_letter'] = widget.letter;
+
+    request.files.add(
+      await http.MultipartFile.fromPath(
+        'file',
+        _recordedFilePath!,
+      ),
+    );
+
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+
+    final data = jsonDecode(response.body);
+
+    if (data['status'] == 'success') {
+      setState(() {
+        _lastScore = data['score'];
+        _recordingState = RecordingState.recorded;
+      });
+
+      debugPrint('AI transcription: ${data['transcription_heard']}');
+      debugPrint('AI score: ${data['score']}');
+    } else {
+      debugPrint('AI error: ${data['message']}');
+
+      setState(() {
+        _recordingState = RecordingState.idle;
+      });
+    }
+  } catch (e) {
+    debugPrint('Connection error: $e');
+
+    setState(() {
+      _recordingState = RecordingState.idle;
+    });
+  }
+}
 
   int _currentExercise = 0;
 
@@ -121,7 +210,8 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
   void dispose() {
     _recordingTimer?.cancel();
     _spinController.dispose();
-    super.dispose();
+    _recorder.dispose();
+        super.dispose();
   }
 
   // -------------------------------------------------------------------------
@@ -137,46 +227,62 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
   // بدون تغيير
   // -------------------------------------------------------------------------
 
-  void _startRecording() {
-    setState(() {
-      _recordingState = RecordingState.recording;
-      _recordingTime = 0;
-    });
+  Future<void> _startRecording() async {
+  final hasPermission = await _recorder.hasPermission();
 
-    _recordingTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+  if (!hasPermission) {
+    return;
+  }
+
+  final directory = await getTemporaryDirectory();
+
+  final path =
+      '${directory.path}/recording_${DateTime.now().millisecondsSinceEpoch}.m4a';
+
+  await _recorder.start(
+    const RecordConfig(
+      encoder: AudioEncoder.aacLc,
+      sampleRate: 16000,
+      numChannels: 1,
+    ),
+    path: path,
+  );
+
+  setState(() {
+    _recordingState = RecordingState.recording;
+    _recordedFilePath = null;
+    _recordingTime = 0;
+  });
+
+  _recordingTimer?.cancel();
+
+  _recordingTimer = Timer.periodic(
+    const Duration(seconds: 1),
+    (timer) {
+      if (!mounted) return;
+
       setState(() {
         _recordingTime++;
       });
+    },
+  );
+}
+Future<void> _stopRecording() async {
+  final path = await _recorder.stop();
 
-      if (_recordingTime >= 5) {
-        timer.cancel();
-        _stopRecording();
-      }
-    });
-  }
+  _recordingTimer?.cancel();
 
-  void _stopRecording() {
-    _recordingTimer?.cancel();
+  setState(() {
+    _recordedFilePath = path;
+    _recordingState = RecordingState.recorded;
+  });
 
-    setState(() {
-      _recordingState = RecordingState.analyzing;
-    });
-
-    Future.delayed(const Duration(seconds: 2), () {
-      final mockScore = Random().nextInt(30) + 70;
-
-      setState(() {
-        _lastScore = mockScore;
-        _recordingState = RecordingState.recorded;
-      });
-    });
-  }
-
+  debugPrint('Recorded audio saved at: $_recordedFilePath');
+}
   void _handleNext() {
     if (_recordingState != RecordingState.recorded) {
       return;
     }
-
     final updatedScores = [..._exerciseScores, _lastScore];
 
     _exerciseScores.add(_lastScore);
@@ -554,9 +660,14 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
           const SizedBox(height: 13),
 
           OutlinedButton.icon(
-            onPressed: () {
-              /* play audio */
-            },
+onPressed: () async {
+  if (_exercise.audioPath.isNotEmpty) {
+    await _audioPlayer.stop();
+    await _audioPlayer.play(
+      AssetSource(_exercise.audioPath),
+    );
+  }
+},
             icon: const Icon(Icons.volume_up_rounded, color: _red, size: 17),
             label: const Text(
               'استمع إلى المثال',

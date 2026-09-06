@@ -46,3 +46,4 @@ app.*.map.json
 
 backend/serviceAccountKey.json
 backend/final_faseeh_model/
+backend/.venv/

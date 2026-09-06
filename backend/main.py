@@ -9,8 +9,27 @@ from firebase_admin import credentials, storage
 from scipy import signal
 from transformers import Wav2Vec2ForCTC, Wav2Vec2Processor
 import torch
-import editdistance
+def levenshtein_distance(a, b):
+    if len(a) < len(b):
+        return levenshtein_distance(b, a)
 
+    previous_row = range(len(b) + 1)
+
+    for i, char_a in enumerate(a):
+        current_row = [i + 1]
+
+        for j, char_b in enumerate(b):
+            insertions = previous_row[j + 1] + 1
+            deletions = current_row[j] + 1
+            substitutions = previous_row[j] + (char_a != char_b)
+
+            current_row.append(
+                min(insertions, deletions, substitutions)
+            )
+
+        previous_row = current_row
+
+    return previous_row[-1]
 app = FastAPI()
 
 # 1. إعداد Firebase
@@ -81,7 +100,7 @@ async def process_audio(
             
         elif target_letter in transcription:
             # Calculating accuracy based on phonetic distance
-            mistakes = editdistance.eval(target_word, transcription)
+            mistakes = levenshtein_distance(target_word, transcription)
             total_letters = len(target_word)
             
             # Accuracy is calculated as the true percentage of correct phonemes

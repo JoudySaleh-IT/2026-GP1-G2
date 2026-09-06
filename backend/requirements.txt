@@ -7,5 +7,4 @@ scipy
 numpy
 firebase-admin
 transformers
-editdistance
 safetensors

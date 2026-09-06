@@ -55,7 +55,8 @@ class LetterLevelsScreen extends StatelessWidget {
     const bool listeningLocked = false;
 
     // تمارين النطق تفتح بعد إكمال تمارين الاستماع
-    final bool recordingLocked = !p.listening;
+    //final bool recordingLocked = !p.listening;
+    const bool recordingLocked = false;
 
     return [
       _LevelInfo(
