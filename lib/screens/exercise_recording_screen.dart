@@ -19,6 +19,7 @@ class RecordingExercise {
   final String instruction;
   final String difficulty;
   final String audioPath;
+  final String imagePath;
 
   const RecordingExercise({
     required this.audioPath,
@@ -27,6 +28,7 @@ class RecordingExercise {
     required this.transliteration,
     required this.instruction,
     required this.difficulty,
+    required this.imagePath,
   });
 }
 
@@ -38,6 +40,7 @@ const List<RecordingExercise> recordingExercises = [
     instruction: 'استمع إلى الكلمة ثم انطقها',
     difficulty: 'مبتدئ',
     audioPath: 'audio/kha/khubz.mp3',
+    imagePath: 'assets/images/kha_exercise_images/khubz.png',
   ),
   RecordingExercise(
     id: 2,
@@ -46,6 +49,7 @@ const List<RecordingExercise> recordingExercises = [
     instruction: 'استمع إلى الكلمة ثم انطقها',
     difficulty: 'مبتدئ',
     audioPath: '',
+    imagePath: 'assets/images/kha_exercise_images/khokh.png',
   ),
   RecordingExercise(
     id: 3,
@@ -54,6 +58,7 @@ const List<RecordingExercise> recordingExercises = [
     instruction: 'استمع إلى الكلمة ثم انطقها',
     difficulty: 'مبتدئ',
     audioPath: 'audio/kha/kharouf.mp3',
+    imagePath: 'assets/images/kha_exercise_images/kharouf.png',
   ),
   RecordingExercise(
     id: 4,
@@ -62,6 +67,7 @@ const List<RecordingExercise> recordingExercises = [
     instruction: 'استمع إلى الكلمة ثم انطقها',
     difficulty: 'مبتدئ',
     audioPath: 'audio/kha/khiyar.mp3',
+    imagePath: 'assets/images/kha_exercise_images/khiyar.png',
   ),
   RecordingExercise(
     id: 5,
@@ -70,6 +76,7 @@ const List<RecordingExercise> recordingExercises = [
     instruction: 'استمع إلى الكلمة ثم انطقها',
     difficulty: 'مبتدئ',
     audioPath: 'audio/kha/khatam.mp3',
+    imagePath: 'assets/images/kha_exercise_images/khatam.png',
   ),
   RecordingExercise(
     id: 6,
@@ -78,6 +85,7 @@ const List<RecordingExercise> recordingExercises = [
     instruction: 'استمع إلى الكلمة ثم انطقها',
     difficulty: 'مبتدئ',
     audioPath: 'audio/kha/khayma.mp3',
+    imagePath: 'assets/images/kha_exercise_images/khayma.png',
   ),
   RecordingExercise(
     id: 7,
@@ -86,6 +94,7 @@ const List<RecordingExercise> recordingExercises = [
     instruction: 'استمع إلى الكلمة ثم انطقها',
     difficulty: 'مبتدئ',
     audioPath: '',
+    imagePath: 'assets/images/kha_exercise_images/batikh.png',
   ),
   RecordingExercise(
     id: 8,
@@ -94,6 +103,7 @@ const List<RecordingExercise> recordingExercises = [
     instruction: 'استمع إلى الكلمة ثم انطقها',
     difficulty: 'مبتدئ',
     audioPath: '',
+    imagePath: 'assets/images/kha_exercise_images/nakhla.png',
   ),
 ];
 
@@ -645,6 +655,14 @@ Future<void> _stopRecording() async {
       ),
       child: Column(
         children: [
+          Image.asset(
+  _exercise.imagePath,
+  height: 130,
+  width: 130,
+  fit: BoxFit.contain,
+),
+
+const SizedBox(height: 12),
           Text(
             _exercise.text,
             style: const TextStyle(
@@ -1011,7 +1029,7 @@ onPressed: () async {
             const SizedBox(width: 5),
 
             Icon(
-              isLast ? Icons.check_rounded : Icons.arrow_back_rounded,
+              isLast ? Icons.check_rounded : Icons.arrow_forward_rounded,
               size: 18,
             ),
           ],

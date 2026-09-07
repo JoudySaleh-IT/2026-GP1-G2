@@ -399,37 +399,15 @@ class _LetterIntroductionScreenState extends State<LetterIntroductionScreen>
               borderRadius: BorderRadius.circular(19),
             ),
 
-            child: _DashedBorderBox(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    width: 68,
-                    height: 68,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFF0E5F8),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.image_rounded,
-                      size: 34,
-                      color: Color(0xFF7B4AAD),
-                    ),
-                  ),
-
-                  const SizedBox(height: 9),
-
-                  const Text(
-                    'صورة مخرج الحرف',
-                    style: TextStyle(
-                      fontFamily: 'Tajawal',
-                      fontSize: 11,
-                      color: Color(0xFF888888),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            child: ClipRRect(
+  borderRadius: BorderRadius.circular(19),
+  child: Image.asset(
+    'assets/images/articulation/kha_articulation.png',
+    width: double.infinity,
+    height: double.infinity,
+    fit: BoxFit.contain,
+  ),
+),
           ),
         ],
       ),

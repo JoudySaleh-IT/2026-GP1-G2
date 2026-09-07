@@ -46,4 +46,6 @@ flutter:
 
   assets:
     - assets/images/
+    - assets/images/articulation/
+    - assets/images/kha_exercise_images/
     - assets/audio/kha/
