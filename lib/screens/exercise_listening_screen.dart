@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'style_constants.dart';
+import 'package:audioplayers/audioplayers.dart';
 
 // ─── Model ────────────────────────────────────────────────────────────────────
 class _Exercise {
@@ -7,46 +8,81 @@ class _Exercise {
   final String audioDescription;
   final List<String> options;
   final String correctAnswer;
+  final String audioPath;
 
   const _Exercise({
     required this.instruction,
     required this.audioDescription,
     required this.options,
     required this.correctAnswer,
+    required this.audioPath,
   });
 }
 
 // ─── Exercises ────────────────────────────────────────────────────────────────
 const _listeningExercises = [
   _Exercise(
-    instruction: "استمع إلى الصوت واختر الحرف الصحيح:",
-    audioDescription: "نطق حرف 'ع'",
-    options: ['ع', 'غ', 'ء', 'ح'],
-    correctAnswer: 'ع',
+    instruction: "استمع واختر الكلمة التي سمعتها:",
+    audioDescription: "كلمة 'خُبْز'",
+    audioPath: 'audio/kha/khubz.mp3',
+    options: ['خُبْز', 'حُبْز', 'غُبْز', 'قُبْز'],
+    correctAnswer: 'خُبْز',
   ),
+
   _Exercise(
-    instruction: "أي كلمة سمعتها؟",
-    audioDescription: "كلمة 'سَمَك'",
-    options: ['سَمَك', 'سَمَح', 'سَمَع', 'سَمَا'],
-    correctAnswer: 'سَمَك',
+    instruction: "ما الحرف الذي سمعته في الكلمة؟",
+    audioDescription: "كلمة 'خُوخ'",
+    audioPath: 'audio/kha/khokh.mp3',
+    options: ['خ', 'ح', 'غ', 'ق'],
+    correctAnswer: 'خ',
   ),
+
   _Exercise(
-    instruction: "حدد الحركة الصحيحة التي سمعتها:",
-    audioDescription: "صوت مع كسرة",
+    instruction: "استمع واختر الكلمة التي سمعتها:",
+    audioDescription: "كلمة 'خَرُوف'",
+    audioPath: 'audio/kha/kharouf.mp3',
+    options: ['خَرُوف', 'حَرُوف', 'غَرُوف', 'قَرُوف'],
+    correctAnswer: 'خَرُوف',
+  ),
+
+  _Exercise(
+    instruction: "ما حركة حرف خ التي سمعتها؟",
+    audioDescription: "كلمة 'خِيَار'",
+    audioPath: 'audio/kha/khiyar.mp3',
     options: ['فتحة (َ)', 'كسرة (ِ)', 'ضمة (ُ)', 'سكون (ْ)'],
     correctAnswer: 'كسرة (ِ)',
   ),
+
   _Exercise(
-    instruction: "استمع واختر الحرف المفخم:",
-    audioDescription: "نطق حرف 'ط'",
-    options: ['ت', 'ط', 'د', 'ث'],
-    correctAnswer: 'ط',
+    instruction: "ما الحرف الذي تبدأ به الكلمة؟",
+    audioDescription: "كلمة 'خَاتَم'",
+    audioPath: 'audio/kha/khatam.mp3',
+    options: ['خ', 'ح', 'غ', 'ق'],
+    correctAnswer: 'خ',
   ),
+
   _Exercise(
-    instruction: "اختر الكلمة التي سمعتها:",
-    audioDescription: "كلمة 'قَلَم'",
-    options: ['قَلَم', 'كَلَم', 'قَلْب', 'كَلْب'],
-    correctAnswer: 'قَلَم',
+    instruction: "استمع واختر الكلمة التي سمعتها:",
+    audioDescription: "كلمة 'خَيْمَة'",
+    audioPath: 'audio/kha/khayma.mp3',
+    options: ['خَيْمَة', 'حَيْمَة', 'غَيْمَة', 'قَيْمَة'],
+    correctAnswer: 'خَيْمَة',
+  ),
+
+  _Exercise(
+    instruction: "أين سمعت صوت خ في الكلمة؟",
+    audioDescription: "كلمة 'بَطِّيخ'",
+    audioPath: 'audio/kha/batikh.mp3',
+    options: ['البداية', 'الوسط', 'النهاية', 'غير موجود'],
+    correctAnswer: 'النهاية',
+  ),
+
+  _Exercise(
+    instruction: "أين سمعت صوت خ في الكلمة؟",
+    audioDescription: "كلمة 'نَخْلَة'",
+    audioPath: 'audio/kha/nakhla.mp3',
+    options: ['البداية', 'الوسط', 'النهاية', 'غير موجود'],
+    correctAnswer: 'الوسط',
   ),
 ];
 
@@ -74,6 +110,7 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
   int _score = 0;
   bool _isPlaying = false;
   int _playCount = 0;
+  final AudioPlayer _audioPlayer = AudioPlayer();
 
   final List<Map<String, String>> _answers = [];
 
@@ -111,6 +148,7 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
   @override
   void dispose() {
     _pulseCtrl.dispose();
+    _audioPlayer.dispose();
     super.dispose();
   }
 
@@ -118,30 +156,42 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
   // Play
   // نفس الـfunctionality
   // ───────────────────────────────────────────────────────────────────────────
-  void _handlePlay() {
-    if (_isPlaying || _playCount >= _maxPlays) {
-      return;
-    }
-
-    setState(() {
-      _isPlaying = true;
-      _playCount++;
-    });
-
-    _pulseCtrl.repeat(reverse: true);
-
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) {
-        setState(() {
-          _isPlaying = false;
-        });
-
-        _pulseCtrl.stop();
-        _pulseCtrl.reset();
-      }
-    });
+  Future<void> _handlePlay() async {
+  if (_isPlaying || _playCount >= _maxPlays) {
+    return;
   }
 
+  // الكلمات اللي ما أضفنا صوتها للحين
+  if (_exercise.audioPath.isEmpty) {
+    return;
+  }
+
+  setState(() {
+    _isPlaying = true;
+    _playCount++;
+  });
+
+  _pulseCtrl.repeat(reverse: true);
+
+  try {
+    await _audioPlayer.play(
+      AssetSource(_exercise.audioPath),
+    );
+
+    await _audioPlayer.onPlayerComplete.first;
+  } catch (e) {
+    debugPrint('Audio error: $e');
+  }
+
+  if (mounted) {
+    setState(() {
+      _isPlaying = false;
+    });
+
+    _pulseCtrl.stop();
+    _pulseCtrl.reset();
+  }
+}
   // ───────────────────────────────────────────────────────────────────────────
   // Answer
   // نفس الـfunctionality
@@ -732,7 +782,7 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
 
                 const SizedBox(width: 4),
 
-                const Icon(Icons.arrow_back_rounded, size: 17),
+                const Icon(Icons.arrow_forward_rounded, size: 17),
               ],
             ),
           ),
