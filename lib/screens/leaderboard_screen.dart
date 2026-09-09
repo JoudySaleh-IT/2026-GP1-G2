@@ -10,7 +10,7 @@ import '../widgets/child_bottom_nav.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 // Filter
 // ─────────────────────────────────────────────────────────────────────────────
-enum _LeaderboardFilter { friends, family, community }
+enum _LeaderboardFilter { friends, community }
 
 enum _PlayerRelation { friend, family }
 
@@ -43,7 +43,8 @@ class _Player {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Mock Leaderboard Data
-// نفس البيانات الأساسية، فقط تم استبدال الإيموجي بأيقونات
+// نفس البيانات الأساسية
+// أفراد العائلة سيظهرون داخل تبويب الأصدقاء مع علامة منزل
 // ─────────────────────────────────────────────────────────────────────────────
 const List<_Player> _topPlayers = [
   _Player(
@@ -162,17 +163,17 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
 
   // ───────────────────────────────────────────────────────────────────────────
   // Filtered Mock List
+  // الأصدقاء + أفراد العائلة يظهرون في نفس التبويب
   // ───────────────────────────────────────────────────────────────────────────
   List<_Player> get _visiblePlayers {
     switch (_selectedFilter) {
       case _LeaderboardFilter.friends:
         return _topPlayers
-            .where((player) => player.relation == _PlayerRelation.friend)
-            .toList();
-
-      case _LeaderboardFilter.family:
-        return _topPlayers
-            .where((player) => player.relation == _PlayerRelation.family)
+            .where(
+              (player) =>
+                  player.relation == _PlayerRelation.friend ||
+                  player.relation == _PlayerRelation.family,
+            )
             .toList();
 
       case _LeaderboardFilter.community:
@@ -185,9 +186,6 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
       case _LeaderboardFilter.friends:
         return 'أصدقائي';
 
-      case _LeaderboardFilter.family:
-        return 'عائلتي';
-
       case _LeaderboardFilter.community:
         return 'متصدرو المجتمع';
     }
@@ -197,9 +195,6 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
     switch (_selectedFilter) {
       case _LeaderboardFilter.friends:
         return 'نافس أصدقاءك وتقدّم بينهم';
-
-      case _LeaderboardFilter.family:
-        return 'تحدَّ أفراد عائلتك وتقدّم';
 
       case _LeaderboardFilter.community:
         return 'شاهد ترتيبك بين جميع المتعلمين';
@@ -245,7 +240,6 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
             Expanded(
               child: Stack(
                 children: [
-                  // ─── Child Home-style background ──────────────────────────
                   const Positioned.fill(
                     child: IgnorePointer(child: _LeaderboardBackground()),
                   ),
@@ -350,6 +344,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
 
   // ───────────────────────────────────────────────────────────────────────────
   // FILTER
+  // تابين فقط: الأصدقاء + المجتمع
   // ───────────────────────────────────────────────────────────────────────────
   Widget _buildFilter() {
     return Container(
@@ -369,6 +364,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
       ),
       child: Row(
         children: [
+          // ===========================================================
+          // Friends
+          // ===========================================================
           Expanded(
             child: _FilterButton(
               label: 'الأصدقاء',
@@ -382,23 +380,11 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
             ),
           ),
 
-          const SizedBox(width: 4),
+          const SizedBox(width: 5),
 
-          Expanded(
-            child: _FilterButton(
-              label: 'العائلة',
-              icon: Icons.family_restroom_rounded,
-              selected: _selectedFilter == _LeaderboardFilter.family,
-              onTap: () {
-                setState(() {
-                  _selectedFilter = _LeaderboardFilter.family;
-                });
-              },
-            ),
-          ),
-
-          const SizedBox(width: 4),
-
+          // ===========================================================
+          // Community
+          // ===========================================================
           Expanded(
             child: _FilterButton(
               label: 'المجتمع',
@@ -474,9 +460,8 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
               ),
             ),
 
-            // ─── Arabic letter bubble ────────────────────────────────────────
             // ================================================================
-            // Trophy - واضح بجانب الأرنب
+            // Trophy
             // ================================================================
             Positioned(
               top: 12,
@@ -506,12 +491,13 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                 ),
               ),
             ),
+
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // ─── Current Rank ──────────────────────────────────────────
+                  // ─── Current Rank
                   Container(
                     width: 70,
                     height: 70,
@@ -549,7 +535,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
 
                   const SizedBox(width: 14),
 
-                  // ─── User information ──────────────────────────────────────
+                  // ─── User information
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -617,7 +603,6 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
 
                   const SizedBox(width: 10),
 
-                  // ─── Cute character ────────────────────────────────────────
                   const SizedBox(
                     width: 72,
                     height: 95,
@@ -709,6 +694,8 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
   Widget _buildPlayerRow(_Player player) {
     final bool isTop3 = player.rank <= 3;
 
+    final bool isFamily = player.relation == _PlayerRelation.family;
+
     Color backgroundColor;
 
     if (player.rank == 1) {
@@ -735,39 +722,119 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
       ),
       child: Row(
         children: [
-          // ─── Rank ──────────────────────────────────────────────────────────
+          // ─── Rank
           _buildRankBadge(player.rank),
 
           const SizedBox(width: 10),
 
-          // ─── Avatar ────────────────────────────────────────────────────────
-          Container(
-            width: 43,
-            height: 43,
-            decoration: BoxDecoration(
-              color: player.avatarColor.withOpacity(0.16),
-              shape: BoxShape.circle,
-              border: Border.all(color: player.avatarColor.withOpacity(0.20)),
-            ),
-            child: Icon(player.avatarIcon, color: player.avatarColor, size: 25),
+          // ─── Avatar
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                width: 43,
+                height: 43,
+                decoration: BoxDecoration(
+                  color: player.avatarColor.withOpacity(0.16),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: player.avatarColor.withOpacity(0.20),
+                  ),
+                ),
+                child: Icon(
+                  player.avatarIcon,
+                  color: player.avatarColor,
+                  size: 25,
+                ),
+              ),
+
+              // =============================================================
+              // Family small marker
+              // يظهر فقط داخل تبويب الأصدقاء
+              // =============================================================
+              if (isFamily && _selectedFilter == _LeaderboardFilter.friends)
+                Positioned(
+                  left: -3,
+                  bottom: -3,
+                  child: Container(
+                    width: 20,
+                    height: 20,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE5F3E9),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 1.5),
+                    ),
+                    child: const Icon(
+                      Icons.home_rounded,
+                      size: 12,
+                      color: Color(0xFF70A884),
+                    ),
+                  ),
+                ),
+            ],
           ),
 
           const SizedBox(width: 10),
 
-          // ─── Name ──────────────────────────────────────────────────────────
+          // ─── Name + family badge
           Expanded(
-            child: Text(
-              player.name,
-              style: const TextStyle(
-                fontSize: 14,
-                color: Color(0xFF222222),
-                fontWeight: FontWeight.w600,
-                fontFamily: 'Tajawal',
-              ),
+            child: Row(
+              children: [
+                Flexible(
+                  child: Text(
+                    player.name,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Color(0xFF222222),
+                      fontWeight: FontWeight.w600,
+                      fontFamily: 'Tajawal',
+                    ),
+                  ),
+                ),
+
+                if (isFamily &&
+                    _selectedFilter == _LeaderboardFilter.friends) ...[
+                  const SizedBox(width: 6),
+
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 7,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEAF5ED),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.home_rounded,
+                          size: 11,
+                          color: Color(0xFF70A884),
+                        ),
+
+                        SizedBox(width: 3),
+
+                        Text(
+                          'العائلة',
+                          style: TextStyle(
+                            fontSize: 8,
+                            color: Color(0xFF66997A),
+                            fontWeight: FontWeight.w600,
+                            fontFamily: 'Tajawal',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
 
-          // ─── Points ────────────────────────────────────────────────────────
+          // ─── Points
           SizedBox(
             width: 73,
             child: Column(
@@ -776,7 +843,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Icon(Icons.star_rounded, size: 14, color: _gold),
+
                     const SizedBox(width: 3),
+
                     Text(
                       toArabicDigits(player.points),
                       style: const TextStyle(
@@ -788,6 +857,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                     ),
                   ],
                 ),
+
                 const Text(
                   'النقاط',
                   style: TextStyle(
@@ -800,7 +870,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
             ),
           ),
 
-          // ─── Streak ────────────────────────────────────────────────────────
+          // ─── Streak
           SizedBox(
             width: 68,
             child: Column(
@@ -813,7 +883,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                       size: 14,
                       color: _coral,
                     ),
+
                     const SizedBox(width: 3),
+
                     Text(
                       toArabicDigits(player.streak),
                       style: const TextStyle(
@@ -825,6 +897,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                     ),
                   ],
                 ),
+
                 const Text(
                   'يوم',
                   style: TextStyle(
@@ -936,7 +1009,7 @@ class _FilterButton extends StatelessWidget {
         borderRadius: BorderRadius.circular(19),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 11),
           decoration: BoxDecoration(
             color: selected ? const Color(0xFF511281) : Colors.transparent,
             borderRadius: BorderRadius.circular(19),
@@ -946,18 +1019,18 @@ class _FilterButton extends StatelessWidget {
             children: [
               Icon(
                 icon,
-                size: 17,
+                size: 18,
                 color: selected ? Colors.white : const Color(0xFF777777),
               ),
 
-              const SizedBox(width: 5),
+              const SizedBox(width: 6),
 
               Flexible(
                 child: Text(
                   label,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: 12,
                     fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                     color: selected ? Colors.white : const Color(0xFF555555),
                     fontFamily: 'Tajawal',
@@ -1014,6 +1087,7 @@ class _CurrentStatBox extends StatelessWidget {
                   fontFamily: 'Tajawal',
                 ),
               ),
+
               Text(
                 label,
                 style: const TextStyle(
@@ -1040,6 +1114,7 @@ class _CuteLeaderboardCharacter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const faceColor = Color(0xFFFFDCE7);
+
     const accentColor = Color(0xFF8A4BB8);
 
     return Stack(
@@ -1106,9 +1181,9 @@ class _CuteLeaderboardCharacter extends StatelessWidget {
           child: Container(
             width: 44,
             height: 31,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: accentColor,
-              borderRadius: const BorderRadius.only(
+              borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(24),
                 topRight: Radius.circular(24),
               ),
@@ -1244,7 +1319,6 @@ class _LeaderboardBackground extends StatelessWidget {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        // ─── دوائر خلفية كبيرة وخفيفة ─────────────────────────────
         Positioned(
           top: 70,
           right: -55,
@@ -1284,7 +1358,6 @@ class _LeaderboardBackground extends StatelessWidget {
           ),
         ),
 
-        // ─── دوائر صغيرة للزخرفة ────────────────────────────────
         Positioned(
           top: 180,
           left: 58,
