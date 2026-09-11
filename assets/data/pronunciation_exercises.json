@@ -1,0 +1,246 @@
+{
+  "exercises": [
+    {
+      "id": "qaf_b_01",
+      "letter": "ق",
+      "level": "beginner",
+      "order": 1,
+      "displayWord": "سُوق",
+      "targetWord": "سوق",
+      "imagePath": "assets/images/word_bank/qaf_b_01_souq.png",
+      "audioPath": "audio/qaf/beginner/qaf_b_01.mp3"
+    },
+    {
+      "id": "qaf_b_02",
+      "letter": "ق",
+      "level": "beginner",
+      "order": 2,
+      "displayWord": "قَمَر",
+      "targetWord": "قمر",
+      "imagePath": "assets/images/word_bank/qaf_b_02_qamar.jpg",
+      "audioPath": "audio/qaf/beginner/qaf_b_02.mp3"
+    },
+    {
+      "id": "qaf_b_03",
+      "letter": "ق",
+      "level": "beginner",
+      "order": 3,
+      "displayWord": "قِطَار",
+      "targetWord": "قطار",
+      "imagePath": "assets/images/word_bank/qaf_b_03_qitar.jpg",
+      "audioPath": "audio/qaf/beginner/qaf_b_03.mp3"
+    },
+    {
+      "id": "qaf_b_04",
+      "letter": "ق",
+      "level": "beginner",
+      "order": 4,
+      "displayWord": "قَارِب",
+      "targetWord": "قارب",
+      "imagePath": "assets/images/word_bank/qaf_b_04_qarib.jpg",
+      "audioPath": "audio/qaf/beginner/qaf_b_04.mp3"
+    },
+    {
+      "id": "qaf_b_05",
+      "letter": "ق",
+      "level": "beginner",
+      "order": 5,
+      "displayWord": "بَقَر",
+      "targetWord": "بقر",
+      "imagePath": "assets/images/word_bank/qaf_b_05_baqar.jpg",
+      "audioPath": "audio/qaf/beginner/qaf_b_05.mp3"
+    },
+    {
+      "id": "qaf_b_06",
+      "letter": "ق",
+      "level": "beginner",
+      "order": 6,
+      "displayWord": "نُقُود",
+      "targetWord": "نقود",
+      "imagePath": "assets/images/word_bank/qaf_b_06_noqood.jpg",
+      "audioPath": "audio/qaf/beginner/qaf_b_06.mp3"
+    },
+    {
+      "id": "qaf_b_07",
+      "letter": "ق",
+      "level": "beginner",
+      "order": 7,
+      "displayWord": "طَبَق",
+      "targetWord": "طبق",
+      "imagePath": "assets/images/word_bank/qaf_b_07_tabaq.jpg",
+      "audioPath": "audio/qaf/beginner/qaf_b_07.mp3"
+    },
+    {
+      "id": "qaf_b_08",
+      "letter": "ق",
+      "level": "beginner",
+      "order": 8,
+      "displayWord": "طَرِيق",
+      "targetWord": "طريق",
+      "imagePath": "assets/images/word_bank/qaf_b_08_tareeq.jpg",
+      "audioPath": "audio/qaf/beginner/qaf_b_08.mp3"
+    },
+
+    {
+      "id": "qaf_i_01",
+      "letter": "ق",
+      "level": "intermediate",
+      "order": 1,
+      "displayWord": "قُبَّة",
+      "targetWord": "قبة",
+      "imagePath": "assets/images/word_bank/qaf_i_01_qubba.jpg",
+      "audioPath": "audio/qaf/intermediate/qaf_i_01.mp3"
+    },
+    {
+      "id": "qaf_i_02",
+      "letter": "ق",
+      "level": "intermediate",
+      "order": 2,
+      "displayWord": "قَهْوَة",
+      "targetWord": "قهوة",
+      "imagePath": "assets/images/word_bank/qaf_i_02_qahwa.jpg",
+      "audioPath": "audio/qaf/intermediate/qaf_i_02.mp3"
+    },
+    {
+      "id": "qaf_i_03",
+      "letter": "ق",
+      "level": "intermediate",
+      "order": 3,
+      "displayWord": "قَائِد",
+      "targetWord": "قائد",
+      "imagePath": "assets/images/word_bank/qaf_i_03_qaed.jpg",
+      "audioPath": "audio/qaf/intermediate/qaf_i_03.mp3"
+    },
+    {
+      "id": "qaf_i_04",
+      "letter": "ق",
+      "level": "intermediate",
+      "order": 4,
+      "displayWord": "لُقْمَة",
+      "targetWord": "لقمة",
+      "imagePath": "assets/images/word_bank/qaf_i_04_luqma.jpg",
+      "audioPath": "audio/qaf/intermediate/qaf_i_04.mp3"
+    },
+    {
+      "id": "qaf_i_05",
+      "letter": "ق",
+      "level": "intermediate",
+      "order": 5,
+      "displayWord": "عُقْدَة",
+      "targetWord": "عقدة",
+      "imagePath": "assets/images/word_bank/qaf_i_05_uqda.jpg",
+      "audioPath": "audio/qaf/intermediate/qaf_i_05.mp3"
+    },
+    {
+      "id": "qaf_i_06",
+      "letter": "ق",
+      "level": "intermediate",
+      "order": 6,
+      "displayWord": "قِرْد",
+      "targetWord": "قرد",
+      "imagePath": "assets/images/word_bank/qaf_i_06_qird.jpg",
+      "audioPath": "audio/qaf/intermediate/qaf_i_06.mp3"
+    },
+    {
+      "id": "qaf_i_07",
+      "letter": "ق",
+      "level": "intermediate",
+      "order": 7,
+      "displayWord": "بَرْق",
+      "targetWord": "برق",
+      "imagePath": "assets/images/word_bank/qaf_i_07_barq.jpg",
+      "audioPath": "audio/qaf/intermediate/qaf_i_07.mp3"
+    },
+    {
+      "id": "qaf_i_08",
+      "letter": "ق",
+      "level": "intermediate",
+      "order": 8,
+      "displayWord": "حَرْق",
+      "targetWord": "حرق",
+      "imagePath": "assets/images/word_bank/qaf_i_08_harq.jpg",
+      "audioPath": "audio/qaf/intermediate/qaf_i_08.mp3"
+    },
+
+    {
+      "id": "qaf_a_01",
+      "letter": "ق",
+      "level": "advanced",
+      "order": 1,
+      "displayWord": "قِلَادَة",
+      "targetWord": "قلادة",
+      "imagePath": "assets/images/word_bank/qaf_a_01_qilada.jpg",
+      "audioPath": "audio/qaf/advanced/qaf_a_01.mp3"
+    },
+    {
+      "id": "qaf_a_02",
+      "letter": "ق",
+      "level": "advanced",
+      "order": 2,
+      "displayWord": "قَائِدَيْن",
+      "targetWord": "قائدين",
+      "imagePath": "assets/images/word_bank/qaf_a_02_qaedain.jpg",
+      "audioPath": "audio/qaf/advanced/qaf_a_02.mp3"
+    },
+    {
+      "id": "qaf_a_03",
+      "letter": "ق",
+      "level": "advanced",
+      "order": 3,
+      "displayWord": "الْقَوَارِب",
+      "targetWord": "القوارب",
+      "imagePath": "assets/images/word_bank/qaf_a_03_qawarib.jpg",
+      "audioPath": "audio/qaf/advanced/qaf_a_03.mp3"
+    },
+    {
+      "id": "qaf_a_04",
+      "letter": "ق",
+      "level": "advanced",
+      "order": 4,
+      "displayWord": "مُسْتَقِيمَة",
+      "targetWord": "مستقيمة",
+      "imagePath": "assets/images/word_bank/qaf_a_04_mustaqima.jpg",
+      "audioPath": "audio/qaf/advanced/qaf_a_04.mp3"
+    },
+    {
+      "id": "qaf_a_05",
+      "letter": "ق",
+      "level": "advanced",
+      "order": 5,
+      "displayWord": "الطَّوَابِق",
+      "targetWord": "الطوابق",
+      "imagePath": "assets/images/word_bank/qaf_a_05_tawabiq.jpg",
+      "audioPath": "audio/qaf/advanced/qaf_a_05.mp3"
+    },
+    {
+      "id": "qaf_a_06",
+      "letter": "ق",
+      "level": "advanced",
+      "order": 6,
+      "displayWord": "الْبِطْرِيق",
+      "targetWord": "البطريق",
+      "imagePath": "assets/images/word_bank/qaf_a_06_batriq.jpg",
+      "audioPath": "audio/qaf/advanced/qaf_a_06.mp3"
+    },
+    {
+      "id": "qaf_a_07",
+      "letter": "ق",
+      "level": "advanced",
+      "order": 7,
+      "displayWord": "الْأَوْرَاق",
+      "targetWord": "الأوراق",
+      "imagePath": "assets/images/word_bank/qaf_a_07_awraq.jpg",
+      "audioPath": "audio/qaf/advanced/qaf_a_07.mp3"
+    },
+    {
+      "id": "qaf_a_08",
+      "letter": "ق",
+      "level": "advanced",
+      "order": 8,
+      "displayWord": "الْإِبْرِيق",
+      "targetWord": "الإبريق",
+      "imagePath": "assets/images/word_bank/qaf_a_08_ibreeq.jpg",
+      "audioPath": "audio/qaf/advanced/qaf_a_08.mp3"
+    }
+  ]
+}

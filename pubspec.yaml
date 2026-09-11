@@ -41,6 +41,7 @@ flutter_launcher_icons:
   adaptive_icon_background: "#FCF9EA"
   adaptive_icon_foreground: "assets/images/logo.png"
 
+
 flutter:
   uses-material-design: true
 
@@ -48,4 +49,14 @@ flutter:
     - assets/images/
     - assets/images/articulation/
     - assets/images/kha_exercise_images/
+    - assets/images/word_bank/
+
     - assets/audio/kha/
+
+    - assets/audio/qaf/
+    - assets/audio/qaf/beginner/
+    - assets/audio/qaf/intermediate/
+    - assets/audio/qaf/advanced/
+
+    - assets/data/
+   

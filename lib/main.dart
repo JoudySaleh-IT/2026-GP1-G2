@@ -61,15 +61,13 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       locale: const Locale('ar', 'SA'),
 
-supportedLocales: const [
-  Locale('ar', 'SA'),
-],
+      supportedLocales: const [Locale('ar', 'SA')],
 
-localizationsDelegates: const [
-  GlobalMaterialLocalizations.delegate,
-  GlobalWidgetsLocalizations.delegate,
-  GlobalCupertinoLocalizations.delegate,
-],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       builder: (context, child) {
         return Directionality(textDirection: TextDirection.rtl, child: child!);
       },
@@ -133,9 +131,11 @@ localizationsDelegates: const [
 
         '/child/letter-introduction': (context) {
           final args = ModalRoute.of(context)!.settings.arguments as Map?;
+
           return LetterIntroductionScreen(
             letter: args?['letter'] ?? 'ض',
             childId: args?['childId'] ?? '',
+            level: args?['level'] ?? 'beginner',
           );
         },
 
@@ -170,12 +170,13 @@ localizationsDelegates: const [
 
         '/child/exercise/recording': (context) {
           final args = ModalRoute.of(context)!.settings.arguments as Map?;
+
           return ExerciseRecordingScreen(
             letter: args?['letter'] ?? 'ض',
             childId: args?['childId'] ?? '',
+            level: args?['level'] ?? 'beginner',
           );
         },
-
         // ── اختبار تحديد المستوى ──
         '/child/placement-test': (context) {
           final args = ModalRoute.of(context)!.settings.arguments;

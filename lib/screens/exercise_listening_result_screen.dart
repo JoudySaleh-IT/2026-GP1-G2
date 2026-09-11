@@ -7,6 +7,10 @@ class ExerciseListeningResultScreen extends StatelessWidget {
   const ExerciseListeningResultScreen({super.key});
 
   String _resultMessage(int score, int total) {
+    if (total == 0) {
+      return 'استمر في التدريب';
+    }
+
     final ratio = score / total;
 
     if (ratio == 1) {
@@ -26,9 +30,6 @@ class ExerciseListeningResultScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // ───────────────────────────────────────────────────────────────────────
-    // نفس الـ arguments الحالية
-    // ───────────────────────────────────────────────────────────────────────
     final args =
         ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
 
@@ -39,19 +40,14 @@ class ExerciseListeningResultScreen extends StatelessWidget {
       args['answers'] as List,
     );
 
-    final int percentage = ((score / total) * 100).round();
+    final int percentage = total == 0 ? 0 : ((score / total) * 100).round();
 
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
         backgroundColor: const Color(0xFFFCF9EA),
-
         body: Column(
           children: [
-            // ==============================================================
-            // HEADER
-            // نفس الهيدر
-            // ==============================================================
             const _ResultHeader(),
 
             Expanded(
@@ -63,10 +59,8 @@ class ExerciseListeningResultScreen extends StatelessWidget {
 
                   SingleChildScrollView(
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-
                     child: Column(
                       children: [
-                        // ─── Result Summary
                         // ─── Result Summary
                         _ResultHeroCard(
                           score: score,
@@ -78,19 +72,20 @@ class ExerciseListeningResultScreen extends StatelessWidget {
                         const SizedBox(height: 12),
 
                         // ─── Points
-                        _PointsCard(score: score, total: total),
+                        _PointsCard(score: score),
 
                         const SizedBox(height: 14),
 
-                        // ─── Answers
-                        _AnswersCard(answers: answers),
+                        // ─── Answers Summary
+                        _AnswersCard(
+                          score: score,
+                          total: total,
+                          answers: answers,
+                        ),
 
                         const SizedBox(height: 18),
 
-                        // ==================================================
-                        // HOME BUTTON
-                        // نفس الـ functionality
-                        // ==================================================
+                        // ─── Home
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton.icon(
@@ -100,9 +95,7 @@ class ExerciseListeningResultScreen extends StatelessWidget {
                               (route) => false,
                               arguments: args['childId'] ?? '',
                             ),
-
                             icon: const Icon(Icons.home_rounded, size: 18),
-
                             label: const Text(
                               'العودة للرئيسية',
                               style: TextStyle(
@@ -110,7 +103,6 @@ class ExerciseListeningResultScreen extends StatelessWidget {
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
-
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFFFF6969),
                               foregroundColor: Colors.white,
@@ -134,7 +126,7 @@ class ExerciseListeningResultScreen extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Simple Result Card
+// Result Hero Card
 // ─────────────────────────────────────────────────────────────────────────────
 class _ResultHeroCard extends StatelessWidget {
   final int score;
@@ -175,7 +167,6 @@ class _ResultHeroCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(28),
         child: Stack(
           children: [
-            // دائرة موف خفيفة
             Positioned(
               right: -45,
               top: -55,
@@ -189,7 +180,6 @@ class _ResultHeroCard extends StatelessWidget {
               ),
             ),
 
-            // دائرة وردية خفيفة
             Positioned(
               left: 40,
               bottom: -60,
@@ -209,7 +199,6 @@ class _ResultHeroCard extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      // ─── Score Circle
                       SizedBox(
                         width: 105,
                         height: 105,
@@ -266,7 +255,6 @@ class _ResultHeroCard extends StatelessWidget {
 
                       const SizedBox(width: 12),
 
-                      // ─── Result message
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -299,7 +287,6 @@ class _ResultHeroCard extends StatelessWidget {
 
                       const SizedBox(width: 6),
 
-                      // الأرنب الحالي المصحح
                       const SizedBox(
                         width: 65,
                         height: 92,
@@ -310,7 +297,6 @@ class _ResultHeroCard extends StatelessWidget {
 
                   const SizedBox(height: 16),
 
-                  // ─── Progress dots
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: List.generate(total, (index) {
@@ -348,50 +334,34 @@ class _ResultHeroCard extends StatelessWidget {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Points Card
-// نفس حساب النقاط
+// كل إجابة صحيحة = 50 نقطة
 // ─────────────────────────────────────────────────────────────────────────────
 class _PointsCard extends StatelessWidget {
   final int score;
-  final int total;
 
-  const _PointsCard({required this.score, required this.total});
+  const _PointsCard({required this.score});
 
-  int get _earnedPoints {
-    final ratio = score / total;
-
-    if (ratio == 1) return 1000;
-    if (ratio >= 0.8) return 800;
-    if (ratio >= 0.6) return 500;
-
-    return 200;
-  }
+  int get _earnedPoints => score * 50;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-
       decoration: BoxDecoration(
         color: const Color(0xFFFFF7E5),
-
         borderRadius: BorderRadius.circular(20),
-
         border: Border.all(color: const Color(0xFFF4C466).withOpacity(0.24)),
       ),
-
       child: Row(
         children: [
           Container(
             width: 42,
             height: 42,
-
             decoration: const BoxDecoration(
               color: Color(0xFFFFE8A6),
               shape: BoxShape.circle,
             ),
-
             child: const Icon(
               Icons.star_rounded,
               color: Color(0xFFE9A92E),
@@ -429,17 +399,37 @@ class _PointsCard extends StatelessWidget {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Answers Card
+//
+// يعرض:
+// - عدد الإجابات الصحيحة
+// - عدد الإجابات الخاطئة
+// - إجابة الطفل فقط للأسئلة الخاطئة
+// لا يعرض الإجابة الصحيحة
 // ─────────────────────────────────────────────────────────────────────────────
 class _AnswersCard extends StatelessWidget {
+  final int score;
+  final int total;
   final List<Map<String, String>> answers;
 
-  const _AnswersCard({required this.answers});
+  const _AnswersCard({
+    required this.score,
+    required this.total,
+    required this.answers,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final int wrongCount = total - score;
+
+    final wrongAnswers = answers
+        .asMap()
+        .entries
+        .where((entry) => entry.value['selected'] != entry.value['correct'])
+        .toList();
+
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(14, 15, 14, 7),
+      padding: const EdgeInsets.fromLTRB(14, 15, 14, 14),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.88),
         borderRadius: BorderRadius.circular(24),
@@ -458,226 +448,137 @@ class _AnswersCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ─── Title ───────────────────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 3),
-            child: Row(
-              children: [
-                Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF1E8FA),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.fact_check_rounded,
-                    color: Color(0xFF7B4AAD),
-                    size: 20,
-                  ),
-                ),
-
-                const SizedBox(width: 9),
-
-                const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'إجاباتك',
-                      style: TextStyle(
-                        fontFamily: 'Tajawal',
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF511281),
-                      ),
-                    ),
-
-                    SizedBox(height: 1),
-
-                    Text(
-                      'شاهد كيف كان أداؤك',
-                      style: TextStyle(
-                        fontFamily: 'Tajawal',
-                        fontSize: 10,
-                        color: Color(0xFF8A8A8A),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 14),
-
-          ...answers.asMap().entries.map((entry) {
-            final int index = entry.key;
-            final Map<String, String> answer = entry.value;
-
-            final bool isCorrect = answer['selected'] == answer['correct'];
-
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: _AnswerResultTile(
-                number: index + 1,
-                answer: answer,
-                isCorrect: isCorrect,
-              ),
-            );
-          }),
-        ],
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Answer Result Tile
-// ─────────────────────────────────────────────────────────────────────────────
-class _AnswerResultTile extends StatelessWidget {
-  final int number;
-  final Map<String, String> answer;
-  final bool isCorrect;
-
-  const _AnswerResultTile({
-    required this.number,
-    required this.answer,
-    required this.isCorrect,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    // ألوان pastel هادئة بدل الأخضر والأحمر القوي
-    final Color accentColor = isCorrect
-        ? const Color(0xFF78B997)
-        : const Color(0xFFE7A267);
-
-    final Color cardColor = isCorrect
-        ? const Color(0xFFF1F9F4)
-        : const Color(0xFFFFF5EC);
-
-    final Color bubbleColor = isCorrect
-        ? const Color(0xFFDDF1E5)
-        : const Color(0xFFFFE5CF);
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(19),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ─────────────────────────────────────────────────────────
-          // Question row
-          // ─────────────────────────────────────────────────────────
+          // ─── Header
           Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // رقم السؤال
               Container(
-                width: 34,
-                height: 34,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: bubbleColor,
+                width: 38,
+                height: 38,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFF1E8FA),
                   shape: BoxShape.circle,
                 ),
-                child: Text(
-                  '$number',
-                  style: TextStyle(
-                    fontFamily: 'Tajawal',
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: accentColor,
+                child: const Icon(
+                  Icons.fact_check_rounded,
+                  color: Color(0xFF7B4AAD),
+                  size: 20,
+                ),
+              ),
+
+              const SizedBox(width: 9),
+
+              const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'إجاباتك',
+                    style: TextStyle(
+                      fontFamily: 'Tajawal',
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF511281),
+                    ),
                   ),
+
+                  SizedBox(height: 1),
+
+                  Text(
+                    'ملخص أدائك في التمرين',
+                    style: TextStyle(
+                      fontFamily: 'Tajawal',
+                      fontSize: 10,
+                      color: Color(0xFF8A8A8A),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          // ─── Correct / Wrong Count
+          Row(
+            children: [
+              Expanded(
+                child: _AnswerCountBox(
+                  icon: Icons.check_circle_rounded,
+                  title: 'إجابات صحيحة',
+                  count: score,
+                  color: const Color(0xFF65A97D),
+                  backgroundColor: const Color(0xFFF0F8F3),
                 ),
               ),
 
               const SizedBox(width: 10),
 
-              // السؤال
               Expanded(
-                child: Text(
-                  answer['instruction'] ?? '',
-                  style: const TextStyle(
-                    fontFamily: 'Tajawal',
-                    fontSize: 12.5,
-                    height: 1.4,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF3F3F3F),
-                  ),
-                ),
-              ),
-
-              const SizedBox(width: 8),
-
-              // الحالة
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.72),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      isCorrect ? Icons.check_rounded : Icons.refresh_rounded,
-                      size: 14,
-                      color: accentColor,
-                    ),
-
-                    const SizedBox(width: 3),
-
-                    Text(
-                      isCorrect ? 'صحيح' : 'راجعها',
-                      style: TextStyle(
-                        fontFamily: 'Tajawal',
-                        fontSize: 9.5,
-                        fontWeight: FontWeight.w700,
-                        color: accentColor,
-                      ),
-                    ),
-                  ],
+                child: _AnswerCountBox(
+                  icon: Icons.cancel_rounded,
+                  title: 'إجابات خاطئة',
+                  count: wrongCount,
+                  color: const Color(0xFFE08A65),
+                  backgroundColor: const Color(0xFFFFF3EE),
                 ),
               ),
             ],
           ),
 
-          // ─────────────────────────────────────────────────────────
-          // Wrong-answer details
-          // تظهر فقط إذا الإجابة خطأ
-          // ─────────────────────────────────────────────────────────
-          if (!isCorrect) ...[
-            const SizedBox(height: 10),
+          const SizedBox(height: 16),
 
-            Padding(
-              padding: const EdgeInsets.only(right: 44),
-              child: Column(
+          // ─── إذا كلها صحيحة
+          if (wrongAnswers.isEmpty)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF1F9F4),
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // إجابة الطفل
-                  _SmallAnswerBubble(
-                    icon: Icons.person_outline_rounded,
-                    title: 'إجابتك',
-                    value: answer['selected'] ?? '',
-                    color: const Color(0xFFD1905C),
-                    backgroundColor: const Color(0xFFFFFBF7),
+                  Icon(
+                    Icons.celebration_rounded,
+                    color: Color(0xFF65A97D),
+                    size: 22,
                   ),
 
-                  const SizedBox(height: 6),
+                  SizedBox(width: 7),
 
-                  // الإجابة الصحيحة
-                  _SmallAnswerBubble(
-                    icon: Icons.lightbulb_outline_rounded,
-                    title: 'الإجابة الصحيحة',
-                    value: answer['correct'] ?? '',
-                    color: const Color(0xFF669E7E),
-                    backgroundColor: const Color(0xFFF8FCF9),
+                  Text(
+                    'رائع! جميع إجاباتك صحيحة',
+                    style: TextStyle(
+                      fontFamily: 'Tajawal',
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF4E8B64),
+                    ),
                   ),
                 ],
+              ),
+            )
+          // ─── إذا فيه إجابات خاطئة
+          else ...[
+            const Text(
+              'إجابات تحتاج تدريبًا أكثر',
+              style: TextStyle(
+                fontFamily: 'Tajawal',
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF666666),
+              ),
+            ),
+
+            const SizedBox(height: 9),
+
+            ...wrongAnswers.map(
+              (entry) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: _WrongAnswerTile(
+                  number: entry.key + 1,
+                  answer: entry.value,
+                ),
               ),
             ),
           ],
@@ -688,19 +589,19 @@ class _AnswerResultTile extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Small Answer Bubble
+// Correct / Wrong Count Box
 // ─────────────────────────────────────────────────────────────────────────────
-class _SmallAnswerBubble extends StatelessWidget {
+class _AnswerCountBox extends StatelessWidget {
   final IconData icon;
   final String title;
-  final String value;
+  final int count;
   final Color color;
   final Color backgroundColor;
 
-  const _SmallAnswerBubble({
+  const _AnswerCountBox({
     required this.icon,
     required this.title,
-    required this.value,
+    required this.count,
     required this.color,
     required this.backgroundColor,
   });
@@ -708,46 +609,50 @@ class _SmallAnswerBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
       decoration: BoxDecoration(
         color: backgroundColor,
-        borderRadius: BorderRadius.circular(13),
+        borderRadius: BorderRadius.circular(17),
       ),
       child: Row(
         children: [
           Container(
-            width: 27,
-            height: 27,
+            width: 32,
+            height: 32,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.10),
+              color: color.withOpacity(0.12),
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, color: color, size: 15),
+            child: Icon(icon, color: color, size: 18),
           ),
 
           const SizedBox(width: 8),
 
-          Text(
-            '$title:',
-            style: const TextStyle(
-              fontFamily: 'Tajawal',
-              fontSize: 10,
-              color: Color(0xFF777777),
-            ),
-          ),
-
-          const SizedBox(width: 4),
-
           Expanded(
-            child: Text(
-              value,
-              style: TextStyle(
-                fontFamily: 'Tajawal',
-                fontSize: 11.5,
-                fontWeight: FontWeight.w700,
-                color: color,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontFamily: 'Tajawal',
+                    fontSize: 9.5,
+                    color: Color(0xFF777777),
+                  ),
+                ),
+
+                const SizedBox(height: 2),
+
+                Text(
+                  '$count',
+                  style: TextStyle(
+                    fontFamily: 'Tajawal',
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: color,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -757,8 +662,90 @@ class _SmallAnswerBubble extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Wrong Answer Tile
+//
+// يعرض فقط إجابة الطفل.
+// لا يعرض الإجابة الصحيحة.
+// ─────────────────────────────────────────────────────────────────────────────
+class _WrongAnswerTile extends StatelessWidget {
+  final int number;
+  final Map<String, String> answer;
+
+  const _WrongAnswerTile({required this.number, required this.answer});
+
+  @override
+  Widget build(BuildContext context) {
+    final String selected = answer['selected']?.trim() ?? '';
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF5EC),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Row(
+        children: [
+          // ─── Question Number
+          Container(
+            width: 34,
+            height: 34,
+            alignment: Alignment.center,
+            decoration: const BoxDecoration(
+              color: Color(0xFFFFE5CF),
+              shape: BoxShape.circle,
+            ),
+            child: Text(
+              '$number',
+              style: const TextStyle(
+                fontFamily: 'Tajawal',
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFFD48852),
+              ),
+            ),
+          ),
+
+          const SizedBox(width: 10),
+
+          // ─── Child Answer
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'إجابتك',
+                  style: TextStyle(
+                    fontFamily: 'Tajawal',
+                    fontSize: 10,
+                    color: Color(0xFF888888),
+                  ),
+                ),
+
+                const SizedBox(height: 3),
+
+                Text(
+                  selected.isNotEmpty ? selected : 'لم يتم اختيار إجابة',
+                  style: const TextStyle(
+                    fontFamily: 'Tajawal',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFFD48852),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const Icon(Icons.close_rounded, color: Color(0xFFE7A267), size: 20),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // HEADER
-// نفس الهيدر الحالي
 // ─────────────────────────────────────────────────────────────────────────────
 class _ResultHeader extends StatelessWidget {
   const _ResultHeader();
@@ -767,29 +754,24 @@ class _ResultHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [Color(0xFF511281), Color(0xFF7A3FA8)],
           begin: Alignment.centerRight,
           end: Alignment.centerLeft,
         ),
-
         boxShadow: [
           BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 2)),
         ],
       ),
-
       padding: EdgeInsets.only(
         top: MediaQuery.of(context).padding.top + 8,
         bottom: 14,
         right: 16,
         left: 16,
       ),
-
       child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-
         children: [
           Text(
             'نتيجة تمرين الاستماع',
@@ -819,7 +801,6 @@ class _ResultHeader extends StatelessWidget {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Simple Background
-// أقل زحمة
 // ─────────────────────────────────────────────────────────────────────────────
 class _SimpleResultBackground extends StatelessWidget {
   const _SimpleResultBackground();
@@ -859,7 +840,6 @@ class _SimpleResultBackground extends StatelessWidget {
     return Container(
       width: size,
       height: size,
-
       decoration: BoxDecoration(color: color, shape: BoxShape.circle),
     );
   }
@@ -867,8 +847,6 @@ class _SimpleResultBackground extends StatelessWidget {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Simple Cute Bunny
-// أذنين فقط فوق الرأس
-// بدون أذرع أو أشكال إضافية
 // ─────────────────────────────────────────────────────────────────────────────
 class _SimpleCuteBunny extends StatelessWidget {
   const _SimpleCuteBunny();
@@ -882,30 +860,24 @@ class _SimpleCuteBunny extends StatelessWidget {
     return Stack(
       alignment: Alignment.center,
       clipBehavior: Clip.none,
-
       children: [
         // ─── Right Ear
         Positioned(
           top: 0,
           right: 11,
-
           child: Container(
             width: 18,
             height: 34,
-
             decoration: BoxDecoration(
               color: faceColor,
               borderRadius: BorderRadius.circular(18),
             ),
-
             child: Center(
               child: Container(
                 width: 7,
                 height: 22,
-
                 decoration: BoxDecoration(
                   color: const Color(0xFFFFA1B7).withOpacity(0.55),
-
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
@@ -917,24 +889,19 @@ class _SimpleCuteBunny extends StatelessWidget {
         Positioned(
           top: 0,
           left: 11,
-
           child: Container(
             width: 18,
             height: 34,
-
             decoration: BoxDecoration(
               color: faceColor,
               borderRadius: BorderRadius.circular(18),
             ),
-
             child: Center(
               child: Container(
                 width: 7,
                 height: 22,
-
                 decoration: BoxDecoration(
                   color: const Color(0xFFFFA1B7).withOpacity(0.55),
-
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
@@ -945,14 +912,11 @@ class _SimpleCuteBunny extends StatelessWidget {
         // ─── Body
         Positioned(
           bottom: 0,
-
           child: Container(
             width: 42,
             height: 27,
-
             decoration: const BoxDecoration(
               color: bodyColor,
-
               borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(24),
                 topRight: Radius.circular(24),
@@ -966,16 +930,12 @@ class _SimpleCuteBunny extends StatelessWidget {
         // ─── Head
         Positioned(
           top: 25,
-
           child: Container(
             width: 55,
             height: 52,
-
             decoration: BoxDecoration(
               color: faceColor,
-
               borderRadius: BorderRadius.circular(26),
-
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.04),
@@ -984,18 +944,15 @@ class _SimpleCuteBunny extends StatelessWidget {
                 ),
               ],
             ),
-
             child: Stack(
               children: [
                 // Eyes
                 Positioned(
                   top: 19,
                   right: 13,
-
                   child: Container(
                     width: 6,
                     height: 7,
-
                     decoration: const BoxDecoration(
                       color: Color(0xFF4D3855),
                       shape: BoxShape.circle,
@@ -1006,11 +963,9 @@ class _SimpleCuteBunny extends StatelessWidget {
                 Positioned(
                   top: 19,
                   left: 13,
-
                   child: Container(
                     width: 6,
                     height: 7,
-
                     decoration: const BoxDecoration(
                       color: Color(0xFF4D3855),
                       shape: BoxShape.circle,
@@ -1022,14 +977,11 @@ class _SimpleCuteBunny extends StatelessWidget {
                 Positioned(
                   top: 31,
                   right: 6,
-
                   child: Container(
                     width: 9,
                     height: 5,
-
                     decoration: BoxDecoration(
                       color: const Color(0xFFFF96AC).withOpacity(0.50),
-
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
@@ -1038,14 +990,11 @@ class _SimpleCuteBunny extends StatelessWidget {
                 Positioned(
                   top: 31,
                   left: 6,
-
                   child: Container(
                     width: 9,
                     height: 5,
-
                     decoration: BoxDecoration(
                       color: const Color(0xFFFF96AC).withOpacity(0.50),
-
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
@@ -1055,11 +1004,9 @@ class _SimpleCuteBunny extends StatelessWidget {
                 Positioned(
                   top: 27,
                   left: 24,
-
                   child: Container(
                     width: 7,
                     height: 5,
-
                     decoration: const BoxDecoration(
                       color: Color(0xFFFF7890),
                       shape: BoxShape.circle,
@@ -1071,11 +1018,9 @@ class _SimpleCuteBunny extends StatelessWidget {
                 Positioned(
                   top: 33,
                   left: 20,
-
                   child: Container(
                     width: 15,
                     height: 7,
-
                     decoration: const BoxDecoration(
                       border: Border(
                         bottom: BorderSide(
@@ -1083,7 +1028,6 @@ class _SimpleCuteBunny extends StatelessWidget {
                           width: 1.4,
                         ),
                       ),
-
                       borderRadius: BorderRadius.only(
                         bottomLeft: Radius.circular(10),
                         bottomRight: Radius.circular(10),

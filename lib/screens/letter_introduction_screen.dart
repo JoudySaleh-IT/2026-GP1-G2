@@ -1,27 +1,16 @@
-import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
-
-const _sampleWords = {
-  'ض': 'ضَبْع',
-  'ح': 'حَمَام',
-  'خ': 'خَرُوف',
-  'ص': 'صَقْر',
-  'ق': 'قَلَم',
-  'ع': 'عَيْن',
-  'غ': 'غَزَال',
-  'ظ': 'ظَبْي',
-  'ط': 'طَاوُوس',
-  'س': 'َسَمَك',
-};
+import 'package:audioplayers/audioplayers.dart';
 
 class LetterIntroductionScreen extends StatefulWidget {
   final String letter;
   final String childId;
+  final String level;
 
   const LetterIntroductionScreen({
     super.key,
     required this.letter,
     required this.childId,
+    required this.level,
   });
 
   @override
@@ -29,63 +18,124 @@ class LetterIntroductionScreen extends StatefulWidget {
       _LetterIntroductionScreenState();
 }
 
-class _LetterIntroductionScreenState extends State<LetterIntroductionScreen>
-    with SingleTickerProviderStateMixin {
-  bool _isPlaying = false;
+class _LetterIntroductionScreenState extends State<LetterIntroductionScreen> {
+  final AudioPlayer _letterAudioPlayer = AudioPlayer();
 
-  late AnimationController _bounceCtrl;
-  late Animation<double> _bounceAnim;
-
-  String get _sampleWord => _sampleWords[widget.letter] ?? 'خَرُوف';
-
-  @override
-  void initState() {
-    super.initState();
-
-    _bounceCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 600),
-    );
-
-    _bounceAnim = Tween<double>(
-      begin: 1.0,
-      end: 1.06,
-    ).animate(CurvedAnimation(parent: _bounceCtrl, curve: Curves.easeInOut));
-  }
-
-  @override
-  void dispose() {
-    _bounceCtrl.dispose();
-    super.dispose();
-  }
+  bool _isLetterPlaying = false;
+  bool _hasListenedToLetter = false;
 
   // -------------------------------------------------------------------------
-  // Functionality - بدون تغيير
+  // Assets
   // -------------------------------------------------------------------------
 
-  void _handlePlayAudio() {
-    if (_isPlaying) return;
+  String get _articulationImage {
+    switch (widget.letter) {
+      case 'ق':
+        return 'assets/images/articulation/qaf_articulation.png';
 
-    setState(() => _isPlaying = true);
+      case 'خ':
+        return 'assets/images/articulation/kha_articulation.png';
 
-    _bounceCtrl.repeat(reverse: true);
+      case 'غ':
+        return 'assets/images/articulation/ghain_articulation.png';
 
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) {
-        setState(() => _isPlaying = false);
+      case 'ص':
+        return 'assets/images/articulation/sad_articulation.png';
 
-        _bounceCtrl.stop();
-        _bounceCtrl.reset();
-      }
+      case 'س':
+        return 'assets/images/articulation/seen_articulation.png';
+
+      case 'ض':
+        return 'assets/images/articulation/dad_articulation.png';
+
+      default:
+        return 'assets/images/articulation/qaf_articulation.png';
+    }
+  }
+
+  String get _letterAudio {
+    switch (widget.letter) {
+      case 'ق':
+        return 'audio/qaf/qaf_letter_sound.mp3';
+
+      case 'خ':
+        return 'audio/kha/kha_letter_sound.mp3';
+
+      case 'غ':
+        return 'audio/ghain/ghain_letter_sound.mp3';
+
+      case 'ص':
+        return 'audio/sad/sad_letter_sound.mp3';
+
+      case 'س':
+        return 'audio/seen/seen_letter_sound.mp3';
+
+      case 'ض':
+        return 'audio/dad/dad_letter_sound.mp3';
+
+      default:
+        return 'audio/qaf/qaf_letter_sound.mp3';
+    }
+  }
+  // -------------------------------------------------------------------------
+  // Play letter sound
+  // -------------------------------------------------------------------------
+
+  Future<void> _handlePlayLetterAudio() async {
+    if (_isLetterPlaying) return;
+
+    setState(() {
+      _isLetterPlaying = true;
     });
+
+    try {
+      await _letterAudioPlayer.stop();
+
+      // نسجل انتظار انتهاء الصوت قبل تشغيله
+      final completed = _letterAudioPlayer.onPlayerComplete.first;
+
+      await _letterAudioPlayer.play(AssetSource(_letterAudio));
+
+      // لازم الطفل يسمع الصوت كامل قبل فتح التمارين
+      await completed;
+
+      if (!mounted) return;
+
+      setState(() {
+        _isLetterPlaying = false;
+        _hasListenedToLetter = true;
+      });
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        _isLetterPlaying = false;
+      });
+
+      debugPrint('Error playing letter audio: $e');
+    }
   }
+
+  // -------------------------------------------------------------------------
+  // Continue
+  // -------------------------------------------------------------------------
 
   void _handleContinue() {
     Navigator.pushNamed(
       context,
       '/child/exercise/recording',
-      arguments: {'letter': widget.letter, 'childId': widget.childId},
+      arguments: {
+        'letter': widget.letter,
+        'childId': widget.childId,
+        'level': widget.level,
+      },
     );
+  }
+
+  @override
+  void dispose() {
+    _letterAudioPlayer.dispose();
+    super.dispose();
   }
 
   // -------------------------------------------------------------------------
@@ -102,7 +152,7 @@ class _LetterIntroductionScreenState extends State<LetterIntroductionScreen>
         body: Column(
           children: [
             // ===============================================================
-            // Header - نفس الهيدر
+            // Header
             // ===============================================================
             _IntroHeader(letter: widget.letter),
 
@@ -121,30 +171,17 @@ class _LetterIntroductionScreenState extends State<LetterIntroductionScreen>
 
                     child: Column(
                       children: [
-                        // ===================================================
-                        // Welcome card
-                        // ===================================================
+                        // Welcome
                         _buildWelcomeCard(),
 
                         const SizedBox(height: 13),
 
-                        // ===================================================
-                        // Mouth placement
-                        // ===================================================
+                        // Articulation + sound
                         _buildMouthCard(),
-
-                        const SizedBox(height: 13),
-
-                        // ===================================================
-                        // Example word
-                        // ===================================================
-                        _buildWordCard(),
 
                         const SizedBox(height: 15),
 
-                        // ===================================================
                         // Continue
-                        // ===================================================
                         _buildContinueButton(),
                       ],
                     ),
@@ -220,7 +257,7 @@ class _LetterIntroductionScreenState extends State<LetterIntroductionScreen>
 
               child: Row(
                 children: [
-                  // Character
+                  // Bunny
                   const SizedBox(
                     width: 83,
                     height: 105,
@@ -232,13 +269,12 @@ class _LetterIntroductionScreenState extends State<LetterIntroductionScreen>
                   Expanded(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
-
                       crossAxisAlignment: CrossAxisAlignment.start,
 
                       children: [
-                        const Text(
-                          'هيا نتعلم النطق!',
-                          style: TextStyle(
+                        Text(
+                          'هيا نتعرف على حرف ${widget.letter}!',
+                          style: const TextStyle(
                             fontFamily: 'Tajawal',
                             fontSize: 17,
                             fontWeight: FontWeight.w700,
@@ -249,7 +285,7 @@ class _LetterIntroductionScreenState extends State<LetterIntroductionScreen>
                         const SizedBox(height: 5),
 
                         const Text(
-                          'شاهد مخرج الحرف، ثم استمع إلى الكلمة',
+                          'شاهد مخرج الحرف واستمع إلى صوته',
                           style: TextStyle(
                             fontFamily: 'Tajawal',
                             fontSize: 11.5,
@@ -273,6 +309,7 @@ class _LetterIntroductionScreenState extends State<LetterIntroductionScreen>
 
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
+
                             children: [
                               const Text(
                                 'حرف اليوم',
@@ -311,7 +348,7 @@ class _LetterIntroductionScreenState extends State<LetterIntroductionScreen>
   }
 
   // -------------------------------------------------------------------------
-  // Mouth Placement Card
+  // Articulation Card
   // -------------------------------------------------------------------------
 
   Widget _buildMouthCard() {
@@ -337,6 +374,9 @@ class _LetterIntroductionScreenState extends State<LetterIntroductionScreen>
 
       child: Column(
         children: [
+          // =====================================================
+          // Card title
+          // =====================================================
           Row(
             children: [
               Container(
@@ -363,7 +403,7 @@ class _LetterIntroductionScreenState extends State<LetterIntroductionScreen>
 
                   children: [
                     Text(
-                      'مخرج الحرف ${widget.letter}',
+                      'تعرف على حرف ${widget.letter}',
                       style: const TextStyle(
                         fontFamily: 'Tajawal',
                         fontSize: 15,
@@ -372,10 +412,10 @@ class _LetterIntroductionScreenState extends State<LetterIntroductionScreen>
                       ),
                     ),
 
-                    const SizedBox(height: 1),
+                    const SizedBox(height: 2),
 
                     const Text(
-                      'لاحظ مكان خروج الصوت',
+                      'شاهد مكان خروج الحرف ثم استمع إلى صوته',
                       style: TextStyle(
                         fontFamily: 'Tajawal',
                         fontSize: 10.5,
@@ -390,9 +430,12 @@ class _LetterIntroductionScreenState extends State<LetterIntroductionScreen>
 
           const SizedBox(height: 13),
 
+          // =====================================================
+          // Articulation image
+          // =====================================================
           Container(
             width: double.infinity,
-            height: 190,
+            height: 235,
 
             decoration: BoxDecoration(
               color: const Color(0xFFF9F5FC),
@@ -400,115 +443,106 @@ class _LetterIntroductionScreenState extends State<LetterIntroductionScreen>
             ),
 
             child: ClipRRect(
-  borderRadius: BorderRadius.circular(19),
-  child: Image.asset(
-    'assets/images/articulation/kha_articulation.png',
-    width: double.infinity,
-    height: double.infinity,
-    fit: BoxFit.contain,
-  ),
-),
-          ),
-        ],
-      ),
-    );
-  }
+              borderRadius: BorderRadius.circular(19),
 
-  // -------------------------------------------------------------------------
-  // Word Card
-  // -------------------------------------------------------------------------
-
-  Widget _buildWordCard() {
-    return Container(
-      width: double.infinity,
-
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
-
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFF7F8),
-
-        borderRadius: BorderRadius.circular(24),
-
-        border: Border.all(color: const Color(0xFFFF6969).withOpacity(0.09)),
-      ),
-
-      child: Column(
-        children: [
-          const Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.hearing_rounded, color: Color(0xFFFF6969), size: 18),
-
-              SizedBox(width: 6),
-
-              Text(
-                'استمع ثم حاول نطقها',
-                style: TextStyle(
-                  fontFamily: 'Tajawal',
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF777777),
-                ),
+              child: Image.asset(
+                _articulationImage,
+                width: double.infinity,
+                height: double.infinity,
+                fit: BoxFit.contain,
               ),
-            ],
-          ),
-
-          const SizedBox(height: 12),
-
-          AnimatedBuilder(
-            animation: _bounceAnim,
-
-            builder: (_, child) =>
-                Transform.scale(scale: _bounceAnim.value, child: child),
-
-            child: Text(
-              _sampleWord,
-              style: const TextStyle(
-                fontFamily: 'Tajawal',
-                fontSize: 48,
-                color: Color(0xFF511281),
-                fontWeight: FontWeight.w600,
-                height: 1.25,
-              ),
-              textAlign: TextAlign.center,
             ),
           ),
 
           const SizedBox(height: 14),
 
-          OutlinedButton.icon(
-            // نفس الـfunctionality
-            onPressed: _handlePlayAudio,
+          // =====================================================
+          // Listen button
+          // =====================================================
+          SizedBox(
+            width: double.infinity,
 
-            icon: Icon(
-              _isPlaying ? Icons.volume_up_rounded : Icons.volume_up_outlined,
-              color: const Color(0xFFFF6969),
-              size: 18,
-            ),
+            child: OutlinedButton.icon(
+              onPressed: _isLetterPlaying ? null : _handlePlayLetterAudio,
 
-            label: Text(
-              _isPlaying ? 'جاري التشغيل...' : 'استمع إلى الكلمة',
-
-              style: const TextStyle(
-                color: Color(0xFFFF6969),
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                fontFamily: 'Tajawal',
-              ),
-            ),
-
-            style: OutlinedButton.styleFrom(
-              backgroundColor: Colors.white,
-
-              side: BorderSide(
-                color: const Color(0xFFFF6969).withOpacity(0.45),
+              icon: Icon(
+                _isLetterPlaying
+                    ? Icons.volume_up_rounded
+                    : Icons.volume_up_outlined,
+                color: const Color(0xFF7B4AAD),
+                size: 19,
               ),
 
-              shape: const StadiumBorder(),
+              label: Text(
+                _isLetterPlaying
+                    ? 'استمع جيدًا...'
+                    : _hasListenedToLetter
+                    ? 'استمع مرة أخرى'
+                    : 'استمع إلى صوت الحرف',
 
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 9),
+                style: const TextStyle(
+                  fontFamily: 'Tajawal',
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF7B4AAD),
+                ),
+              ),
+
+              style: OutlinedButton.styleFrom(
+                backgroundColor: const Color(0xFFF9F5FC),
+
+                disabledBackgroundColor: const Color(0xFFF4EEF8),
+
+                side: BorderSide(
+                  color: const Color(0xFF7B4AAD).withOpacity(0.30),
+                ),
+
+                shape: const StadiumBorder(),
+
+                padding: const EdgeInsets.symmetric(vertical: 11),
+              ),
             ),
           ),
+
+          // =====================================================
+          // Success message
+          // =====================================================
+          if (_hasListenedToLetter) ...[
+            const SizedBox(height: 10),
+
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
+
+              decoration: BoxDecoration(
+                color: const Color(0xFFEAF7EE),
+                borderRadius: BorderRadius.circular(15),
+              ),
+
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+
+                children: [
+                  Icon(
+                    Icons.check_circle_rounded,
+                    color: Color(0xFF4FA56A),
+                    size: 17,
+                  ),
+
+                  SizedBox(width: 6),
+
+                  Text(
+                    'أحسنت! أنت جاهز للتمارين',
+                    style: TextStyle(
+                      fontFamily: 'Tajawal',
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF4A8A5C),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -523,12 +557,18 @@ class _LetterIntroductionScreenState extends State<LetterIntroductionScreen>
       width: double.infinity,
 
       child: ElevatedButton(
-        // نفس الـfunctionality
-        onPressed: _handleContinue,
+        // لا يفتح إلا بعد الاستماع
+        onPressed: _hasListenedToLetter ? _handleContinue : null,
 
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFFFF6969),
+
+          disabledBackgroundColor: const Color(0xFFE4DDE7),
+
           foregroundColor: Colors.white,
+
+          disabledForegroundColor: const Color(0xFF9A929D),
+
           elevation: 0,
 
           shape: const StadiumBorder(),
@@ -536,23 +576,30 @@ class _LetterIntroductionScreenState extends State<LetterIntroductionScreen>
           padding: const EdgeInsets.symmetric(vertical: 14),
         ),
 
-        child: const Row(
+        child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
+
           mainAxisSize: MainAxisSize.min,
 
           children: [
             Text(
-              'ابدأ التمرين',
-              style: TextStyle(
+              _hasListenedToLetter ? 'ابدأ التمارين' : 'استمع إلى الحرف أولًا',
+
+              style: const TextStyle(
                 fontFamily: 'Tajawal',
                 fontSize: 14.5,
                 fontWeight: FontWeight.w600,
               ),
             ),
 
-            SizedBox(width: 7),
+            const SizedBox(width: 7),
 
-            Icon(Icons.mic_rounded, size: 18),
+            Icon(
+              _hasListenedToLetter
+                  ? Icons.arrow_forward_rounded
+                  : Icons.lock_outline_rounded,
+              size: 18,
+            ),
           ],
         ),
       ),
@@ -562,7 +609,6 @@ class _LetterIntroductionScreenState extends State<LetterIntroductionScreen>
 
 // ---------------------------------------------------------------------------
 // Header
-// نفس الهيدر الأصلي
 // ---------------------------------------------------------------------------
 
 class _IntroHeader extends StatelessWidget {
@@ -613,28 +659,30 @@ class _IntroHeader extends StatelessWidget {
 
           const SizedBox(width: 12),
 
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
 
-            children: [
-              Text(
-                'تعلم نطق الحرف $letter',
+              children: [
+                Text(
+                  'تعرف على الحرف $letter',
 
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 17,
-                  fontWeight: FontWeight.w600,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
 
-              const SizedBox(height: 2),
+                const SizedBox(height: 2),
 
-              const Text(
-                'شاهد مخرج الحرف واستمع إلى الكلمة',
+                const Text(
+                  'شاهد مخرج الحرف واستمع إلى صوته',
 
-                style: TextStyle(color: Colors.white70, fontSize: 12),
-              ),
-            ],
+                  style: TextStyle(color: Colors.white70, fontSize: 12),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -656,28 +704,24 @@ class _IntroBackground extends StatelessWidget {
         Positioned(
           top: 45,
           right: -55,
-
           child: _circle(145, const Color(0xFFDCC9F5).withOpacity(0.18)),
         ),
 
         Positioned(
           top: 275,
           left: -55,
-
           child: _circle(145, const Color(0xFFDDF2E3).withOpacity(0.27)),
         ),
 
         Positioned(
           top: 540,
           right: -45,
-
           child: _circle(120, const Color(0xFFFFDCE3).withOpacity(0.24)),
         ),
 
         Positioned(
           top: 720,
           left: 30,
-
           child: _circle(20, const Color(0xFFD6C1EF).withOpacity(0.35)),
         ),
       ],
@@ -696,7 +740,6 @@ class _IntroBackground extends StatelessWidget {
 
 // ---------------------------------------------------------------------------
 // Cute Character
-// نفس ستايل أرنب تمارين النطق
 // ---------------------------------------------------------------------------
 
 class _CuteIntroCharacter extends StatelessWidget {
@@ -736,6 +779,7 @@ class _CuteIntroCharacter extends StatelessWidget {
 
                 decoration: BoxDecoration(
                   color: pink.withOpacity(0.48),
+
                   borderRadius: BorderRadius.circular(14),
                 ),
               ),
@@ -754,6 +798,7 @@ class _CuteIntroCharacter extends StatelessWidget {
 
             decoration: BoxDecoration(
               color: faceColor,
+
               borderRadius: BorderRadius.circular(22),
             ),
 
@@ -764,6 +809,7 @@ class _CuteIntroCharacter extends StatelessWidget {
 
                 decoration: BoxDecoration(
                   color: pink.withOpacity(0.48),
+
                   borderRadius: BorderRadius.circular(14),
                 ),
               ),
@@ -784,8 +830,11 @@ class _CuteIntroCharacter extends StatelessWidget {
 
               borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(25),
+
                 topRight: Radius.circular(25),
+
                 bottomLeft: Radius.circular(10),
+
                 bottomRight: Radius.circular(10),
               ),
             ),
@@ -808,7 +857,9 @@ class _CuteIntroCharacter extends StatelessWidget {
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.04),
+
                   blurRadius: 4,
+
                   offset: const Offset(0, 2),
                 ),
               ],
@@ -827,6 +878,7 @@ class _CuteIntroCharacter extends StatelessWidget {
 
                     decoration: const BoxDecoration(
                       color: Color(0xFF4D3855),
+
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -842,6 +894,7 @@ class _CuteIntroCharacter extends StatelessWidget {
 
                     decoration: const BoxDecoration(
                       color: Color(0xFF4D3855),
+
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -858,6 +911,7 @@ class _CuteIntroCharacter extends StatelessWidget {
 
                     decoration: BoxDecoration(
                       color: pink.withOpacity(0.45),
+
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
@@ -873,6 +927,7 @@ class _CuteIntroCharacter extends StatelessWidget {
 
                     decoration: BoxDecoration(
                       color: pink.withOpacity(0.45),
+
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
@@ -889,6 +944,7 @@ class _CuteIntroCharacter extends StatelessWidget {
 
                     decoration: const BoxDecoration(
                       color: Color(0xFFFF7890),
+
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -907,12 +963,14 @@ class _CuteIntroCharacter extends StatelessWidget {
                       border: Border(
                         bottom: BorderSide(
                           color: Color(0xFF4D3855),
+
                           width: 1.5,
                         ),
                       ),
 
                       borderRadius: BorderRadius.only(
                         bottomLeft: Radius.circular(12),
+
                         bottomRight: Radius.circular(12),
                       ),
                     ),
@@ -923,7 +981,7 @@ class _CuteIntroCharacter extends StatelessWidget {
           ),
         ),
 
-        // Small sound bubble
+        // Sound bubble
         Positioned(
           right: -2,
           bottom: 11,
@@ -934,6 +992,7 @@ class _CuteIntroCharacter extends StatelessWidget {
 
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.90),
+
               shape: BoxShape.circle,
 
               boxShadow: const [
@@ -951,57 +1010,4 @@ class _CuteIntroCharacter extends StatelessWidget {
       ],
     );
   }
-}
-
-// ---------------------------------------------------------------------------
-// Dashed border
-// نفس الـfunctionality
-// ---------------------------------------------------------------------------
-
-class _DashedBorderBox extends StatelessWidget {
-  final Widget child;
-
-  const _DashedBorderBox({required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    return CustomPaint(painter: _DashedBorderPainter(), child: child);
-  }
-}
-
-class _DashedBorderPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = const Color(0xFF511281).withOpacity(0.18)
-      ..strokeWidth = 1.5
-      ..style = PaintingStyle.stroke;
-
-    const dashWidth = 8.0;
-    const dashSpace = 5.0;
-    const radius = Radius.circular(19);
-
-    final path = Path()
-      ..addRRect(
-        RRect.fromRectAndRadius(
-          Rect.fromLTWH(1, 1, size.width - 2, size.height - 2),
-          radius,
-        ),
-      );
-
-    final ui.PathMetrics pathMetrics = path.computeMetrics();
-
-    for (final ui.PathMetric pm in pathMetrics) {
-      double distance = 0;
-
-      while (distance < pm.length) {
-        canvas.drawPath(pm.extractPath(distance, distance + dashWidth), paint);
-
-        distance += dashWidth + dashSpace;
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

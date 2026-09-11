@@ -1,92 +1,37 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
-import 'style_constants.dart';
+import 'package:flutter/services.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:audioplayers/audioplayers.dart';
 
-// ─── Model ────────────────────────────────────────────────────────────────────
+import 'style_constants.dart';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Exercise Model
+// ─────────────────────────────────────────────────────────────────────────────
 class _Exercise {
-  final String instruction;
-  final String audioDescription;
+  final int number;
+  final String target;
   final List<String> options;
-  final String correctAnswer;
   final String audioPath;
 
   const _Exercise({
-    required this.instruction,
-    required this.audioDescription,
+    required this.number,
+    required this.target,
     required this.options,
-    required this.correctAnswer,
     required this.audioPath,
   });
+
+  // Target word = correct answer
+  String get correctAnswer => target;
+
+  String get instruction => 'استمع واختر الكلمة التي سمعتها:';
 }
 
-// ─── Exercises ────────────────────────────────────────────────────────────────
-const _listeningExercises = [
-  _Exercise(
-    instruction: "استمع واختر الكلمة التي سمعتها:",
-    audioDescription: "كلمة 'خُبْز'",
-    audioPath: 'audio/kha/khubz.mp3',
-    options: ['خُبْز', 'حُبْز', 'غُبْز', 'قُبْز'],
-    correctAnswer: 'خُبْز',
-  ),
-
-  _Exercise(
-    instruction: "ما الحرف الذي سمعته في الكلمة؟",
-    audioDescription: "كلمة 'خُوخ'",
-    audioPath: 'audio/kha/khokh.mp3',
-    options: ['خ', 'ح', 'غ', 'ق'],
-    correctAnswer: 'خ',
-  ),
-
-  _Exercise(
-    instruction: "استمع واختر الكلمة التي سمعتها:",
-    audioDescription: "كلمة 'خَرُوف'",
-    audioPath: 'audio/kha/kharouf.mp3',
-    options: ['خَرُوف', 'حَرُوف', 'غَرُوف', 'قَرُوف'],
-    correctAnswer: 'خَرُوف',
-  ),
-
-  _Exercise(
-    instruction: "ما حركة حرف خ التي سمعتها؟",
-    audioDescription: "كلمة 'خِيَار'",
-    audioPath: 'audio/kha/khiyar.mp3',
-    options: ['فتحة (َ)', 'كسرة (ِ)', 'ضمة (ُ)', 'سكون (ْ)'],
-    correctAnswer: 'كسرة (ِ)',
-  ),
-
-  _Exercise(
-    instruction: "ما الحرف الذي تبدأ به الكلمة؟",
-    audioDescription: "كلمة 'خَاتَم'",
-    audioPath: 'audio/kha/khatam.mp3',
-    options: ['خ', 'ح', 'غ', 'ق'],
-    correctAnswer: 'خ',
-  ),
-
-  _Exercise(
-    instruction: "استمع واختر الكلمة التي سمعتها:",
-    audioDescription: "كلمة 'خَيْمَة'",
-    audioPath: 'audio/kha/khayma.mp3',
-    options: ['خَيْمَة', 'حَيْمَة', 'غَيْمَة', 'قَيْمَة'],
-    correctAnswer: 'خَيْمَة',
-  ),
-
-  _Exercise(
-    instruction: "أين سمعت صوت خ في الكلمة؟",
-    audioDescription: "كلمة 'بَطِّيخ'",
-    audioPath: 'audio/kha/batikh.mp3',
-    options: ['البداية', 'الوسط', 'النهاية', 'غير موجود'],
-    correctAnswer: 'النهاية',
-  ),
-
-  _Exercise(
-    instruction: "أين سمعت صوت خ في الكلمة؟",
-    audioDescription: "كلمة 'نَخْلَة'",
-    audioPath: 'audio/kha/nakhla.mp3',
-    options: ['البداية', 'الوسط', 'النهاية', 'غير موجود'],
-    correctAnswer: 'الوسط',
-  ),
-];
-
-// ─── Screen ───────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// Screen
+// ─────────────────────────────────────────────────────────────────────────────
 class ExerciseListeningScreen extends StatefulWidget {
   final String letter;
   final String childId;
@@ -106,26 +51,43 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
     with SingleTickerProviderStateMixin {
   int _currentIndex = 0;
   String? _selectedAnswer;
+
   bool _showFeedback = false;
-  int _score = 0;
   bool _isPlaying = false;
+
+  int _score = 0;
   int _playCount = 0;
+
   final AudioPlayer _audioPlayer = AudioPlayer();
 
   final List<Map<String, String>> _answers = [];
 
+  // Loaded dynamically from JSON
+  List<_Exercise> _exercises = [];
+
+  bool _isLoadingExercises = true;
+  String? _exerciseLoadError;
+  String? _currentLevelKey;
+
   late AnimationController _pulseCtrl;
   late Animation<double> _pulseAnim;
 
+  // Child can listen to each word maximum 3 times
   static const int _maxPlays = 3;
 
   static const Color _purple = Color(0xFF511281);
   static const Color _coral = Color(0xFFFF6969);
   static const Color _cream = Color(0xFFFCF9EA);
 
-  _Exercise get _exercise => _listeningExercises[_currentIndex];
+  _Exercise get _exercise => _exercises[_currentIndex];
 
-  double get _progress => (_currentIndex + 1) / _listeningExercises.length;
+  double get _progress {
+    if (_exercises.isEmpty) {
+      return 0;
+    }
+
+    return (_currentIndex + 1) / _exercises.length;
+  }
 
   // ───────────────────────────────────────────────────────────────────────────
   // Init
@@ -143,47 +105,303 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
       begin: 1.0,
       end: 1.1,
     ).animate(CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut));
+
+    _loadExercises();
   }
 
   @override
   void dispose() {
     _pulseCtrl.dispose();
     _audioPlayer.dispose();
+
     super.dispose();
   }
 
   // ───────────────────────────────────────────────────────────────────────────
+  // Normalize Child Level
+  //
+  // Supports:
+  // beginner / intermediate / advanced
+  // foundational / developing / master
+  // Arabic values
+  // ───────────────────────────────────────────────────────────────────────────
+  String _normalizeLevel(dynamic rawLevel) {
+    final String level = rawLevel?.toString().trim().toLowerCase() ?? '';
+
+    switch (level) {
+      // ─── Beginner
+      case 'beginner':
+      case 'foundational':
+      case 'easy':
+      case 'مبتدئ':
+      case 'تأسيسي':
+        return 'beginner';
+
+      // ─── Intermediate
+      case 'intermediate':
+      case 'developing':
+      case 'moderate':
+      case 'متوسط':
+        return 'intermediate';
+
+      // ─── Advanced
+      case 'advanced':
+      case 'master':
+      case 'mastered':
+      case 'hard':
+      case 'متقدم':
+      case 'متقن':
+        return 'advanced';
+
+      default:
+        throw Exception('مستوى الطفل غير معروف: $rawLevel');
+    }
+  }
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // Load Exercises
+  //
+  // 1. Read child level from Firestore
+  // 2. Read exercises.json
+  // 3. Find selected letter
+  // 4. Find child level
+  // 5. Build audio paths automatically
+  // ───────────────────────────────────────────────────────────────────────────
+  Future<void> _loadExercises() async {
+    try {
+      // ==============================================================
+      // 1. Get Child
+      // ==============================================================
+
+      final childDoc = await FirebaseFirestore.instance
+          .collection('children')
+          .doc(widget.childId)
+          .get();
+
+      if (!childDoc.exists) {
+        throw Exception('لم يتم العثور على بيانات الطفل');
+      }
+
+      final childData = childDoc.data();
+
+      if (childData == null) {
+        throw Exception('بيانات الطفل فارغة');
+      }
+
+      // ==============================================================
+      // 2. Get Child Level
+      // ==============================================================
+
+      final String childLevel = _normalizeLevel(childData['level']);
+      _currentLevelKey = childLevel;
+
+      debugPrint(
+        'Listening Exercise → '
+        'Child level: ${childData['level']} → $childLevel',
+      );
+
+      // ==============================================================
+      // 3. Load JSON
+      // ==============================================================
+
+      final String jsonString = await rootBundle.loadString(
+        'assets/data/exercises.json',
+      );
+
+      final Map<String, dynamic> allData = Map<String, dynamic>.from(
+        jsonDecode(jsonString),
+      );
+
+      // ==============================================================
+      // 4. Find Letter
+      //
+      // widget.letter example:
+      // ق
+      // ==============================================================
+
+      if (!allData.containsKey(widget.letter)) {
+        throw Exception('لا توجد تمارين للحرف ${widget.letter}');
+      }
+
+      final Map<String, dynamic> letterData = Map<String, dynamic>.from(
+        allData[widget.letter],
+      );
+
+      // Example:
+      // qaf
+      final String assetFolder = letterData['assetFolder'].toString();
+
+      // ==============================================================
+      // 5. Get Levels
+      // ==============================================================
+
+      final Map<String, dynamic> levels = Map<String, dynamic>.from(
+        letterData['levels'],
+      );
+
+      if (!levels.containsKey(childLevel)) {
+        throw Exception(
+          'لا توجد تمارين لمستوى $childLevel '
+          'للحرف ${widget.letter}',
+        );
+      }
+
+      final Map<String, dynamic> levelData = Map<String, dynamic>.from(
+        levels[childLevel],
+      );
+
+      // Example:
+      // code = b
+      // folder = beginner
+
+      final String levelCode = levelData['code'].toString();
+
+      final String levelFolder = levelData['folder'].toString();
+
+      // ==============================================================
+      // 6. Get Words
+      // ==============================================================
+
+      final List<dynamic> words = List<dynamic>.from(levelData['words'] ?? []);
+
+      if (words.isEmpty) {
+        throw Exception('لا توجد كلمات مضافة لهذا المستوى');
+      }
+
+      // ==============================================================
+      // 7. Convert JSON → Exercise objects
+      // ==============================================================
+
+      final List<_Exercise> loadedExercises = [];
+
+      for (final wordData in words) {
+        final Map<String, dynamic> item = Map<String, dynamic>.from(wordData);
+
+        final int number = (item['number'] as num).toInt();
+
+        final String target = item['target'].toString();
+
+        final List<String> options = List<String>.from(item['options']);
+
+        // Important:
+        // Correct answer will not always appear first
+        options.shuffle();
+
+        // 1 → 01
+        // 2 → 02
+        final String numberFormatted = number.toString().padLeft(2, '0');
+
+        // Example:
+        // qaf_b_01.mp3
+        final String fileName =
+            '${assetFolder}_${levelCode}_$numberFormatted.mp3';
+
+        // Example:
+        // audio/qaf/beginner/qaf_b_01.mp3
+        final String audioPath =
+            'audio/$assetFolder/'
+            '$levelFolder/'
+            '$fileName';
+
+        loadedExercises.add(
+          _Exercise(
+            number: number,
+            target: target,
+            options: options,
+            audioPath: audioPath,
+          ),
+        );
+      }
+
+      // Keep question order 1 → 8
+      loadedExercises.sort((a, b) => a.number.compareTo(b.number));
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _exercises = loadedExercises;
+
+        _isLoadingExercises = false;
+        _exerciseLoadError = null;
+
+        _currentIndex = 0;
+        _score = 0;
+
+        _selectedAnswer = null;
+        _showFeedback = false;
+
+        _playCount = 0;
+        _isPlaying = false;
+      });
+
+      // ==============================================================
+      // Debug
+      // ==============================================================
+
+      debugPrint(
+        'Loaded ${_exercises.length} '
+        '${widget.letter} exercises',
+      );
+
+      for (final exercise in _exercises) {
+        debugPrint(
+          '${exercise.number}: '
+          '${exercise.target} → '
+          '${exercise.audioPath}',
+        );
+      }
+    } catch (e) {
+      debugPrint('Exercise loading error: $e');
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _isLoadingExercises = false;
+        _exerciseLoadError = e.toString();
+      });
+    }
+  }
+
+  // ───────────────────────────────────────────────────────────────────────────
   // Play
-  // نفس الـfunctionality
+  //
+  // Maximum: 3 times per word
   // ───────────────────────────────────────────────────────────────────────────
   Future<void> _handlePlay() async {
-  if (_isPlaying || _playCount >= _maxPlays) {
-    return;
-  }
+    // Prevent:
+    // 1. Double click while audio is already playing
+    // 2. More than 3 plays
+    if (_isPlaying || _playCount >= _maxPlays) {
+      return;
+    }
 
-  // الكلمات اللي ما أضفنا صوتها للحين
-  if (_exercise.audioPath.isEmpty) {
-    return;
-  }
+    if (_exercise.audioPath.isEmpty) {
+      return;
+    }
 
-  setState(() {
-    _isPlaying = true;
-    _playCount++;
-  });
+    setState(() {
+      _isPlaying = true;
+      _playCount++;
+    });
 
-  _pulseCtrl.repeat(reverse: true);
+    _pulseCtrl.repeat(reverse: true);
 
-  try {
-    await _audioPlayer.play(
-      AssetSource(_exercise.audioPath),
-    );
+    try {
+      await _audioPlayer.play(AssetSource(_exercise.audioPath));
 
-    await _audioPlayer.onPlayerComplete.first;
-  } catch (e) {
-    debugPrint('Audio error: $e');
-  }
+      await _audioPlayer.onPlayerComplete.first;
+    } catch (e) {
+      debugPrint('Audio error: $e');
+    }
 
-  if (mounted) {
+    if (!mounted) {
+      return;
+    }
+
     setState(() {
       _isPlaying = false;
     });
@@ -191,13 +409,17 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
     _pulseCtrl.stop();
     _pulseCtrl.reset();
   }
-}
+
   // ───────────────────────────────────────────────────────────────────────────
   // Answer
-  // نفس الـfunctionality
+  //
+  // Child cannot answer before listening at least once
   // ───────────────────────────────────────────────────────────────────────────
   void _handleAnswer(String answer) {
-    if (_showFeedback || _playCount == 0) {
+    // Cannot answer:
+    // - before listening
+    // - after already answering
+    if (_playCount == 0 || _showFeedback) {
       return;
     }
 
@@ -211,18 +433,55 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
     });
   }
 
+  Future<void> _saveListeningResult() async {
+    if (_currentLevelKey == null) {
+      debugPrint('Cannot save result: current level is null');
+      return;
+    }
+
+    final bool passed = _score >= 6;
+
+    final childRef = FirebaseFirestore.instance
+        .collection('children')
+        .doc(widget.childId);
+
+    // نحفظ الدرجة الأخيرة دائمًا
+    await childRef.update({
+      'exerciseProgress.${widget.letter}.$_currentLevelKey.listeningScore':
+          _score,
+    });
+
+    // إذا نجح، نخزن true
+    // ولا نرجعها false لو أعاد التمرين لاحقًا وجاب درجة أقل
+    if (passed) {
+      await childRef.update({
+        'exerciseProgress.${widget.letter}.$_currentLevelKey.listeningPassed':
+            true,
+      });
+    }
+
+    debugPrint(
+      'Listening result saved: '
+      'letter=${widget.letter}, '
+      'level=$_currentLevelKey, '
+      'score=$_score, '
+      'passed=$passed',
+    );
+  }
+
   // ───────────────────────────────────────────────────────────────────────────
   // Next
-  // نفس الـfunctionality
   // ───────────────────────────────────────────────────────────────────────────
-  void _handleNext() {
+  Future<void> _handleNext() async {
     _answers.add({
       'selected': _selectedAnswer ?? '',
       'correct': _exercise.correctAnswer,
+      'target': _exercise.target,
       'instruction': _exercise.instruction,
     });
 
-    if (_currentIndex < _listeningExercises.length - 1) {
+    // يوجد سؤال آخر
+    if (_currentIndex < _exercises.length - 1) {
       setState(() {
         _currentIndex++;
         _selectedAnswer = null;
@@ -230,19 +489,35 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
         _playCount = 0;
         _isPlaying = false;
       });
-    } else {
-      Navigator.pushNamed(
-        context,
-        '/child/exercise-listening-result',
-        arguments: {
-          'score': _score,
-          'total': _listeningExercises.length,
-          'answers': List<Map<String, String>>.from(_answers),
-          'letter': widget.letter,
-          'childId': widget.childId,
-        },
-      );
+
+      return;
     }
+
+    // =========================================================
+    // انتهى آخر سؤال
+    // =========================================================
+
+    // حفظ نتيجة الاستماع
+    await _saveListeningResult();
+
+    if (!mounted) return;
+
+    // الانتقال لصفحة النتائج
+    Navigator.pushNamed(
+      context,
+      '/child/exercise-listening-result',
+      arguments: {
+        'score': _score,
+        'total': _exercises.length,
+        'answers': List<Map<String, String>>.from(_answers),
+        'letter': widget.letter,
+        'childId': widget.childId,
+
+        // نمررها أيضًا لصفحة النتائج إذا احتجناها
+        'passedListening': _score >= 6,
+        'level': _currentLevelKey,
+      },
+    );
   }
 
   // ───────────────────────────────────────────────────────────────────────────
@@ -250,6 +525,72 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
   // ───────────────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
+    // ================================================================
+    // Loading
+    // ================================================================
+
+    if (_isLoadingExercises) {
+      return Directionality(
+        textDirection: TextDirection.rtl,
+        child: Scaffold(
+          backgroundColor: _cream,
+          body: Column(
+            children: [
+              _buildHeader(),
+              const Expanded(
+                child: Center(child: CircularProgressIndicator(color: _purple)),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // ================================================================
+    // Error / No Exercises
+    // ================================================================
+
+    if (_exerciseLoadError != null || _exercises.isEmpty) {
+      return Directionality(
+        textDirection: TextDirection.rtl,
+        child: Scaffold(
+          backgroundColor: _cream,
+          body: Column(
+            children: [
+              _buildHeader(),
+              Expanded(
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.error_outline_rounded,
+                          color: _coral,
+                          size: 40,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          _exerciseLoadError ?? 'لا توجد تمارين لهذا المستوى',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Color(0xFF555555),
+                            fontFamily: 'Tajawal',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     final double screenHeight = MediaQuery.of(context).size.height;
 
     final double screenWidth = MediaQuery.of(context).size.width;
@@ -260,12 +601,10 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
       textDirection: TextDirection.rtl,
       child: Scaffold(
         backgroundColor: _cream,
-
         body: Column(
           children: [
             // ================================================================
             // HEADER
-            // نفس الهيدر بدون تغيير
             // ================================================================
             _buildHeader(),
 
@@ -275,7 +614,7 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
             Expanded(
               child: Stack(
                 children: [
-                  // ─── Pastel Background ────────────────────────────────────
+                  // ─── Pastel Background
                   const Positioned.fill(
                     child: IgnorePointer(child: _ListeningBackground()),
                   ),
@@ -288,10 +627,8 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
                             ? screenHeight * 0.92
                             : double.infinity,
                       ),
-
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(15, 8, 15, 10),
-
                         child: Container(
                           decoration: BoxDecoration(
                             color: Colors.white.withOpacity(0.88),
@@ -308,36 +645,30 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
                               ),
                             ],
                           ),
-
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(26),
-
                             child: Column(
                               children: [
                                 // ─── Progress
                                 _buildProgressSection(),
 
-                                // ─────────────────────────────────────────────
-                                // Main Exercise Area
-                                // ─────────────────────────────────────────────
+                                // ─── Main Exercise Area
                                 Expanded(
                                   child: Padding(
                                     padding: const EdgeInsets.symmetric(
                                       horizontal: 14,
                                     ),
-
                                     child: Column(
                                       mainAxisAlignment:
                                           MainAxisAlignment.spaceEvenly,
-
                                       children: [
-                                        // ─── Cute instruction card
+                                        // Instruction
                                         _buildInstructionBox(isTablet),
 
-                                        // ─── Audio Player
+                                        // Audio
                                         _buildAudioPlayer(isTablet),
 
-                                        // ─── Answers
+                                        // Answers
                                         GridView.count(
                                           padding: EdgeInsets.zero,
                                           shrinkWrap: true,
@@ -349,11 +680,10 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
                                           childAspectRatio: isTablet
                                               ? 3.0
                                               : 1.6,
-
                                           children: _exercise.options
                                               .map(
-                                                (opt) => _AnswerTile(
-                                                  text: opt,
+                                                (option) => _AnswerTile(
+                                                  text: option,
                                                   selectedAnswer:
                                                       _selectedAnswer,
                                                   correctAnswer:
@@ -363,20 +693,20 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
                                                       _playCount > 0 &&
                                                       !_showFeedback,
                                                   onTap: () =>
-                                                      _handleAnswer(opt),
+                                                      _handleAnswer(option),
                                                 ),
                                               )
                                               .toList(),
                                         ),
 
-                                        // ─── Feedback
+                                        // Feedback
                                         _buildFeedbackNoticeArea(isTablet),
                                       ],
                                     ),
                                   ),
                                 ),
 
-                                // ─── Bottom Actions
+                                // ─── Footer
                                 _buildFooter(),
                               ],
                             ),
@@ -416,7 +746,6 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
                   fontFamily: 'Tajawal',
                 ),
               ),
-
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 10,
@@ -427,7 +756,8 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  'تمرين ${_currentIndex + 1} من ${_listeningExercises.length}',
+                  'تمرين ${_currentIndex + 1} '
+                  'من ${_exercises.length}',
                   style: const TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
@@ -438,9 +768,7 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
               ),
             ],
           ),
-
           const SizedBox(height: 8),
-
           ClipRRect(
             borderRadius: BorderRadius.circular(10),
             child: LinearProgressIndicator(
@@ -467,13 +795,11 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: _purple.withOpacity(0.10), width: 1.3),
       ),
-
       child: ClipRRect(
         borderRadius: BorderRadius.circular(22),
-
         child: Stack(
           children: [
-            // Soft purple circle
+            // Purple circle
             Positioned(
               right: -30,
               top: -35,
@@ -487,7 +813,7 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
               ),
             ),
 
-            // Soft pink circle
+            // Pink circle
             Positioned(
               left: 70,
               bottom: -45,
@@ -503,10 +829,9 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
 
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-
               child: Row(
                 children: [
-                  // ─── Number
+                  // Number
                   Container(
                     width: 36,
                     height: 36,
@@ -528,7 +853,7 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
 
                   const SizedBox(width: 10),
 
-                  // ─── Instruction text
+                  // Instruction
                   Expanded(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -543,9 +868,7 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
                             fontFamily: 'Tajawal',
                           ),
                         ),
-
                         const SizedBox(height: 3),
-
                         Text(
                           _exercise.instruction,
                           style: TextStyle(
@@ -561,7 +884,6 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
 
                   const SizedBox(width: 6),
 
-                  // ─── Cute Character
                   const SizedBox(
                     width: 67,
                     height: 84,
@@ -588,20 +910,17 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
       mainAxisSize: MainAxisSize.min,
       children: [
         GestureDetector(
-          onTap: _handlePlay,
-
+          onTap: disabled ? null : _handlePlay,
           child: AnimatedBuilder(
             animation: _pulseAnim,
-
             builder: (_, child) => Transform.scale(
               scale: _isPlaying ? _pulseAnim.value : 1.0,
               child: child,
             ),
-
             child: Stack(
               alignment: Alignment.center,
               children: [
-                // Outer soft circle
+                // Outer circle
                 Container(
                   width: isTablet ? 82 : 104,
                   height: isTablet ? 82 : 104,
@@ -636,7 +955,6 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
                       ),
                     ],
                   ),
-
                   child: Icon(
                     _isPlaying ? Icons.pause_rounded : Icons.volume_up_rounded,
                     color: Colors.white,
@@ -665,7 +983,7 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
 
         const SizedBox(height: 3),
 
-        // ─── Play count
+        // Play Counter
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: List.generate(_maxPlays, (index) {
@@ -687,12 +1005,11 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
   }
 
   // ───────────────────────────────────────────────────────────────────────────
-  // Feedback area
+  // Feedback
   // ───────────────────────────────────────────────────────────────────────────
   Widget _buildFeedbackNoticeArea(bool isTablet) {
     return SizedBox(
       height: isTablet ? 45 : 55,
-
       child: _showFeedback
           ? _FeedbackBanner(
               isCorrect: _selectedAnswer == _exercise.correctAnswer,
@@ -725,7 +1042,6 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
 
   // ───────────────────────────────────────────────────────────────────────────
   // Footer
-  // نفس الـFunctionality
   // ───────────────────────────────────────────────────────────────────────────
   Widget _buildFooter() {
     return Container(
@@ -734,7 +1050,6 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
         color: Colors.white.withOpacity(0.82),
         border: Border(top: BorderSide(color: _purple.withOpacity(0.07))),
       ),
-
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -745,7 +1060,8 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
-              'النتيجة: $_score/${_currentIndex + (_showFeedback ? 1 : 0)}',
+              'النتيجة: $_score/'
+              '${_currentIndex + (_showFeedback ? 1 : 0)}',
               style: const TextStyle(
                 fontSize: 10.5,
                 color: _purple,
@@ -757,7 +1073,6 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
 
           ElevatedButton(
             onPressed: _showFeedback ? _handleNext : null,
-
             style: ElevatedButton.styleFrom(
               backgroundColor: _coral,
               disabledBackgroundColor: const Color(0xFFFFD1D1),
@@ -766,22 +1081,17 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
               shape: const StadiumBorder(),
               padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 9),
             ),
-
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  _currentIndex < _listeningExercises.length - 1
-                      ? 'التالي'
-                      : 'إنهاء',
+                  _currentIndex < _exercises.length - 1 ? 'التالي' : 'إنهاء',
                   style: const TextStyle(
                     fontFamily: 'Tajawal',
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-
                 const SizedBox(width: 4),
-
                 const Icon(Icons.arrow_forward_rounded, size: 17),
               ],
             ),
@@ -792,15 +1102,12 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
   }
 
   // ───────────────────────────────────────────────────────────────────────────
-  // HEADER
-  // نفس الهيدر الأصلي بدون تغيير
+  // Header
   // ───────────────────────────────────────────────────────────────────────────
   Widget _buildHeader() {
     return Container(
       decoration: FaseehStyle.headerDecoration,
-
       padding: FaseehStyle.getStandardPadding(context),
-
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -811,11 +1118,11 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
 
           const SizedBox(width: 8),
 
-          Expanded(
+          const Expanded(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
+              children: [
                 Text(
                   'تمارين الاستماع',
                   style: TextStyle(
@@ -898,16 +1205,12 @@ class _AnswerTile extends StatelessWidget {
 
     return GestureDetector(
       onTap: enabled ? onTap : null,
-
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
-
         decoration: BoxDecoration(
           color: backgroundColor,
           borderRadius: BorderRadius.circular(18),
-
           border: Border.all(color: borderColor, width: 1.6),
-
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.025),
@@ -916,10 +1219,8 @@ class _AnswerTile extends StatelessWidget {
             ),
           ],
         ),
-
         child: Stack(
           children: [
-            // Tiny pastel decoration
             Positioned(
               left: 8,
               top: 8,
@@ -1006,9 +1307,7 @@ class _FeedbackBanner extends StatelessWidget {
             color: color,
             size: 18,
           ),
-
           const SizedBox(width: 6),
-
           Text(
             isCorrect
                 ? 'أحسنت! إجابة صحيحة'
@@ -1037,49 +1336,36 @@ class _ListeningBackground extends StatelessWidget {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        // Purple
         Positioned(
           top: 40,
           right: -55,
           child: _circle(150, const Color(0xFFDCC9F5).withOpacity(0.20)),
         ),
-
-        // Pink small
         Positioned(
           top: 160,
           left: 20,
           child: _circle(23, const Color(0xFFFFC8D3).withOpacity(0.48)),
         ),
-
-        // Green
         Positioned(
           top: 280,
           left: -55,
           child: _circle(145, const Color(0xFFD9F1E0).withOpacity(0.30)),
         ),
-
-        // Purple small
         Positioned(
           top: 430,
           right: 25,
           child: _circle(23, const Color(0xFFD4BDEA).withOpacity(0.42)),
         ),
-
-        // Pink large
         Positioned(
           top: 540,
           right: -45,
           child: _circle(125, const Color(0xFFFFDCE3).withOpacity(0.28)),
         ),
-
-        // Green small
         Positioned(
           top: 680,
           left: 38,
           child: _circle(19, const Color(0xFFCDEFD9).withOpacity(0.52)),
         ),
-
-        // Purple lower
         Positioned(
           top: 780,
           left: -45,
@@ -1100,7 +1386,6 @@ class _ListeningBackground extends StatelessWidget {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Cute Listening Character
-// مرسوم بالـFlutter فقط
 // ─────────────────────────────────────────────────────────────────────────────
 class _CuteListeningCharacter extends StatelessWidget {
   const _CuteListeningCharacter();
@@ -1115,7 +1400,7 @@ class _CuteListeningCharacter extends StatelessWidget {
       alignment: Alignment.center,
       clipBehavior: Clip.none,
       children: [
-        // Right ear
+        // Right Ear
         Positioned(
           top: 1,
           right: 10,
@@ -1142,7 +1427,7 @@ class _CuteListeningCharacter extends StatelessWidget {
           ),
         ),
 
-        // Left ear
+        // Left Ear
         Positioned(
           top: 1,
           left: 10,
@@ -1169,7 +1454,7 @@ class _CuteListeningCharacter extends StatelessWidget {
           ),
         ),
 
-        // Headphones band
+        // Headphone Band
         Positioned(
           top: 22,
           child: Container(
@@ -1222,10 +1507,9 @@ class _CuteListeningCharacter extends StatelessWidget {
                 ),
               ],
             ),
-
             child: Stack(
               children: [
-                // Headphone sides
+                // Headphone Right
                 const Positioned(
                   top: 18,
                   right: -1,
@@ -1241,6 +1525,7 @@ class _CuteListeningCharacter extends StatelessWidget {
                   ),
                 ),
 
+                // Headphone Left
                 const Positioned(
                   top: 18,
                   left: -1,
@@ -1256,7 +1541,7 @@ class _CuteListeningCharacter extends StatelessWidget {
                   ),
                 ),
 
-                // Eyes
+                // Right Eye
                 Positioned(
                   top: 19,
                   right: 13,
@@ -1270,6 +1555,7 @@ class _CuteListeningCharacter extends StatelessWidget {
                   ),
                 ),
 
+                // Left Eye
                 Positioned(
                   top: 19,
                   left: 13,
@@ -1283,7 +1569,7 @@ class _CuteListeningCharacter extends StatelessWidget {
                   ),
                 ),
 
-                // Cheeks
+                // Right Cheek
                 Positioned(
                   top: 31,
                   right: 6,
@@ -1297,6 +1583,7 @@ class _CuteListeningCharacter extends StatelessWidget {
                   ),
                 ),
 
+                // Left Cheek
                 Positioned(
                   top: 31,
                   left: 6,

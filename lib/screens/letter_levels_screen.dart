@@ -1,14 +1,7 @@
 import 'package:flutter/material.dart';
-import '../utils/arabic_numbers.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-const _levelProgress = {
-  'ض': (mcq: true, listening: true, recording: false),
-  'خ': (mcq: true, listening: true, recording: true),
-  'غ': (mcq: false, listening: false, recording: false),
-  'ص': (mcq: true, listening: false, recording: false),
-  'س': (mcq: false, listening: false, recording: false),
-  'ق': (mcq: false, listening: false, recording: false),
-};
+import '../utils/arabic_numbers.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Level Info
@@ -36,7 +29,7 @@ class _LevelInfo {
 // ─────────────────────────────────────────────────────────────────────────────
 // Screen
 // ─────────────────────────────────────────────────────────────────────────────
-class LetterLevelsScreen extends StatelessWidget {
+class LetterLevelsScreen extends StatefulWidget {
   final String letter;
   final String childId;
 
@@ -46,47 +39,251 @@ class LetterLevelsScreen extends StatelessWidget {
     required this.childId,
   });
 
+  @override
+  State<LetterLevelsScreen> createState() => _LetterLevelsScreenState();
+}
+
+class _LetterLevelsScreenState extends State<LetterLevelsScreen> {
+  bool _isLoading = true;
+
+  String? _currentLevelKey;
+
+  bool _listeningPassed = false;
+  bool _pronunciationPassed = false;
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // Init
+  // ───────────────────────────────────────────────────────────────────────────
+  @override
+  void initState() {
+    super.initState();
+
+    _loadProgress();
+  }
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // Normalize child level
+  // ───────────────────────────────────────────────────────────────────────────
+  String _normalizeLevel(dynamic rawLevel) {
+    final String level = rawLevel?.toString().trim().toLowerCase() ?? '';
+
+    switch (level) {
+      // Beginner
+      case 'beginner':
+      case 'foundational':
+      case 'easy':
+      case 'مبتدئ':
+      case 'تأسيسي':
+        return 'beginner';
+
+      // Intermediate
+      case 'intermediate':
+      case 'developing':
+      case 'moderate':
+      case 'متوسط':
+        return 'intermediate';
+
+      // Advanced
+      case 'advanced':
+      case 'master':
+      case 'mastered':
+      case 'hard':
+      case 'متقدم':
+      case 'متقن':
+        return 'advanced';
+
+      default:
+        // مؤقتًا إذا ما كانت القيمة معروفة
+        // نبدأ من beginner بدل ما تنهار الصفحة
+        return 'beginner';
+    }
+  }
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // Load Progress from Firestore
+  //
+  // Expected structure:
+  //
+  // exerciseProgress
+  //   ق
+  //     beginner
+  //       listeningScore: 6
+  //       listeningPassed: true
+  //       pronunciationPassed: false
+  // ───────────────────────────────────────────────────────────────────────────
+  Future<void> _loadProgress() async {
+    try {
+      if (mounted) {
+        setState(() {
+          _isLoading = true;
+        });
+      }
+
+      final doc = await FirebaseFirestore.instance
+          .collection('children')
+          .doc(widget.childId)
+          .get();
+
+      if (!doc.exists || doc.data() == null) {
+        if (!mounted) return;
+
+        setState(() {
+          _currentLevelKey = 'beginner';
+          _listeningPassed = false;
+          _pronunciationPassed = false;
+          _isLoading = false;
+        });
+
+        return;
+      }
+
+      final Map<String, dynamic> data = doc.data()!;
+
+      // =============================================================
+      // Current child level
+      // =============================================================
+
+      final String currentLevel = _normalizeLevel(data['level']);
+
+      bool listeningPassed = false;
+      bool pronunciationPassed = false;
+
+      // =============================================================
+      // Read exerciseProgress
+      // =============================================================
+
+      final dynamic rawExerciseProgress = data['exerciseProgress'];
+
+      if (rawExerciseProgress is Map) {
+        final Map<String, dynamic> exerciseProgress = Map<String, dynamic>.from(
+          rawExerciseProgress,
+        );
+
+        final dynamic rawLetterProgress = exerciseProgress[widget.letter];
+
+        if (rawLetterProgress is Map) {
+          final Map<String, dynamic> letterProgress = Map<String, dynamic>.from(
+            rawLetterProgress,
+          );
+
+          final dynamic rawLevelProgress = letterProgress[currentLevel];
+
+          if (rawLevelProgress is Map) {
+            final Map<String, dynamic> levelProgress =
+                Map<String, dynamic>.from(rawLevelProgress);
+
+            listeningPassed = levelProgress['listeningPassed'] == true;
+
+            pronunciationPassed = levelProgress['pronunciationPassed'] == true;
+          }
+        }
+      }
+
+      if (!mounted) return;
+
+      setState(() {
+        _currentLevelKey = currentLevel;
+
+        _listeningPassed = listeningPassed;
+        _pronunciationPassed = pronunciationPassed;
+
+        _isLoading = false;
+      });
+
+      debugPrint('══════════════════════════════════════════');
+
+      debugPrint('Letter: ${widget.letter}');
+
+      debugPrint('Current level: $_currentLevelKey');
+
+      debugPrint('Listening passed: $_listeningPassed');
+
+      debugPrint('Pronunciation passed: $_pronunciationPassed');
+
+      debugPrint('══════════════════════════════════════════');
+    } catch (e) {
+      debugPrint('Error loading exercise progress: $e');
+
+      if (!mounted) return;
+
+      setState(() {
+        _currentLevelKey ??= 'beginner';
+
+        _listeningPassed = false;
+        _pronunciationPassed = false;
+
+        _isLoading = false;
+      });
+    }
+  }
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // Build Exercise Types
+  // ───────────────────────────────────────────────────────────────────────────
   List<_LevelInfo> _buildLevels() {
-    final p =
-        _levelProgress[letter] ??
-        (mcq: false, listening: false, recording: false);
-
-    // الاستماع هو أول تمرين ظاهر
-    const bool listeningLocked = false;
-
-    // تمارين النطق تفتح بعد إكمال تمارين الاستماع
-    //final bool recordingLocked = !p.listening;
-    const bool recordingLocked = false;
-
     return [
+      // =============================================================
+      // 1. Listening
+      // =============================================================
       _LevelInfo(
         id: 'listening',
         title: 'تمارين الاستماع',
-        description: 'استمع وكرر',
+        description: _listeningPassed
+            ? 'أكملت تمارين الاستماع بنجاح'
+            : 'استمع واختر الإجابة الصحيحة',
         icon: Icons.headphones_rounded,
         color: const Color(0xFF7B4AAD),
-        completed: p.listening,
-        isLocked: listeningLocked,
+
+        // Listening يعتبر مكتمل فقط بعد 6/8 على الأقل
+        completed: _listeningPassed,
+
+        // Listening مفتوح للمستوى الحالي
+        isLocked: false,
       ),
 
+      // =============================================================
+      // 2. Pronunciation
+      // =============================================================
       _LevelInfo(
-        // نبقي recording داخليًا حتى لا تتغير الـ functionality
         id: 'recording',
         title: 'تمارين النطق',
         description: 'انطق وسجّل صوتك',
         icon: Icons.mic_rounded,
         color: const Color(0xFF5CB88A),
-        completed: p.recording,
-        isLocked: recordingLocked,
+
+        completed: _pronunciationPassed,
+
+        // أهم شرط:
+        // لا يفتح النطق إلا بعد النجاح في الاستماع
+        isLocked: !_listeningPassed,
       ),
     ];
   }
 
+  // ───────────────────────────────────────────────────────────────────────────
+  // Build
+  // ───────────────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
-    final levels = _buildLevels();
+    // ===============================================================
+    // Loading
+    // ===============================================================
 
-    final completedCount = levels.where((l) => l.completed).length;
+    if (_isLoading) {
+      return const Directionality(
+        textDirection: TextDirection.rtl,
+        child: Scaffold(
+          backgroundColor: Color(0xFFFCF9EA),
+          body: Center(
+            child: CircularProgressIndicator(color: Color(0xFF511281)),
+          ),
+        ),
+      );
+    }
+
+    final List<_LevelInfo> levels = _buildLevels();
+
+    final int completedCount = levels.where((l) => l.completed).length;
 
     return Directionality(
       textDirection: TextDirection.rtl,
@@ -97,13 +294,12 @@ class LetterLevelsScreen extends StatelessWidget {
           children: [
             // ===============================================================
             // HEADER
-            // بدون تغيير
             // ===============================================================
             _LetterLevelsHeader(
-              letter: letter,
+              letter: widget.letter,
               completedCount: completedCount,
               totalCount: levels.length,
-              childId: childId,
+              childId: widget.childId,
             ),
 
             // ===============================================================
@@ -112,7 +308,7 @@ class LetterLevelsScreen extends StatelessWidget {
             Expanded(
               child: Stack(
                 children: [
-                  // خلفية باستيل
+                  // Background
                   const Positioned.fill(
                     child: IgnorePointer(child: _LevelsBackground()),
                   ),
@@ -121,63 +317,85 @@ class LetterLevelsScreen extends StatelessWidget {
                     padding: const EdgeInsets.fromLTRB(18, 18, 18, 35),
                     child: Column(
                       children: [
-                        // ─────────────────────────────────────────────────────
-                        // Cute Intro Card
-                        // ─────────────────────────────────────────────────────
+                        // =====================================================
+                        // Intro
+                        // =====================================================
                         _LevelsIntroCard(
-                          letter: letter,
+                          letter: widget.letter,
                           completedCount: completedCount,
                           totalCount: levels.length,
                         ),
 
                         const SizedBox(height: 14),
 
-                        // ─────────────────────────────────────────────────────
-                        // Levels
-                        // ─────────────────────────────────────────────────────
+                        // =====================================================
+                        // Listening + Pronunciation
+                        // =====================================================
                         ...levels.asMap().entries.map((entry) {
+                          final _LevelInfo level = entry.value;
+
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 12),
                             child: _LevelCard(
-                              level: entry.value,
+                              level: level,
                               number: entry.key + 1,
 
-                              // =================================================
-                              // نفس الـ functionality الحالية
-                              // =================================================
-                              onTap: () {
-                                if (entry.value.isLocked) {
+                              onTap: () async {
+                                // ===========================================
+                                // Locked
+                                // ===========================================
+
+                                if (level.isLocked) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
                                       content: Text(
-                                        'يجب عليك إنهاء المستوى السابق أولاً!',
+                                        'احصل على ٦ من ٨ على الأقل في تمارين الاستماع أولًا',
+                                        textDirection: TextDirection.rtl,
                                       ),
-                                      duration: Duration(seconds: 1),
+                                      duration: Duration(seconds: 2),
                                     ),
                                   );
 
                                   return;
                                 }
 
-                                if (entry.value.id == 'recording') {
-                                  Navigator.pushNamed(
+                                // ===========================================
+                                // Pronunciation
+                                // ===========================================
+
+                                if (level.id == 'recording') {
+                                  await Navigator.pushNamed(
                                     context,
                                     '/child/letter-introduction',
                                     arguments: {
-                                      'letter': letter,
-                                      'childId': childId,
+                                      'letter': widget.letter,
+                                      'childId': widget.childId,
+                                      'level': _currentLevelKey,
                                     },
                                   );
-                                } else {
-                                  Navigator.pushNamed(
-                                    context,
-                                    '/child/exercise/${entry.value.id}',
-                                    arguments: {
-                                      'letter': letter,
-                                      'childId': childId,
-                                    },
-                                  );
+
+                                  // Refresh when child comes back
+                                  await _loadProgress();
+
+                                  return;
                                 }
+
+                                // ===========================================
+                                // Listening
+                                // ===========================================
+
+                                await Navigator.pushNamed(
+                                  context,
+                                  '/child/exercise/${level.id}',
+                                  arguments: {
+                                    'letter': widget.letter,
+                                    'childId': widget.childId,
+                                    'level': _currentLevelKey,
+                                  },
+                                );
+
+                                // Refresh when child comes back
+                                await _loadProgress();
                               },
                             ),
                           );
@@ -197,7 +415,6 @@ class LetterLevelsScreen extends StatelessWidget {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Header
-// نفس الهيدر الأصلي بدون تغيير
 // ─────────────────────────────────────────────────────────────────────────────
 class _LetterLevelsHeader extends StatelessWidget {
   final String letter;
@@ -225,12 +442,14 @@ class _LetterLevelsHeader extends StatelessWidget {
           BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 2)),
         ],
       ),
+
       padding: EdgeInsets.only(
         top: MediaQuery.of(context).padding.top + 8,
         bottom: 16,
         right: 16,
         left: 16,
       ),
+
       child: Row(
         children: [
           _HeaderIconBtn(
@@ -269,7 +488,8 @@ class _LetterLevelsHeader extends StatelessWidget {
                 ),
 
                 Text(
-                  '${toArabicDigits(completedCount)} من ${toArabicDigits(totalCount)} مستويات مكتملة',
+                  '${toArabicDigits(completedCount)} من '
+                  '${toArabicDigits(totalCount)} تمارين مكتملة',
                   style: const TextStyle(color: Colors.white70, fontSize: 12),
                 ),
               ],
@@ -283,7 +503,6 @@ class _LetterLevelsHeader extends StatelessWidget {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Cute Intro Card
-// بدون تغيير
 // ─────────────────────────────────────────────────────────────────────────────
 class _LevelsIntroCard extends StatelessWidget {
   final String letter;
@@ -303,13 +522,16 @@ class _LevelsIntroCard extends StatelessWidget {
     return Container(
       width: double.infinity,
       height: 145,
+
       decoration: BoxDecoration(
         color: const Color(0xFFF7F0FF),
         borderRadius: BorderRadius.circular(26),
+
         border: Border.all(
           color: const Color(0xFF511281).withOpacity(0.10),
           width: 1.4,
         ),
+
         boxShadow: const [
           BoxShadow(
             color: Color(0x0B000000),
@@ -318,17 +540,19 @@ class _LevelsIntroCard extends StatelessWidget {
           ),
         ],
       ),
+
       child: ClipRRect(
         borderRadius: BorderRadius.circular(26),
+
         child: Stack(
           children: [
-            // موف خلفي
             Positioned(
               right: -40,
               top: -50,
               child: Container(
                 width: 145,
                 height: 145,
+
                 decoration: BoxDecoration(
                   color: const Color(0xFFD8C2F0).withOpacity(0.32),
                   shape: BoxShape.circle,
@@ -336,13 +560,13 @@ class _LevelsIntroCard extends StatelessWidget {
               ),
             ),
 
-            // وردي خلفي
             Positioned(
               left: 45,
               bottom: -55,
               child: Container(
                 width: 135,
                 height: 105,
+
                 decoration: BoxDecoration(
                   color: const Color(0xFFFFD7E1).withOpacity(0.48),
                   shape: BoxShape.circle,
@@ -352,13 +576,15 @@ class _LevelsIntroCard extends StatelessWidget {
 
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+
               child: Row(
                 children: [
-                  // ─── Text ─────────────────────────────
                   Expanded(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
+
                       crossAxisAlignment: CrossAxisAlignment.start,
+
                       children: [
                         const Text(
                           'اختر تمرينك وابدأ!',
@@ -373,7 +599,7 @@ class _LevelsIntroCard extends StatelessWidget {
                         const SizedBox(height: 4),
 
                         const Text(
-                          'أكمل المستويات واحدًا بعد الآخر',
+                          'أكمل التمارين واحدًا بعد الآخر',
                           style: TextStyle(
                             fontSize: 11.5,
                             color: Color(0xFF777777),
@@ -385,20 +611,24 @@ class _LevelsIntroCard extends StatelessWidget {
 
                         Row(
                           children: [
-                            // الحرف
                             Container(
                               width: 43,
                               height: 43,
+
                               decoration: BoxDecoration(
                                 color: Colors.white.withOpacity(0.85),
+
                                 shape: BoxShape.circle,
+
                                 border: Border.all(
                                   color: const Color(
                                     0xFF511281,
                                   ).withOpacity(0.10),
                                 ),
                               ),
+
                               alignment: Alignment.center,
+
                               child: Text(
                                 letter,
                                 style: const TextStyle(
@@ -416,10 +646,12 @@ class _LevelsIntroCard extends StatelessWidget {
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
+
                                 children: [
                                   Row(
                                     mainAxisAlignment:
                                         MainAxisAlignment.spaceBetween,
+
                                     children: [
                                       const Text(
                                         'تقدّمك',
@@ -431,7 +663,8 @@ class _LevelsIntroCard extends StatelessWidget {
                                       ),
 
                                       Text(
-                                        '${toArabicDigits(completedCount)}/${toArabicDigits(totalCount)}',
+                                        '${toArabicDigits(completedCount)}/'
+                                        '${toArabicDigits(totalCount)}',
                                         style: const TextStyle(
                                           fontSize: 10,
                                           color: Color(0xFF511281),
@@ -446,12 +679,15 @@ class _LevelsIntroCard extends StatelessWidget {
 
                                   ClipRRect(
                                     borderRadius: BorderRadius.circular(15),
+
                                     child: LinearProgressIndicator(
                                       value: progress,
                                       minHeight: 7,
+
                                       backgroundColor: Colors.white.withOpacity(
                                         0.85,
                                       ),
+
                                       valueColor:
                                           const AlwaysStoppedAnimation<Color>(
                                             Color(0xFFFF6969),
@@ -469,7 +705,6 @@ class _LevelsIntroCard extends StatelessWidget {
 
                   const SizedBox(width: 8),
 
-                  // ─── Character ────────────────────────
                   const SizedBox(
                     width: 82,
                     height: 110,
@@ -554,7 +789,9 @@ class _LevelCardState extends State<_LevelCard>
 
     return AnimatedBuilder(
       animation: _scale,
+
       builder: (_, child) => Transform.scale(scale: _scale.value, child: child),
+
       child: GestureDetector(
         onTapDown: (_) {
           if (!widget.level.isLocked) {
@@ -577,11 +814,14 @@ class _LevelCardState extends State<_LevelCard>
 
             decoration: BoxDecoration(
               color: _cardColor,
+
               borderRadius: BorderRadius.circular(23),
+
               border: Border.all(
                 color: mainColor.withOpacity(0.16),
                 width: 1.5,
               ),
+
               boxShadow: const [
                 BoxShadow(
                   color: Color(0x0A000000),
@@ -596,13 +836,14 @@ class _LevelCardState extends State<_LevelCard>
 
               child: Stack(
                 children: [
-                  // خلفية ناعمة داخل الكارد
                   Positioned(
                     left: -28,
                     bottom: -38,
+
                     child: Container(
                       width: 115,
                       height: 95,
+
                       decoration: BoxDecoration(
                         color: mainColor.withOpacity(0.055),
                         shape: BoxShape.circle,
@@ -610,13 +851,14 @@ class _LevelCardState extends State<_LevelCard>
                     ),
                   ),
 
-                  // دائرة صغيرة
                   Positioned(
                     right: 85,
                     top: 15,
+
                     child: Container(
                       width: 10,
                       height: 10,
+
                       decoration: BoxDecoration(
                         color: mainColor.withOpacity(0.15),
                         shape: BoxShape.circle,
@@ -632,13 +874,15 @@ class _LevelCardState extends State<_LevelCard>
 
                     child: Row(
                       children: [
-                        // ── رقم المرحلة
+                        // Number
                         Container(
                           width: 42,
                           height: 42,
+
                           decoration: BoxDecoration(
                             color: mainColor,
                             shape: BoxShape.circle,
+
                             boxShadow: widget.level.isLocked
                                 ? null
                                 : [
@@ -649,9 +893,12 @@ class _LevelCardState extends State<_LevelCard>
                                     ),
                                   ],
                           ),
+
                           alignment: Alignment.center,
+
                           child: Text(
                             toArabicDigits(widget.number),
+
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 16,
@@ -663,21 +910,26 @@ class _LevelCardState extends State<_LevelCard>
 
                         const SizedBox(width: 11),
 
-                        // ── Icon
+                        // Icon
                         Container(
                           width: 55,
                           height: 55,
+
                           decoration: BoxDecoration(
                             color: Colors.white.withOpacity(0.75),
+
                             shape: BoxShape.circle,
+
                             border: Border.all(
                               color: mainColor.withOpacity(0.12),
                             ),
                           ),
+
                           child: Icon(
                             widget.level.isLocked
                                 ? Icons.lock_outline_rounded
                                 : widget.level.icon,
+
                             color: mainColor,
                             size: 27,
                           ),
@@ -685,20 +937,26 @@ class _LevelCardState extends State<_LevelCard>
 
                         const SizedBox(width: 12),
 
-                        // ── Text
+                        // Text
                         Expanded(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
+
                             crossAxisAlignment: CrossAxisAlignment.start,
+
                             children: [
                               Text(
                                 widget.level.title,
+
                                 style: TextStyle(
                                   fontSize: 15.5,
+
                                   fontWeight: FontWeight.w700,
+
                                   color: widget.level.isLocked
                                       ? const Color(0xFF888888)
                                       : const Color(0xFF333333),
+
                                   fontFamily: 'Tajawal',
                                 ),
                               ),
@@ -707,8 +965,9 @@ class _LevelCardState extends State<_LevelCard>
 
                               Text(
                                 widget.level.isLocked
-                                    ? 'أكمل المستوى السابق للفتح'
+                                    ? 'أكمل تمارين الاستماع بنجاح للفتح'
                                     : widget.level.description,
+
                                 style: const TextStyle(
                                   fontSize: 11,
                                   color: Color(0xFF888888),
@@ -716,20 +975,22 @@ class _LevelCardState extends State<_LevelCard>
                                 ),
                               ),
 
-                              // ── Completed indicator
                               if (widget.level.completed) ...[
                                 const SizedBox(height: 6),
+
                                 Container(
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 8,
                                     vertical: 3,
                                   ),
+
                                   decoration: BoxDecoration(
                                     color: const Color(
                                       0xFF59B77B,
                                     ).withOpacity(0.10),
                                     borderRadius: BorderRadius.circular(14),
                                   ),
+
                                   child: const Text(
                                     'تم إكماله',
                                     style: TextStyle(
@@ -745,25 +1006,30 @@ class _LevelCardState extends State<_LevelCard>
                           ),
                         ),
 
-                        // ── Final icon
+                        // Final Icon
                         Container(
                           width: 32,
                           height: 32,
+
                           decoration: BoxDecoration(
                             color: widget.level.completed
                                 ? const Color(0xFF5BB980).withOpacity(0.12)
                                 : mainColor.withOpacity(0.07),
+
                             shape: BoxShape.circle,
                           ),
+
                           child: Icon(
                             widget.level.completed
                                 ? Icons.check_rounded
                                 : widget.level.isLocked
                                 ? Icons.lock_rounded
                                 : Icons.arrow_forward_ios_rounded,
+
                             color: widget.level.completed
                                 ? const Color(0xFF55AD75)
                                 : mainColor.withOpacity(0.65),
+
                             size: widget.level.completed ? 20 : 15,
                           ),
                         ),
@@ -782,7 +1048,6 @@ class _LevelCardState extends State<_LevelCard>
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Background
-// بدون تغيير
 // ─────────────────────────────────────────────────────────────────────────────
 class _LevelsBackground extends StatelessWidget {
   const _LevelsBackground();
@@ -847,7 +1112,6 @@ class _LevelsBackground extends StatelessWidget {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Cute Character
-// بدون تغيير
 // ─────────────────────────────────────────────────────────────────────────────
 class _CuteLevelCharacter extends StatelessWidget {
   final Color faceColor;
@@ -863,24 +1127,30 @@ class _CuteLevelCharacter extends StatelessWidget {
     return Stack(
       alignment: Alignment.center,
       clipBehavior: Clip.none,
+
       children: [
         // Right Ear
         Positioned(
           top: 1,
           right: 13,
+
           child: Transform.rotate(
             angle: 0.15,
+
             child: Container(
               width: 20,
               height: 41,
+
               decoration: BoxDecoration(
                 color: faceColor,
                 borderRadius: BorderRadius.circular(24),
               ),
+
               child: Center(
                 child: Container(
                   width: 8,
                   height: 27,
+
                   decoration: BoxDecoration(
                     color: const Color(0xFFFF9CB5).withOpacity(0.62),
                     borderRadius: BorderRadius.circular(18),
@@ -895,19 +1165,24 @@ class _CuteLevelCharacter extends StatelessWidget {
         Positioned(
           top: 1,
           left: 13,
+
           child: Transform.rotate(
             angle: -0.15,
+
             child: Container(
               width: 20,
               height: 41,
+
               decoration: BoxDecoration(
                 color: faceColor,
                 borderRadius: BorderRadius.circular(24),
               ),
+
               child: Center(
                 child: Container(
                   width: 8,
                   height: 27,
+
                   decoration: BoxDecoration(
                     color: const Color(0xFFFF9CB5).withOpacity(0.62),
                     borderRadius: BorderRadius.circular(18),
@@ -921,11 +1196,14 @@ class _CuteLevelCharacter extends StatelessWidget {
         // Body
         Positioned(
           bottom: 0,
+
           child: Container(
             width: 48,
             height: 32,
+
             decoration: BoxDecoration(
               color: accentColor,
+
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(26),
                 topRight: Radius.circular(26),
@@ -938,11 +1216,14 @@ class _CuteLevelCharacter extends StatelessWidget {
         Positioned(
           right: 4,
           bottom: 20,
+
           child: Transform.rotate(
             angle: -0.50,
+
             child: Container(
               width: 11,
               height: 28,
+
               decoration: BoxDecoration(
                 color: faceColor,
                 borderRadius: BorderRadius.circular(12),
@@ -954,12 +1235,16 @@ class _CuteLevelCharacter extends StatelessWidget {
         // Head
         Positioned(
           top: 30,
+
           child: Container(
             width: 64,
             height: 59,
+
             decoration: BoxDecoration(
               color: faceColor,
+
               borderRadius: BorderRadius.circular(29),
+
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.05),
@@ -968,15 +1253,18 @@ class _CuteLevelCharacter extends StatelessWidget {
                 ),
               ],
             ),
+
             child: Stack(
               children: [
                 // Eyes
                 Positioned(
                   top: 20,
                   right: 15,
+
                   child: Container(
                     width: 7,
                     height: 9,
+
                     decoration: const BoxDecoration(
                       color: Color(0xFF4D3855),
                       shape: BoxShape.circle,
@@ -987,9 +1275,11 @@ class _CuteLevelCharacter extends StatelessWidget {
                 Positioned(
                   top: 20,
                   left: 15,
+
                   child: Container(
                     width: 7,
                     height: 9,
+
                     decoration: const BoxDecoration(
                       color: Color(0xFF4D3855),
                       shape: BoxShape.circle,
@@ -1001,9 +1291,11 @@ class _CuteLevelCharacter extends StatelessWidget {
                 Positioned(
                   top: 34,
                   right: 7,
+
                   child: Container(
                     width: 11,
                     height: 6,
+
                     decoration: BoxDecoration(
                       color: const Color(0xFFFF8EA6).withOpacity(0.55),
                       borderRadius: BorderRadius.circular(12),
@@ -1014,9 +1306,11 @@ class _CuteLevelCharacter extends StatelessWidget {
                 Positioned(
                   top: 34,
                   left: 7,
+
                   child: Container(
                     width: 11,
                     height: 6,
+
                     decoration: BoxDecoration(
                       color: const Color(0xFFFF8EA6).withOpacity(0.55),
                       borderRadius: BorderRadius.circular(12),
@@ -1028,9 +1322,11 @@ class _CuteLevelCharacter extends StatelessWidget {
                 Positioned(
                   top: 29,
                   left: 28,
+
                   child: Container(
                     width: 8,
                     height: 6,
+
                     decoration: const BoxDecoration(
                       color: Color(0xFFFF7890),
                       shape: BoxShape.circle,
@@ -1042,9 +1338,11 @@ class _CuteLevelCharacter extends StatelessWidget {
                 Positioned(
                   top: 36,
                   left: 23,
+
                   child: Container(
                     width: 18,
                     height: 9,
+
                     decoration: const BoxDecoration(
                       border: Border(
                         bottom: BorderSide(
@@ -1052,6 +1350,7 @@ class _CuteLevelCharacter extends StatelessWidget {
                           width: 1.7,
                         ),
                       ),
+
                       borderRadius: BorderRadius.only(
                         bottomLeft: Radius.circular(12),
                         bottomRight: Radius.circular(12),
@@ -1070,7 +1369,6 @@ class _CuteLevelCharacter extends StatelessWidget {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Header Button
-// بدون تغيير
 // ─────────────────────────────────────────────────────────────────────────────
 class _HeaderIconBtn extends StatelessWidget {
   final IconData icon;
@@ -1082,9 +1380,11 @@ class _HeaderIconBtn extends StatelessWidget {
   Widget build(BuildContext context) => InkWell(
     onTap: onTap,
     borderRadius: BorderRadius.circular(8),
+
     child: SizedBox(
       width: 34,
       height: 34,
+
       child: Icon(icon, color: Colors.white, size: 25),
     ),
   );
