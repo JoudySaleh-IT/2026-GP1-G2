@@ -6,6 +6,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../utils/arabic_numbers.dart';
+import 'style_constants.dart';
 
 // ─── Data Model ──────────────────────────────────────────────────────────────
 class PlacementWord {
@@ -553,110 +554,60 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
     );
   }
 
-  // ===========================================================================
-  // HEADER
-  // نفس وظيفة الرجوع + نفس معلومات السؤال
-  // ===========================================================================
   Widget _buildHeader() {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topRight,
-          end: Alignment.bottomLeft,
-          colors: [
-            Color(0xFF511281), // اليمين - غامق
-            Color(0xFF6A3A9E), // اليسار - أفتح
-          ],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Color(0x22000000),
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        bottom: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 11, 12, 13),
-          child: Row(
-            children: [
-              // ===============================================================
-              // زر الرجوع
-              // نفس الوظيفة الأصلية
-              // ===============================================================
-              SizedBox(
-                width: 48,
-                height: 48,
-                child: IconButton(
-                  onPressed: () => Navigator.pushNamedAndRemoveUntil(
+    return FaseehStyle.buildLargeHeader(
+      context: context,
+
+      title: 'اختبار تحديد المستوى',
+
+      subtitle:
+          'الكلمة ${toArabicDigits(_currentIndex + 1)} من ${toArabicDigits(_placementWords.length)}',
+
+      leading: SizedBox(
+        width: 88,
+        height: 48,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // زر الرجوع
+            SizedBox(
+              width: 44,
+              height: 48,
+              child: IconButton(
+                padding: EdgeInsets.zero,
+                onPressed: () {
+                  Navigator.pushNamedAndRemoveUntil(
                     context,
                     '/child/home',
                     (route) => false,
                     arguments: widget.childId,
-                  ),
-                  icon: const Icon(
-                    Icons.arrow_back,
-                    color: Colors.white,
-                    size: 25,
-                  ),
-                ),
-              ),
-
-              const SizedBox(width: 8),
-
-              // ===============================================================
-              // العنوان
-              // ===============================================================
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'اختبار تحديد المستوى',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 19,
-                        fontWeight: FontWeight.w700,
-                        fontFamily: 'Tajawal',
-                      ),
-                    ),
-
-                    const SizedBox(height: 2),
-
-                    Text(
-                      'الكلمة ${toArabicDigits(_currentIndex + 1)} من ${toArabicDigits(_placementWords.length)}',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.76),
-                        fontSize: 11.5,
-                        fontFamily: 'Tajawal',
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // ===============================================================
-              // أيقونة بسيطة للصفحة
-              // ===============================================================
-              Container(
-                width: 46,
-                height: 46,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.12),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.record_voice_over_rounded,
+                  );
+                },
+                icon: const Icon(
+                  Icons.arrow_back_rounded,
                   color: Colors.white,
                   size: 25,
                 ),
               ),
-            ],
-          ),
+            ),
+
+            // أيقونة الـ Placement Test
+            const SizedBox(
+              width: 38,
+              height: 48,
+              child: Center(
+                child: Icon(
+                  Icons.record_voice_over_rounded,
+                  color: Colors.white,
+                  size: 30,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
+
+      trailingActions: const [SizedBox(width: 48, height: 48)],
     );
   }
 
