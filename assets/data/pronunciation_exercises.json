@@ -241,6 +241,249 @@
       "targetWord": "الإبريق",
       "imagePath": "assets/images/word_bank/qaf_a_08_ibreeq.jpg",
       "audioPath": "audio/qaf/advanced/qaf_a_08.mp3"
+    },
+
+    {
+      "id": "kha_b_01",
+      "letter": "خ",
+      "level": "beginner",
+      "order": 1,
+      "displayWord": "خُبْز",
+      "targetWord": "خبز",
+      "imagePath": "assets/images/word_bank/kha_b_01_khubz.png",
+      "audioPath": "audio/kha/beginner/kha_b_01.mp3"
+    },
+    {
+      "id": "kha_b_02",
+      "letter": "خ",
+      "level": "beginner",
+      "order": 2,
+      "displayWord": "خَوْخ",
+      "targetWord": "خوخ",
+      "imagePath": "assets/images/word_bank/kha_b_02_khawkh.png",
+      "audioPath": "audio/kha/beginner/kha_b_02.mp3"
+    },
+    {
+      "id": "kha_b_03",
+      "letter": "خ",
+      "level": "beginner",
+      "order": 3,
+      "displayWord": "خَيْط",
+      "targetWord": "خيط",
+      "imagePath": "assets/images/word_bank/kha_b_03_khayt.png",
+      "audioPath": "audio/kha/beginner/kha_b_03.mp3"
+    },
+    {
+      "id": "kha_b_04",
+      "letter": "خ",
+      "level": "beginner",
+      "order": 4,
+      "displayWord": "خَسّ",
+      "targetWord": "خس",
+      "imagePath": "assets/images/word_bank/kha_b_04_khass.png",
+      "audioPath": "audio/kha/beginner/kha_b_04.mp3"
+    },
+    {
+      "id": "kha_b_05",
+      "letter": "خ",
+      "level": "beginner",
+      "order": 5,
+      "displayWord": "صَخْر",
+      "targetWord": "صخر",
+      "imagePath": "assets/images/word_bank/kha_b_05_sakhr.png",
+      "audioPath": "audio/kha/beginner/kha_b_05.mp3"
+    },
+    {
+      "id": "kha_b_06",
+      "letter": "خ",
+      "level": "beginner",
+      "order": 6,
+      "displayWord": "يَخْت",
+      "targetWord": "يخت",
+      "imagePath": "assets/images/word_bank/kha_b_06_yakht.png",
+      "audioPath": "audio/kha/beginner/kha_b_06.mp3"
+    },
+    {
+      "id": "kha_b_07",
+      "letter": "خ",
+      "level": "beginner",
+      "order": 7,
+      "displayWord": "كُوخ",
+      "targetWord": "كوخ",
+      "imagePath": "assets/images/word_bank/kha_b_07_kookh.png",
+      "audioPath": "audio/kha/beginner/kha_b_07.mp3"
+    },
+    {
+      "id": "kha_b_08",
+      "letter": "خ",
+      "level": "beginner",
+      "order": 8,
+      "displayWord": "مُخّ",
+      "targetWord": "مخ",
+      "imagePath": "assets/images/word_bank/kha_b_08_mukh.png",
+      "audioPath": "audio/kha/beginner/kha_b_08.mp3"
+    },
+
+    {
+      "id": "kha_i_01",
+      "letter": "خ",
+      "level": "intermediate",
+      "order": 1,
+      "displayWord": "خَرُوف",
+      "targetWord": "خروف",
+      "imagePath": "assets/images/word_bank/kha_i_01_kharoof.png",
+      "audioPath": "audio/kha/intermediate/kha_i_01.mp3"
+    },
+    {
+      "id": "kha_i_02",
+      "letter": "خ",
+      "level": "intermediate",
+      "order": 2,
+      "displayWord": "خِيَار",
+      "targetWord": "خيار",
+      "imagePath": "assets/images/word_bank/kha_i_02_khiyar.png",
+      "audioPath": "audio/kha/intermediate/kha_i_02.mp3"
+    },
+    {
+      "id": "kha_i_03",
+      "letter": "خ",
+      "level": "intermediate",
+      "order": 3,
+      "displayWord": "خَاتَم",
+      "targetWord": "خاتم",
+      "imagePath": "assets/images/word_bank/kha_i_03_khatam.png",
+      "audioPath": "audio/kha/intermediate/kha_i_03.mp3"
+    },
+    {
+      "id": "kha_i_04",
+      "letter": "خ",
+      "level": "intermediate",
+      "order": 4,
+      "displayWord": "خَيْمَة",
+      "targetWord": "خيمة",
+      "imagePath": "assets/images/word_bank/kha_i_04_khayma.png",
+      "audioPath": "audio/kha/intermediate/kha_i_04.mp3"
+    },
+    {
+      "id": "kha_i_05",
+      "letter": "خ",
+      "level": "intermediate",
+      "order": 5,
+      "displayWord": "نَخْلَة",
+      "targetWord": "نخلة",
+      "imagePath": "assets/images/word_bank/kha_i_05_nakhla.png",
+      "audioPath": "audio/kha/intermediate/kha_i_05.mp3"
+    },
+    {
+      "id": "kha_i_06",
+      "letter": "خ",
+      "level": "intermediate",
+      "order": 6,
+      "displayWord": "فَخَّار",
+      "targetWord": "فخار",
+      "imagePath": "assets/images/word_bank/kha_i_06_fakhar.png",
+      "audioPath": "audio/kha/intermediate/kha_i_06.mp3"
+    },
+    {
+      "id": "kha_i_07",
+      "letter": "خ",
+      "level": "intermediate",
+      "order": 7,
+      "displayWord": "مَطْبَخ",
+      "targetWord": "مطبخ",
+      "imagePath": "assets/images/word_bank/kha_i_07_matbakh.png",
+      "audioPath": "audio/kha/intermediate/kha_i_07.mp3"
+    },
+    {
+      "id": "kha_i_08",
+      "letter": "خ",
+      "level": "intermediate",
+      "order": 8,
+      "displayWord": "بَطِّيخ",
+      "targetWord": "بطيخ",
+      "imagePath": "assets/images/word_bank/kha_i_08_batikh.png",
+      "audioPath": "audio/kha/intermediate/kha_i_08.mp3"
+    },
+
+    {
+      "id": "kha_a_01",
+      "letter": "خ",
+      "level": "advanced",
+      "order": 1,
+      "displayWord": "خَرِيطَة",
+      "targetWord": "خريطة",
+      "imagePath": "assets/images/word_bank/kha_a_01_khareeta.png",
+      "audioPath": "audio/kha/advanced/kha_a_01.mp3"
+    },
+    {
+      "id": "kha_a_02",
+      "letter": "خ",
+      "level": "advanced",
+      "order": 2,
+      "displayWord": "خَائِفِين",
+      "targetWord": "خائفين",
+      "imagePath": "assets/images/word_bank/kha_a_02_khaifeen.png",
+      "audioPath": "audio/kha/advanced/kha_a_02.mp3"
+    },
+    {
+      "id": "kha_a_03",
+      "letter": "خ",
+      "level": "advanced",
+      "order": 3,
+      "displayWord": "أُخْطُبُوط",
+      "targetWord": "أخطبوط",
+      "imagePath": "assets/images/word_bank/kha_a_03_ukhtuboot.png",
+      "audioPath": "audio/kha/advanced/kha_a_03.mp3"
+    },
+    {
+      "id": "kha_a_04",
+      "letter": "خ",
+      "level": "advanced",
+      "order": 4,
+      "displayWord": "طَبَّاخَات",
+      "targetWord": "طباخات",
+      "imagePath": "assets/images/word_bank/kha_a_04_tabakhat.png",
+      "audioPath": "audio/kha/advanced/kha_a_04.mp3"
+    },
+    {
+      "id": "kha_a_05",
+      "letter": "خ",
+      "level": "advanced",
+      "order": 5,
+      "displayWord": "مُخْتَبَرَات",
+      "targetWord": "مختبرات",
+      "imagePath": "assets/images/word_bank/kha_a_05_mukhtabarat.png",
+      "audioPath": "audio/kha/advanced/kha_a_05.mp3"
+    },
+    {
+      "id": "kha_a_06",
+      "letter": "خ",
+      "level": "advanced",
+      "order": 6,
+      "displayWord": "صَوَارِيخ",
+      "targetWord": "صواريخ",
+      "imagePath": "assets/images/word_bank/kha_a_06_sawareekh.png",
+      "audioPath": "audio/kha/advanced/kha_a_06.mp3"
+    },
+    {
+      "id": "kha_a_07",
+      "letter": "خ",
+      "level": "advanced",
+      "order": 7,
+      "displayWord": "أَفْخَاخ",
+      "targetWord": "أفخاخ",
+      "imagePath": "assets/images/word_bank/kha_a_07_afkhakh.png",
+      "audioPath": "audio/kha/advanced/kha_a_07.mp3"
+    },
+    {
+      "id": "kha_a_08",
+      "letter": "خ",
+      "level": "advanced",
+      "order": 8,
+      "displayWord": "أَوْسَاخ",
+      "targetWord": "أوساخ",
+      "imagePath": "assets/images/word_bank/kha_a_08_awsakh.png",
+      "audioPath": "audio/kha/advanced/kha_a_08.mp3"
     }
   ]
 }

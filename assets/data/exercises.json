@@ -1,12 +1,10 @@
 {
   "ق": {
     "assetFolder": "qaf",
-
     "levels": {
       "beginner": {
         "code": "b",
         "folder": "beginner",
-
         "words": [
           {
             "number": 1,
@@ -50,11 +48,9 @@
           }
         ]
       },
-
       "intermediate": {
         "code": "i",
         "folder": "intermediate",
-
         "words": [
           {
             "number": 1,
@@ -98,11 +94,9 @@
           }
         ]
       },
-
       "advanced": {
         "code": "a",
         "folder": "advanced",
-
         "words": [
           {
             "number": 1,
@@ -143,6 +137,152 @@
             "number": 8,
             "target": "الإبريق",
             "options": ["الإبريق", "الكوب", "الزجاجة", "الوعاء"]
+          }
+        ]
+      }
+    }
+  },
+
+  "خ": {
+    "assetFolder": "kha",
+    "levels": {
+      "beginner": {
+        "code": "b",
+        "folder": "beginner",
+        "words": [
+          {
+            "number": 1,
+            "target": "خبز",
+            "options": ["خبز", "أرز", "تمر", "حليب"]
+          },
+          {
+            "number": 2,
+            "target": "خوخ",
+            "options": ["خوخ", "تفاح", "موز", "عنب"]
+          },
+          {
+            "number": 3,
+            "target": "خيط",
+            "options": ["خيط", "حبل", "قلم", "مسمار"]
+          },
+          {
+            "number": 4,
+            "target": "خس",
+            "options": ["خس", "بصل", "جزر", "فلفل"]
+          },
+          {
+            "number": 5,
+            "target": "صخر",
+            "options": ["صخر", "شجر", "رمل", "طين"]
+          },
+          {
+            "number": 6,
+            "target": "يخت",
+            "options": ["يخت", "قارب", "قطار", "سيارة"]
+          },
+          {
+            "number": 7,
+            "target": "كوخ",
+            "options": ["كوخ", "بيت", "قصر", "خيمة"]
+          },
+          {
+            "number": 8,
+            "target": "مخ",
+            "options": ["مخ", "فم", "يد", "عين"]
+          }
+        ]
+      },
+
+      "intermediate": {
+        "code": "i",
+        "folder": "intermediate",
+        "words": [
+          {
+            "number": 1,
+            "target": "خروف",
+            "options": ["خروف", "جمل", "حصان", "أرنب"]
+          },
+          {
+            "number": 2,
+            "target": "خيار",
+            "options": ["خيار", "جزر", "طماطم", "بصل"]
+          },
+          {
+            "number": 3,
+            "target": "خاتم",
+            "options": ["خاتم", "سوار", "قلادة", "ساعة"]
+          },
+          {
+            "number": 4,
+            "target": "خيمة",
+            "options": ["خيمة", "بيت", "كوخ", "قصر"]
+          },
+          {
+            "number": 5,
+            "target": "نخلة",
+            "options": ["نخلة", "شجرة", "زهرة", "وردة"]
+          },
+          {
+            "number": 6,
+            "target": "فخار",
+            "options": ["فخار", "زجاج", "حديد", "خشب"]
+          },
+          {
+            "number": 7,
+            "target": "مطبخ",
+            "options": ["مطبخ", "غرفة", "حديقة", "مدرسة"]
+          },
+          {
+            "number": 8,
+            "target": "بطيخ",
+            "options": ["بطيخ", "تفاح", "برتقال", "عنب"]
+          }
+        ]
+      },
+
+      "advanced": {
+        "code": "a",
+        "folder": "advanced",
+        "words": [
+          {
+            "number": 1,
+            "target": "خريطة",
+            "options": ["خريطة", "صحيفة", "رسالة", "صورة"]
+          },
+          {
+            "number": 2,
+            "target": "خائفين",
+            "options": ["خائفين", "سعيدين", "نائمين", "واقفِين"]
+          },
+          {
+            "number": 3,
+            "target": "أخطبوط",
+            "options": ["أخطبوط", "سمكة", "سلحفاة", "دلفين"]
+          },
+          {
+            "number": 4,
+            "target": "طباخات",
+            "options": ["طباخات", "معلمات", "طبيبات", "مهندسات"]
+          },
+          {
+            "number": 5,
+            "target": "مختبرات",
+            "options": ["مختبرات", "مكتبات", "مدارس", "مستشفيات"]
+          },
+          {
+            "number": 6,
+            "target": "صواريخ",
+            "options": ["صواريخ", "طائرات", "سيارات", "قطارات"]
+          },
+          {
+            "number": 7,
+            "target": "أفخاخ",
+            "options": ["أفخاخ", "أقفاص", "حبال", "شباك"]
+          },
+          {
+            "number": 8,
+            "target": "أوساخ",
+            "options": ["أوساخ", "ألعاب", "أوراق", "ملابس"]
           }
         ]
       }

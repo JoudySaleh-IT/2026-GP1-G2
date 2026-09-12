@@ -52,6 +52,10 @@ flutter:
     - assets/images/word_bank/
 
     - assets/audio/kha/
+    - assets/audio/kha/beginner/
+    - assets/audio/kha/intermediate/
+    - assets/audio/kha/advanced/
+
 
     - assets/audio/qaf/
     - assets/audio/qaf/beginner/
