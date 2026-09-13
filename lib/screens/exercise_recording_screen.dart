@@ -316,7 +316,9 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
         'POST',
 
         // غيري هذا إلى IP جهازك الحقيقي
-        Uri.parse('http://YOUR_COMPUTER_IP:8000/process-audio/'),
+        Uri.parse(
+          'https://faseeh-api-816737402071.me-central1.run.app/process-audio/',
+        ),
       );
 
       // الكلمة بدون تشكيل للمودل
