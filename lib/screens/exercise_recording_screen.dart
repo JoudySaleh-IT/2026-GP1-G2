@@ -80,10 +80,22 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
 
   RecordingState _recordingState = RecordingState.idle;
 
-  int _lastScore = 0;
+int _lastScore = 0;
 
-  final List<int> _exerciseScores = [];
+// هل المحاولة الحالية Invalid؟
+bool _currentIsInvalid = false;
 
+// سبب الـ Invalid القادم من الـ Backend
+String? _currentInvalidReason;
+
+final List<int> _exerciseScores = [];
+
+// نحفظ حالة كل تمرين
+final List<bool> _exerciseInvalidFlags = [];
+static const int _maxAudioPlays = 3;
+int _audioPlayCount = 0;
+// نحفظ سبب الـ Invalid لكل تمرين
+final List<String?> _exerciseInvalidReasons = [];
   int _recordingTime = 0;
 
   Timer? _recordingTimer;
@@ -169,29 +181,44 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
   // -------------------------------------------------------------------------
 
   Future<void> _playExampleAudio() async {
-    try {
-      debugPrint('AUDIO PATH FROM JSON: ${_exercise.audioPath}');
-
-      await _audioPlayer.stop();
-
-      await _audioPlayer.play(AssetSource(_exercise.audioPath));
-
-      debugPrint('AUDIO STARTED SUCCESSFULLY');
-    } catch (e) {
-      debugPrint('AUDIO ERROR: $e');
-
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'تعذر تشغيل الصوت: ${_exercise.audioPath}',
-            textAlign: TextAlign.center,
-          ),
-        ),
-      );
-    }
+  if (_audioPlayCount >= _maxAudioPlays) {
+    return;
   }
+
+  try {
+    debugPrint('AUDIO PATH FROM JSON: ${_exercise.audioPath}');
+
+    await _audioPlayer.stop();
+
+    await _audioPlayer.play(
+      AssetSource(_exercise.audioPath),
+    );
+
+    if (!mounted) return;
+
+    setState(() {
+      _audioPlayCount++;
+    });
+
+    debugPrint(
+      'AUDIO STARTED SUCCESSFULLY '
+      '($_audioPlayCount/$_maxAudioPlays)',
+    );
+  } catch (e) {
+    debugPrint('AUDIO ERROR: $e');
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'تعذر تشغيل الصوت: ${_exercise.audioPath}',
+          textAlign: TextAlign.center,
+        ),
+      ),
+    );
+  }
+}
   // -------------------------------------------------------------------------
   // Start recording
   // -------------------------------------------------------------------------
@@ -232,12 +259,15 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
       if (!mounted) return;
 
       setState(() {
-        _recordingState = RecordingState.recording;
+  _recordingState = RecordingState.recording;
 
-        _recordedFilePath = null;
-        _recordingTime = 0;
-        _lastScore = 0;
-      });
+  _recordedFilePath = null;
+  _recordingTime = 0;
+  _lastScore = 0;
+
+  _currentIsInvalid = false;
+  _currentInvalidReason = null;
+});
 
       _recordingTimer?.cancel();
 
@@ -342,41 +372,61 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
       final data = jsonDecode(response.body);
 
       if (data['status'] == 'success') {
-        final score = (data['score'] as num?)?.round() ?? 0;
+  final score = (data['score'] as num?)?.round() ?? 0;
 
-        if (!mounted) return;
+  if (!mounted) return;
 
-        setState(() {
-          _lastScore = score;
+  setState(() {
+    _lastScore = score;
 
-          _recordingState = RecordingState.recorded;
-        });
+    _currentIsInvalid = false;
+    _currentInvalidReason = null;
 
-        debugPrint('Target word: ${_exercise.targetWord}');
+    _recordingState = RecordingState.recorded;
+  });
 
-        debugPrint('Target letter: ${widget.letter}');
+  debugPrint('Target word: ${_exercise.targetWord}');
+  debugPrint('Target letter: ${widget.letter}');
+  debugPrint('AI transcription: ${data['transcription_heard']}');
+  debugPrint('AI score: $score');
+} else if (data['status'] == 'invalid_audio') {
+  if (!mounted) return;
 
-        debugPrint('AI transcription: ${data['transcription_heard']}');
+  setState(() {
+    // الـ Invalid لا يعتبر خطأ نطق
+    // نعطيه صفر مؤقتًا فقط حتى تتم إعادة المحاولة لاحقًا
+    _lastScore = 0;
 
-        debugPrint('AI score: $score');
-      } else {
-        debugPrint('AI error: ${data['message']}');
+    _currentIsInvalid = true;
+    _currentInvalidReason = data['reason']?.toString();
 
-        if (!mounted) return;
+    // نخليه Recorded حتى يقدر الطفل يضغط التالي
+    // ويكمل باقي التمارين
+    _recordingState = RecordingState.recorded;
+  });
 
-        setState(() {
-          _recordingState = RecordingState.idle;
-        });
+  debugPrint(
+    'Invalid recording for ${_exercise.targetWord}: '
+    '${data['reason']}',
+  );
+} else {
+  debugPrint('AI error: ${data['message']}');
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'تعذر تحليل النطق، حاول مرة أخرى',
-              textAlign: TextAlign.center,
-            ),
-          ),
-        );
-      }
+  if (!mounted) return;
+
+  setState(() {
+    _recordingState = RecordingState.idle;
+  });
+
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+      content: Text(
+        'تعذر الاتصال بخدمة تقييم النطق',
+        textAlign: TextAlign.center,
+      ),
+    ),
+  );
+}
     } catch (e) {
       debugPrint('Connection error: $e');
 
@@ -407,18 +457,25 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
     }
 
     _exerciseScores.add(_lastScore);
+    _exerciseInvalidFlags.add(_currentIsInvalid);
+_exerciseInvalidReasons.add(_currentInvalidReason);
 
     // يوجد سؤال آخر
     if (_currentExercise < _exercises.length - 1) {
       setState(() {
-        _currentExercise++;
+  _currentExercise++;
 
-        _recordingState = RecordingState.idle;
+  _recordingState = RecordingState.idle;
 
-        _recordingTime = 0;
-        _recordedFilePath = null;
-        _lastScore = 0;
-      });
+  _recordingTime = 0;
+  _recordedFilePath = null;
+  _lastScore = 0;
+
+  _currentIsInvalid = false;
+  _currentInvalidReason = null;
+   // كل كلمة جديدة تبدأ بعداد استماع جديد
+  _audioPlayCount = 0;
+});
 
       return;
     }
@@ -431,15 +488,23 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
         (_exerciseScores.reduce((a, b) => a + b) / _exercises.length).round();
 
     final questionsData = List.generate(
-      _exercises.length,
-      (i) => {
-        'questionText': _exercises[i].displayWord,
+  _exercises.length,
+  (i) => {
+    'questionText': _exercises[i].displayWord,
 
-        'targetWord': _exercises[i].targetWord,
+    'targetWord': _exercises[i].targetWord,
 
-        'score': _exerciseScores[i],
-      },
-    );
+    'score': _exerciseScores[i],
+
+    'isInvalid': _exerciseInvalidFlags[i],
+
+    'invalidReason': _exerciseInvalidReasons[i],
+
+    'audioPath': _exercises[i].audioPath,
+
+    'imagePath': _exercises[i].imagePath,
+  },
+);
 
     Navigator.pushNamed(
       context,
@@ -964,20 +1029,24 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
 
           // Audio comes from JSON
           OutlinedButton.icon(
-            onPressed: _playExampleAudio,
+  onPressed:
+    _audioPlayCount < _maxAudioPlays &&
+        _recordingState == RecordingState.idle
+    ? _playExampleAudio
+    : null,
 
             icon: const Icon(Icons.volume_up_rounded, color: _red, size: 17),
 
-            label: const Text(
-              'استمع إلى المثال',
-
-              style: TextStyle(
-                color: _red,
-                fontSize: 11.5,
-                fontFamily: 'Tajawal',
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+            label: Text(
+  _audioPlayCount >= _maxAudioPlays
+      ? 'تم الاستماع 3 مرات'
+      : 'استمع إلى المثال',
+  style: const TextStyle(
+    fontSize: 11.5,
+    fontFamily: 'Tajawal',
+    fontWeight: FontWeight.w600,
+  ),
+),
 
             style: OutlinedButton.styleFrom(
               side: BorderSide(color: _red.withOpacity(0.45)),
@@ -1278,6 +1347,51 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
   // -------------------------------------------------------------------------
 
   Widget _buildRecordedState() {
+    if (_currentIsInvalid) {
+  return const Column(
+    mainAxisAlignment: MainAxisAlignment.center,
+    children: [
+      SizedBox(
+        width: 72,
+        height: 72,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: Color(0xFFF3EBFA),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            Icons.check_rounded,
+            color: _deepPurple,
+            size: 38,
+          ),
+        ),
+      ),
+
+      SizedBox(height: 10),
+
+      Text(
+        'تم حفظ محاولتك',
+        style: TextStyle(
+          fontFamily: 'Tajawal',
+          fontSize: 14,
+          color: _deepPurple,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+
+      SizedBox(height: 3),
+
+      Text(
+        'يمكنك الآن الانتقال للكلمة التالية',
+        style: TextStyle(
+          fontFamily: 'Tajawal',
+          fontSize: 10.5,
+          color: Color(0xFF999999),
+        ),
+      ),
+    ],
+  );
+}
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
 
