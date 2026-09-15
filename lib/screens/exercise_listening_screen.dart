@@ -435,21 +435,29 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
       return;
     }
 
-    setState(() {
-      _isPlaying = true;
-      _playCount++;
-    });
+   setState(() {
+  _isPlaying = true;
+});
 
-    _pulseCtrl.repeat(reverse: true);
+_pulseCtrl.repeat(reverse: true);
 
-    try {
-      await _audioPlayer.play(AssetSource(_exercise.audioPath));
+try {
+  await _audioPlayer.play(
+    AssetSource(_exercise.audioPath),
+  );
 
-      await _audioPlayer.onPlayerComplete.first;
-    } catch (e) {
-      debugPrint('Audio error: $e');
-    }
+  if (!mounted) {
+    return;
+  }
 
+  setState(() {
+    _playCount++;
+  });
+
+  await _audioPlayer.onPlayerComplete.first;
+} catch (e) {
+  debugPrint('Audio error: $e');
+}
     if (!mounted) {
       return;
     }

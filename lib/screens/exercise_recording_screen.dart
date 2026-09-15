@@ -94,6 +94,7 @@ final List<int> _exerciseScores = [];
 final List<bool> _exerciseInvalidFlags = [];
 static const int _maxAudioPlays = 3;
 int _audioPlayCount = 0;
+bool _isExampleAudioPlaying = false;
 // نحفظ سبب الـ Invalid لكل تمرين
 final List<String?> _exerciseInvalidReasons = [];
   int _recordingTime = 0;
@@ -181,14 +182,27 @@ final List<String?> _exerciseInvalidReasons = [];
   // -------------------------------------------------------------------------
 
   Future<void> _playExampleAudio() async {
-  if (_audioPlayCount >= _maxAudioPlays) {
+  if (_audioPlayCount >= _maxAudioPlays ||
+      _isExampleAudioPlaying) {
     return;
   }
 
   try {
-    debugPrint('AUDIO PATH FROM JSON: ${_exercise.audioPath}');
+    debugPrint(
+      'AUDIO PATH FROM JSON: ${_exercise.audioPath}',
+    );
 
     await _audioPlayer.stop();
+
+    if (!mounted) return;
+
+    setState(() {
+      _isExampleAudioPlaying = true;
+    });
+
+    // نجهز انتظار انتهاء الصوت قبل تشغيله
+    final audioCompleted =
+        _audioPlayer.onPlayerComplete.first;
 
     await _audioPlayer.play(
       AssetSource(_exercise.audioPath),
@@ -204,10 +218,23 @@ final List<String?> _exerciseInvalidReasons = [];
       'AUDIO STARTED SUCCESSFULLY '
       '($_audioPlayCount/$_maxAudioPlays)',
     );
+
+    // ننتظر لين يخلص الصوت كامل
+    await audioCompleted;
+
+    if (!mounted) return;
+
+    setState(() {
+      _isExampleAudioPlaying = false;
+    });
   } catch (e) {
     debugPrint('AUDIO ERROR: $e');
 
     if (!mounted) return;
+
+    setState(() {
+      _isExampleAudioPlaying = false;
+    });
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -224,6 +251,9 @@ final List<String?> _exerciseInvalidReasons = [];
   // -------------------------------------------------------------------------
 
   Future<void> _startRecording() async {
+    if (_isExampleAudioPlaying) {
+  return;
+}
     final hasPermission = await _recorder.hasPermission();
 
     if (!hasPermission) {
@@ -1031,6 +1061,7 @@ _exerciseInvalidReasons.add(_currentInvalidReason);
           OutlinedButton.icon(
   onPressed:
     _audioPlayCount < _maxAudioPlays &&
+        !_isExampleAudioPlaying &&
         _recordingState == RecordingState.idle
     ? _playExampleAudio
     : null,

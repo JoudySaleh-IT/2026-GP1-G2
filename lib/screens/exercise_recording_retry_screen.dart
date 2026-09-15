@@ -1404,8 +1404,8 @@ class _ExerciseRecordingRetryScreenState
   Widget _buildFinishedState() {
     // Keep the same threshold currently used in the result screen.
     final bool correct =
-        !_finalIsInvalid &&
-        _finalScore >= 70;
+    !_finalIsInvalid &&
+    _finalScore >= 80;
 
     final bool validButIncorrect =
         !_finalIsInvalid &&

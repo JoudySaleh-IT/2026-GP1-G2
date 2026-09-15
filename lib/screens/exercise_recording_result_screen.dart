@@ -473,7 +473,7 @@ final bool retryUsed =
 // النطق الصحيح/الضعيف يظل يعتمد على منطقكم الحالي.
 // Invalid حالة منفصلة تمامًا.
 final bool good =
-    !isInvalid && qScr >= 70;
+    !isInvalid && qScr >= 80;
 
               return Padding(
                 padding: const EdgeInsets.only(bottom: 10),
