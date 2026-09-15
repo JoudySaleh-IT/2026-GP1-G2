@@ -88,15 +88,33 @@ bool _currentIsInvalid = false;
 // سبب الـ Invalid القادم من الـ Backend
 String? _currentInvalidReason;
 
-final List<int> _exerciseScores = [];
+// نتائج كل كلمة.
+// نستخدم index ثابت لأن التحليل سيحدث بالخلفية
+// وقد ينتهي بعد انتقال الطفل لكلمة أخرى.
+List<int?> _exerciseScores = [];
+List<bool> _exerciseInvalidFlags = [];
+List<String?> _exerciseInvalidReasons = [];
 
-// نحفظ حالة كل تمرين
-final List<bool> _exerciseInvalidFlags = [];
+// Background evaluation queue
+final List<Map<String, dynamic>> _evaluationQueue = [];
+
+bool _isProcessingQueue = false;
+int _pendingEvaluations = 0;
+
+// تصبح true فقط بعد إنهاء آخر كلمة
+// إذا كان المودل ما زال يحلل بعض التسجيلات.
+bool _isCalculatingFinalScore = false;
+
+// إذا حدث خطأ تقني أثناء التحليل، نحافظ على التسجيل
+// ولا نعتبره خطأ من الطفل.
+bool _queueTechnicalError = false;
+
+// يمنع فتح صفحة النتائج أكثر من مرة.
+bool _resultsNavigationStarted = false;
+
 static const int _maxAudioPlays = 3;
 int _audioPlayCount = 0;
 bool _isExampleAudioPlaying = false;
-// نحفظ سبب الـ Invalid لكل تمرين
-final List<String?> _exerciseInvalidReasons = [];
   int _recordingTime = 0;
 
   Timer? _recordingTimer;
@@ -133,10 +151,26 @@ final List<String?> _exerciseInvalidReasons = [];
       if (!mounted) return;
 
       setState(() {
-        _exercises = exercises;
-        _isLoading = false;
-        _loadError = null;
-      });
+  _exercises = exercises;
+
+  _exerciseScores = List<int?>.filled(
+    exercises.length,
+    null,
+  );
+
+  _exerciseInvalidFlags = List<bool>.filled(
+    exercises.length,
+    false,
+  );
+
+  _exerciseInvalidReasons = List<String?>.filled(
+    exercises.length,
+    null,
+  );
+
+  _isLoading = false;
+  _loadError = null;
+});
     } catch (e) {
       debugPrint('Error loading pronunciation exercises: $e');
 
@@ -318,241 +352,364 @@ final List<String?> _exerciseInvalidReasons = [];
   // -------------------------------------------------------------------------
 
   Future<void> _stopRecording() async {
-    try {
-      final path = await _recorder.stop();
+  try {
+    final path = await _recorder.stop();
 
-      _recordingTimer?.cancel();
+    _recordingTimer?.cancel();
 
-      if (path == null) {
-        if (!mounted) return;
-
-        setState(() {
-          _recordingState = RecordingState.idle;
-        });
-
-        return;
-      }
-
-      if (!mounted) return;
-
-      setState(() {
-        _recordedFilePath = path;
-
-        _recordingState = RecordingState.analyzing;
-      });
-
-      debugPrint('Recorded audio saved at: $_recordedFilePath');
-
-      // إرسال التسجيل للمودل
-      await _analyzeRecording();
-    } catch (e) {
-      debugPrint('Recording stop error: $e');
-
+    if (path == null) {
       if (!mounted) return;
 
       setState(() {
         _recordingState = RecordingState.idle;
       });
+
+      return;
     }
+
+    // نحفظ معلومات الكلمة الحالية قبل أن ينتقل الطفل للكلمة التالية.
+    final int exerciseIndex = _currentExercise;
+    final String targetWord = _exercise.targetWord;
+
+    if (!mounted) return;
+
+    setState(() {
+      _recordedFilePath = path;
+
+      // الطفل لا ينتظر تحليل المودل.
+      // بمجرد حفظ التسجيل نسمح له بالانتقال.
+      _recordingState = RecordingState.recorded;
+
+      _pendingEvaluations++;
+    });
+
+    debugPrint(
+      'Recorded audio saved for exercise $exerciseIndex at: $path',
+    );
+
+    // نضيف التسجيل إلى طابور التحليل الخلفي.
+    _evaluationQueue.add({
+      'index': exerciseIndex,
+      'path': path,
+      'targetWord': targetWord,
+      'targetLetter': widget.letter,
+    });
+
+    // يبدأ التحليل بالخلفية بدون انتظار.
+    _processQueue();
+  } catch (e) {
+    debugPrint('Recording stop error: $e');
+
+    _recordingTimer?.cancel();
+
+    if (!mounted) return;
+
+    setState(() {
+      _recordingState = RecordingState.idle;
+    });
   }
+}
 
   // -------------------------------------------------------------------------
   // AI pronunciation analysis
   // -------------------------------------------------------------------------
 
-  Future<void> _analyzeRecording() async {
-    if (_recordedFilePath == null) {
-      return;
-    }
-
-    if (!mounted) return;
-
-    setState(() {
-      _recordingState = RecordingState.analyzing;
-    });
-
-    try {
-      final request = http.MultipartRequest(
-        'POST',
-
-        // غيري هذا إلى IP جهازك الحقيقي
-        Uri.parse(
-          'https://faseeh-api-best-model-816737402071.me-central1.run.app/process-audio/',
-        ),
-      );
-
-      // الكلمة بدون تشكيل للمودل
-      request.fields['target_word'] = _exercise.targetWord;
-
-      // الحرف الحالي ديناميكي
-      request.fields['target_letter'] = widget.letter;
-
-      request.files.add(
-        await http.MultipartFile.fromPath('file', _recordedFilePath!),
-      );
-
-      final streamedResponse = await request.send();
-
-      final response = await http.Response.fromStream(streamedResponse);
-
-      if (response.statusCode < 200 || response.statusCode >= 300) {
-        throw Exception('Server returned ${response.statusCode}');
-      }
-
-      final data = jsonDecode(response.body);
-
-      if (data['status'] == 'success') {
-  final score = (data['score'] as num?)?.round() ?? 0;
-
-  if (!mounted) return;
-
-  setState(() {
-    _lastScore = score;
-
-    _currentIsInvalid = false;
-    _currentInvalidReason = null;
-
-    _recordingState = RecordingState.recorded;
-  });
-
-  debugPrint('Target word: ${_exercise.targetWord}');
-  debugPrint('Target letter: ${widget.letter}');
-  debugPrint('AI transcription: ${data['transcription_heard']}');
-  debugPrint('AI score: $score');
-} else if (data['status'] == 'invalid_audio') {
-  if (!mounted) return;
-
-  setState(() {
-    // الـ Invalid لا يعتبر خطأ نطق
-    // نعطيه صفر مؤقتًا فقط حتى تتم إعادة المحاولة لاحقًا
-    _lastScore = 0;
-
-    _currentIsInvalid = true;
-    _currentInvalidReason = data['reason']?.toString();
-
-    // نخليه Recorded حتى يقدر الطفل يضغط التالي
-    // ويكمل باقي التمارين
-    _recordingState = RecordingState.recorded;
-  });
-
-  debugPrint(
-    'Invalid recording for ${_exercise.targetWord}: '
-    '${data['reason']}',
-  );
-} else {
-  debugPrint('AI error: ${data['message']}');
-
-  if (!mounted) return;
-
-  setState(() {
-    _recordingState = RecordingState.idle;
-  });
-
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(
-      content: Text(
-        'تعذر الاتصال بخدمة تقييم النطق',
-        textAlign: TextAlign.center,
-      ),
-    ),
-  );
-}
-    } catch (e) {
-      debugPrint('Connection error: $e');
-
-      if (!mounted) return;
-
-      setState(() {
-        _recordingState = RecordingState.idle;
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'تعذر الاتصال بخدمة تقييم النطق',
-            textAlign: TextAlign.center,
-          ),
-        ),
-      );
-    }
+  Future<void> _processQueue() async {
+  if (_isProcessingQueue) {
+    return;
   }
 
+  _isProcessingQueue = true;
+
+  try {
+    while (_evaluationQueue.isNotEmpty) {
+      final item = _evaluationQueue.first;
+
+      final bool completed = await _analyzeQueuedRecording(
+        exerciseIndex: item['index'] as int,
+        filePath: item['path'] as String,
+        targetWord: item['targetWord'] as String,
+        targetLetter: item['targetLetter'] as String,
+      );
+
+      // إذا صار خطأ تقني:
+      // نحافظ على نفس التسجيل داخل الـQueue
+      // ولا نحسبه خطأ على الطفل.
+      if (!completed) {
+        break;
+      }
+
+      // التحليل انتهى بنجاح سواء كانت النتيجة
+      // success أو invalid_audio.
+      _evaluationQueue.removeAt(0);
+    }
+  } finally {
+  _isProcessingQueue = false;
+
+  // إذا خلصت كل التسجيلات بنجاح
+  // نمسح أي حالة خطأ تقنية سابقة.
+  if (_evaluationQueue.isEmpty && mounted) {
+    setState(() {
+      _queueTechnicalError = false;
+    });
+  }
+
+  // الطفل ضغط "إنهاء" وكان ينتظر آخر النتائج.
+  // بمجرد اكتمالها نفتح صفحة النتائج تلقائيًا.
+  if (mounted &&
+      _isCalculatingFinalScore &&
+      _pendingEvaluations == 0) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+
+      _navigateToResults();
+    });
+  }
+}
+}
+
+
+Future<bool> _analyzeQueuedRecording({
+  required int exerciseIndex,
+  required String filePath,
+  required String targetWord,
+  required String targetLetter,
+}) async {
+  try {
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse(
+        'https://faseeh-api-best-model-816737402071.me-central1.run.app/process-audio/',
+      ),
+    );
+
+    request.fields['target_word'] = targetWord;
+    request.fields['target_letter'] = targetLetter;
+
+    request.files.add(
+      await http.MultipartFile.fromPath(
+        'file',
+        filePath,
+      ),
+    );
+
+    final streamedResponse = await request.send();
+
+    final response = await http.Response.fromStream(
+      streamedResponse,
+    );
+
+    if (response.statusCode < 200 ||
+        response.statusCode >= 300) {
+      throw Exception(
+        'Server returned ${response.statusCode}',
+      );
+    }
+
+    final data = jsonDecode(response.body);
+
+    // ---------------------------------------------------------
+    // Valid pronunciation result
+    // ---------------------------------------------------------
+
+    if (data['status'] == 'success') {
+      final score =
+          (data['score'] as num?)?.round() ?? 0;
+
+      if (!mounted) {
+        return false;
+      }
+
+      setState(() {
+        _exerciseScores[exerciseIndex] = score;
+
+        _exerciseInvalidFlags[exerciseIndex] = false;
+
+        _exerciseInvalidReasons[exerciseIndex] = null;
+
+        _pendingEvaluations--;
+      });
+
+      debugPrint(
+        'Background result [$exerciseIndex] '
+        '$targetWord → $score%',
+      );
+
+      debugPrint(
+        'AI transcription: '
+        '${data['transcription_heard']}',
+      );
+
+      return true;
+    }
+
+    // ---------------------------------------------------------
+    // Invalid recording
+    // ---------------------------------------------------------
+
+    if (data['status'] == 'invalid_audio') {
+      if (!mounted) {
+        return false;
+      }
+
+      setState(() {
+        _exerciseScores[exerciseIndex] = 0;
+
+        _exerciseInvalidFlags[exerciseIndex] = true;
+
+        _exerciseInvalidReasons[exerciseIndex] =
+            data['reason']?.toString();
+
+        _pendingEvaluations--;
+      });
+
+      debugPrint(
+        'Background invalid [$exerciseIndex] '
+        '$targetWord → ${data['reason']}',
+      );
+
+      return true;
+    }
+
+    throw Exception(
+      data['message']?.toString() ??
+          'Unknown backend response',
+    );
+  } catch (e) {
+    debugPrint(
+      'Background analysis technical error '
+      'for $targetWord: $e',
+    );
+
+    if (mounted) {
+      setState(() {
+        _queueTechnicalError = true;
+      });
+    }
+
+    // مهم:
+    // لا ننقص pending
+    // ولا نحذف التسجيل من الـQueue.
+    // لأنه خطأ تقني وليس نتيجة الطفل.
+    return false;
+  }
+}
+Future<void> _retryPendingEvaluations() async {
+  if (_evaluationQueue.isEmpty || _isProcessingQueue) {
+    return;
+  }
+
+  if (mounted) {
+    setState(() {
+      _queueTechnicalError = false;
+    });
+  }
+
+  await _processQueue();
+}
   // -------------------------------------------------------------------------
   // Next exercise
   // -------------------------------------------------------------------------
 
   void _handleNext() {
-    if (_recordingState != RecordingState.recorded) {
-      return;
-    }
-
-    _exerciseScores.add(_lastScore);
-    _exerciseInvalidFlags.add(_currentIsInvalid);
-_exerciseInvalidReasons.add(_currentInvalidReason);
-
-    // يوجد سؤال آخر
-    if (_currentExercise < _exercises.length - 1) {
-      setState(() {
-  _currentExercise++;
-
-  _recordingState = RecordingState.idle;
-
-  _recordingTime = 0;
-  _recordedFilePath = null;
-  _lastScore = 0;
-
-  _currentIsInvalid = false;
-  _currentInvalidReason = null;
-   // كل كلمة جديدة تبدأ بعداد استماع جديد
-  _audioPlayCount = 0;
-});
-
-      return;
-    }
-
-    // -----------------------------------------------------------------------
-    // Finished all exercises
-    // -----------------------------------------------------------------------
-
-    final avgScore =
-        (_exerciseScores.reduce((a, b) => a + b) / _exercises.length).round();
-
-    final questionsData = List.generate(
-  _exercises.length,
-  (i) => {
-    'questionText': _exercises[i].displayWord,
-
-    'targetWord': _exercises[i].targetWord,
-
-    'score': _exerciseScores[i],
-
-    'isInvalid': _exerciseInvalidFlags[i],
-
-    'invalidReason': _exerciseInvalidReasons[i],
-
-    'audioPath': _exercises[i].audioPath,
-
-    'imagePath': _exercises[i].imagePath,
-  },
-);
-
-    Navigator.pushNamed(
-      context,
-      '/child/exercise/recording-result',
-      arguments: {
-        'score': avgScore,
-        'total': 100,
-        'type': 'تسجيل',
-
-        'questions': questionsData,
-
-        'childId': widget.childId,
-        'letter': widget.letter,
-        'level': widget.level,
-      },
-    );
+  if (_recordingState != RecordingState.recorded) {
+    return;
   }
 
+  // ---------------------------------------------------------
+  // يوجد تمرين آخر
+  // ---------------------------------------------------------
+
+  if (_currentExercise < _exercises.length - 1) {
+    setState(() {
+      _currentExercise++;
+
+      _recordingState = RecordingState.idle;
+
+      _recordingTime = 0;
+      _recordedFilePath = null;
+
+      _lastScore = 0;
+      _currentIsInvalid = false;
+      _currentInvalidReason = null;
+
+      // كل كلمة جديدة لها عداد استماع مستقل
+      _audioPlayCount = 0;
+    });
+
+    return;
+  }
+
+  // ---------------------------------------------------------
+  // آخر كلمة
+  // ---------------------------------------------------------
+
+  if (_pendingEvaluations > 0) {
+    setState(() {
+      _isCalculatingFinalScore = true;
+    });
+
+    return;
+  }
+
+  // كل النتائج جاهزة
+  _navigateToResults();
+}
+void _navigateToResults() {
+  if (_resultsNavigationStarted || !mounted) {
+    return;
+  }
+
+  // ما نفتح النتائج إلا بعد اكتمال كل التحليلات.
+  if (_pendingEvaluations > 0) {
+    return;
+  }
+
+  _resultsNavigationStarted = true;
+
+  final scores = _exerciseScores
+      .map((score) => score ?? 0)
+      .toList();
+
+  final avgScore = scores.isEmpty
+      ? 0
+      : (scores.reduce((a, b) => a + b) / scores.length)
+          .round();
+
+  final questionsData = List.generate(
+    _exercises.length,
+    (i) => {
+      'questionText': _exercises[i].displayWord,
+      'targetWord': _exercises[i].targetWord,
+
+      'score': scores[i],
+
+      'isInvalid': _exerciseInvalidFlags[i],
+      'invalidReason': _exerciseInvalidReasons[i],
+
+      'audioPath': _exercises[i].audioPath,
+      'imagePath': _exercises[i].imagePath,
+    },
+  );
+
+  Navigator.pushNamed(
+    context,
+    '/child/exercise/recording-result',
+    arguments: {
+      'score': avgScore,
+      'total': 100,
+      'type': 'تسجيل',
+
+      'questions': questionsData,
+
+      'childId': widget.childId,
+      'letter': widget.letter,
+      'level': widget.level,
+    },
+  );
+}
+
+   
   // -------------------------------------------------------------------------
   // Build
   // -------------------------------------------------------------------------
@@ -591,6 +748,9 @@ _exerciseInvalidReasons.add(_currentInvalidReason);
   // -------------------------------------------------------------------------
 
   Widget _buildBody() {
+    if (_isCalculatingFinalScore) {
+  return _buildFinalCalculatingScreen();
+}
     // Loading
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator(color: _deepPurple));
@@ -686,7 +846,160 @@ _exerciseInvalidReasons.add(_currentInvalidReason);
       ),
     );
   }
+Widget _buildFinalCalculatingScreen() {
+  // ---------------------------------------------------------
+  // Technical error while processing background recordings
+  // ---------------------------------------------------------
 
+  if (_queueTechnicalError) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+
+          children: [
+            Container(
+              width: 72,
+              height: 72,
+
+              decoration: const BoxDecoration(
+                color: Color(0xFFFFECEF),
+                shape: BoxShape.circle,
+              ),
+
+              child: const Icon(
+                Icons.wifi_off_rounded,
+                color: _red,
+                size: 36,
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            const Text(
+              'تعذر إكمال تحليل النتائج',
+              textAlign: TextAlign.center,
+
+              style: TextStyle(
+                fontFamily: 'Tajawal',
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+                color: _deepPurple,
+              ),
+            ),
+
+            const SizedBox(height: 7),
+
+            const Text(
+              'تسجيلاتك محفوظة، حاول إرسالها مرة أخرى',
+              textAlign: TextAlign.center,
+
+              style: TextStyle(
+                fontFamily: 'Tajawal',
+                fontSize: 12,
+                color: Color(0xFF777777),
+              ),
+            ),
+
+            const SizedBox(height: 18),
+
+            SizedBox(
+              width: double.infinity,
+
+              child: ElevatedButton.icon(
+                onPressed: _retryPendingEvaluations,
+
+                icon: const Icon(
+                  Icons.refresh_rounded,
+                  size: 19,
+                ),
+
+                label: const Text(
+                  'إعادة المحاولة',
+                  style: TextStyle(
+                    fontFamily: 'Tajawal',
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _red,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: const StadiumBorder(),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 13,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------
+  // Normal final analysis
+  // ---------------------------------------------------------
+
+  return Center(
+    child: Padding(
+      padding: const EdgeInsets.all(24),
+
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+
+        children: [
+          AnimatedBuilder(
+            animation: _spinController,
+
+            builder: (_, __) {
+              return Transform.rotate(
+                angle: _spinController.value * 2 * pi,
+
+                child: const Icon(
+                  Icons.sync_rounded,
+                  size: 64,
+                  color: _red,
+                ),
+              );
+            },
+          ),
+
+          const SizedBox(height: 18),
+
+          const Text(
+            'جاري تحليل نتائجك...',
+            textAlign: TextAlign.center,
+
+            style: TextStyle(
+              fontFamily: 'Tajawal',
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: _deepPurple,
+            ),
+          ),
+
+          const SizedBox(height: 7),
+
+          const Text(
+            'لحظات قليلة ونجهز لك النتيجة',
+            textAlign: TextAlign.center,
+
+            style: TextStyle(
+              fontFamily: 'Tajawal',
+              fontSize: 12,
+              color: Color(0xFF777777),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
   // -------------------------------------------------------------------------
   // Header
   // -------------------------------------------------------------------------
@@ -1378,7 +1691,6 @@ _exerciseInvalidReasons.add(_currentInvalidReason);
   // -------------------------------------------------------------------------
 
   Widget _buildRecordedState() {
-    if (_currentIsInvalid) {
   return const Column(
     mainAxisAlignment: MainAxisAlignment.center,
     children: [
@@ -1423,54 +1735,6 @@ _exerciseInvalidReasons.add(_currentInvalidReason);
     ],
   );
 }
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-
-      children: [
-        Container(
-          width: 72,
-          height: 72,
-
-          decoration: const BoxDecoration(
-            color: Color(0xFFEAF7EF),
-
-            shape: BoxShape.circle,
-          ),
-
-          child: const Icon(
-            Icons.check_rounded,
-            color: Color(0xFF67AF82),
-            size: 38,
-          ),
-        ),
-
-        const SizedBox(height: 8),
-
-        Text(
-          '$_lastScore%',
-
-          style: const TextStyle(
-            fontFamily: 'Tajawal',
-            fontSize: 27,
-            fontWeight: FontWeight.w800,
-            color: _deepPurple,
-          ),
-        ),
-
-        const SizedBox(height: 2),
-
-        const Text(
-          'أحسنت! هذه نتيجة نطقك',
-
-          style: TextStyle(
-            fontFamily: 'Tajawal',
-            fontSize: 11.5,
-            color: Color(0xFF6E6E6E),
-          ),
-        ),
-      ],
-    );
-  }
 
   // -------------------------------------------------------------------------
   // Next

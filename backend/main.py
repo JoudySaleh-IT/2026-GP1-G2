@@ -74,7 +74,7 @@ async def process_audio(
     target_letter: str = Form(...)
 ):
     temp_raw = f"/tmp/raw_{file.filename}"
-    temp_clean = f"/tmp/clean_{file.filename}"
+    temp_clean = f"/tmp/clean_{os.path.splitext(file.filename)[0]}.wav"
 
     try:
         # حفظ الملف الصوتي المرفوع
@@ -312,8 +312,8 @@ async def process_audio(
         bucket = storage.bucket()
 
         blob = bucket.blob(
-            f"processed_audios/clean_{file.filename}"
-        )
+    f"processed_audios/clean_{os.path.splitext(file.filename)[0]}.wav"
+)
 
         download_token = str(
             uuid.uuid4()

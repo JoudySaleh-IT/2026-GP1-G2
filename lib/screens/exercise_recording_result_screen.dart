@@ -159,16 +159,23 @@ Future<void> _retryQuestion(int index) async {
 
   final question = _questions[index];
 
-  final bool isInvalid =
-      question['isInvalid'] == true;
+  final int score =
+    (question['score'] as num?)?.round() ?? 0;
 
-  final bool retryUsed =
-      question['retryUsed'] == true;
+final bool isInvalid =
+    question['isInvalid'] == true;
 
-  // Retry is allowed ONLY for invalid attempts.
-  if (!isInvalid || retryUsed) {
-    return;
-  }
+final bool retryUsed =
+    question['retryUsed'] == true;
+
+final bool needsRetry =
+    isInvalid || score < 80;
+
+// الإعادة مسموحة مرة واحدة فقط
+// لأي كلمة Invalid أو درجتها أقل من 80.
+if (!needsRetry || retryUsed) {
+  return;
+}
 
   final result =
       await Navigator.push<Map<String, dynamic>>(
@@ -487,9 +494,9 @@ final bool good =
   retryUsed: retryUsed,
   scoreColor: _scoreColor(qScr),
   scoreBackground: _scoreBg(qScr),
-  onRetry: isInvalid && !retryUsed
-      ? () => _retryQuestion(idx)
-      : null,
+  onRetry: !good && !retryUsed
+    ? () => _retryQuestion(idx)
+    : null,
 ),
               );
             }),
@@ -907,7 +914,7 @@ class _PronunciationResultTile extends StatelessWidget {
 
     String subtitle;
 
-    if (isInvalid && !retryUsed) {
+    if (!good && !retryUsed) {
       subtitle = 'أعد المحاولة لهذه الكلمة';
     } else if (isInvalid && retryUsed) {
       subtitle = 'لم نتمكن من تقييم المحاولة';
@@ -1000,7 +1007,7 @@ class _PronunciationResultTile extends StatelessWidget {
           const SizedBox(width: 8),
 
           // Invalid first attempt → Retry button
-          if (isInvalid && !retryUsed)
+          if (!good && !retryUsed)
             ElevatedButton.icon(
               onPressed: onRetry,
 
