@@ -4,15 +4,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'style_constants.dart';
 import '../widgets/child_bottom_nav.dart';
 
-const _mockLevelProgress = {
-  'ض': (mcq: true, listening: true, recording: false), // 2/3
-  'خ': (mcq: true, listening: true, recording: true), // 3/3
-  'ص': (mcq: true, listening: false, recording: false), // 1/3
-  'س': (mcq: false, listening: false, recording: false), // 0/3
-  'ع': (mcq: false, listening: false, recording: false), // 0/3
-  'ن': (mcq: false, listening: false, recording: false), // 0/3
-};
-
 // ─── Data Model ──────────────────────────────────────────────────────────────
 class _LetterData {
   final String letter;
@@ -20,6 +11,7 @@ class _LetterData {
   final int score;
   final int completed;
   final int total;
+  final String level;
 
   const _LetterData({
     required this.letter,
@@ -27,6 +19,7 @@ class _LetterData {
     required this.score,
     required this.completed,
     required this.total,
+    required this.level,
   });
 }
 
@@ -71,6 +64,7 @@ class _ExercisesScreenState extends State<ExercisesScreen> {
         _hasCompletedPlacement = data['placementDone'] ?? false;
 
         final dynamic rawScores = data['letterScores'];
+        final dynamic rawExerciseProgress = data['exerciseProgress'];
 
         List<_LetterData> loaded = [];
 
@@ -78,31 +72,26 @@ class _ExercisesScreenState extends State<ExercisesScreen> {
           rawScores.forEach((letter, scoreValue) {
             int score = (scoreValue is num) ? scoreValue.toInt() : 0;
 
-            // إظهار الحروف التي درجتها أقل من 70% فقط
-            if (score < 70) {
-              final p =
-                  _mockLevelProgress[letter] ??
-                  (mcq: false, listening: false, recording: false);
-
-              int completedCount = 0;
-
-              if (p.mcq) completedCount++;
-              if (p.listening) completedCount++;
-              if (p.recording) completedCount++;
+            // إظهار الحروف التي تحتاج إلى تدريب فقط
+            if (score < 80) {
+              final progress = _getCurrentLevelProgress(
+                rawExerciseProgress,
+                letter.toString(),
+              );
 
               loaded.add(
                 _LetterData(
                   letter: letter.toString(),
                   name: _getLetterName(letter.toString()),
                   score: score,
-                  completed: completedCount,
-                  total: 3,
+                  completed: progress.completed,
+                  total: 2,
+                  level: progress.level,
                 ),
               );
             }
           });
         }
-
         if (!mounted) return;
 
         setState(() {
@@ -146,6 +135,58 @@ class _ExercisesScreenState extends State<ExercisesScreen> {
     };
 
     return names[letter] ?? letter;
+  }
+
+  ({String level, int completed}) _getCurrentLevelProgress(
+    dynamic rawExerciseProgress,
+    String letter,
+  ) {
+    if (rawExerciseProgress is! Map) {
+      return (level: 'مبتدئ', completed: 0);
+    }
+
+    final dynamic letterProgress = rawExerciseProgress[letter];
+
+    if (letterProgress is! Map) {
+      return (level: 'مبتدئ', completed: 0);
+    }
+
+    const levels = [
+      ('beginner', 'مبتدئ'),
+      ('intermediate', 'متوسط'),
+      ('advanced', 'متقدم'),
+    ];
+
+    for (final item in levels) {
+      final String key = item.$1;
+      final String arabicLevel = item.$2;
+
+      final dynamic levelProgress = letterProgress[key];
+
+      if (levelProgress is! Map) {
+        return (level: arabicLevel, completed: 0);
+      }
+
+      final bool listeningPassed = levelProgress['listeningPassed'] == true;
+
+      final bool pronunciationPassed =
+          levelProgress['pronunciationPassed'] == true;
+
+      // ما خلص الاستماع
+      if (!listeningPassed) {
+        return (level: arabicLevel, completed: 0);
+      }
+
+      // خلص الاستماع لكن ما خلص النطق
+      if (listeningPassed && !pronunciationPassed) {
+        return (level: arabicLevel, completed: 1);
+      }
+
+      // لو خلص الاثنين نكمل ونشوف المستوى التالي
+    }
+
+    // خلص جميع المستويات
+    return (level: 'متقدم', completed: 2);
   }
 
   @override

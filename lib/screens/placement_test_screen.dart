@@ -46,10 +46,11 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
   List<bool> _recorded = [];
   bool _isRecording = false;
   bool _showNext = false;
-  bool _isValidatingAudio = false;
-
-  // Track attempts per current word (Max 3)
-  int _currentWordAttempts = 0;
+  // Background evaluation queue
+final List<Map<String, String>> _evaluationQueue = [];
+bool _isProcessingQueue = false;
+int _pendingEvaluations = 0;
+bool _isCalculatingFinalScore = false;
 
   double _totalAccumulatedScore = 0.0;
   List<Map<String, dynamic>> _individualScores = [];
@@ -140,347 +141,211 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
             _placementWords.length;
 
   void _handleRecordToggle() async {
-    if (_isRecording) {
-      // Stop recording
-      final path = await _recordingService.stop();
+  if (_isRecording) {
+    final path = await _recordingService.stop();
 
-      _pulseController.stop();
-      _pulseController.reset();
+    final currentWordText = _currentWord.text;
+    final currentWordLetter = _currentWord.targetLetter;
+
+    _pulseController.stop();
+    _pulseController.reset();
+
+    if (path == null) {
+  setState(() {
+    _isRecording = false;
+  });
+
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+      content: Text(
+        'تعذر حفظ التسجيل، حاول مرة أخرى',
+        style: TextStyle(fontFamily: 'Tajawal'),
+      ),
+    ),
+  );
+
+  return;
+}
+
+setState(() {
+  _lastRecordedPath = path;
+  _isRecording = false;
+  _recorded[_currentIndex] = true;
+  _showNext = true;
+  _pendingEvaluations++;
+});
+
+_evaluationQueue.add({
+  'path': path,
+  'word': currentWordText,
+  'letter': currentWordLetter,
+});
+
+_processQueue();
+  } else {
+    final hasPermission = await _recordingService.checkPermission();
+
+    if (hasPermission) {
+      await _recordingService.start(
+        'child_${widget.childId}_word_${_currentWord.wordId}',
+      );
 
       setState(() {
-        _lastRecordedPath = path;
-        _isRecording = false;
-        _isValidatingAudio = true;
+        _isRecording = true;
       });
 
-      if (path != null) {
-        await _evaluateAndValidateRecording(
-          path,
-          _currentWord.text,
-          _currentWord.targetLetter,
-        );
-      } else {
-        setState(() => _isValidatingAudio = false);
-        _handleInvalidAudioAttempt();
-      }
+      _pulseController.repeat(reverse: true);
     } else {
-      // Start recording
-      final hasPermission = await _recordingService.checkPermission();
-      if (hasPermission) {
-        await _recordingService.start(
-          'child_${widget.childId}_word_${_currentWord.wordId}',
-        );
-        setState(() {
-          _isRecording = true;
-        });
-        _pulseController.repeat(reverse: true);
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('الرجاء السماح بالوصول للمايكروفون')),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('الرجاء السماح بالوصول للمايكروفون'),
+        ),
+      );
     }
   }
+}
 
-  Future<void> _evaluateAndValidateRecording(
-    String path,
-    String targetWord,
-    String targetLetter,
-  ) async {
-    const String baseUrl =
-        "https://faseeh-api-816737402071.me-central1.run.app";
-    final url = Uri.parse('$baseUrl/process-audio/');
+  
 
-    debugPrint("🚀 جاري إرسال وتقييم: $targetWord");
+  Future<void> _processQueue() async {
+  if (_isProcessingQueue) return;
 
-    try {
-      var request = http.MultipartRequest('POST', url);
-      request.files.add(await http.MultipartFile.fromPath('file', path));
-      request.fields['target_word'] = targetWord;
-      request.fields['target_letter'] = targetLetter;
+  _isProcessingQueue = true;
 
-      var streamedResponse = await request.send();
-      var response = await http.Response.fromStream(streamedResponse);
+  while (_evaluationQueue.isNotEmpty) {
+    final item = _evaluationQueue.first;
 
-      if (!mounted) return;
+    await _startPreprocessing(
+      item['path']!,
+      item['word']!,
+      item['letter']!,
+    );
 
-      if (response.statusCode == 200) {
-        var data = jsonDecode(response.body);
+    _evaluationQueue.removeAt(0);
+  }
 
-        // Case 1: Backend Audio Validation Failed (Empty, Silence, or < 0.2s)
-        if (data['status'] == 'invalid_audio') {
-          setState(() => _isValidatingAudio = false);
-          _handleInvalidAudioAttempt();
-          return;
-        }
+  _isProcessingQueue = false;
+}
 
-        // Case 2: Success
-        if (data['status'] == 'success' && data.containsKey('score')) {
-          double wordScore = (data['score'] as num).toDouble();
+Future<void> _startPreprocessing(
+  String path,
+  String targetWord,
+  String targetLetter,
+) async {
+  const String baseUrl =
+      "https://faseeh-api-best-model-816737402071.me-central1.run.app";
 
+  final url = Uri.parse('$baseUrl/process-audio/');
+
+  debugPrint("🚀 جاري تقييم: $targetWord");
+
+  try {
+    var request = http.MultipartRequest('POST', url);
+
+    request.files.add(
+      await http.MultipartFile.fromPath('file', path),
+    );
+
+    request.fields['target_word'] = targetWord;
+    request.fields['target_letter'] = targetLetter;
+
+    var streamedResponse = await request.send();
+    var response = await http.Response.fromStream(streamedResponse);
+
+    debugPrint("Response code: ${response.statusCode}");
+    debugPrint("Response body: ${response.body}");
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['status'] == 'invalid_audio') {
+  if (mounted) {
+    setState(() {
+      _individualScores.add({
+        'letter': targetLetter,
+        'score': 0,
+      });
+    });
+  }
+
+  debugPrint("⚠️ تسجيل غير صالح لـ $targetWord → 0%");
+  return;
+}
+
+      if (data['status'] == 'success' &&
+          data.containsKey('score')) {
+        final double wordScore =
+            (data['score'] as num).toDouble();
+
+        if (mounted) {
           setState(() {
-            _isValidatingAudio = false;
             _totalAccumulatedScore += wordScore;
+
             _individualScores.add({
               'letter': targetLetter,
               'score': wordScore.round(),
             });
-            _recorded[_currentIndex] = true;
-            _showNext = true;
-            _currentWordAttempts = 0; // Reset for next word
           });
-          return;
         }
-      }
 
-      // If unexpected backend error, treat as invalid attempt
-      setState(() => _isValidatingAudio = false);
-      _handleInvalidAudioAttempt();
-    } catch (e) {
-      debugPrint("⚠️ خطأ في الاتصال بالسيرفر: $e");
-      if (mounted) {
-        setState(() => _isValidatingAudio = false);
-        _handleInvalidAudioAttempt();
+        debugPrint("⭐ نتيجة $targetWord: $wordScore%");
+      }
+    }
+  } catch (e) {
+    debugPrint("⚠️ خطأ في الاتصال: $e");
+  } finally {
+    if (mounted) {
+      setState(() {
+        _pendingEvaluations--;
+      });
+
+      if (_isCalculatingFinalScore &&
+          _pendingEvaluations == 0) {
+        _navigateToResults();
       }
     }
   }
-
-  void _handleInvalidAudioAttempt() {
-    _currentWordAttempts++;
-
-    if (_currentWordAttempts < 3) {
-      // Show Re-recording dialog with remaining attempts
-      _showReRecordingDialog(remainingAttempts: 3 - _currentWordAttempts);
-    } else {
-      // 3 attempts reached: assign 0% and allow child to continue
-      _showMaxAttemptsExhaustedDialog();
-    }
-  }
-
-  // ─── Pop-up Dialog 1: Re-recording Request (Attempts 1 & 2) ───────────────────
-  void _showReRecordingDialog({required int remainingAttempts}) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => Directionality(
-        textDirection: TextDirection.rtl,
-        child: Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(28),
-          ),
-          backgroundColor: Colors.white,
-          elevation: 10,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Top Icon Badge
-                Container(
-                  width: 76,
-                  height: 76,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: [_coral, _coral.withOpacity(0.8)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: _coral.withOpacity(0.35),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: const Icon(
-                    Icons.mic_off_rounded,
-                    color: Colors.white,
-                    size: 38,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                const Text(
-                  'لم نسمعك بوضوح! 🎤',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: _purple,
-                    fontFamily: 'Tajawal',
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  'تحدث بصوت واضح بالقرب من الهاتف يا بطل.\nالمحاولات المتبقية: (${toArabicDigits(remainingAttempts)})',
-                  style: const TextStyle(
-                    fontSize: 15,
-                    color: Color(0xFF6B5A7A),
-                    fontFamily: 'Tajawal',
-                    height: 1.5,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(ctx);
-                      setState(() {
-                        _recorded[_currentIndex] = false;
-                        _showNext = false;
-                      });
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _coral,
-                      foregroundColor: Colors.white,
-                      elevation: 3,
-                      shadowColor: _coral.withOpacity(0.4),
-                      shape: const StadiumBorder(),
-                    ),
-                    child: const Text(
-                      'أعد التسجيل 🔁',
-                      style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'Tajawal',
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ─── Pop-up Dialog 2: Max Attempts Reached (3rd Failure -> 0%) ───────────────
-  void _showMaxAttemptsExhaustedDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => Directionality(
-        textDirection: TextDirection.rtl,
-        child: Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(28),
-          ),
-          backgroundColor: Colors.white,
-          elevation: 10,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Top Icon Badge
-                Container(
-                  width: 76,
-                  height: 76,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: const LinearGradient(
-                      colors: [_purple2, _purple],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: _purple.withOpacity(0.3),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: const Icon(
-                    Icons.sentiment_satisfied_alt_rounded,
-                    color: Colors.white,
-                    size: 40,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                const Text(
-                  'لا بأس يا بطل! 🌟',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: _purple,
-                    fontFamily: 'Tajawal',
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 10),
-                const Text(
-                  'استنفدت محاولات التسجيل لهذه الكلمة. سننتقل معاً للكلمة التالية!',
-                  style: TextStyle(
-                    fontSize: 15,
-                    color: Color(0xFF6B5A7A),
-                    fontFamily: 'Tajawal',
-                    height: 1.5,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(ctx);
-                      setState(() {
-                        // Assign 0% score strictly
-                        _totalAccumulatedScore += 0.0;
-                        _individualScores.add({
-                          'letter': _currentWord.targetLetter,
-                          'score': 0,
-                        });
-                        _recorded[_currentIndex] = true;
-                        _showNext = true;
-                        _currentWordAttempts = 0;
-                      });
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _purple,
-                      foregroundColor: Colors.white,
-                      elevation: 3,
-                      shadowColor: _purple.withOpacity(0.4),
-                      shape: const StadiumBorder(),
-                    ),
-                    child: const Text(
-                      'متابعة ➡️',
-                      style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'Tajawal',
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+}
 
   void _handleNext() {
-    if (_currentIndex < _placementWords.length - 1) {
+  if (_currentIndex < _placementWords.length - 1) {
+    setState(() {
+      _currentIndex++;
+      _showNext = false;
+      _isRecording = false;
+    });
+  } else {
+    if (_pendingEvaluations > 0) {
       setState(() {
-        _currentIndex++;
-        _showNext = false;
-        _isRecording = false;
-        _currentWordAttempts = 0;
+        _isCalculatingFinalScore = true;
       });
     } else {
       _navigateToResults();
     }
   }
-
+}
+Widget _buildFinalCalculatingScreen() {
+  return const Center(
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        CircularProgressIndicator(
+          color: _purple,
+          strokeWidth: 4,
+        ),
+        SizedBox(height: 24),
+        Text(
+          'جاري إعداد نتيجتك يا بطل... 🚀',
+          style: TextStyle(
+            color: _purple,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            fontFamily: 'Tajawal',
+          ),
+        ),
+      ],
+    ),
+  );
+}
   void _navigateToResults() {
     double finalPlacementPercentage = _placementWords.isEmpty
         ? 0
@@ -515,15 +380,20 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
   }
 
   @override
-  @override
   Widget build(BuildContext context) {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
         backgroundColor: _bgColor,
         body: _isLoading
-            ? const Center(child: CircularProgressIndicator(color: _purple))
-            : _placementWords.isEmpty
+    ? const Center(
+        child: CircularProgressIndicator(
+          color: _purple,
+        ),
+      )
+    : _isCalculatingFinalScore
+        ? _buildFinalCalculatingScreen()
+        : _placementWords.isEmpty
             ? const Center(
                 child: Text(
                   'لا توجد كلمات في قاعدة البيانات',
@@ -936,62 +806,22 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
   // نفس المنطق
   // ===========================================================================
   Widget _buildRecordingSection() {
-    return Column(
-      children: [
-        if (_isValidatingAudio)
-          _buildValidatingIndicator()
-        else if (!_recorded[_currentIndex])
-          _buildRecordButton()
-        else
-          _buildSuccessIndicator(),
+  return Column(
+    children: [
+      if (!_recorded[_currentIndex])
+        _buildRecordButton()
+      else
+        _buildSuccessIndicator(),
 
-        if (_showNext && !_isValidatingAudio) ...[
-          const SizedBox(height: 12),
-          _buildNextButton(),
-        ],
+      if (_showNext) ...[
+        const SizedBox(height: 12),
+        _buildNextButton(),
       ],
-    );
-  }
+    ],
+  );
+}
 
-  // ===========================================================================
-  // VALIDATING
-  // ===========================================================================
-  Widget _buildValidatingIndicator() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF4EEFA),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: _purple.withOpacity(0.10)),
-      ),
-      child: const Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          SizedBox(
-            width: 20,
-            height: 20,
-            child: CircularProgressIndicator(strokeWidth: 2.5, color: _purple),
-          ),
 
-          SizedBox(width: 11),
-
-          Flexible(
-            child: Text(
-              'نستمع إلى تسجيلك...',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: _purple,
-                fontFamily: 'Tajawal',
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   // ===========================================================================
   // RECORD BUTTON

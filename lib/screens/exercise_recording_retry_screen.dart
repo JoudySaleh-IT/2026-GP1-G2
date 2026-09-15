@@ -411,7 +411,7 @@ class _ExerciseRecordingRetryScreenState
       final request = http.MultipartRequest(
         'POST',
         Uri.parse(
-          'https://faseeh-api-816737402071.me-central1.run.app/process-audio/',
+          'https://faseeh-api-best-model-816737402071.me-central1.run.app/process-audio/',
         ),
       );
 

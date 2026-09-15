@@ -86,18 +86,25 @@ class ExerciseListeningResultScreen extends StatelessWidget {
                         const SizedBox(height: 18),
 
                         // ─── Home
+                        // ─── Continue Exercises
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton.icon(
                             onPressed: () => Navigator.pushNamedAndRemoveUntil(
                               context,
-                              '/child/home',
+                              '/child/letter-levels',
                               (route) => false,
-                              arguments: args['childId'] ?? '',
+                              arguments: {
+                                'letter': args['letter'],
+                                'childId': args['childId'],
+                              },
                             ),
-                            icon: const Icon(Icons.home_rounded, size: 18),
+                            icon: const Icon(
+                              Icons.arrow_forward_rounded,
+                              size: 18,
+                            ),
                             label: const Text(
-                              'العودة للرئيسية',
+                              'متابعة التمارين',
                               style: TextStyle(
                                 fontFamily: 'Tajawal',
                                 fontWeight: FontWeight.w600,
