@@ -9,8 +9,6 @@ import '../utils/arabic_numbers.dart';
 class ParentDashboardScreen extends StatelessWidget {
   const ParentDashboardScreen({super.key});
 
- 
-
   @override
   Widget build(BuildContext context) {
     final String? userId = FirebaseAuth.instance.currentUser?.uid;
@@ -45,19 +43,29 @@ class ParentDashboardScreen extends StatelessWidget {
                     return _buildEmptyState(context);
                   }
 
-                  return ListView(
-                    padding: const EdgeInsets.all(16),
+                  return Column(
                     children: [
-                      _buildSectionTitle(context, showAddButton: true),
-                      const SizedBox(height: 12),
+                      // قائمة الأطفال فقط هي التي تتحرك
+                      Expanded(
+                        child: ListView(
+                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+                          children: [
+                            _buildSectionTitle(context, showAddButton: true),
+                            const SizedBox(height: 12),
 
-                      ...childrenDocs.map((doc) {
-                        final data = doc.data() as Map<String, dynamic>;
-                        return _buildChildCard(context, doc.id, data);
-                      }),
+                            ...childrenDocs.map((doc) {
+                              final data = doc.data() as Map<String, dynamic>;
+                              return _buildChildCard(context, doc.id, data);
+                            }),
+                          ],
+                        ),
+                      ),
 
-                      const SizedBox(height: 24),
-                      _buildSwitchToChildButton(context),
+                      // زر ثابت دائمًا بأسفل الصفحة
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                        child: _buildSwitchToChildButton(context),
+                      ),
                     ],
                   );
                 },

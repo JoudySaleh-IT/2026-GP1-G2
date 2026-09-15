@@ -93,7 +93,7 @@ class _LetterLevelsScreenState extends State<LetterLevelsScreen> {
         return 'advanced';
 
       default:
-        // مؤقتًا إذا ما كانت القيمة معروفة
+        // مؤقتً إذا ما كانت القيمة معروفة
         // نبدأ من beginner بدل ما تنهار الصفحة
         return 'beginner';
     }
@@ -1207,26 +1207,6 @@ class _CuteLevelCharacter extends StatelessWidget {
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(26),
                 topRight: Radius.circular(26),
-              ),
-            ),
-          ),
-        ),
-
-        // Arm
-        Positioned(
-          right: 4,
-          bottom: 20,
-
-          child: Transform.rotate(
-            angle: -0.50,
-
-            child: Container(
-              width: 11,
-              height: 28,
-
-              decoration: BoxDecoration(
-                color: faceColor,
-                borderRadius: BorderRadius.circular(12),
               ),
             ),
           ),
