@@ -25,15 +25,16 @@ class _Exercise {
   final String target;
   final List<_ListeningOption> options;
   final String audioPath;
+  final String imagePath;
 
   const _Exercise({
     required this.number,
     required this.target,
     required this.options,
     required this.audioPath,
+    required this.imagePath,
   });
 
-  // Target word = correct answer
   String get correctAnswer => target;
 
   String get instruction => 'استمع واختر الكلمة التي سمعتها:';
@@ -125,6 +126,54 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
     _audioPlayer.dispose();
 
     super.dispose();
+  }
+
+  Widget _buildTargetImage(bool isTablet) {
+    if (_exercise.imagePath.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final double imageSize = isTablet ? 115 : 105;
+
+    return Container(
+      width: imageSize + 24,
+      height: imageSize + 24,
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.94),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: _purple.withOpacity(0.08), width: 1.3),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x09000000),
+            blurRadius: 7,
+            offset: Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Image.asset(
+        _exercise.imagePath,
+        width: imageSize,
+        height: imageSize,
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) {
+          debugPrint('Listening image asset error: ${_exercise.imagePath}');
+
+          return Container(
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: const Color(0xFFF7F3F9),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: const Icon(
+              Icons.image_not_supported_outlined,
+              color: Color(0xFFB5A7BB),
+              size: 36,
+            ),
+          );
+        },
+      ),
+    );
   }
 
   // ───────────────────────────────────────────────────────────────────────────
@@ -291,19 +340,11 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
 
         final String target = item['target'].toString();
 
-        final List<_ListeningOption> options =
-    List<dynamic>.from(item['options'])
-        .map((optionData) {
-          final option = Map<String, dynamic>.from(optionData);
+        final List<String> options = List<String>.from(item['options']);
 
-          return _ListeningOption(
-            word: option['word'].toString(),
-            imagePath: option['imagePath'].toString(),
-          );
-        })
-        .toList();
-
-options.shuffle();
+        // Important:
+        // Correct answer will not always appear first
+        options.shuffle();
 
         // 1 → 01
         // 2 → 02
@@ -327,6 +368,7 @@ options.shuffle();
             target: target,
             options: options,
             audioPath: audioPath,
+            imagePath: imagePath,
           ),
         );
       }
@@ -401,21 +443,29 @@ options.shuffle();
       return;
     }
 
-    setState(() {
-      _isPlaying = true;
-      _playCount++;
-    });
+   setState(() {
+  _isPlaying = true;
+});
 
-    _pulseCtrl.repeat(reverse: true);
+_pulseCtrl.repeat(reverse: true);
 
-    try {
-      await _audioPlayer.play(AssetSource(_exercise.audioPath));
+try {
+  await _audioPlayer.play(
+    AssetSource(_exercise.audioPath),
+  );
 
-      await _audioPlayer.onPlayerComplete.first;
-    } catch (e) {
-      debugPrint('Audio error: $e');
-    }
+  if (!mounted) {
+    return;
+  }
 
+  setState(() {
+    _playCount++;
+  });
+
+  await _audioPlayer.onPlayerComplete.first;
+} catch (e) {
+  debugPrint('Audio error: $e');
+}
     if (!mounted) {
       return;
     }
@@ -680,13 +730,12 @@ options.shuffle();
                                       mainAxisAlignment:
                                           MainAxisAlignment.spaceEvenly,
                                       children: [
-                                        // Instruction
                                         _buildInstructionBox(isTablet),
 
-                                        // Audio
+                                        _buildTargetImage(isTablet),
+
                                         _buildAudioPlayer(isTablet),
 
-                                        // Answers
                                         GridView.count(
                                           padding: EdgeInsets.zero,
                                           shrinkWrap: true,
@@ -713,7 +762,6 @@ options.shuffle();
                                               .toList(),
                                         ),
 
-                                        // Feedback
                                         _buildFeedbackNoticeArea(isTablet),
                                       ],
                                     ),

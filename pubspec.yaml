@@ -66,5 +66,10 @@ flutter:
     - assets/audio/qaf/intermediate/
     - assets/audio/qaf/advanced/
 
+    - assets/audio/seen/
+    - assets/audio/seen/beginner/
+    - assets/audio/seen/intermediate/
+    - assets/audio/seen/advanced/
+
     - assets/data/
    

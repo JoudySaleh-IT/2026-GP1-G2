@@ -407,6 +407,174 @@
         }
       ]
     }
+  },
+  "س": {
+  "assetFolder": "seen",
+  "levels": {
+"beginner": {
+  "code": "b",
+  "folder": "beginner",
+  "words": [
+    {
+      "number": 1,
+      "target": "سلم",
+      "imagePath": "assets/images/word_bank/seen_b_01_sulam.png",
+      "options": ["سلم", "قلم", "علم", "سهم"]
+    },
+    {
+      "number": 2,
+      "target": "خس",
+      "imagePath": "assets/images/word_bank/seen_b_02_khas.png",
+      "options": ["خس", "خوخ", "خبز", "كيس"]
+    },
+    {
+      "number": 3,
+      "target": "جرس",
+      "imagePath": "assets/images/word_bank/seen_b_03_jaras.png",
+      "options": ["جرس", "فرس", "درس", "كرسي"]
+    },
+    {
+      "number": 4,
+      "target": "جسر",
+      "imagePath": "assets/images/word_bank/seen_b_04_jisr.png",
+      "options": ["جسر", "نسر", "قصر", "بئر"]
+    },
+    {
+      "number": 5,
+      "target": "أسد",
+      "imagePath": "assets/images/word_bank/seen_b_05_asad.png",
+      "options": ["أسد", "أرنب", "أسهم", "أسرة"]
+    },
+    {
+      "number": 6,
+      "target": "رسم",
+      "imagePath": "assets/images/word_bank/seen_b_06_rasm.png",
+      "options": ["رسم", "سهم", "نجم", "ختم"]
+    },
+    {
+      "number": 7,
+      "target": "عسل",
+      "imagePath": "assets/images/word_bank/seen_b_07_asal.png",
+      "options": ["عسل", "بصل", "عجل", "عنب"]
+    },
+    {
+      "number": 8,
+      "target": "سمك",
+      "imagePath": "assets/images/word_bank/seen_b_08_smk.png",
+      "options": ["سمك", "سماء", "سمن", "سلة"]
+    }
+  ]
+},
+
+"intermediate": {
+  "code": "i",
+  "folder": "intermediate",
+  "words": [
+    {
+      "number": 1,
+      "target": "سنجاب",
+      "imagePath": "assets/images/word_bank/seen_i_01_sinjab.png",
+      "options": ["سنجاب", "سنبلة", "سندان", "سربال"]
+    },
+    {
+      "number": 2,
+      "target": "سرير",
+      "imagePath": "assets/images/word_bank/seen_i_02_sarir.png",
+      "options": ["سرير", "حرير", "سفير", "سراب"]
+    },
+    {
+      "number": 3,
+      "target": "سحاب",
+      "imagePath": "assets/images/word_bank/seen_i_03_sahab.png",
+      "options": ["سحاب", "سراب", "ضباب", "سوار"]
+    },
+    {
+      "number": 4,
+      "target": "طاووس",
+      "imagePath": "assets/images/word_bank/seen_i_04_tawoos.png",
+      "options": ["طاووس", "فانوس", "جاموس", "ناقوس"]
+    },
+    {
+      "number": 5,
+      "target": "ألماس",
+      "imagePath": "assets/images/word_bank/seen_i_05_almas.png",
+      "options": ["ألماس", "أجراس", "أكياس", "لباس"]
+    },
+    {
+      "number": 6,
+      "target": "مسبح",
+      "imagePath": "assets/images/word_bank/seen_i_06_masbah.png",
+      "options": ["مسبح", "مسرح", "مسجد", "ملعب"]
+    },
+    {
+      "number": 7,
+      "target": "أسود",
+      "imagePath": "assets/images/word_bank/seen_i_07_aswad.png",
+      "options": ["أسود", "أسد", "أسوار", "أسواق"]
+    },
+    {
+      "number": 8,
+      "target": "مسمار",
+      "imagePath": "assets/images/word_bank/seen_i_08_mismar.png",
+      "options": ["مسمار", "منشار", "مصباح", "منظار"]
+    }
+  ]
+},
+
+"advanced": {
+  "code": "a",
+  "folder": "advanced",
+  "words": [
+    {
+      "number": 1,
+      "target": "سيارة",
+      "imagePath": "assets/images/word_bank/seen_a_01_syarh.png",
+      "options": ["سيارة", "إشارة", "منارة", "نظارة"]
+    },
+    {
+      "number": 2,
+      "target": "سفينة",
+      "imagePath": "assets/images/word_bank/seen_a_02_safinah.png",
+      "options": ["سفينة", "مدينة", "خزينة", "سكينة"]
+    },
+    {
+      "number": 3,
+      "target": "مغناطيس",
+      "imagePath": "assets/images/word_bank/seen_a_03_megnatish.png",
+      "options": ["مغناطيس", "مقياس", "منظار", "ميكروسكوب"]
+    },
+    {
+      "number": 4,
+      "target": "أناناس",
+      "imagePath": "assets/images/word_bank/seen_a_04_ananas.png",
+      "options": ["أناناس", "ألماس", "أكياس", "أجراس"]
+    },
+    {
+      "number": 5,
+      "target": "مدارس",
+      "imagePath": "assets/images/word_bank/seen_a_05_mdars.png",
+      "options": ["مدارس", "مجالس", "ملابس", "مكاتب"]
+    },
+    {
+      "number": 6,
+      "target": "استحمام",
+      "imagePath": "assets/images/word_bank/seen_a_06_estihmam.png",
+      "options": ["استحمام", "ابتسام", "ازدحام", "احتفال"]
+    },
+    {
+      "number": 7,
+      "target": "مسرحية",
+      "imagePath": "assets/images/word_bank/seen_a_07_masrahiyah.png",
+      "options": ["مسرحية", "مسابقة", "مكتبة", "موسيقى"]
+    },
+    {
+      "number": 8,
+      "target": "أساتذة",
+      "imagePath": "assets/images/word_bank/seen_a_08_asatidah.png",
+      "options": ["أساتذة", "أساور", "أصدقاء", "أطباء"]
+    }
+  ]
+}
   }
 }
 }

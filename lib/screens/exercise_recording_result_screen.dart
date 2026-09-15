@@ -1,17 +1,73 @@
 import 'package:flutter/material.dart';
 
+import 'exercise_recording_retry_screen.dart';
 // ---------------------------------------------------------------------------
 // Screen
 // ---------------------------------------------------------------------------
 
-class ExerciseRecordingResultScreen extends StatelessWidget {
+class ExerciseRecordingResultScreen extends StatefulWidget {
   const ExerciseRecordingResultScreen({super.key});
 
-  // -------------------------------------------------------------------------
-  // Helpers
-  // نفس منطق النتيجة
-  // -------------------------------------------------------------------------
+  @override
+  State<ExerciseRecordingResultScreen> createState() =>
+      _ExerciseRecordingResultScreenState();
+}
 
+class _ExerciseRecordingResultScreenState
+    extends State<ExerciseRecordingResultScreen> {
+  bool _initialized = false;
+
+  String _childId = '';
+  String _letter = '';
+  String _level = '';
+
+  List<Map<String, dynamic>> _questions = [];
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    if (_initialized) {
+      return;
+    }
+
+    final args =
+        ModalRoute.of(context)?.settings.arguments as Map? ?? {};
+
+    _childId = args['childId']?.toString() ?? '';
+    _letter = args['letter']?.toString() ?? '';
+    _level = args['level']?.toString() ?? '';
+
+    final List receivedQuestions =
+        args['questions'] ?? _defaultQuestions;
+
+    _questions = receivedQuestions
+        .map(
+          (q) => Map<String, dynamic>.from(q as Map),
+        )
+        .toList();
+
+    // Ensure every question has a retry state.
+    for (final q in _questions) {
+      q['retryUsed'] = q['retryUsed'] == true;
+    }
+
+    _initialized = true;
+  }
+
+  int _calculateAverageScore() {
+    if (_questions.isEmpty) {
+      return 0;
+    }
+
+    final int totalScore = _questions.fold<int>(
+      0,
+      (sum, q) =>
+          sum + ((q['score'] as num?)?.round() ?? 0),
+    );
+
+    return (totalScore / _questions.length).round();
+  }
   String _resultMessage(int pct) {
     if (pct == 100) {
       return 'ممتاز! أتقنت جميع التمارين';
@@ -96,20 +152,69 @@ class ExerciseRecordingResultScreen extends StatelessWidget {
   // -------------------------------------------------------------------------
   // Build
   // -------------------------------------------------------------------------
+Future<void> _retryQuestion(int index) async {
+  if (index < 0 || index >= _questions.length) {
+    return;
+  }
 
+  final question = _questions[index];
+
+  final bool isInvalid =
+      question['isInvalid'] == true;
+
+  final bool retryUsed =
+      question['retryUsed'] == true;
+
+  // Retry is allowed ONLY for invalid attempts.
+  if (!isInvalid || retryUsed) {
+    return;
+  }
+
+  final result =
+      await Navigator.push<Map<String, dynamic>>(
+    context,
+    MaterialPageRoute(
+      builder: (_) => ExerciseRecordingRetryScreen(
+        childId: _childId,
+        letter: _letter,
+        level: _level,
+        questionText:
+            question['questionText']?.toString() ?? '',
+        targetWord:
+            question['targetWord']?.toString() ?? '',
+        imagePath:
+            question['imagePath']?.toString() ?? '',
+        audioPath:
+            question['audioPath']?.toString() ?? '',
+      ),
+    ),
+  );
+
+  if (!mounted || result == null) {
+    return;
+  }
+
+  setState(() {
+    // This retry is now permanently consumed.
+    question['retryUsed'] = true;
+
+    question['score'] =
+        (result['score'] as num?)?.round() ?? 0;
+
+    question['isInvalid'] =
+        result['isInvalid'] == true;
+
+    question['invalidReason'] =
+        result['invalidReason'];
+  });
+}
   @override
   Widget build(BuildContext context) {
-    final args = ModalRoute.of(context)?.settings.arguments as Map? ?? {};
+    final int score = _calculateAverageScore();
 
-    final String childId = args['childId'] ?? '';
+const int total = 100;
 
-    final int score = args['score'] ?? 85;
-
-    final int total = args['total'] ?? 100;
-
-    final List questions = args['questions'] ?? _defaultQuestions;
-
-    final int pct = ((score / total) * 100).round();
+final int pct = ((score / total) * 100).round();
 
     // نفس حساب النقاط
     final int pts = score * 10;
@@ -174,7 +279,7 @@ class ExerciseRecordingResultScreen extends StatelessWidget {
                           // =================================================
                           // Pronunciation details
                           // =================================================
-                          _buildDetailsCard(questions),
+                          _buildDetailsCard(_questions),
 
                           const SizedBox(height: 18),
 
@@ -191,7 +296,7 @@ class ExerciseRecordingResultScreen extends StatelessWidget {
                                     context,
                                     '/child/home',
                                     (r) => false,
-                                    arguments: childId,
+                                    arguments: _childId,
                                   ),
 
                               icon: const Icon(Icons.home_rounded, size: 18),
@@ -353,24 +458,39 @@ class ExerciseRecordingResultScreen extends StatelessWidget {
 
               final Map q = entry.value as Map;
 
-              final String qTxt = q['questionText'] as String? ?? '';
+              final String qTxt =
+    q['questionText']?.toString() ?? '';
 
-              final int qScr = q['score'] as int? ?? 0;
+final int qScr =
+    (q['score'] as num?)?.round() ?? 0;
 
-              // نفس threshold الحالي
-              final bool good = qScr >= 70;
+final bool isInvalid =
+    q['isInvalid'] == true;
+
+final bool retryUsed =
+    q['retryUsed'] == true;
+
+// النطق الصحيح/الضعيف يظل يعتمد على منطقكم الحالي.
+// Invalid حالة منفصلة تمامًا.
+final bool good =
+    !isInvalid && qScr >= 80;
 
               return Padding(
                 padding: const EdgeInsets.only(bottom: 10),
 
                 child: _PronunciationResultTile(
-                  number: idx + 1,
-                  text: qTxt,
-                  score: qScr,
-                  good: good,
-                  scoreColor: _scoreColor(qScr),
-                  scoreBackground: _scoreBg(qScr),
-                ),
+  number: idx + 1,
+  text: qTxt,
+  score: qScr,
+  good: good,
+  isInvalid: isInvalid,
+  retryUsed: retryUsed,
+  scoreColor: _scoreColor(qScr),
+  scoreBackground: _scoreBg(qScr),
+  onRetry: isInvalid && !retryUsed
+      ? () => _retryQuestion(idx)
+      : null,
+),
               );
             }),
         ],
@@ -746,38 +866,74 @@ class _PronunciationResultTile extends StatelessWidget {
   final int score;
 
   final bool good;
+  final bool isInvalid;
+  final bool retryUsed;
 
   final Color scoreColor;
   final Color scoreBackground;
+
+  final VoidCallback? onRetry;
 
   const _PronunciationResultTile({
     required this.number,
     required this.text,
     required this.score,
     required this.good,
+    required this.isInvalid,
+    required this.retryUsed,
     required this.scoreColor,
     required this.scoreBackground,
+    required this.onRetry,
   });
 
   @override
   Widget build(BuildContext context) {
-    final Color cardColor = good
-        ? const Color(0xFFF2F9F4)
-        : const Color(0xFFFFF5EC);
+    const Color invalidRed = Color(0xFFFF6969);
 
-    final Color accentColor = good
-        ? const Color(0xFF77AD8B)
-        : const Color(0xFFDFA064);
+    final Color cardColor;
+
+    final Color accentColor;
+
+    if (isInvalid) {
+      cardColor = const Color(0xFFFFF0F2);
+      accentColor = invalidRed;
+    } else if (good) {
+      cardColor = const Color(0xFFF2F9F4);
+      accentColor = const Color(0xFF77AD8B);
+    } else {
+      cardColor = const Color(0xFFFFF5EC);
+      accentColor = const Color(0xFFDFA064);
+    }
+
+    String subtitle;
+
+    if (isInvalid && !retryUsed) {
+      subtitle = 'أعد المحاولة لهذه الكلمة';
+    } else if (isInvalid && retryUsed) {
+      subtitle = 'لم نتمكن من تقييم المحاولة';
+    } else if (good) {
+      subtitle = 'أداء جميل';
+    } else {
+      subtitle = 'تحتاج إلى تدريب أكثر';
+    }
 
     return Container(
       width: double.infinity,
 
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 12,
+        vertical: 11,
+      ),
 
       decoration: BoxDecoration(
         color: cardColor,
-
         borderRadius: BorderRadius.circular(18),
+
+        border: isInvalid
+            ? Border.all(
+                color: invalidRed.withOpacity(0.20),
+              )
+            : null,
       ),
 
       child: Row(
@@ -791,7 +947,6 @@ class _PronunciationResultTile extends StatelessWidget {
 
             decoration: BoxDecoration(
               color: accentColor.withOpacity(0.13),
-
               shape: BoxShape.circle,
             ),
 
@@ -809,10 +964,11 @@ class _PronunciationResultTile extends StatelessWidget {
 
           const SizedBox(width: 11),
 
-          // Word
+          // Word + status
           Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
 
               children: [
                 Text(
@@ -829,7 +985,7 @@ class _PronunciationResultTile extends StatelessWidget {
                 const SizedBox(height: 2),
 
                 Text(
-                  good ? 'أداء جميل' : 'تحتاج إلى تدريب أكثر',
+                  subtitle,
 
                   style: TextStyle(
                     fontFamily: 'Tajawal',
@@ -841,32 +997,91 @@ class _PronunciationResultTile extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(width: 10),
+          const SizedBox(width: 8),
 
-          // Score
-          Container(
-            width: 53,
-            height: 38,
+          // Invalid first attempt → Retry button
+          if (isInvalid && !retryUsed)
+            ElevatedButton.icon(
+              onPressed: onRetry,
 
-            alignment: Alignment.center,
+              icon: const Icon(
+                Icons.refresh_rounded,
+                size: 15,
+              ),
 
-            decoration: BoxDecoration(
-              color: scoreBackground,
+              label: const Text(
+                'إعادة',
 
-              borderRadius: BorderRadius.circular(15),
-            ),
+                style: TextStyle(
+                  fontFamily: 'Tajawal',
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
 
-            child: Text(
-              '$score%',
+              style: ElevatedButton.styleFrom(
+                backgroundColor: invalidRed,
+                foregroundColor: Colors.white,
+                elevation: 0,
 
-              style: TextStyle(
-                fontFamily: 'Tajawal',
-                fontSize: 11.5,
-                fontWeight: FontWeight.w700,
-                color: scoreColor,
+                shape: const StadiumBorder(),
+
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+              ),
+            )
+
+          // Retry was already used but still invalid
+          else if (isInvalid && retryUsed)
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 9,
+                vertical: 7,
+              ),
+
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFDFE4),
+                borderRadius: BorderRadius.circular(13),
+              ),
+
+              child: const Text(
+                'لم تُحتسب',
+
+                style: TextStyle(
+                  fontFamily: 'Tajawal',
+                  fontSize: 9.5,
+                  fontWeight: FontWeight.w700,
+                  color: invalidRed,
+                ),
+              ),
+            )
+
+          // Valid pronunciation attempt
+          else
+            Container(
+              width: 53,
+              height: 38,
+
+              alignment: Alignment.center,
+
+              decoration: BoxDecoration(
+                color: scoreBackground,
+                borderRadius: BorderRadius.circular(15),
+              ),
+
+              child: Text(
+                '$score%',
+
+                style: TextStyle(
+                  fontFamily: 'Tajawal',
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w700,
+                  color: scoreColor,
+                ),
               ),
             ),
-          ),
         ],
       ),
     );
