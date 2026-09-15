@@ -51,10 +51,14 @@ flutter:
     - assets/images/kha_exercise_images/
     - assets/images/word_bank/
 
+
     - assets/audio/kha/
     - assets/audio/kha/beginner/
     - assets/audio/kha/intermediate/
     - assets/audio/kha/advanced/
+    - assets/images/listening/kha_listening/beginner/
+    - assets/images/listening/kha_listening/intermediate/
+    - assets/images/listening/kha_listening/advanced/
 
 
     - assets/audio/qaf/

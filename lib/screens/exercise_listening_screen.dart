@@ -10,10 +10,20 @@ import 'style_constants.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 // Exercise Model
 // ─────────────────────────────────────────────────────────────────────────────
+class _ListeningOption {
+  final String word;
+  final String imagePath;
+
+  const _ListeningOption({
+    required this.word,
+    required this.imagePath,
+  });
+}
+
 class _Exercise {
   final int number;
   final String target;
-  final List<String> options;
+  final List<_ListeningOption> options;
   final String audioPath;
 
   const _Exercise({
@@ -281,11 +291,19 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
 
         final String target = item['target'].toString();
 
-        final List<String> options = List<String>.from(item['options']);
+        final List<_ListeningOption> options =
+    List<dynamic>.from(item['options'])
+        .map((optionData) {
+          final option = Map<String, dynamic>.from(optionData);
 
-        // Important:
-        // Correct answer will not always appear first
-        options.shuffle();
+          return _ListeningOption(
+            word: option['word'].toString(),
+            imagePath: option['imagePath'].toString(),
+          );
+        })
+        .toList();
+
+options.shuffle();
 
         // 1 → 01
         // 2 → 02
@@ -683,18 +701,14 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
                                           children: _exercise.options
                                               .map(
                                                 (option) => _AnswerTile(
-                                                  text: option,
-                                                  selectedAnswer:
-                                                      _selectedAnswer,
-                                                  correctAnswer:
-                                                      _exercise.correctAnswer,
-                                                  showFeedback: _showFeedback,
-                                                  enabled:
-                                                      _playCount > 0 &&
-                                                      !_showFeedback,
-                                                  onTap: () =>
-                                                      _handleAnswer(option),
-                                                ),
+  text: option.word,
+  imagePath: option.imagePath,
+  selectedAnswer: _selectedAnswer,
+  correctAnswer: _exercise.correctAnswer,
+  showFeedback: _showFeedback,
+  enabled: _playCount > 0 && !_showFeedback,
+  onTap: () => _handleAnswer(option.word),
+),
                                               )
                                               .toList(),
                                         ),
@@ -1159,6 +1173,7 @@ class _AnswerTile extends StatelessWidget {
   final bool showFeedback;
   final bool enabled;
   final VoidCallback onTap;
+  final String imagePath;
 
   const _AnswerTile({
     required this.text,
@@ -1167,6 +1182,7 @@ class _AnswerTile extends StatelessWidget {
     required this.showFeedback,
     required this.enabled,
     required this.onTap,
+     required this.imagePath,
   });
 
   @override
@@ -1235,17 +1251,43 @@ class _AnswerTile extends StatelessWidget {
             ),
 
             Center(
-              child: Text(
-                text,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: text.length > 7 ? 14 : 19,
-                  fontWeight: FontWeight.w600,
-                  color: textColor,
-                  fontFamily: 'Tajawal',
-                ),
-              ),
-            ),
+  child: Padding(
+    padding: const EdgeInsets.fromLTRB(10, 8, 10, 6),
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Expanded(
+          child: Image.asset(
+            imagePath,
+            fit: BoxFit.contain,
+            errorBuilder: (context, error, stackTrace) {
+              return const Icon(
+                Icons.image_not_supported_outlined,
+                size: 35,
+                color: Color(0xFFBBBBBB),
+              );
+            },
+          ),
+        ),
+
+        const SizedBox(height: 5),
+
+        Text(
+          text,
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontSize: text.length > 7 ? 13 : 17,
+            fontWeight: FontWeight.w700,
+            color: textColor,
+            fontFamily: 'Tajawal',
+          ),
+        ),
+      ],
+    ),
+  ),
+),
 
             if (showCorrect)
               const Positioned(
