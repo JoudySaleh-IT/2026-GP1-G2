@@ -65,11 +65,17 @@ flutter:
     - assets/audio/qaf/beginner/
     - assets/audio/qaf/intermediate/
     - assets/audio/qaf/advanced/
+    - assets/images/listening/qaf_listening/beginner/
+    - assets/images/listening/qaf_listening/intermediate/
+    - assets/images/listening/qaf_listening/advanced/
 
     - assets/audio/seen/
     - assets/audio/seen/beginner/
     - assets/audio/seen/intermediate/
     - assets/audio/seen/advanced/
+    - assets/images/listening/seen_listening/beginner/
+    - assets/images/listening/seen_listening/intermediate/
+    - assets/images/listening/seen_listening/advanced/
 
     - assets/data/
    
