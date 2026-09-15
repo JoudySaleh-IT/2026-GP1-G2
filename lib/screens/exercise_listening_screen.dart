@@ -338,13 +338,29 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
 
         final int number = (item['number'] as num).toInt();
 
-        final String target = item['target'].toString();
+       final String target = item['target'].toString();
 
-        final List<String> options = List<String>.from(item['options']);
+final List<_ListeningOption> options =
+    List<dynamic>.from(item['options']).map((optionData) {
+  // الشكل الجديد: الكلمة معها صورة
+  if (optionData is Map) {
+    final option = Map<String, dynamic>.from(optionData);
 
-        // Important:
-        // Correct answer will not always appear first
-        options.shuffle();
+    return _ListeningOption(
+      word: option['word']?.toString() ?? '',
+      imagePath: option['imagePath']?.toString() ?? '',
+    );
+  }
+
+  // الشكل القديم: الكلمة فقط
+  return _ListeningOption(
+    word: optionData.toString(),
+    imagePath: '',
+  );
+}).toList();
+
+// Correct answer will not always appear first
+options.shuffle();
 
         // 1 → 01
         // 2 → 02
@@ -368,7 +384,7 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
             target: target,
             options: options,
             audioPath: audioPath,
-            imagePath: imagePath,
+            imagePath: '',
           ),
         );
       }
