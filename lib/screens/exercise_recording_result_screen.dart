@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import 'exercise_recording_retry_screen.dart';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 // ---------------------------------------------------------------------------
 // Screen
 // ---------------------------------------------------------------------------
@@ -91,6 +93,83 @@ class _ExerciseRecordingResultScreenState
 
     return (totalScore / _questions.length).round();
   }
+
+  int _countCorrectPronunciations() {
+  return _questions.where((q) {
+    final int wordScore =
+        (q['score'] as num?)?.round() ?? 0;
+
+    final bool isInvalid =
+        q['isInvalid'] == true;
+
+    // الكلمة تعتبر صحيحة إذا كانت صالحة
+    // ودرجتها 80% أو أكثر
+    return !isInvalid && wordScore >= 80;
+  }).length;
+}
+
+String? _getNextLevel() {
+  switch (_level.toLowerCase()) {
+    case 'beginner':
+      return 'intermediate';
+
+    case 'intermediate':
+      return 'advanced';
+
+    // Advanced هو آخر مستوى
+    default:
+      return null;
+  }
+}
+
+Future<void> _savePronunciationProgress() async {
+  if (_childId.isEmpty || _letter.isEmpty || _level.isEmpty) {
+    return;
+  }
+
+  final int averageScore = _calculateAverageScore();
+  final int correctCount = _countCorrectPronunciations();
+
+  // شرطان للانتقال:
+  // 1. على الأقل 6 من 8 كلمات صحيحة
+  // 2. المتوسط النهائي 80% أو أكثر
+  final bool canAdvance =
+      correctCount >= 6 && averageScore >= 80;
+
+  final childRef = FirebaseFirestore.instance
+      .collection('children')
+      .doc(_childId);
+
+  // نحفظ نتيجة النطق للمستوى الحالي
+  await childRef.update({
+    'exerciseProgress.$_letter.$_level.pronunciationScore':
+        averageScore,
+    'exerciseProgress.$_letter.$_level.pronunciationCorrectCount':
+        correctCount,
+    'exerciseProgress.$_letter.$_level.pronunciationPassed':
+        canAdvance,
+  });
+
+  // إذا حقق الشرطين، ينتقل مستوى واحد فقط
+  if (canAdvance) {
+    final String? nextLevel = _getNextLevel();
+
+    if (nextLevel != null) {
+      await childRef.update({
+        'level': nextLevel,
+      });
+    }
+  }
+
+  debugPrint(
+    'Pronunciation result → '
+    'level=$_level, '
+    'average=$averageScore, '
+    'correct=$correctCount/${_questions.length}, '
+    'canAdvance=$canAdvance',
+  );
+}
+
   String _resultMessage(int pct) {
     if (pct == 100) {
       return 'ممتاز! أتقنت جميع التمارين';
@@ -344,11 +423,15 @@ final bool hasPendingRetry =
                             width: double.infinity,
 
                             child: ElevatedButton.icon(
-                              onPressed: () {
+  onPressed: () async {
   if (hasPendingRetry) {
-    _retryQuestion(nextRetryIndex);
+    await _retryQuestion(nextRetryIndex);
     return;
   }
+
+  await _savePronunciationProgress();
+
+  if (!mounted) return;
 
   Navigator.pushNamedAndRemoveUntil(
     context,
