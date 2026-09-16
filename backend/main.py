@@ -246,36 +246,8 @@ async def process_audio(
         # Completely different word
         # -------------------------------------------------
 
-        if len(transcription_words) == 1:
-
-            validation_distance = levenshtein_distance(
-                normalized_target,
-                normalized_transcription
-            )
-
-            validation_max_length = max(
-                len(normalized_target),
-                len(normalized_transcription)
-            )
-
-            if validation_max_length > 0:
-
-                word_similarity = (
-                    1 -
-                    (
-                        validation_distance /
-                        validation_max_length
-                    )
-                )
-
-                # Very low similarity means that the child
-                # most likely said a completely different word.
-                if word_similarity <= 0.25:
-                    return {
-                        "status": "invalid_audio",
-                        "reason": "different_word",
-                        "message": "A different word was detected."
-                    }
+# Different-word validation temporarily disabled
+# to avoid rejecting valid pronunciations due to ASR errors.
 
         # =================================================
         # 3. Targeted Scoring Algorithm
