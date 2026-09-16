@@ -604,14 +604,13 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
         _currentIsInvalid = false;
         _currentInvalidReason = null;
 
-        // كل كلمة جديدة لها عداد استماع مستقل
         _audioPlayCount = 0;
+        _hasListenedToExample = false;
+        _isExampleAudioPlaying = false;
       });
 
       return;
-    }
-
-    // ---------------------------------------------------------
+    } // ---------------------------------------------------------
     // آخر كلمة
     // ---------------------------------------------------------
 
@@ -1342,16 +1341,17 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
             icon: const Icon(Icons.volume_up_rounded, color: _red, size: 17),
 
             label: Text(
-              _audioPlayCount >= _maxAudioPlays
-                  ? 'تم الاستماع 3 مرات'
-                  : 'استمع إلى المثال',
+              _isExampleAudioPlaying
+                  ? 'جاري الاستماع...'
+                  : _hasListenedToExample
+                  ? 'استمع مرة أخرى'
+                  : 'استمع إلى الكلمة',
               style: const TextStyle(
                 fontSize: 11.5,
                 fontFamily: 'Tajawal',
                 fontWeight: FontWeight.w600,
               ),
             ),
-
             style: OutlinedButton.styleFrom(
               side: BorderSide(color: _red.withOpacity(0.45)),
 
@@ -1360,6 +1360,25 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
               shape: const StadiumBorder(),
 
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            ),
+          ),
+
+          const SizedBox(height: 7),
+
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF3EBFA),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Text(
+              'محاولات الاستماع: $_audioPlayCount من $_maxAudioPlays',
+              style: const TextStyle(
+                fontFamily: 'Tajawal',
+                fontSize: 10.5,
+                fontWeight: FontWeight.w600,
+                color: _deepPurple,
+              ),
             ),
           ),
         ],
@@ -1388,7 +1407,10 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
       ),
 
       child: switch (_recordingState) {
-        RecordingState.idle => _buildIdleState(),
+        RecordingState.idle =>
+          _hasListenedToExample
+              ? _buildReadyToRecordState()
+              : _buildWaitingForAudioState(),
 
         RecordingState.recording => _buildRecordingState(),
 
@@ -1403,15 +1425,68 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
   // Idle
   // -------------------------------------------------------------------------
 
-  Widget _buildIdleState() {
-    final bool canRecord = _hasListenedToExample && !_isExampleAudioPlaying;
+  // -------------------------------------------------------------------------
+  // Waiting for audio
+  // -------------------------------------------------------------------------
 
+  Widget _buildWaitingForAudioState() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Container(
+          width: 86,
+          height: 86,
+          decoration: const BoxDecoration(
+            color: Color(0xFFF3EBFA),
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(
+            Icons.hearing_rounded,
+            color: _deepPurple,
+            size: 42,
+          ),
+        ),
+
+        const SizedBox(height: 10),
+
+        Text(
+          _isExampleAudioPlaying ? 'استمع جيدًا...' : 'استمع إلى الكلمة أولًا',
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontFamily: 'Tajawal',
+            fontSize: 13,
+            color: _deepPurple,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+
+        const SizedBox(height: 3),
+
+        Text(
+          _isExampleAudioPlaying
+              ? 'بعد انتهاء الصوت سيظهر لك زر التسجيل'
+              : 'اضغط زر الاستماع الموجود فوق',
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontFamily: 'Tajawal',
+            fontSize: 10.5,
+            color: Color(0xFF999999),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // -------------------------------------------------------------------------
+  // Ready to record
+  // -------------------------------------------------------------------------
+
+  Widget _buildReadyToRecordState() {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         GestureDetector(
-          onTap: canRecord ? _startRecording : null,
-
+          onTap: _startRecording,
           child: Stack(
             alignment: Alignment.center,
             children: [
@@ -1419,9 +1494,7 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
                 width: 102,
                 height: 102,
                 decoration: BoxDecoration(
-                  color: canRecord
-                      ? _red.withOpacity(0.08)
-                      : const Color(0xFFE8E5E9),
+                  color: _red.withOpacity(0.08),
                   shape: BoxShape.circle,
                 ),
               ),
@@ -1430,17 +1503,15 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
                 width: 82,
                 height: 82,
                 decoration: BoxDecoration(
-                  color: canRecord ? _red : const Color(0xFFBEB8C1),
+                  color: _red,
                   shape: BoxShape.circle,
-                  boxShadow: canRecord
-                      ? [
-                          BoxShadow(
-                            color: _red.withOpacity(0.22),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ]
-                      : null,
+                  boxShadow: [
+                    BoxShadow(
+                      color: _red.withOpacity(0.22),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
                 child: const Icon(
                   Icons.mic_rounded,
@@ -1454,21 +1525,21 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
 
         const SizedBox(height: 10),
 
-        Text(
-          canRecord ? 'اضغط وابدأ النطق' : 'استمع إلى الكلمة أولًا',
+        const Text(
+          'اضغط وابدأ النطق',
           style: TextStyle(
             fontFamily: 'Tajawal',
             fontSize: 13,
-            color: canRecord ? _deepPurple : const Color(0xFF888888),
+            color: _deepPurple,
             fontWeight: FontWeight.w600,
           ),
         ),
 
-        const SizedBox(height: 2),
+        const SizedBox(height: 3),
 
-        Text(
-          canRecord ? 'سجّل صوتك بوضوح' : 'بعد سماع المثال يمكنك تسجيل صوتك',
-          style: const TextStyle(
+        const Text(
+          'سجّل صوتك بوضوح',
+          style: TextStyle(
             fontFamily: 'Tajawal',
             fontSize: 10.5,
             color: Color(0xFF999999),
@@ -1476,8 +1547,7 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
         ),
       ],
     );
-  }
-  // -------------------------------------------------------------------------
+  } // -------------------------------------------------------------------------
   // Recording
   // -------------------------------------------------------------------------
 
