@@ -484,6 +484,248 @@
       "targetWord": "أوساخ",
       "imagePath": "assets/images/word_bank/kha_a_08_awsakh.png",
       "audioPath": "audio/kha/advanced/kha_a_08.mp3"
-    }
+    },
+{
+  "id": "seen_b_01",
+  "letter": "س",
+  "level": "beginner",
+  "order": 1,
+  "displayWord": "سُلَّم",
+  "targetWord": "سلم",
+  "imagePath": "assets/images/word_bank/seen_b_01_sulam.png",
+  "audioPath": "audio/seen/beginner/seen_b_01.mp3"
+},
+{
+  "id": "seen_b_02",
+  "letter": "س",
+  "level": "beginner",
+  "order": 2,
+  "displayWord": "خَسّ",
+  "targetWord": "خس",
+  "imagePath": "assets/images/word_bank/seen_b_02_khas.png",
+  "audioPath": "audio/seen/beginner/seen_b_02.mp3"
+},
+{
+  "id": "seen_b_03",
+  "letter": "س",
+  "level": "beginner",
+  "order": 3,
+  "displayWord": "جَرَس",
+  "targetWord": "جرس",
+  "imagePath": "assets/images/word_bank/seen_b_03_jaras.png",
+  "audioPath": "audio/seen/beginner/seen_b_03.mp3"
+},
+{
+  "id": "seen_b_04",
+  "letter": "س",
+  "level": "beginner",
+  "order": 4,
+  "displayWord": "جِسْر",
+  "targetWord": "جسر",
+  "imagePath": "assets/images/word_bank/seen_b_04_jisr.png",
+  "audioPath": "audio/seen/beginner/seen_b_04.mp3"
+},
+{
+  "id": "seen_b_05",
+  "letter": "س",
+  "level": "beginner",
+  "order": 5,
+  "displayWord": "أَسَد",
+  "targetWord": "أسد",
+  "imagePath": "assets/images/word_bank/seen_b_05_asad.png",
+  "audioPath": "audio/seen/beginner/seen_b_05.mp3"
+},
+{
+  "id": "seen_b_06",
+  "letter": "س",
+  "level": "beginner",
+  "order": 6,
+  "displayWord": "رَسْم",
+  "targetWord": "رسم",
+  "imagePath": "assets/images/word_bank/seen_b_06_rasm.png",
+  "audioPath": "audio/seen/beginner/seen_b_06.mp3"
+},
+{
+  "id": "seen_b_07",
+  "letter": "س",
+  "level": "beginner",
+  "order": 7,
+  "displayWord": "عَسَل",
+  "targetWord": "عسل",
+  "imagePath": "assets/images/word_bank/seen_b_07_asal.png",
+  "audioPath": "audio/seen/beginner/seen_b_07.mp3"
+},
+{
+  "id": "seen_b_08",
+  "letter": "س",
+  "level": "beginner",
+  "order": 8,
+  "displayWord": "سَمَك",
+  "targetWord": "سمك",
+  "imagePath": "assets/images/word_bank/seen_b_08_smk.png",
+  "audioPath": "audio/seen/beginner/seen_b_08.mp3"
+},
+
+{
+  "id": "seen_i_01",
+  "letter": "س",
+  "level": "intermediate",
+  "order": 1,
+  "displayWord": "سِنْجَاب",
+  "targetWord": "سنجاب",
+  "imagePath": "assets/images/word_bank/seen_i_01_sinjab.png",
+  "audioPath": "audio/seen/intermediate/seen_i_01.mp3"
+},
+{
+  "id": "seen_i_02",
+  "letter": "س",
+  "level": "intermediate",
+  "order": 2,
+  "displayWord": "سَرِير",
+  "targetWord": "سرير",
+  "imagePath": "assets/images/word_bank/seen_i_02_sarir.png",
+  "audioPath": "audio/seen/intermediate/seen_i_02.mp3"
+},
+{
+  "id": "seen_i_03",
+  "letter": "س",
+  "level": "intermediate",
+  "order": 3,
+  "displayWord": "سَحَاب",
+  "targetWord": "سحاب",
+  "imagePath": "assets/images/word_bank/seen_i_03_sahab.png",
+  "audioPath": "audio/seen/intermediate/seen_i_03.mp3"
+},
+{
+  "id": "seen_i_04",
+  "letter": "س",
+  "level": "intermediate",
+  "order": 4,
+  "displayWord": "طَاوُوس",
+  "targetWord": "طاووس",
+  "imagePath": "assets/images/word_bank/seen_i_04_tawoos.png",
+  "audioPath": "audio/seen/intermediate/seen_i_04.mp3"
+},
+{
+  "id": "seen_i_05",
+  "letter": "س",
+  "level": "intermediate",
+  "order": 5,
+  "displayWord": "أَلْمَاس",
+  "targetWord": "ألماس",
+  "imagePath": "assets/images/word_bank/seen_i_05_almas.png",
+  "audioPath": "audio/seen/intermediate/seen_i_05.mp3"
+},
+{
+  "id": "seen_i_06",
+  "letter": "س",
+  "level": "intermediate",
+  "order": 6,
+  "displayWord": "مَسْبَح",
+  "targetWord": "مسبح",
+  "imagePath": "assets/images/word_bank/seen_i_06_masbah.png",
+  "audioPath": "audio/seen/intermediate/seen_i_06.mp3"
+},
+{
+  "id": "seen_i_07",
+  "letter": "س",
+  "level": "intermediate",
+  "order": 7,
+  "displayWord": "أَسْوَد",
+  "targetWord": "أسود",
+  "imagePath": "assets/images/word_bank/seen_i_07_aswad.png",
+  "audioPath": "audio/seen/intermediate/seen_i_07.mp3"
+},
+{
+  "id": "seen_i_08",
+  "letter": "س",
+  "level": "intermediate",
+  "order": 8,
+  "displayWord": "مِسْمَار",
+  "targetWord": "مسمار",
+  "imagePath": "assets/images/word_bank/seen_i_08_mismar.png",
+  "audioPath": "audio/seen/intermediate/seen_i_08.mp3"
+},
+
+{
+  "id": "seen_a_01",
+  "letter": "س",
+  "level": "advanced",
+  "order": 1,
+  "displayWord": "سَيَّارَة",
+  "targetWord": "سيارة",
+  "imagePath": "assets/images/word_bank/seen_a_01_syarh.png",
+  "audioPath": "audio/seen/advanced/seen_a_01.mp3"
+},
+{
+  "id": "seen_a_02",
+  "letter": "س",
+  "level": "advanced",
+  "order": 2,
+  "displayWord": "سَفِينَة",
+  "targetWord": "سفينة",
+  "imagePath": "assets/images/word_bank/seen_a_02_safinah.png",
+  "audioPath": "audio/seen/advanced/seen_a_02.mp3"
+},
+{
+  "id": "seen_a_03",
+  "letter": "س",
+  "level": "advanced",
+  "order": 3,
+  "displayWord": "مِغْنَاطِيس",
+  "targetWord": "مغناطيس",
+  "imagePath": "assets/images/word_bank/seen_a_03_megnatish.png",
+  "audioPath": "audio/seen/advanced/seen_a_03.mp3"
+},
+{
+  "id": "seen_a_04",
+  "letter": "س",
+  "level": "advanced",
+  "order": 4,
+  "displayWord": "أَنَانَاس",
+  "targetWord": "أناناس",
+  "imagePath": "assets/images/word_bank/seen_a_04_ananas.png",
+  "audioPath": "audio/seen/advanced/seen_a_04.mp3"
+},
+{
+  "id": "seen_a_05",
+  "letter": "س",
+  "level": "advanced",
+  "order": 5,
+  "displayWord": "مَدَارِس",
+  "targetWord": "مدارس",
+  "imagePath": "assets/images/word_bank/seen_a_05_mdars.png",
+  "audioPath": "audio/seen/advanced/seen_a_05.mp3"
+},
+{
+  "id": "seen_a_06",
+  "letter": "س",
+  "level": "advanced",
+  "order": 6,
+  "displayWord": "اِسْتِحْمَام",
+  "targetWord": "استحمام",
+  "imagePath": "assets/images/word_bank/seen_a_06_estihmam.png",
+  "audioPath": "audio/seen/advanced/seen_a_06.mp3"
+},
+{
+  "id": "seen_a_07",
+  "letter": "س",
+  "level": "advanced",
+  "order": 7,
+  "displayWord": "مَسْرَحِيَّة",
+  "targetWord": "مسرحية",
+  "imagePath": "assets/images/word_bank/seen_a_07_masrahiyah.png",
+  "audioPath": "audio/seen/advanced/seen_a_07.mp3"
+},
+{
+  "id": "seen_a_08",
+  "letter": "س",
+  "level": "advanced",
+  "order": 8,
+  "displayWord": "أَسَاتِذَة",
+  "targetWord": "أساتذة",
+  "imagePath": "assets/images/word_bank/seen_a_08_asatidah.png",
+  "audioPath": "audio/seen/advanced/seen_a_08.mp3"
+}
   ]
 }
