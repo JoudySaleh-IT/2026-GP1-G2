@@ -158,40 +158,8 @@ async def process_audio(
                 "message": "No speech detected."
             }
 
-        # High-pass filter
-        b, a = signal.butter(
-            4,
-            80,
-            'hp',
-            fs=sr
-        )
-
-        y_hp = signal.filtfilt(
-            b,
-            a,
-            y
-        )
-
-        # Silence removal
-        y_trimmed, _ = librosa.effects.trim(
-            y_hp,
-            top_db=35
-        )
-
-        
-
-        # If trimming leaves less than 0.2 seconds,
-        # use the original filtered recording instead
-        # of rejecting the child's recording.
-        if len(y_trimmed) < (sr * 0.2):
-            y_final = librosa.util.normalize(
-                y_hp
-            )
-
-        else:
-            y_final = librosa.util.normalize(
-                y_trimmed
-            )
+        # Use the same audio preparation used during fine-tuning.
+        y_final = y
 
         sf.write(
             temp_clean,
@@ -237,7 +205,7 @@ async def process_audio(
             }
 
         # Normalize target and transcription
-        # only for validation checks.
+        # for validation and scoring.
         normalized_target = normalize_arabic_text(
             target_word
         )
@@ -246,10 +214,14 @@ async def process_audio(
             transcription
         )
 
+        # Ignore the Arabic definite article "ال"
+        # when the ASR adds it to the target word.
+        if normalized_transcription == "ال" + normalized_target:
+            normalized_transcription = normalized_target
+
         transcription_words = (
             normalized_transcription.split()
         )
-
         # -------------------------------------------------
         # Validation Rule 4:
         # Child repeated the target word
@@ -308,23 +280,23 @@ async def process_audio(
         # =================================================
         # 3. Targeted Scoring Algorithm
         # =================================================
-
         final_score = 0.0
 
-        if target_letter in transcription:
+        normalized_letter = normalize_arabic_text(
+            target_letter
+        )
 
-            # Calculating accuracy based on phonetic distance
+        if normalized_letter in normalized_transcription:
+
             mistakes = levenshtein_distance(
-                target_word,
-                transcription
+                normalized_target,
+                normalized_transcription
             )
 
             total_letters = len(
-                target_word
+                normalized_target
             )
 
-            # Accuracy is calculated as the true percentage
-            # of correct phonemes
             accuracy = max(
                 0,
                 100 - (
@@ -332,25 +304,58 @@ async def process_audio(
                 )
             )
 
-            # Final Score reflects the real accuracy,
-            # no matter how low it is
             final_score = accuracy
 
         else:
-            # Target letter is missing or mispronounced.
-            #
-            # This is NOT an invalid recording.
-            # The child's recording is valid and their
-            # pronunciation performance is measured as-is.
-            #
-            # Therefore, no invalid retry is triggered.
             final_score = 0.0
+
+        # =================================================
+        # DEBUG — Check ASR vs Rule-Based Scoring
+        # =================================================
+
+        debug_distance = levenshtein_distance(
+            normalized_target,
+            normalized_transcription
+        )
+
+        debug_max_length = max(
+            len(normalized_target),
+            len(normalized_transcription)
+        )
+
+        debug_similarity = (
+            1 - (debug_distance / debug_max_length)
+            if debug_max_length > 0
+            else 0.0
+        )
+
+        print("\n========== FASEH DEBUG ==========")
+        print("Expected word (raw):", repr(target_word))
+        print("Target letter:", repr(target_letter))
+        print("ASR transcription (raw):", repr(transcription))
+        print("Normalized expected:", repr(normalized_target))
+        print("Normalized transcription:", repr(normalized_transcription))
+        print(
+            "Target detected in RAW transcription:",
+            target_letter in transcription
+        )
+        print(
+            "Target detected after normalization:",
+            normalize_arabic_text(target_letter)
+            in normalized_transcription
+        )
+        print("Edit distance:", debug_distance)
+        print("Similarity:", round(debug_similarity, 4))
+        print("Similarity (%):", round(debug_similarity * 100, 2))
+        print("Final score:", final_score)
+        print("=================================\n")
 
         # =================================================
         # 4. الرفع إلى Firebase Storage
         # =================================================
 
         bucket = storage.bucket()
+
 
         blob = bucket.blob(
     f"processed_audios/clean_{os.path.splitext(file.filename)[0]}.wav"
