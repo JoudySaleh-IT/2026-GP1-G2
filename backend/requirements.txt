@@ -8,3 +8,4 @@ numpy
 firebase-admin
 transformers
 safetensors
+webrtcvad-wheels

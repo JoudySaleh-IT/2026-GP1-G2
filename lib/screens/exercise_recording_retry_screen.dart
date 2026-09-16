@@ -81,7 +81,8 @@ class _ExerciseRecordingRetryScreenState
   // Retry state
   // -------------------------------------------------------------------------
 
-  RetryRecordingState _state = RetryRecordingState.waitingForAudio;
+  RetryRecordingState _state =
+      RetryRecordingState.waitingForAudio;
 
   // Reference audio can only be played once.
   bool _audioPlayed = false;
@@ -90,10 +91,9 @@ class _ExerciseRecordingRetryScreenState
   bool _recordingUsed = false;
 
   // Becomes true once the reference audio begins.
-  // From this moment, the child cannot leave the retry flow.
   bool _retryStarted = false;
 
-  // Used only when returning programmatically to the results page.
+  // Used only when returning programmatically.
   bool _allowProgrammaticPop = false;
 
   // -------------------------------------------------------------------------
@@ -101,7 +101,6 @@ class _ExerciseRecordingRetryScreenState
   // -------------------------------------------------------------------------
 
   int _recordingTime = 0;
-
   Timer? _recordingTimer;
 
   // -------------------------------------------------------------------------
@@ -109,9 +108,7 @@ class _ExerciseRecordingRetryScreenState
   // -------------------------------------------------------------------------
 
   int _finalScore = 0;
-
   bool _finalIsInvalid = false;
-
   String? _finalInvalidReason;
 
   // -------------------------------------------------------------------------
@@ -147,11 +144,8 @@ class _ExerciseRecordingRetryScreenState
   @override
   void dispose() {
     _recordingTimer?.cancel();
-
     _spinController.dispose();
-
     _audioPlayer.dispose();
-
     _recorder.dispose();
 
     super.dispose();
@@ -162,7 +156,6 @@ class _ExerciseRecordingRetryScreenState
   // -------------------------------------------------------------------------
 
   Future<void> _playReferenceAudio() async {
-    // Reference audio is allowed only once.
     if (_audioPlayed || _retryStarted) {
       return;
     }
@@ -172,21 +165,14 @@ class _ExerciseRecordingRetryScreenState
 
       if (!mounted) return;
 
-      // ---------------------------------------------------------------
-      // Retry starts here.
-      //
-      // Once the child begins listening to the reference audio,
-      // leaving this page is no longer allowed.
-      // ---------------------------------------------------------------
-
       setState(() {
         _retryStarted = true;
         _audioPlayed = true;
         _state = RetryRecordingState.waitingForAudio;
       });
 
-      // Subscribe to completion BEFORE starting playback.
-      final audioCompleted = _audioPlayer.onPlayerComplete.first;
+      final audioCompleted =
+          _audioPlayer.onPlayerComplete.first;
 
       await _audioPlayer.play(
         AssetSource(widget.audioPath),
@@ -195,12 +181,6 @@ class _ExerciseRecordingRetryScreenState
       debugPrint(
         'Retry reference audio started: ${widget.audioPath}',
       );
-
-      // ---------------------------------------------------------------
-      // Wait until the reference audio finishes completely.
-      //
-      // Recording is NOT enabled while the example is still playing.
-      // ---------------------------------------------------------------
 
       await audioCompleted;
 
@@ -220,8 +200,6 @@ class _ExerciseRecordingRetryScreenState
 
       if (!mounted) return;
 
-      // The audio did not play correctly.
-      // Therefore, the retry has not actually been consumed.
       setState(() {
         _retryStarted = false;
         _audioPlayed = false;
@@ -240,15 +218,14 @@ class _ExerciseRecordingRetryScreenState
   // -------------------------------------------------------------------------
 
   Future<void> _startRecording() async {
-    // Recording is allowed only after hearing the reference audio
-    // and only once.
     if (!_audioPlayed ||
         _recordingUsed ||
         _state != RetryRecordingState.readyToRecord) {
       return;
     }
 
-    final hasPermission = await _recorder.hasPermission();
+    final hasPermission =
+        await _recorder.hasPermission();
 
     if (!hasPermission) {
       if (!mounted) return;
@@ -262,7 +239,8 @@ class _ExerciseRecordingRetryScreenState
     }
 
     try {
-      final directory = await getTemporaryDirectory();
+      final directory =
+          await getTemporaryDirectory();
 
       final path =
           '${directory.path}/retry_recording_${DateTime.now().millisecondsSinceEpoch}.m4a';
@@ -280,14 +258,12 @@ class _ExerciseRecordingRetryScreenState
 
       setState(() {
         _recordingUsed = true;
-
         _recordedFilePath = null;
-
         _recordingTime = 0;
-
         _technicalErrorMessage = null;
 
-        _state = RetryRecordingState.recording;
+        _state =
+            RetryRecordingState.recording;
       });
 
       _recordingTimer?.cancel();
@@ -309,11 +285,10 @@ class _ExerciseRecordingRetryScreenState
 
       if (!mounted) return;
 
-      // Recording never actually started successfully.
-      // Do not consume the recording attempt.
       setState(() {
         _recordingUsed = false;
-        _state = RetryRecordingState.readyToRecord;
+        _state =
+            RetryRecordingState.readyToRecord;
       });
 
       _showAppSnackBar(
@@ -333,13 +308,6 @@ class _ExerciseRecordingRetryScreenState
 
       _recordingTimer?.cancel();
 
-      // ---------------------------------------------------------------
-      // Local recording failure
-      //
-      // No usable recording file was created.
-      // This is a technical issue, not the child's pronunciation result.
-      // ---------------------------------------------------------------
-
       if (path == null) {
         if (!mounted) return;
 
@@ -349,7 +317,8 @@ class _ExerciseRecordingRetryScreenState
           _technicalErrorMessage =
               'تعذر حفظ التسجيل. يمكنك تسجيل الكلمة مرة أخرى دون إعادة الاستماع.';
 
-          _state = RetryRecordingState.technicalError;
+          _state =
+              RetryRecordingState.technicalError;
         });
 
         return;
@@ -360,7 +329,8 @@ class _ExerciseRecordingRetryScreenState
       setState(() {
         _recordedFilePath = path;
 
-        _state = RetryRecordingState.analyzing;
+        _state =
+            RetryRecordingState.analyzing;
       });
 
       debugPrint(
@@ -377,15 +347,14 @@ class _ExerciseRecordingRetryScreenState
 
       if (!mounted) return;
 
-      // This is a technical recording failure.
-      // It is NOT counted as the child's final retry result.
       setState(() {
         _recordedFilePath = null;
 
         _technicalErrorMessage =
             'حدثت مشكلة أثناء حفظ التسجيل. يمكنك تسجيل الكلمة مرة أخرى.';
 
-        _state = RetryRecordingState.technicalError;
+        _state =
+            RetryRecordingState.technicalError;
       });
     }
   }
@@ -403,7 +372,6 @@ class _ExerciseRecordingRetryScreenState
 
     setState(() {
       _technicalErrorMessage = null;
-
       _state = RetryRecordingState.analyzing;
     });
 
@@ -415,9 +383,11 @@ class _ExerciseRecordingRetryScreenState
         ),
       );
 
-      request.fields['target_word'] = widget.targetWord;
+      request.fields['target_word'] =
+          widget.targetWord;
 
-      request.fields['target_letter'] = widget.letter;
+      request.fields['target_letter'] =
+          widget.letter;
 
       request.files.add(
         await http.MultipartFile.fromPath(
@@ -426,18 +396,13 @@ class _ExerciseRecordingRetryScreenState
         ),
       );
 
-      final streamedResponse = await request.send();
+      final streamedResponse =
+          await request.send();
 
-      final response = await http.Response.fromStream(
+      final response =
+          await http.Response.fromStream(
         streamedResponse,
       );
-
-      // ---------------------------------------------------------------
-      // Server / HTTP problem
-      //
-      // Keep the exact same recording and allow resending.
-      // Do NOT count this as the child's retry result.
-      // ---------------------------------------------------------------
 
       if (response.statusCode < 200 ||
           response.statusCode >= 300) {
@@ -446,7 +411,8 @@ class _ExerciseRecordingRetryScreenState
         );
       }
 
-      final data = jsonDecode(response.body);
+      final data =
+          jsonDecode(response.body);
 
       // ---------------------------------------------------------------
       // Valid analyzed pronunciation
@@ -454,20 +420,19 @@ class _ExerciseRecordingRetryScreenState
 
       if (data['status'] == 'success') {
         final score =
-            (data['score'] as num?)?.round() ?? 0;
+            (data['score'] as num?)?.round() ??
+                0;
 
         if (!mounted) return;
 
         setState(() {
           _finalScore = score;
-
           _finalIsInvalid = false;
-
           _finalInvalidReason = null;
-
           _technicalErrorMessage = null;
 
-          _state = RetryRecordingState.finished;
+          _state =
+              RetryRecordingState.finished;
         });
 
         debugPrint(
@@ -482,11 +447,7 @@ class _ExerciseRecordingRetryScreenState
       }
 
       // ---------------------------------------------------------------
-      // Backend successfully analyzed the recording,
-      // but determined that the child's retry itself is invalid.
-      //
-      // This IS the child's second and final attempt.
-      // No third attempt is provided.
+      // Invalid retry
       // ---------------------------------------------------------------
 
       if (data['status'] == 'invalid_audio') {
@@ -494,7 +455,6 @@ class _ExerciseRecordingRetryScreenState
 
         setState(() {
           _finalScore = 0;
-
           _finalIsInvalid = true;
 
           _finalInvalidReason =
@@ -502,7 +462,8 @@ class _ExerciseRecordingRetryScreenState
 
           _technicalErrorMessage = null;
 
-          _state = RetryRecordingState.finished;
+          _state =
+              RetryRecordingState.finished;
         });
 
         debugPrint(
@@ -511,13 +472,6 @@ class _ExerciseRecordingRetryScreenState
 
         return;
       }
-
-      // ---------------------------------------------------------------
-      // Backend returned an internal/system error.
-      //
-      // This is technical, so the child's recording is preserved
-      // and can be sent again.
-      // ---------------------------------------------------------------
 
       throw Exception(
         data['message']?.toString() ??
@@ -530,22 +484,18 @@ class _ExerciseRecordingRetryScreenState
 
       if (!mounted) return;
 
-      // IMPORTANT:
-      // Do not change _finalScore or _finalIsInvalid here.
-      //
-      // This was not a failed pronunciation attempt.
-      // It was a technical problem.
       setState(() {
         _technicalErrorMessage =
             'تعذر تحليل التسجيل بسبب مشكلة في الاتصال. تسجيلك محفوظ ويمكنك إرساله مرة أخرى.';
 
-        _state = RetryRecordingState.technicalError;
+        _state =
+            RetryRecordingState.technicalError;
       });
     }
   }
 
   // -------------------------------------------------------------------------
-  // Resend SAME recording after network/server error
+  // Resend same recording
   // -------------------------------------------------------------------------
 
   Future<void> _resendRecording() async {
@@ -557,29 +507,23 @@ class _ExerciseRecordingRetryScreenState
   }
 
   // -------------------------------------------------------------------------
-  // Retry recording only after LOCAL recording failure
+  // Retry after local recording failure
   // -------------------------------------------------------------------------
 
   void _retryRecordingAfterLocalError() {
-    // There is no saved recording file.
-    // Therefore, the child may record again.
-    //
-    // The reference audio is NOT played again.
     setState(() {
       _recordingUsed = false;
-
       _recordedFilePath = null;
-
       _recordingTime = 0;
-
       _technicalErrorMessage = null;
 
-      _state = RetryRecordingState.readyToRecord;
+      _state =
+          RetryRecordingState.readyToRecord;
     });
   }
 
   // -------------------------------------------------------------------------
-  // Return final result to results page
+  // Return final result
   // -------------------------------------------------------------------------
 
   void _returnToResults() {
@@ -590,12 +534,12 @@ class _ExerciseRecordingRetryScreenState
       'retryUsed': true,
     };
 
-    // Temporarily allow this one programmatic pop.
     setState(() {
       _allowProgrammaticPop = true;
     });
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) {
       if (!mounted) return;
 
       Navigator.pop(
@@ -610,14 +554,11 @@ class _ExerciseRecordingRetryScreenState
   // -------------------------------------------------------------------------
 
   void _handleHeaderBack() {
-    // Before the child starts the retry,
-    // normal back navigation is allowed.
     if (!_retryStarted) {
       Navigator.pop(context);
       return;
     }
 
-    // Once reference audio begins, the retry flow must be completed.
     _showAppSnackBar(
       'أكمل محاولتك الأخيرة أولًا',
       isError: false,
@@ -632,15 +573,16 @@ class _ExerciseRecordingRetryScreenState
     String message, {
     bool isError = false,
   }) {
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context)
+        .hideCurrentSnackBar();
 
-    ScaffoldMessenger.of(context).showSnackBar(
+    ScaffoldMessenger.of(context)
+        .showSnackBar(
       SnackBar(
         behavior: SnackBarBehavior.fixed,
 
-        backgroundColor: isError
-            ? _red
-            : _deepPurple,
+        backgroundColor:
+            isError ? _red : _deepPurple,
 
         content: Directionality(
           textDirection: TextDirection.rtl,
@@ -674,20 +616,12 @@ class _ExerciseRecordingRetryScreenState
       textDirection: TextDirection.rtl,
 
       child: PopScope(
-        // ---------------------------------------------------------------
-        // Before retry starts:
-        // Back is allowed.
-        //
-        // After reference audio starts:
-        // Back is blocked until final result.
-        //
-        // _allowProgrammaticPop is enabled only when we deliberately
-        // return the completed result to the previous page.
-        // ---------------------------------------------------------------
+        canPop:
+            !_retryStarted ||
+            _allowProgrammaticPop,
 
-        canPop: !_retryStarted || _allowProgrammaticPop,
-
-        onPopInvokedWithResult: (didPop, result) {
+        onPopInvokedWithResult:
+            (didPop, result) {
           if (!didPop &&
               _retryStarted &&
               !_allowProgrammaticPop) {
@@ -710,31 +644,21 @@ class _ExerciseRecordingRetryScreenState
                   children: [
                     const Positioned.fill(
                       child: IgnorePointer(
-                        child: _RetryBackground(),
+                        child:
+                            _RetryBackground(),
                       ),
                     ),
 
                     SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(
+                      padding:
+                          const EdgeInsets.fromLTRB(
                         16,
-                        18,
+                        14,
                         16,
-                        40,
+                        50,
                       ),
 
-                      child: Column(
-                        children: [
-                          _buildInfoCard(),
-
-                          const SizedBox(height: 16),
-
-                          _buildWordCard(),
-
-                          const SizedBox(height: 16),
-
-                          _buildActionCard(),
-                        ],
-                      ),
+                      child: _buildRetryPanel(),
                     ),
                   ],
                 ),
@@ -751,69 +675,61 @@ class _ExerciseRecordingRetryScreenState
   // -------------------------------------------------------------------------
 
   Widget _buildHeader() {
-    return FaseehStyle.buildLargeHeader(
-      context: context,
-
-      title: 'إعادة المحاولة',
-
-      subtitle: 'استمع جيدًا ثم انطق الكلمة مرة أخرى',
-
-      leading: SizedBox(
-        width: 48,
-        height: 48,
-
-        child: IconButton(
-          onPressed: _handleHeaderBack,
-
-          icon: const Icon(
-            Icons.arrow_back,
-            color: Colors.white,
-            size: 25,
-          ),
-        ),
-      ),
-    );
-  }
-
-  // -------------------------------------------------------------------------
-  // Info
-  // -------------------------------------------------------------------------
-
-  Widget _buildInfoCard() {
     return Container(
-      width: double.infinity,
+      decoration:
+          FaseehStyle.headerDecoration,
 
-      padding: const EdgeInsets.symmetric(
-        horizontal: 16,
-        vertical: 13,
+      padding:
+          FaseehStyle.getStandardPadding(
+        context,
       ),
 
-      decoration: BoxDecoration(
-        color: const Color(0xFFF3EBFA),
+      child: Row(
+        crossAxisAlignment:
+            CrossAxisAlignment.center,
 
-        borderRadius: BorderRadius.circular(20),
-      ),
-
-      child: const Row(
         children: [
-          Icon(
-            Icons.info_outline_rounded,
-            color: _deepPurple,
-            size: 21,
+          IconButton(
+            onPressed: _handleHeaderBack,
+
+            icon: const Icon(
+              Icons.arrow_back,
+              color: Colors.white,
+              size: 25,
+            ),
           ),
 
-          SizedBox(width: 9),
+          const SizedBox(width: 8),
 
-          Expanded(
-            child: Text(
-              'هذه محاولتك الأخيرة لهذه الكلمة',
+          const Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
 
-              style: TextStyle(
-                fontFamily: 'Tajawal',
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: _deepPurple,
-              ),
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
+
+              children: [
+                Text(
+                  'إعادة المحاولة',
+
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Tajawal',
+                  ),
+                ),
+
+                Text(
+                  'استمع إلى الكلمة ثم جرّب مرة أخرى',
+
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 13,
+                    fontFamily: 'Tajawal',
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -822,38 +738,29 @@ class _ExerciseRecordingRetryScreenState
   }
 
   // -------------------------------------------------------------------------
-  // Word card
+  // Main retry panel
   // -------------------------------------------------------------------------
 
-  Widget _buildWordCard() {
-    final bool disableAudioButton =
-        _audioPlayed ||
-        _retryStarted ||
-        _state == RetryRecordingState.recording ||
-        _state == RetryRecordingState.analyzing ||
-        _state == RetryRecordingState.technicalError ||
-        _state == RetryRecordingState.finished;
-
+  Widget _buildRetryPanel() {
     return Container(
       width: double.infinity,
 
-      padding: const EdgeInsets.symmetric(
-        vertical: 22,
-        horizontal: 16,
-      ),
+      padding: const EdgeInsets.all(15),
 
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFFF8F2FF),
 
-        borderRadius: BorderRadius.circular(26),
+        borderRadius:
+            BorderRadius.circular(26),
 
         border: Border.all(
-          color: _deepPurple.withOpacity(0.08),
+          color:
+              _deepPurple.withOpacity(0.08),
         ),
 
         boxShadow: const [
           BoxShadow(
-            color: Color(0x0A000000),
+            color: Color(0x09000000),
             blurRadius: 8,
             offset: Offset(0, 3),
           ),
@@ -862,11 +769,195 @@ class _ExerciseRecordingRetryScreenState
 
       child: Column(
         children: [
+          _buildInstructionRow(),
+
+          const SizedBox(height: 13),
+
+          _buildWordDisplay(),
+
+          const SizedBox(height: 13),
+
+          _buildRecordingBox(),
+        ],
+      ),
+    );
+  }
+
+  // -------------------------------------------------------------------------
+  // Child-friendly instruction area
+  // -------------------------------------------------------------------------
+
+  Widget _buildInstructionRow() {
+    return SizedBox(
+      width: double.infinity,
+
+      child: Row(
+        children: [
+          const SizedBox(
+            width: 76,
+            height: 90,
+
+            child:
+                _CutePronunciationCharacter(),
+          ),
+
+          const SizedBox(width: 12),
+
+          Expanded(
+            child: Column(
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
+
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 29,
+                      height: 29,
+
+                      alignment:
+                          Alignment.center,
+
+                      decoration:
+                          const BoxDecoration(
+                        color: _red,
+                        shape: BoxShape.circle,
+                      ),
+
+                      child: const Icon(
+                        Icons.refresh_rounded,
+                        color: Colors.white,
+                        size: 17,
+                      ),
+                    ),
+
+                    const SizedBox(width: 7),
+
+                    const Expanded(
+                      child: Text(
+                        'جرّب مرة ثانية!',
+
+                        style: TextStyle(
+                          fontFamily:
+                              'Tajawal',
+                          fontSize: 14,
+                          color: _deepPurple,
+                          fontWeight:
+                              FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 6),
+
+                const Text(
+                  'استمع إلى الكلمة ثم انطقها',
+
+                  style: TextStyle(
+                    fontFamily: 'Tajawal',
+                    fontSize: 12.5,
+                    height: 1.4,
+                    color:
+                        Color(0xFF444444),
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
+
+                  decoration: BoxDecoration(
+                    color:
+                        const Color(0xFFFFECEF),
+
+                    borderRadius:
+                        BorderRadius.circular(
+                      14,
+                    ),
+                  ),
+
+                  child: const Text(
+                    'محاولتك الأخيرة',
+
+                    style: TextStyle(
+                      fontFamily: 'Tajawal',
+                      fontSize: 10.5,
+                      fontWeight:
+                          FontWeight.w600,
+                      color: _red,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // -------------------------------------------------------------------------
+  // Word display
+  // -------------------------------------------------------------------------
+
+  Widget _buildWordDisplay() {
+    final bool disableAudioButton =
+        _audioPlayed ||
+        _retryStarted ||
+        _state ==
+            RetryRecordingState.recording ||
+        _state ==
+            RetryRecordingState.analyzing ||
+        _state ==
+            RetryRecordingState.technicalError ||
+        _state ==
+            RetryRecordingState.finished;
+
+    String audioLabel;
+
+    if (!_audioPlayed) {
+      audioLabel = 'استمع إلى الكلمة';
+    } else if (_state ==
+        RetryRecordingState.waitingForAudio) {
+      audioLabel = 'جاري الاستماع...';
+    } else {
+      audioLabel = 'تم الاستماع';
+    }
+
+    return Container(
+      width: double.infinity,
+
+      padding: const EdgeInsets.symmetric(
+        vertical: 21,
+        horizontal: 14,
+      ),
+
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.94),
+
+        borderRadius:
+            BorderRadius.circular(21),
+
+        border: Border.all(
+          color:
+              _deepPurple.withOpacity(0.07),
+        ),
+      ),
+
+      child: Column(
+        children: [
           Image.asset(
             widget.imagePath,
 
-            width: 145,
-            height: 145,
+            height: 130,
+            width: 130,
 
             fit: BoxFit.contain,
 
@@ -876,21 +967,33 @@ class _ExerciseRecordingRetryScreenState
               stackTrace,
             ) {
               return Container(
-                width: 145,
-                height: 145,
+                width: 130,
+                height: 130,
 
                 alignment: Alignment.center,
 
+                decoration: BoxDecoration(
+                  color:
+                      const Color(0xFFF7F3F9),
+
+                  borderRadius:
+                      BorderRadius.circular(
+                    18,
+                  ),
+                ),
+
                 child: const Icon(
-                  Icons.image_not_supported_outlined,
-                  color: Color(0xFFB5A7BB),
-                  size: 42,
+                  Icons
+                      .image_not_supported_outlined,
+                  color:
+                      Color(0xFFB5A7BB),
+                  size: 40,
                 ),
               );
             },
           ),
 
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
 
           Text(
             widget.questionText,
@@ -898,174 +1001,86 @@ class _ExerciseRecordingRetryScreenState
             textAlign: TextAlign.center,
 
             style: const TextStyle(
-              fontFamily: 'Tajawal',
-              fontSize: 42,
-              fontWeight: FontWeight.w600,
+              fontSize: 43,
               color: _deepPurple,
+              fontWeight: FontWeight.w600,
+              fontFamily: 'Tajawal',
+              height: 1.25,
             ),
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: 13),
 
           OutlinedButton.icon(
             onPressed: disableAudioButton
                 ? null
                 : _playReferenceAudio,
 
-            icon: const Icon(
-              Icons.volume_up_rounded,
-              size: 18,
+            icon: Icon(
+              _audioPlayed
+                  ? Icons.check_rounded
+                  : Icons.volume_up_rounded,
+
+              color: _audioPlayed
+                  ? const Color(0xFF999999)
+                  : _red,
+
+              size: 17,
             ),
 
             label: Text(
-              _audioPlayed
-                  ? 'تم الاستماع'
-                  : 'استمع إلى الكلمة',
+              audioLabel,
 
               style: const TextStyle(
+                fontSize: 11.5,
                 fontFamily: 'Tajawal',
-                fontWeight: FontWeight.w600,
+                fontWeight:
+                    FontWeight.w600,
               ),
             ),
 
             style: OutlinedButton.styleFrom(
-              foregroundColor: _red,
+              foregroundColor: _audioPlayed
+                  ? const Color(0xFF999999)
+                  : _red,
 
               side: BorderSide(
                 color: _audioPlayed
-                    ? const Color(0xFFD6D0D8)
-                    : _red.withOpacity(0.45),
+                    ? const Color(
+                        0xFFD6D0D8,
+                      )
+                    : _red.withOpacity(
+                        0.45,
+                      ),
               ),
 
-              shape: const StadiumBorder(),
+              backgroundColor:
+                  const Color(0xFFFFF6F7),
 
-              padding: const EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical: 10,
+              shape:
+                  const StadiumBorder(),
+
+              padding:
+                  const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 8,
               ),
             ),
           ),
 
-          if (!_audioPlayed)
-            const Padding(
-              padding: EdgeInsets.only(top: 7),
-
-              child: Text(
-                'استمع إلى الكلمة أولًا',
-
-                style: TextStyle(
-                  fontFamily: 'Tajawal',
-                  fontSize: 10,
-                  color: Color(0xFF999999),
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  // -------------------------------------------------------------------------
-  // Action card
-  // -------------------------------------------------------------------------
-
-  Widget _buildActionCard() {
-    switch (_state) {
-      case RetryRecordingState.waitingForAudio:
-        return _buildWaitingState();
-
-      case RetryRecordingState.readyToRecord:
-        return _buildReadyState();
-
-      case RetryRecordingState.recording:
-        return _buildRecordingState();
-
-      case RetryRecordingState.analyzing:
-        return _buildAnalyzingState();
-
-      case RetryRecordingState.technicalError:
-        return _buildTechnicalErrorState();
-
-      case RetryRecordingState.finished:
-        return _buildFinishedState();
-    }
-  }
-
-  // -------------------------------------------------------------------------
-  // Shared action container
-  // -------------------------------------------------------------------------
-
-  Widget _actionContainer({
-    required Widget child,
-  }) {
-    return Container(
-      width: double.infinity,
-
-      constraints: const BoxConstraints(
-        minHeight: 190,
-      ),
-
-      padding: const EdgeInsets.all(20),
-
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFFAFB),
-
-        borderRadius: BorderRadius.circular(24),
-
-        border: Border.all(
-          color: _red.withOpacity(0.10),
-        ),
-      ),
-
-      child: child,
-    );
-  }
-
-  // -------------------------------------------------------------------------
-  // Waiting for audio
-  // -------------------------------------------------------------------------
-
-  Widget _buildWaitingState() {
-    return _actionContainer(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-
-        children: [
-          const Icon(
-            Icons.hearing_rounded,
-            color: _deepPurple,
-            size: 43,
-          ),
-
-          const SizedBox(height: 10),
-
-          Text(
-            _audioPlayed
-                ? 'استمع جيدًا إلى الكلمة...'
-                : 'استمع إلى الكلمة أولًا',
-
-            textAlign: TextAlign.center,
-
-            style: const TextStyle(
-              fontFamily: 'Tajawal',
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: _deepPurple,
-            ),
-          ),
-
-          if (_audioPlayed) ...[
-            const SizedBox(height: 5),
+          if (!_audioPlayed) ...[
+            const SizedBox(height: 7),
 
             const Text(
-              'سيظهر التسجيل بعد انتهاء الصوت',
+              'استمع أولًا، وبعدها يفتح لك التسجيل',
 
               textAlign: TextAlign.center,
 
               style: TextStyle(
                 fontFamily: 'Tajawal',
-                fontSize: 10.5,
-                color: Color(0xFF999999),
+                fontSize: 10,
+                color:
+                    Color(0xFF999999),
               ),
             ),
           ],
@@ -1075,72 +1090,214 @@ class _ExerciseRecordingRetryScreenState
   }
 
   // -------------------------------------------------------------------------
+  // Recording box
+  // -------------------------------------------------------------------------
+
+  Widget _buildRecordingBox() {
+    return Container(
+      width: double.infinity,
+
+      constraints:
+          const BoxConstraints(
+        minHeight: 175,
+      ),
+
+      padding: const EdgeInsets.symmetric(
+        horizontal: 18,
+        vertical: 17,
+      ),
+
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFAFB),
+
+        borderRadius:
+            BorderRadius.circular(22),
+
+        border: Border.all(
+          color: _red.withOpacity(0.10),
+        ),
+      ),
+
+      child: switch (_state) {
+        RetryRecordingState
+              .waitingForAudio =>
+          _buildWaitingState(),
+
+        RetryRecordingState
+              .readyToRecord =>
+          _buildReadyState(),
+
+        RetryRecordingState.recording =>
+          _buildRecordingState(),
+
+        RetryRecordingState.analyzing =>
+          _buildAnalyzingState(),
+
+        RetryRecordingState
+              .technicalError =>
+          _buildTechnicalErrorState(),
+
+        RetryRecordingState.finished =>
+          _buildFinishedState(),
+      },
+    );
+  }
+
+  // -------------------------------------------------------------------------
+  // Waiting
+  // -------------------------------------------------------------------------
+
+  Widget _buildWaitingState() {
+    return Column(
+      mainAxisAlignment:
+          MainAxisAlignment.center,
+
+      children: [
+        Stack(
+          alignment: Alignment.center,
+
+          children: [
+            Container(
+              width: 86,
+              height: 86,
+
+              decoration: BoxDecoration(
+                color: const Color(
+                  0xFFF3EBFA,
+                ),
+
+                shape: BoxShape.circle,
+              ),
+            ),
+
+            const Icon(
+              Icons.hearing_rounded,
+              color: _deepPurple,
+              size: 42,
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 10),
+
+        Text(
+          _audioPlayed
+              ? 'استمع جيدًا...'
+              : 'استمع إلى الكلمة أولًا',
+
+          textAlign: TextAlign.center,
+
+          style: const TextStyle(
+            fontFamily: 'Tajawal',
+            fontSize: 13,
+            color: _deepPurple,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+
+        const SizedBox(height: 3),
+
+        Text(
+          _audioPlayed
+              ? 'بعد انتهاء الصوت سيظهر لك زر التسجيل'
+              : 'اضغط زر الاستماع الموجود فوق',
+
+          textAlign: TextAlign.center,
+
+          style: const TextStyle(
+            fontFamily: 'Tajawal',
+            fontSize: 10.5,
+            color: Color(0xFF999999),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // -------------------------------------------------------------------------
   // Ready to record
   // -------------------------------------------------------------------------
 
   Widget _buildReadyState() {
-    return _actionContainer(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+    return Column(
+      mainAxisAlignment:
+          MainAxisAlignment.center,
 
-        children: [
-          GestureDetector(
-            onTap: _startRecording,
+      children: [
+        GestureDetector(
+          onTap: _startRecording,
 
-            child: Container(
-              width: 88,
-              height: 88,
+          child: Stack(
+            alignment: Alignment.center,
 
-              decoration: BoxDecoration(
-                color: _red,
+            children: [
+              Container(
+                width: 102,
+                height: 102,
 
-                shape: BoxShape.circle,
-
-                boxShadow: [
-                  BoxShadow(
-                    color: _red.withOpacity(0.22),
-
-                    blurRadius: 10,
-
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+                decoration: BoxDecoration(
+                  color:
+                      _red.withOpacity(0.08),
+                  shape: BoxShape.circle,
+                ),
               ),
 
-              child: const Icon(
-                Icons.mic_rounded,
-                color: Colors.white,
-                size: 41,
+              Container(
+                width: 82,
+                height: 82,
+
+                decoration: BoxDecoration(
+                  color: _red,
+                  shape: BoxShape.circle,
+
+                  boxShadow: [
+                    BoxShadow(
+                      color: _red
+                          .withOpacity(0.22),
+                      blurRadius: 10,
+                      offset:
+                          const Offset(0, 4),
+                    ),
+                  ],
+                ),
+
+                child: const Icon(
+                  Icons.mic_rounded,
+                  color: Colors.white,
+                  size: 39,
+                ),
               ),
-            ),
+            ],
           ),
+        ),
 
-          const SizedBox(height: 11),
+        const SizedBox(height: 10),
 
-          const Text(
-            'اضغط وسجّل نطقك',
+        const Text(
+          'اضغط وابدأ النطق',
 
-            style: TextStyle(
-              fontFamily: 'Tajawal',
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: _deepPurple,
-            ),
+          style: TextStyle(
+            fontFamily: 'Tajawal',
+            fontSize: 13,
+            color: _deepPurple,
+            fontWeight: FontWeight.w600,
           ),
+        ),
 
-          const SizedBox(height: 4),
+        const SizedBox(height: 3),
 
-          const Text(
-            'لديك محاولة تسجيل واحدة',
+        const Text(
+          'هذه محاولتك الأخيرة لهذه الكلمة',
 
-            style: TextStyle(
-              fontFamily: 'Tajawal',
-              fontSize: 10.5,
-              color: Color(0xFF999999),
-            ),
+          textAlign: TextAlign.center,
+
+          style: TextStyle(
+            fontFamily: 'Tajawal',
+            fontSize: 10.5,
+            color: Color(0xFF999999),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -1149,70 +1306,104 @@ class _ExerciseRecordingRetryScreenState
   // -------------------------------------------------------------------------
 
   Widget _buildRecordingState() {
-    return _actionContainer(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+    return Column(
+      mainAxisAlignment:
+          MainAxisAlignment.center,
 
-        children: [
-          GestureDetector(
-            onTap: _stopRecording,
+      children: [
+        GestureDetector(
+          onTap: _stopRecording,
 
-            child: Container(
-              width: 88,
-              height: 88,
+          child: Stack(
+            alignment: Alignment.center,
 
-              decoration: const BoxDecoration(
-                color: _red,
-                shape: BoxShape.circle,
+            children: [
+              Container(
+                width: 102,
+                height: 102,
+
+                decoration: BoxDecoration(
+                  color:
+                      _red.withOpacity(0.10),
+                  shape: BoxShape.circle,
+                ),
               ),
 
-              child: const Icon(
-                Icons.stop_rounded,
-                color: Colors.white,
-                size: 40,
+              Container(
+                width: 82,
+                height: 82,
+
+                decoration:
+                    const BoxDecoration(
+                  color: _red,
+                  shape: BoxShape.circle,
+                ),
+
+                child: const Icon(
+                  Icons.stop_rounded,
+                  color: Colors.white,
+                  size: 38,
+                ),
               ),
-            ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 10),
+
+        const Text(
+          'جاري تسجيل صوتك...',
+
+          style: TextStyle(
+            fontFamily: 'Tajawal',
+            fontSize: 13,
+            color: _deepPurple,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+
+        const SizedBox(height: 5),
+
+        Container(
+          padding:
+              const EdgeInsets.symmetric(
+            horizontal: 11,
+            vertical: 4,
           ),
 
-          const SizedBox(height: 10),
-
-          const Text(
-            'جاري تسجيل صوتك...',
-
-            style: TextStyle(
-              fontFamily: 'Tajawal',
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: _deepPurple,
+          decoration: BoxDecoration(
+            color: const Color(
+              0xFFFFECEF,
             ),
+
+            borderRadius:
+                BorderRadius.circular(15),
           ),
 
-          const SizedBox(height: 6),
-
-          Text(
+          child: Text(
             '${_recordingTime}ث',
 
             style: const TextStyle(
               fontFamily: 'Tajawal',
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
+              fontSize: 15,
               color: _red,
+              fontWeight: FontWeight.bold,
             ),
           ),
+        ),
 
-          const SizedBox(height: 4),
+        const SizedBox(height: 5),
 
-          const Text(
-            'اضغط زر الإيقاف عند الانتهاء',
+        const Text(
+          'اضغط زر الإيقاف عند الانتهاء',
 
-            style: TextStyle(
-              fontFamily: 'Tajawal',
-              fontSize: 10,
-              color: Color(0xFF999999),
-            ),
+          style: TextStyle(
+            fontFamily: 'Tajawal',
+            fontSize: 9.5,
+            color: Color(0xFF999999),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -1221,56 +1412,77 @@ class _ExerciseRecordingRetryScreenState
   // -------------------------------------------------------------------------
 
   Widget _buildAnalyzingState() {
-    return _actionContainer(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+    return Column(
+      mainAxisAlignment:
+          MainAxisAlignment.center,
 
-        children: [
-          AnimatedBuilder(
-            animation: _spinController,
+      children: [
+        AnimatedBuilder(
+          animation: _spinController,
 
-            builder: (_, __) {
-              return Transform.rotate(
-                angle:
-                    _spinController.value *
-                    2 *
-                    pi,
+          builder: (_, __) {
+            return Transform.rotate(
+              angle:
+                  _spinController.value *
+                  2 *
+                  pi,
 
-                child: const Icon(
-                  Icons.sync_rounded,
-                  size: 58,
-                  color: _red,
+              child: Container(
+                width: 68,
+                height: 68,
+
+                decoration: BoxDecoration(
+                  color: const Color(
+                    0xFFF8F0FF,
+                  ),
+
+                  shape: BoxShape.circle,
+
+                  border: Border.all(
+                    color: _red,
+                    width: 4,
+
+                    strokeAlign:
+                        BorderSide
+                            .strokeAlignInside,
+                  ),
                 ),
-              );
-            },
+
+                child: ClipOval(
+                  child: CustomPaint(
+                    painter: _ArcPainter(),
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+
+        const SizedBox(height: 13),
+
+        const Text(
+          'جاري تحليل نطقك...',
+
+          style: TextStyle(
+            fontFamily: 'Tajawal',
+            fontSize: 14,
+            color: _deepPurple,
+            fontWeight: FontWeight.w600,
           ),
+        ),
 
-          const SizedBox(height: 13),
+        const SizedBox(height: 3),
 
-          const Text(
-            'جاري تحليل نطقك...',
+        const Text(
+          'لحظات قليلة',
 
-            style: TextStyle(
-              fontFamily: 'Tajawal',
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: _deepPurple,
-            ),
+          style: TextStyle(
+            fontFamily: 'Tajawal',
+            fontSize: 10.5,
+            color: Color(0xFF999999),
           ),
-
-          const SizedBox(height: 4),
-
-          const Text(
-            'لحظات قليلة',
-
-            style: TextStyle(
-              fontFamily: 'Tajawal',
-              fontSize: 10.5,
-              color: Color(0xFF999999),
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -1282,118 +1494,126 @@ class _ExerciseRecordingRetryScreenState
     final bool hasSavedRecording =
         _recordedFilePath != null;
 
-    return _actionContainer(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+    return Column(
+      mainAxisAlignment:
+          MainAxisAlignment.center,
 
-        children: [
-          Container(
-            width: 68,
-            height: 68,
+      children: [
+        Container(
+          width: 68,
+          height: 68,
 
-            decoration: const BoxDecoration(
-              color: Color(0xFFFFF0F2),
-              shape: BoxShape.circle,
-            ),
-
-            child: const Icon(
-              Icons.wifi_off_rounded,
-              color: _red,
-              size: 34,
-            ),
+          decoration:
+              const BoxDecoration(
+            color: Color(0xFFFFECEF),
+            shape: BoxShape.circle,
           ),
 
-          const SizedBox(height: 11),
+          child: const Icon(
+            Icons.wifi_off_rounded,
+            color: _red,
+            size: 34,
+          ),
+        ),
+
+        const SizedBox(height: 11),
+
+        const Text(
+          'حدثت مشكلة بسيطة',
+
+          style: TextStyle(
+            fontFamily: 'Tajawal',
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+            color: _deepPurple,
+          ),
+        ),
+
+        const SizedBox(height: 5),
+
+        Text(
+          _technicalErrorMessage ??
+              'تعذر إكمال العملية، حاول مرة أخرى.',
+
+          textAlign: TextAlign.center,
+
+          style: const TextStyle(
+            fontFamily: 'Tajawal',
+            fontSize: 10.5,
+            height: 1.5,
+            color: Color(0xFF777777),
+          ),
+        ),
+
+        const SizedBox(height: 14),
+
+        SizedBox(
+          width: double.infinity,
+
+          child: ElevatedButton.icon(
+            onPressed: hasSavedRecording
+                ? _resendRecording
+                : _retryRecordingAfterLocalError,
+
+            icon: Icon(
+              hasSavedRecording
+                  ? Icons
+                      .cloud_upload_rounded
+                  : Icons.mic_rounded,
+
+              size: 18,
+            ),
+
+            label: Text(
+              hasSavedRecording
+                  ? 'إعادة الإرسال'
+                  : 'تسجيل مرة أخرى',
+
+              style: const TextStyle(
+                fontFamily: 'Tajawal',
+                fontWeight:
+                    FontWeight.w600,
+              ),
+            ),
+
+            style:
+                ElevatedButton.styleFrom(
+              backgroundColor:
+                  _deepPurple,
+
+              foregroundColor:
+                  Colors.white,
+
+              elevation: 0,
+
+              shape:
+                  const StadiumBorder(),
+
+              padding:
+                  const EdgeInsets.symmetric(
+                vertical: 13,
+              ),
+            ),
+          ),
+        ),
+
+        if (hasSavedRecording) ...[
+          const SizedBox(height: 7),
 
           const Text(
-            'حدثت مشكلة تقنية',
-
-            style: TextStyle(
-              fontFamily: 'Tajawal',
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: _deepPurple,
-            ),
-          ),
-
-          const SizedBox(height: 5),
-
-          Text(
-            _technicalErrorMessage ??
-                'تعذر إكمال العملية، حاول مرة أخرى.',
+            'تسجيلك محفوظ، لن تحتاج إلى تسجيل الكلمة مرة أخرى',
 
             textAlign: TextAlign.center,
 
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'Tajawal',
-              fontSize: 10.5,
-              height: 1.5,
-              color: Color(0xFF777777),
+              fontSize: 9.5,
+              color:
+                  Color(0xFF999999),
             ),
           ),
-
-          const SizedBox(height: 14),
-
-          SizedBox(
-            width: double.infinity,
-
-            child: ElevatedButton.icon(
-              onPressed: hasSavedRecording
-                  ? _resendRecording
-                  : _retryRecordingAfterLocalError,
-
-              icon: Icon(
-                hasSavedRecording
-                    ? Icons.cloud_upload_rounded
-                    : Icons.mic_rounded,
-
-                size: 18,
-              ),
-
-              label: Text(
-                hasSavedRecording
-                    ? 'إعادة الإرسال'
-                    : 'تسجيل مرة أخرى',
-
-                style: const TextStyle(
-                  fontFamily: 'Tajawal',
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _deepPurple,
-
-                foregroundColor: Colors.white,
-
-                elevation: 0,
-
-                shape: const StadiumBorder(),
-
-                padding: const EdgeInsets.symmetric(
-                  vertical: 13,
-                ),
-              ),
-            ),
-          ),
-
-          if (hasSavedRecording) ...[
-            const SizedBox(height: 7),
-
-            const Text(
-              'لن تحتاج إلى تسجيل الكلمة مرة أخرى',
-
-              textAlign: TextAlign.center,
-
-              style: TextStyle(
-                fontFamily: 'Tajawal',
-                fontSize: 9.5,
-                color: Color(0xFF999999),
-              ),
-            ),
-          ],
         ],
-      ),
+      ],
     );
   }
 
@@ -1402,140 +1622,161 @@ class _ExerciseRecordingRetryScreenState
   // -------------------------------------------------------------------------
 
   Widget _buildFinishedState() {
-    // Keep the same threshold currently used in the result screen.
     final bool correct =
-    !_finalIsInvalid &&
-    _finalScore >= 80;
+        !_finalIsInvalid &&
+        _finalScore >= 80;
 
     final bool validButIncorrect =
         !_finalIsInvalid &&
         !correct;
 
-    return _actionContainer(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+    return Column(
+      mainAxisAlignment:
+          MainAxisAlignment.center,
 
-        children: [
-          Container(
-            width: 70,
-            height: 70,
+      children: [
+        Container(
+          width: 72,
+          height: 72,
 
-            decoration: BoxDecoration(
-              color: correct
-                  ? const Color(0xFFEAF7EF)
-                  : const Color(0xFFFFECEF),
+          decoration: BoxDecoration(
+            color: correct
+                ? const Color(
+                    0xFFEAF7EF,
+                  )
+                : const Color(
+                    0xFFFFECEF,
+                  ),
 
-              shape: BoxShape.circle,
+            shape: BoxShape.circle,
+          ),
+
+          child: Icon(
+            correct
+                ? Icons
+                    .check_rounded
+                : Icons
+                    .close_rounded,
+
+            color: correct
+                ? const Color(
+                    0xFF67AF82,
+                  )
+                : _red,
+
+            size: 38,
+          ),
+        ),
+
+        const SizedBox(height: 10),
+
+        if (_finalIsInvalid)
+          const Text(
+            'لم نتمكن من تقييم المحاولة',
+
+            textAlign: TextAlign.center,
+
+            style: TextStyle(
+              fontFamily: 'Tajawal',
+              fontSize: 13,
+              fontWeight:
+                  FontWeight.w600,
+              color: _red,
             ),
+          )
+        else ...[
+          Text(
+            '$_finalScore%',
 
-            child: Icon(
-              correct
-                  ? Icons.check_rounded
-                  : Icons.close_rounded,
-
-              color: correct
-                  ? const Color(0xFF67AF82)
-                  : _red,
-
-              size: 37,
+            style: const TextStyle(
+              fontFamily: 'Tajawal',
+              fontSize: 26,
+              fontWeight: FontWeight.w800,
+              color: _deepPurple,
             ),
           ),
 
-          const SizedBox(height: 10),
+          const SizedBox(height: 3),
 
-          if (_finalIsInvalid)
-            const Text(
-              'لم نتمكن من تقييم المحاولة',
+          Text(
+            correct
+                ? 'أحسنت! نطق جميل'
+                : 'استمر في التدريب',
 
-              textAlign: TextAlign.center,
+            style: TextStyle(
+              fontFamily: 'Tajawal',
+              fontSize: 11.5,
+              fontWeight:
+                  FontWeight.w600,
 
-              style: TextStyle(
-                fontFamily: 'Tajawal',
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: _red,
-              ),
-            )
-          else ...[
-            Text(
-              '$_finalScore%',
-
-              style: const TextStyle(
-                fontFamily: 'Tajawal',
-                fontSize: 26,
-                fontWeight: FontWeight.w800,
-                color: _deepPurple,
-              ),
-            ),
-
-            const SizedBox(height: 3),
-
-            Text(
-              correct
-                  ? 'أحسنت! نطق جميل'
-                  : 'استمر في التدريب',
-
-              style: TextStyle(
-                fontFamily: 'Tajawal',
-                fontSize: 11.5,
-                fontWeight: FontWeight.w600,
-                color: correct
-                    ? const Color(0xFF67AF82)
-                    : _red,
-              ),
-            ),
-          ],
-
-          if (validButIncorrect) ...[
-            const SizedBox(height: 4),
-
-            const Text(
-              'هذه محاولتك الأخيرة لهذه الكلمة',
-
-              textAlign: TextAlign.center,
-
-              style: TextStyle(
-                fontFamily: 'Tajawal',
-                fontSize: 9.5,
-                color: Color(0xFF999999),
-              ),
-            ),
-          ],
-
-          const SizedBox(height: 14),
-
-          SizedBox(
-            width: double.infinity,
-
-            child: ElevatedButton(
-              onPressed: _returnToResults,
-
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _red,
-
-                foregroundColor: Colors.white,
-
-                elevation: 0,
-
-                shape: const StadiumBorder(),
-
-                padding: const EdgeInsets.symmetric(
-                  vertical: 13,
-                ),
-              ),
-
-              child: const Text(
-                'العودة للنتائج',
-
-                style: TextStyle(
-                  fontFamily: 'Tajawal',
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+              color: correct
+                  ? const Color(
+                      0xFF67AF82,
+                    )
+                  : _red,
             ),
           ),
         ],
-      ),
+
+        if (validButIncorrect) ...[
+          const SizedBox(height: 4),
+
+          const Text(
+            'انتهت محاولتك لهذه الكلمة',
+
+            textAlign: TextAlign.center,
+
+            style: TextStyle(
+              fontFamily: 'Tajawal',
+              fontSize: 9.5,
+              color:
+                  Color(0xFF999999),
+            ),
+          ),
+        ],
+
+        const SizedBox(height: 14),
+
+        SizedBox(
+          width: double.infinity,
+
+          child: ElevatedButton.icon(
+            onPressed: _returnToResults,
+
+            icon: const Icon(
+              Icons
+                  .arrow_back_rounded,
+              size: 18,
+            ),
+
+            label: const Text(
+              'العودة للنتائج',
+
+              style: TextStyle(
+                fontFamily: 'Tajawal',
+                fontWeight:
+                    FontWeight.w600,
+              ),
+            ),
+
+            style:
+                ElevatedButton.styleFrom(
+              backgroundColor: _red,
+              foregroundColor:
+                  Colors.white,
+              elevation: 0,
+
+              shape:
+                  const StadiumBorder(),
+
+              padding:
+                  const EdgeInsets.symmetric(
+                vertical: 13,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -1544,7 +1785,8 @@ class _ExerciseRecordingRetryScreenState
 // Background
 // ---------------------------------------------------------------------------
 
-class _RetryBackground extends StatelessWidget {
+class _RetryBackground
+    extends StatelessWidget {
   const _RetryBackground();
 
   @override
@@ -1552,32 +1794,46 @@ class _RetryBackground extends StatelessWidget {
     return Stack(
       children: [
         Positioned(
-          top: 60,
+          top: 40,
           right: -55,
 
           child: _circle(
             145,
-            const Color(0xFFDCC9F5).withOpacity(0.18),
+            const Color(0xFFDCC9F5)
+                .withOpacity(0.18),
           ),
         ),
 
         Positioned(
-          top: 350,
+          top: 240,
           left: -55,
 
           child: _circle(
             145,
-            const Color(0xFFDDF2E3).withOpacity(0.25),
+            const Color(0xFFDDF2E3)
+                .withOpacity(0.26),
           ),
         ),
 
         Positioned(
-          top: 650,
+          top: 500,
           right: -45,
 
           child: _circle(
             115,
-            const Color(0xFFFFDCE3).withOpacity(0.23),
+            const Color(0xFFFFDCE3)
+                .withOpacity(0.24),
+          ),
+        ),
+
+        Positioned(
+          top: 710,
+          left: 25,
+
+          child: _circle(
+            21,
+            const Color(0xFFD4BDEA)
+                .withOpacity(0.35),
           ),
         ),
       ],
@@ -1598,4 +1854,401 @@ class _RetryBackground extends StatelessWidget {
       ),
     );
   }
+}
+
+// ---------------------------------------------------------------------------
+// Cute pronunciation character
+// ---------------------------------------------------------------------------
+
+class _CutePronunciationCharacter
+    extends StatelessWidget {
+  const _CutePronunciationCharacter();
+
+  @override
+  Widget build(BuildContext context) {
+    const Color faceColor =
+        Color(0xFFFFDCE7);
+
+    const Color purple =
+        Color(0xFF8B55B3);
+
+    const Color pink =
+        Color(0xFFFF96AC);
+
+    return Stack(
+      alignment: Alignment.center,
+      clipBehavior: Clip.none,
+
+      children: [
+        // Right ear
+        Positioned(
+          top: 0,
+          right: 11,
+
+          child: Container(
+            width: 18,
+            height: 35,
+
+            decoration: BoxDecoration(
+              color: faceColor,
+
+              borderRadius:
+                  BorderRadius.circular(18),
+            ),
+
+            child: Center(
+              child: Container(
+                width: 7,
+                height: 22,
+
+                decoration: BoxDecoration(
+                  color:
+                      pink.withOpacity(0.48),
+
+                  borderRadius:
+                      BorderRadius.circular(
+                    10,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+
+        // Left ear
+        Positioned(
+          top: 0,
+          left: 11,
+
+          child: Container(
+            width: 18,
+            height: 35,
+
+            decoration: BoxDecoration(
+              color: faceColor,
+
+              borderRadius:
+                  BorderRadius.circular(18),
+            ),
+
+            child: Center(
+              child: Container(
+                width: 7,
+                height: 22,
+
+                decoration: BoxDecoration(
+                  color:
+                      pink.withOpacity(0.48),
+
+                  borderRadius:
+                      BorderRadius.circular(
+                    10,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+
+        // Body
+        Positioned(
+          bottom: 0,
+
+          child: Container(
+            width: 44,
+            height: 27,
+
+            decoration:
+                const BoxDecoration(
+              color: purple,
+
+              borderRadius:
+                  BorderRadius.only(
+                topLeft:
+                    Radius.circular(22),
+                topRight:
+                    Radius.circular(22),
+                bottomLeft:
+                    Radius.circular(9),
+                bottomRight:
+                    Radius.circular(9),
+              ),
+            ),
+          ),
+        ),
+
+        // Head
+        Positioned(
+          top: 25,
+
+          child: Container(
+            width: 56,
+            height: 52,
+
+            decoration: BoxDecoration(
+              color: faceColor,
+
+              borderRadius:
+                  BorderRadius.circular(26),
+
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black
+                      .withOpacity(0.04),
+
+                  blurRadius: 4,
+
+                  offset:
+                      const Offset(0, 2),
+                ),
+              ],
+            ),
+
+            child: Stack(
+              children: [
+                // Eyes
+                Positioned(
+                  top: 18,
+                  right: 13,
+
+                  child: Container(
+                    width: 6,
+                    height: 7,
+
+                    decoration:
+                        const BoxDecoration(
+                      color: Color(
+                        0xFF4D3855,
+                      ),
+
+                      shape:
+                          BoxShape.circle,
+                    ),
+                  ),
+                ),
+
+                Positioned(
+                  top: 18,
+                  left: 13,
+
+                  child: Container(
+                    width: 6,
+                    height: 7,
+
+                    decoration:
+                        const BoxDecoration(
+                      color: Color(
+                        0xFF4D3855,
+                      ),
+
+                      shape:
+                          BoxShape.circle,
+                    ),
+                  ),
+                ),
+
+                // Cheeks
+                Positioned(
+                  top: 30,
+                  right: 6,
+
+                  child: Container(
+                    width: 9,
+                    height: 5,
+
+                    decoration: BoxDecoration(
+                      color:
+                          pink.withOpacity(
+                        0.45,
+                      ),
+
+                      borderRadius:
+                          BorderRadius
+                              .circular(
+                        10,
+                      ),
+                    ),
+                  ),
+                ),
+
+                Positioned(
+                  top: 30,
+                  left: 6,
+
+                  child: Container(
+                    width: 9,
+                    height: 5,
+
+                    decoration: BoxDecoration(
+                      color:
+                          pink.withOpacity(
+                        0.45,
+                      ),
+
+                      borderRadius:
+                          BorderRadius
+                              .circular(
+                        10,
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Nose
+                Positioned(
+                  top: 26,
+                  left: 24,
+
+                  child: Container(
+                    width: 7,
+                    height: 5,
+
+                    decoration:
+                        const BoxDecoration(
+                      color: Color(
+                        0xFFFF7890,
+                      ),
+
+                      shape:
+                          BoxShape.circle,
+                    ),
+                  ),
+                ),
+
+                // Smile
+                Positioned(
+                  top: 32,
+                  left: 20,
+
+                  child: Container(
+                    width: 16,
+                    height: 7,
+
+                    decoration:
+                        const BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(
+                          color: Color(
+                            0xFF4D3855,
+                          ),
+                          width: 1.4,
+                        ),
+                      ),
+
+                      borderRadius:
+                          BorderRadius.only(
+                        bottomLeft:
+                            Radius.circular(
+                          10,
+                        ),
+                        bottomRight:
+                            Radius.circular(
+                          10,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        // Tiny microphone
+        Positioned(
+          right: 0,
+          bottom: 7,
+
+          child: Transform.rotate(
+            angle: -0.25,
+
+            child: Column(
+              children: [
+                Container(
+                  width: 10,
+                  height: 17,
+
+                  decoration: BoxDecoration(
+                    color:
+                        const Color(
+                      0xFFFF6969,
+                    ),
+
+                    borderRadius:
+                        BorderRadius.circular(
+                      7,
+                    ),
+                  ),
+                ),
+
+                Container(
+                  width: 3,
+                  height: 7,
+                  color:
+                      const Color(
+                    0xFF745183,
+                  ),
+                ),
+
+                Container(
+                  width: 10,
+                  height: 2,
+
+                  decoration: BoxDecoration(
+                    color:
+                        const Color(
+                      0xFF745183,
+                    ),
+
+                    borderRadius:
+                        BorderRadius.circular(
+                      3,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Spinner
+// ---------------------------------------------------------------------------
+
+class _ArcPainter extends CustomPainter {
+  @override
+  void paint(
+    Canvas canvas,
+    Size size,
+  ) {
+    final paint = Paint()
+      ..color =
+          const Color(0xFFFF6969)
+      ..strokeWidth = 4
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    canvas.drawArc(
+      Rect.fromLTWH(
+        0,
+        0,
+        size.width,
+        size.height,
+      ),
+      -pi / 2,
+      3 * pi / 2,
+      false,
+      paint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(
+    covariant CustomPainter oldDelegate,
+  ) =>
+      false;
 }

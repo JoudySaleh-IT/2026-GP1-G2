@@ -15,6 +15,29 @@ class ExerciseRecordingResultScreen extends StatefulWidget {
 
 class _ExerciseRecordingResultScreenState
     extends State<ExerciseRecordingResultScreen> {
+      int _getNextRetryIndex() {
+  for (int i = 0; i < _questions.length; i++) {
+    final question = _questions[i];
+
+    final int score =
+        (question['score'] as num?)?.round() ?? 0;
+
+    final bool isInvalid =
+        question['isInvalid'] == true;
+
+    final bool retryUsed =
+        question['retryUsed'] == true;
+
+    final bool needsRetry =
+        isInvalid || score < 80;
+
+    if (needsRetry && !retryUsed) {
+      return i;
+    }
+  }
+
+  return -1;
+}
   bool _initialized = false;
 
   String _childId = '';
@@ -225,6 +248,10 @@ final int pct = ((score / total) * 100).round();
 
     // نفس حساب النقاط
     final int pts = score * 10;
+    final int nextRetryIndex = _getNextRetryIndex();
+
+final bool hasPendingRetry =
+    nextRetryIndex != -1;
 
     // نفس حساب النجوم
     final int stars = pct >= 90
@@ -234,8 +261,27 @@ final int pct = ((score / total) * 100).round();
         : 1;
 
     return Directionality(
-      textDirection: TextDirection.rtl,
-      child: Scaffold(
+  textDirection: TextDirection.rtl,
+  child: PopScope(
+    canPop: !hasPendingRetry,
+
+    onPopInvokedWithResult: (didPop, result) {
+      if (!didPop && hasPendingRetry) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'أكمل محاولاتك لنحسب نتيجتك',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: 'Tajawal',
+              ),
+            ),
+          ),
+        );
+      }
+    },
+
+    child: Scaffold(
         backgroundColor: const Color(0xFFFCF9EA),
 
         body: Column(
@@ -298,23 +344,36 @@ final int pct = ((score / total) * 100).round();
                             width: double.infinity,
 
                             child: ElevatedButton.icon(
-                              onPressed: () =>
-                                  Navigator.pushNamedAndRemoveUntil(
-                                    context,
-                                    '/child/home',
-                                    (r) => false,
-                                    arguments: _childId,
-                                  ),
+                              onPressed: () {
+  if (hasPendingRetry) {
+    _retryQuestion(nextRetryIndex);
+    return;
+  }
 
-                              icon: const Icon(Icons.home_rounded, size: 18),
+  Navigator.pushNamedAndRemoveUntil(
+    context,
+    '/child/home',
+    (r) => false,
+    arguments: _childId,
+  );
+},
 
-                              label: const Text(
-                                'العودة للرئيسية',
-                                style: TextStyle(
-                                  fontFamily: 'Tajawal',
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
+icon: Icon(
+  hasPendingRetry
+      ? Icons.refresh_rounded
+      : Icons.home_rounded,
+  size: 18,
+),
+
+label: Text(
+  hasPendingRetry
+      ? 'أكمل المحاولات'
+      : 'العودة للرئيسية',
+  style: const TextStyle(
+    fontFamily: 'Tajawal',
+    fontWeight: FontWeight.w600,
+  ),
+),
 
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFFFF6969),
@@ -339,10 +398,11 @@ final int pct = ((score / total) * 100).round();
               ),
             ),
           ],
-        ),
+              ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   // -------------------------------------------------------------------------
   // Details Card

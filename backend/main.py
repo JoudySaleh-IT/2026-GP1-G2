@@ -10,6 +10,7 @@ from firebase_admin import credentials, storage
 from scipy import signal
 from transformers import Wav2Vec2ForCTC, Wav2Vec2Processor
 import torch
+import webrtcvad
 
 
 def levenshtein_distance(a, b):
@@ -48,7 +49,59 @@ def normalize_arabic_text(text):
     text = ' '.join(text.split())
 
     return text.strip()
+def contains_speech(
+    audio,
+    sample_rate=16000,
+    mode=0,
+    frame_duration_ms=10,
+    min_speech_frames=2
+):
+    """
+    Detect whether the recording contains human speech.
 
+    This configuration is intentionally permissive because
+    Faseh contains very short Arabic words such as "خس" and "مخ".
+    """
+
+    vad = webrtcvad.Vad(mode)
+
+    # Convert librosa float audio (-1.0 to 1.0)
+    # into 16-bit PCM required by WebRTC VAD.
+    audio = np.clip(audio, -1.0, 1.0)
+
+    pcm_audio = (
+        audio * 32767
+    ).astype(np.int16)
+
+    frame_size = int(
+        sample_rate * frame_duration_ms / 1000
+    )
+
+    speech_frames = 0
+
+    for start in range(
+        0,
+        len(pcm_audio) - frame_size + 1,
+        frame_size
+    ):
+        frame = pcm_audio[
+            start:start + frame_size
+        ]
+
+        frame_bytes = frame.tobytes()
+
+        if vad.is_speech(
+            frame_bytes,
+            sample_rate
+        ):
+            speech_frames += 1
+
+            # Only 2 × 10 ms = 20 ms of detected speech
+            # is enough to accept the recording.
+            if speech_frames >= min_speech_frames:
+                return True
+
+    return False
 
 app = FastAPI()
 
@@ -92,19 +145,17 @@ async def process_audio(
 
         # -------------------------------------------------
         # Validation Rule 1:
-        # Recording is too short
+        # Voice Activity Detection
         # -------------------------------------------------
 
-        duration = librosa.get_duration(
-            y=y,
-            sr=sr
-        )
-
-        if duration < 0.2:
+        if not contains_speech(
+            y,
+            sample_rate=sr
+        ):
             return {
                 "status": "invalid_audio",
-                "reason": "too_short",
-                "message": "Recording is too short."
+                "reason": "no_speech",
+                "message": "No speech detected."
             }
 
         # High-pass filter
@@ -127,17 +178,7 @@ async def process_audio(
             top_db=35
         )
 
-        # -------------------------------------------------
-        # Validation Rule 2:
-        # No speech detected
-        # -------------------------------------------------
-
-        if len(y_trimmed) == 0:
-            return {
-                "status": "invalid_audio",
-                "reason": "no_speech",
-                "message": "No speech detected."
-            }
+        
 
         # If trimming leaves less than 0.2 seconds,
         # use the original filtered recording instead
