@@ -473,6 +473,191 @@ label: Text(
                               ),
                             ),
                           ),
+if (hasPendingRetry) ...[
+  const SizedBox(height: 10),
+
+  SizedBox(
+    width: double.infinity,
+    child: OutlinedButton.icon(
+      onPressed: () {
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (dialogContext) {
+      return Directionality(
+        textDirection: TextDirection.rtl,
+        child: Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 28),
+
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(22, 24, 22, 20),
+
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFFCF7),
+              borderRadius: BorderRadius.circular(30),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.10),
+                  blurRadius: 18,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Sad Bunny
+                const SizedBox(
+                  width: 105,
+                  height: 125,
+                  child: _SadCuteBunny(),
+                ),
+
+                const SizedBox(height: 12),
+
+                // Title
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF4EAFB),
+                    borderRadius: BorderRadius.circular(22),
+                  ),
+                  child: const Text(
+                    'لحظة! لا تروح',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontFamily: 'Tajawal',
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF511281),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 14),
+
+                // Warning
+                const Text(
+                  'إذا رجعت للتمارين الآن،\nبتبدأ تمرين النطق من جديد.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'Tajawal',
+                    fontSize: 13,
+                    height: 1.6,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF777777),
+                  ),
+                ),
+
+                const SizedBox(height: 22),
+
+                // Continue retries
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(dialogContext);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFFF6969),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: const StadiumBorder(),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 14,
+                      ),
+                    ),
+                    child: const Text(
+                      'أكمل المحاولات',
+                      style: TextStyle(
+                        fontFamily: 'Tajawal',
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 9),
+
+                // Leave exercise
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: () {
+                      Navigator.pop(dialogContext);
+
+                      // العودة بدون حفظ محاولة النطق الحالية
+                      Navigator.pushNamedAndRemoveUntil(
+                        context,
+                        '/child/letter-levels',
+                        (route) =>
+                            route.settings.name == '/child/exercises',
+                        arguments: {
+                          'letter': _letter,
+                          'childId': _childId,
+                        },
+                      );
+                    },
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF511281),
+                      side: const BorderSide(
+                        color: Color(0xFF511281),
+                        width: 1.3,
+                      ),
+                      shape: const StadiumBorder(),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 13,
+                      ),
+                    ),
+                    child: const Text(
+                      'العودة للتمارين',
+                      style: TextStyle(
+                        fontFamily: 'Tajawal',
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    },
+  );
+},
+      icon: const Icon(
+        Icons.arrow_back_rounded,
+        size: 18,
+      ),
+      label: const Text(
+        'العودة للتمارين',
+        style: TextStyle(
+          fontFamily: 'Tajawal',
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: const Color(0xFF511281),
+        side: const BorderSide(
+          color: Color(0xFF511281),
+          width: 1.3,
+        ),
+        shape: const StadiumBorder(),
+        padding: const EdgeInsets.symmetric(
+          vertical: 14,
+        ),
+      ),
+    ),
+  ),
+],
                         ],
                       ),
                     ),
@@ -1609,7 +1794,271 @@ class _SimpleCuteBunny extends StatelessWidget {
     );
   }
 }
+// ---------------------------------------------------------------------------
+// SAD BUNNY
+// ---------------------------------------------------------------------------
 
+class _SadCuteBunny extends StatelessWidget {
+  const _SadCuteBunny();
+
+  @override
+  Widget build(BuildContext context) {
+    const Color faceColor = Color(0xFFFFDCE7);
+    const Color bodyColor = Color(0xFF8B55B3);
+    const Color darkColor = Color(0xFF4D3855);
+
+    return Stack(
+      alignment: Alignment.center,
+      clipBehavior: Clip.none,
+      children: [
+        // Right Ear
+        Positioned(
+          top: 0,
+          right: 17,
+          child: Transform.rotate(
+            angle: 0.15,
+            child: Container(
+              width: 22,
+              height: 43,
+              decoration: BoxDecoration(
+                color: faceColor,
+                borderRadius: BorderRadius.circular(22),
+              ),
+              child: Center(
+                child: Container(
+                  width: 8,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFA1B7).withOpacity(0.55),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+
+        // Left Ear
+        Positioned(
+          top: 0,
+          left: 17,
+          child: Transform.rotate(
+            angle: -0.15,
+            child: Container(
+              width: 22,
+              height: 43,
+              decoration: BoxDecoration(
+                color: faceColor,
+                borderRadius: BorderRadius.circular(22),
+              ),
+              child: Center(
+                child: Container(
+                  width: 8,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFA1B7).withOpacity(0.55),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+
+        // Body
+        Positioned(
+          bottom: 0,
+          child: Container(
+            width: 55,
+            height: 37,
+            decoration: const BoxDecoration(
+              color: bodyColor,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(28),
+                topRight: Radius.circular(28),
+                bottomLeft: Radius.circular(15),
+                bottomRight: Radius.circular(15),
+              ),
+            ),
+          ),
+        ),
+
+        // Head
+        Positioned(
+          top: 34,
+          child: Container(
+            width: 76,
+            height: 70,
+            decoration: BoxDecoration(
+              color: faceColor,
+              borderRadius: BorderRadius.circular(35),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 5,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Stack(
+              children: [
+                // Sad eyebrows
+                Positioned(
+                  top: 15,
+                  right: 15,
+                  child: Transform.rotate(
+                    angle: -0.25,
+                    child: Container(
+                      width: 13,
+                      height: 2,
+                      decoration: BoxDecoration(
+                        color: darkColor,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                  ),
+                ),
+
+                Positioned(
+                  top: 15,
+                  left: 15,
+                  child: Transform.rotate(
+                    angle: 0.25,
+                    child: Container(
+                      width: 13,
+                      height: 2,
+                      decoration: BoxDecoration(
+                        color: darkColor,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Eyes
+                Positioned(
+                  top: 26,
+                  right: 18,
+                  child: Container(
+                    width: 10,
+                    height: 12,
+                    decoration: const BoxDecoration(
+                      color: darkColor,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+
+                Positioned(
+                  top: 26,
+                  left: 18,
+                  child: Container(
+                    width: 10,
+                    height: 12,
+                    decoration: const BoxDecoration(
+                      color: darkColor,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+
+                // Eye shine
+                Positioned(
+                  top: 28,
+                  right: 20,
+                  child: Container(
+                    width: 3,
+                    height: 3,
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+
+                Positioned(
+                  top: 28,
+                  left: 20,
+                  child: Container(
+                    width: 3,
+                    height: 3,
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+
+                // Cheeks
+                Positioned(
+                  top: 43,
+                  right: 8,
+                  child: Container(
+                    width: 12,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFF96AC).withOpacity(0.45),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+
+                Positioned(
+                  top: 43,
+                  left: 8,
+                  child: Container(
+                    width: 12,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFF96AC).withOpacity(0.45),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+
+                // Nose
+                Positioned(
+                  top: 39,
+                  left: 34,
+                  child: Container(
+                    width: 8,
+                    height: 6,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFFF7890),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+
+                // Sad mouth :(
+                Positioned(
+                  top: 51,
+                  left: 30,
+                  child: Container(
+                    width: 16,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      border: Border(
+                        top: BorderSide(
+                          color: darkColor,
+                          width: 1.5,
+                        ),
+                      ),
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(10),
+                        topRight: Radius.circular(10),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
 // ---------------------------------------------------------------------------
 // Default fallback data
 // بدون تغيير
