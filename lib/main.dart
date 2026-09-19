@@ -30,10 +30,59 @@ import 'firebase_options.dart';
 import 'screens/child_enter_code_screen.dart';
 import 'services/childSession.dart';
 import 'services/notification_service.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'screens/friend_requests_screen.dart';
 
+final GlobalKey<NavigatorState> navigatorKey =
+    GlobalKey<NavigatorState>();
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  final messaging = FirebaseMessaging.instance;
+
+  final settings = await messaging.requestPermission(
+    alert: true,
+    badge: true,
+    sound: true,
+  );
+
+  print('🔔 Permission: ${settings.authorizationStatus}');
+
+  final fcmToken = await messaging.getToken();
+
+  print('🔥 FCM TOKEN: $fcmToken');
+
+// إذا ضغط الطفل على الإشعار والتطبيق كان بالخلفية
+FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+  if (message.data['type'] == 'friend_request') {
+    navigatorKey.currentState?.pushNamed(
+      '/child/friend-requests',
+      arguments: {
+        'childId': message.data['receiverId'],
+      },
+    );
+  }
+});
+final RemoteMessage? initialMessage =
+    await FirebaseMessaging.instance.getInitialMessage();
+
+runApp(MyApp());
+
+if (initialMessage != null &&
+    initialMessage.data['type'] == 'friend_request') {
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    navigatorKey.currentState?.pushNamed(
+      '/child/friend-requests',
+      arguments: {
+        'childId': initialMessage.data['receiverId'],
+      },
+    );
+  });
+}
   runApp(MyApp());
 }
 
@@ -53,6 +102,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+        navigatorKey: navigatorKey,
       title: 'فصيح',
       scaffoldMessengerKey: rootScaffoldMessengerKey,
       scrollBehavior: NoStretchScrollBehavior(),
@@ -101,6 +151,20 @@ class MyApp extends StatelessWidget {
         },
 
         // ─── مسارات الطفل (Child Routes) ───
+        '/child/friend-requests': (context) {
+  final args = ModalRoute.of(context)!.settings.arguments;
+  final String? id = args is String
+      ? args
+      : (args as Map?)?['childId'] ?? ChildSession.currentChildId;
+
+  if (id == null || id.isEmpty) {
+    return const SplashScreen();
+  }
+
+  return FriendRequestsScreen(
+    childId: id,
+  );
+},
         '/child/home': (context) {
           final args = ModalRoute.of(context)!.settings.arguments;
           // Check arguments first, then check our global ChildSession as a backup

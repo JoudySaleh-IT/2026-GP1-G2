@@ -7,7 +7,9 @@ import '/services/ChildSession.dart';
 import 'style_constants.dart';
 import '../services/notification_service.dart';
 import '../services/friend_service.dart';
+import '../services/fcm_service.dart';
 import '../widgets/child_bottom_nav.dart';
+import 'notifications_screen.dart';
 
 // ─── Mock Data ───────────────────────────────────────────────────────────────
 const _mockChild = (
@@ -59,7 +61,12 @@ class ChildHomeScreen extends StatelessWidget {
             ),
             ElevatedButton(
               onPressed: () async {
+                
                 try {
+                  print('🚨 HOME SEND BUTTON PRESSED');
+                  print('🚨 enteredId: $enteredId');
+                  print('🚨 childId: $childId');
+
                   await FriendService().sendFriendRequestByFasehId(
                     currentChildId: childId,
                     enteredFasehId: enteredId,
@@ -129,6 +136,7 @@ class ChildHomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    FcmService().saveTokenForChild(childId);
     return StreamBuilder<DocumentSnapshot>(
       stream: FirebaseFirestore.instance
           .collection('children')
@@ -232,6 +240,7 @@ class ChildHomeScreen extends StatelessWidget {
                 // ============================================================
                 _ChildHeader(
                   name: data['name'] ?? 'بطل فصيح',
+                   childId: childId,
                   avatar: data['avatar'] ?? '🦁',
                   level: hasCompletedPlacement
                       ? (data['level'] ?? 'مبتدئ')
@@ -358,11 +367,13 @@ class ChildHomeScreen extends StatelessWidget {
 // Header
 // ─────────────────────────────────────────────────────────────────────────────
 class _ChildHeader extends StatelessWidget {
+  final String childId;
   final String name;
   final String avatar;
   final String level;
 
   const _ChildHeader({
+    required this.childId,
     required this.name,
     required this.avatar,
     required this.level,
@@ -490,6 +501,75 @@ class _ChildHeader extends StatelessWidget {
       ),
 
       trailingActions: [
+        StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+  stream: FirebaseFirestore.instance
+      .collection('notifications')
+      .where('receiverId', isEqualTo: childId)
+      .where('isRead', isEqualTo: false)
+      .snapshots(),
+  builder: (context, snapshot) {
+    final unreadCount = snapshot.data?.docs.length ?? 0;
+
+    return SizedBox(
+      width: 48,
+      height: 48,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Center(
+            child: IconButton(
+              icon: const Icon(
+                Icons.notifications_rounded,
+                color: Colors.white,
+                size: 26,
+              ),
+              onPressed: () {
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => NotificationsScreen(
+        childId: childId,
+      ),
+    ),
+  );
+},
+            ),
+          ),
+
+          if (unreadCount > 0)
+            Positioned(
+              top: 4,
+              right: 4,
+              child: Container(
+                constraints: const BoxConstraints(
+                  minWidth: 18,
+                  minHeight: 18,
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 5,
+                  vertical: 2,
+                ),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFF6969),
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Text(
+                    unreadCount > 9 ? '9+' : '$unreadCount',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  },
+),
         SizedBox(
           width: 48,
           height: 48,

@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 
 import 'faseh_id_service.dart';
 
@@ -28,6 +29,9 @@ class FriendService {
     // ─── 2. Normalize entered Faseh ID ───
     final String fasehId =
         _fasehIdService.normalizeFasehId(enteredFasehId);
+        print('🟣 enteredFasehId = "$enteredFasehId"');
+print('🟣 normalized fasehId = "$fasehId"');
+print('🟣 currentChildId = "$currentChildId"');
 
     if (fasehId.isEmpty) {
       throw Exception('INVALID_FASEH_ID');
@@ -67,6 +71,12 @@ class FriendService {
         .collection('child_public_profiles')
         .doc(receiverId);
 
+    // Notification for the receiver
+    final notificationRef =
+       _db.collection('notifications').doc();    
+       print('🔔 NOTIFICATION CODE REACHED');
+print('🔔 notificationId: ${notificationRef.id}');
+
     await _db.runTransaction((transaction) async {
       print('========== FRIEND REQUEST DEBUG ==========');
 print('authUid: ${user.uid}');
@@ -105,7 +115,41 @@ print('==========================================');
     'receiverId': receiverId,
     'createdAt': FieldValue.serverTimestamp(),
   });
+  print('🔔 CREATING NOTIFICATION');
+  // WRITE: Notification
+transaction.set(notificationRef, {
+  'receiverId': receiverId,
+  'senderId': currentChildId,
+  'type': 'friend_request',
+  'referenceId': pairId,
+  'isRead': false,
+  'createdAt': FieldValue.serverTimestamp(),
 });
+
+});
+// Send external push notification
+try {
+  final functions = FirebaseFunctions.instanceFor(
+    region: 'us-central1',
+  );
+
+  final callable = functions.httpsCallable(
+    'sendPushNotification',
+  );
+
+  final result = await callable.call({
+    'receiverId': receiverId,
+    'senderId': currentChildId,
+    'type': 'friend_request',
+    'referenceId': pairId,
+  });
+
+  print('🔔 PUSH RESULT: ${result.data}');
+} catch (e) {
+  // The friend request is already saved,
+  // so push failure should not cancel it.
+  print('❌ PUSH ERROR: $e');
+}
   }
 Future<void> acceptFriendRequest({
   required String currentChildId,
