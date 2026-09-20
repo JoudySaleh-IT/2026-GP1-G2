@@ -59,7 +59,61 @@ class NotificationsScreen extends StatelessWidget {
     // practice_invitation
     // بنربطه لاحقًا بشاشة Practice Together
   }
+String _formatNotificationTime(Timestamp? timestamp) {
+  if (timestamp == null) return '';
 
+  final DateTime createdAt = timestamp.toDate();
+  final DateTime now = DateTime.now();
+
+  final Duration difference = now.difference(createdAt);
+
+  if (difference.inSeconds < 60) {
+    final seconds = difference.inSeconds;
+
+    if (seconds <= 5) {
+      return 'الآن';
+    }
+
+    return 'منذ $seconds ثانية';
+  }
+
+  if (difference.inMinutes < 60) {
+    final minutes = difference.inMinutes;
+
+    if (minutes == 1) {
+      return 'منذ دقيقة';
+    }
+
+    return 'منذ $minutes دقائق';
+  }
+
+  if (difference.inHours < 24) {
+    final hours = difference.inHours;
+
+    if (hours == 1) {
+      return 'منذ ساعة';
+    }
+
+    return 'منذ $hours ساعات';
+  }
+
+  const months = [
+    'يناير',
+    'فبراير',
+    'مارس',
+    'أبريل',
+    'مايو',
+    'يونيو',
+    'يوليو',
+    'أغسطس',
+    'سبتمبر',
+    'أكتوبر',
+    'نوفمبر',
+    'ديسمبر',
+  ];
+
+  return '${createdAt.day} ${months[createdAt.month - 1]} ${createdAt.year}';
+}
   @override
   Widget build(BuildContext context) {
     return Directionality(
@@ -155,8 +209,32 @@ class NotificationsScreen extends StatelessWidget {
                     );
                   }
 
-                  final notifications =
-                      snapshot.data?.docs.toList() ?? [];
+                  final allNotifications =
+    snapshot.data?.docs.toList() ?? [];
+
+final sevenDaysAgo =
+    DateTime.now().subtract(const Duration(days: 7));
+
+final notifications = allNotifications.where((notification) {
+  final data = notification.data();
+
+  final bool isRead = data['isRead'] == true;
+  final Timestamp? createdAt =
+      data['createdAt'] as Timestamp?;
+
+  // الإشعار غير المقروء يبقى مهما كان عمره
+  if (!isRead) {
+    return true;
+  }
+
+  // احتياطًا: إذا ما عنده تاريخ نخليه ظاهر
+  if (createdAt == null) {
+    return true;
+  }
+
+  // المقروء يظهر فقط إذا عمره أقل من 7 أيام
+  return createdAt.toDate().isAfter(sevenDaysAgo);
+}).toList();
 
                   // Newest first
                   notifications.sort((a, b) {
@@ -219,6 +297,12 @@ class NotificationsScreen extends StatelessWidget {
                           final isRead =
                               data['isRead'] == true;
 
+                              final createdAt =
+    data['createdAt'] as Timestamp?;
+
+final timeText =
+    _formatNotificationTime(createdAt);
+
                           return FutureBuilder<
                               Map<String, dynamic>?>(
                             future: _getSenderProfile(senderId),
@@ -244,6 +328,8 @@ class NotificationsScreen extends StatelessWidget {
                                 avatar: avatar,
                                 type: type,
                                 isRead: isRead,
+                                timeText: timeText,
+
                                 onTap: () {
                                   _openNotification(
                                     context,
@@ -277,6 +363,7 @@ class _NotificationCard extends StatelessWidget {
   final String type;
   final bool isRead;
   final VoidCallback onTap;
+  final String timeText;
 
   const _NotificationCard({
     required this.name,
@@ -284,6 +371,7 @@ class _NotificationCard extends StatelessWidget {
     required this.type,
     required this.isRead,
     required this.onTap,
+    required this.timeText,
   });
 
   @override
@@ -432,16 +520,40 @@ class _NotificationCard extends StatelessWidget {
                     const SizedBox(height: 4),
 
                     Text(
-                      message,
-                      textAlign: TextAlign.right,
-                      style: const TextStyle(
-                        fontFamily: 'Tajawal',
-                        fontSize: 11.5,
-                        color: Color(0xFF808080),
-                      ),
-                    ),
+  message,
+  textAlign: TextAlign.right,
+  style: const TextStyle(
+    fontFamily: 'Tajawal',
+    fontSize: 11.5,
+    color: Color(0xFF808080),
+  ),
+),
 
-                    const SizedBox(height: 7),
+const SizedBox(height: 5),
+
+if (timeText.isNotEmpty)
+  Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      const Icon(
+        Icons.access_time_rounded,
+        size: 12,
+        color: Color(0xFFA9A0AE),
+      ),
+      const SizedBox(width: 4),
+      Text(
+        timeText,
+        style: const TextStyle(
+          fontFamily: 'Tajawal',
+          fontSize: 9.5,
+          fontWeight: FontWeight.w500,
+          color: Color(0xFFA9A0AE),
+        ),
+      ),
+    ],
+  ),
+
+const SizedBox(height: 7),
 
                     Container(
                       padding: const EdgeInsets.symmetric(
@@ -481,13 +593,7 @@ class _NotificationCard extends StatelessWidget {
                 ),
               ),
 
-              const SizedBox(width: 6),
-
-              const Icon(
-                Icons.chevron_left_rounded,
-                color: Color(0xFFB7A9C0),
-                size: 22,
-              ),
+              
             ],
           ),
         ),

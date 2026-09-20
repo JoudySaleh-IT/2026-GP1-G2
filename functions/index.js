@@ -1,5 +1,6 @@
 const {setGlobalOptions} = require("firebase-functions");
 const {onCall, HttpsError} = require("firebase-functions/v2/https");
+const {onSchedule} = require("firebase-functions/v2/scheduler");
 const logger = require("firebase-functions/logger");
 const admin = require("firebase-admin");
 
@@ -101,3 +102,41 @@ exports.sendPushNotification = onCall(async (request) => {
     );
   }
 });
+
+exports.cleanupOldNotifications = onSchedule(
+    {
+      schedule: "every day 00:00",
+      timeZone: "Asia/Riyadh",
+      region: "us-central1",
+    },
+    async () => {
+      const db = admin.firestore();
+
+      const sevenDaysAgo = admin.firestore.Timestamp.fromDate(
+          new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+      );
+
+      const snapshot = await db
+          .collection("notifications")
+          .where("isRead", "==", true)
+          .where("createdAt", "<=", sevenDaysAgo)
+          .get();
+
+      if (snapshot.empty) {
+        logger.info("No old notifications to delete.");
+        return;
+      }
+
+      const batch = db.batch();
+
+      snapshot.docs.forEach((doc) => {
+        batch.delete(doc.ref);
+      });
+
+      await batch.commit();
+
+      logger.info(
+          `Deleted ${snapshot.size} old notifications.`,
+      );
+    },
+);
