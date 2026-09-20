@@ -79,5 +79,10 @@ flutter:
     - assets/images/listening/seen_listening/intermediate/
     - assets/images/listening/seen_listening/advanced/
 
+    - assets/audio/dad/
+    - assets/audio/dad/beginner/
+    - assets/audio/dad/intermediate/
+    - assets/audio/dad/advanced/
+
     - assets/data/
    

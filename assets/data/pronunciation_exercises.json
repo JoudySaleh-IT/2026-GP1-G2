@@ -726,6 +726,248 @@
   "targetWord": "أساتذة",
   "imagePath": "assets/images/word_bank/seen_a_08_asatidah.png",
   "audioPath": "audio/seen/advanced/seen_a_08.mp3"
+},
+{
+  "id": "dad_b_01",
+  "letter": "ض",
+  "level": "beginner",
+  "order": 1,
+  "displayWord": "ضَبُع",
+  "targetWord": "ضبع",
+  "imagePath": "assets/images/word_bank/dad_b_01_dab.png",
+  "audioPath": "audio/dad/beginner/dad_b_01.mp3"
+},
+{
+  "id": "dad_b_02",
+  "letter": "ض",
+  "level": "beginner",
+  "order": 2,
+  "displayWord": "ضَوْء",
+  "targetWord": "ضوء",
+  "imagePath": "assets/images/word_bank/dad_b_02_daw.png",
+  "audioPath": "audio/dad/beginner/dad_b_02.mp3"
+},
+{
+  "id": "dad_b_03",
+  "letter": "ض",
+  "level": "beginner",
+  "order": 3,
+  "displayWord": "ضِرْس",
+  "targetWord": "ضرس",
+  "imagePath": "assets/images/word_bank/dad_b_03_dirs.png",
+  "audioPath": "audio/dad/beginner/dad_b_03.mp3"
+},
+{
+  "id": "dad_b_04",
+  "letter": "ض",
+  "level": "beginner",
+  "order": 4,
+  "displayWord": "ضَغْط",
+  "targetWord": "ضغط",
+  "imagePath": "assets/images/word_bank/dad_b_04_daght.png",
+  "audioPath": "audio/dad/beginner/dad_b_04.mp3"
+},
+{
+  "id": "dad_b_05",
+  "letter": "ض",
+  "level": "beginner",
+  "order": 5,
+  "displayWord": "بَيْض",
+  "targetWord": "بيض",
+  "imagePath": "assets/images/word_bank/dad_b_05_bayd.png",
+  "audioPath": "audio/dad/beginner/dad_b_05.mp3"
+},
+{
+  "id": "dad_b_06",
+  "letter": "ض",
+  "level": "beginner",
+  "order": 6,
+  "displayWord": "أَرْض",
+  "targetWord": "أرض",
+  "imagePath": "assets/images/word_bank/dad_b_06_ard.png",
+  "audioPath": "audio/dad/beginner/dad_b_06.mp3"
+},
+{
+  "id": "dad_b_07",
+  "letter": "ض",
+  "level": "beginner",
+  "order": 7,
+  "displayWord": "رَفْض",
+  "targetWord": "رفض",
+  "imagePath": "assets/images/word_bank/dad_b_07_rafd.png",
+  "audioPath": "audio/dad/beginner/dad_b_07.mp3"
+},
+{
+  "id": "dad_b_08",
+  "letter": "ض",
+  "level": "beginner",
+  "order": 8,
+  "displayWord": "نَبْض",
+  "targetWord": "نبض",
+  "imagePath": "assets/images/word_bank/dad_b_08_nabd.png",
+  "audioPath": "audio/dad/beginner/dad_b_08.mp3"
+},
+
+{
+  "id": "dad_i_01",
+  "letter": "ض",
+  "level": "intermediate",
+  "order": 1,
+  "displayWord": "ضُرُوس",
+  "targetWord": "ضروس",
+  "imagePath": "assets/images/word_bank/dad_i_01_durus.png",
+  "audioPath": "audio/dad/intermediate/dad_i_01.mp3"
+},
+{
+  "id": "dad_i_02",
+  "letter": "ض",
+  "level": "intermediate",
+  "order": 2,
+  "displayWord": "ضِفْدَع",
+  "targetWord": "ضفدع",
+  "imagePath": "assets/images/word_bank/dad_i_02_difda.png",
+  "audioPath": "audio/dad/intermediate/dad_i_02.mp3"
+},
+{
+  "id": "dad_i_03",
+  "letter": "ض",
+  "level": "intermediate",
+  "order": 3,
+  "displayWord": "خُضَار",
+  "targetWord": "خضار",
+  "imagePath": "assets/images/word_bank/dad_i_03_khodar.png",
+  "audioPath": "audio/dad/intermediate/dad_i_03.mp3"
+},
+{
+  "id": "dad_i_04",
+  "letter": "ض",
+  "level": "intermediate",
+  "order": 4,
+  "displayWord": "رَوْضَة",
+  "targetWord": "روضة",
+  "imagePath": "assets/images/word_bank/dad_i_04_rawda.png",
+  "audioPath": "audio/dad/intermediate/dad_i_04.mp3"
+},
+{
+  "id": "dad_i_05",
+  "letter": "ض",
+  "level": "intermediate",
+  "order": 5,
+  "displayWord": "فَضَاء",
+  "targetWord": "فضاء",
+  "imagePath": "assets/images/word_bank/dad_i_05_fadaa.png",
+  "audioPath": "audio/dad/intermediate/dad_i_05.mp3"
+},
+{
+  "id": "dad_i_06",
+  "letter": "ض",
+  "level": "intermediate",
+  "order": 6,
+  "displayWord": "بَعُوض",
+  "targetWord": "بعوض",
+  "imagePath": "assets/images/word_bank/dad_i_06_baood.png",
+  "audioPath": "audio/dad/intermediate/dad_i_06.mp3"
+},
+{
+  "id": "dad_i_07",
+  "letter": "ض",
+  "level": "intermediate",
+  "order": 7,
+  "displayWord": "مَرِيض",
+  "targetWord": "مريض",
+  "imagePath": "assets/images/word_bank/dad_i_07_mareed.png",
+  "audioPath": "audio/dad/intermediate/dad_i_07.mp3"
+},
+{
+  "id": "dad_i_08",
+  "letter": "ض",
+  "level": "intermediate",
+  "order": 8,
+  "displayWord": "أَبْيَض",
+  "targetWord": "أبيض",
+  "imagePath": "assets/images/word_bank/dad_i_08_abyad.png",
+  "audioPath": "audio/dad/intermediate/dad_i_08.mp3"
+},
+
+{
+  "id": "dad_a_01",
+  "letter": "ض",
+  "level": "advanced",
+  "order": 1,
+  "displayWord": "ضَاحِيَة",
+  "targetWord": "ضاحية",
+  "imagePath": "assets/images/word_bank/dad_a_01_dahiya.png",
+  "audioPath": "audio/dad/advanced/dad_a_01.mp3"
+},
+{
+  "id": "dad_a_02",
+  "letter": "ض",
+  "level": "advanced",
+  "order": 2,
+  "displayWord": "ضَحِكَات",
+  "targetWord": "ضحكات",
+  "imagePath": "assets/images/word_bank/dad_a_02_dahikat.png",
+  "audioPath": "audio/dad/advanced/dad_a_02.mp3"
+},
+{
+  "id": "dad_a_03",
+  "letter": "ض",
+  "level": "advanced",
+  "order": 3,
+  "displayWord": "ضَمَادَات",
+  "targetWord": "ضمادات",
+  "imagePath": "assets/images/word_bank/dad_a_03_damadat.png",
+  "audioPath": "audio/dad/advanced/dad_a_03.mp3"
+},
+{
+  "id": "dad_a_04",
+  "letter": "ض",
+  "level": "advanced",
+  "order": 4,
+  "displayWord": "ضَائِعُون",
+  "targetWord": "ضائعون",
+  "imagePath": "assets/images/word_bank/dad_a_04_daioon.png",
+  "audioPath": "audio/dad/advanced/dad_a_04.mp3"
+},
+{
+  "id": "dad_a_05",
+  "letter": "ض",
+  "level": "advanced",
+  "order": 5,
+  "displayWord": "رِيَاضَة",
+  "targetWord": "رياضة",
+  "imagePath": "assets/images/word_bank/dad_a_05_riyada.png",
+  "audioPath": "audio/dad/advanced/dad_a_05.mp3"
+},
+{
+  "id": "dad_a_06",
+  "letter": "ض",
+  "level": "advanced",
+  "order": 6,
+  "displayWord": "الْعَضَلَات",
+  "targetWord": "العضلات",
+  "imagePath": "assets/images/word_bank/dad_a_06_adalat.png",
+  "audioPath": "audio/dad/advanced/dad_a_06.mp3"
+},
+{
+  "id": "dad_a_07",
+  "letter": "ض",
+  "level": "advanced",
+  "order": 7,
+  "displayWord": "رَضَّاعَة",
+  "targetWord": "رضاعة",
+  "imagePath": "assets/images/word_bank/dad_a_07_radaa.png",
+  "audioPath": "audio/dad/advanced/dad_a_07.mp3"
+},
+{
+  "id": "dad_a_08",
+  "letter": "ض",
+  "level": "advanced",
+  "order": 8,
+  "displayWord": "تَخْفِيض",
+  "targetWord": "تخفيض",
+  "imagePath": "assets/images/word_bank/dad_a_08_takhfid.png",
+  "audioPath": "audio/dad/advanced/dad_a_08.mp3"
 }
   ]
 }
