@@ -33,57 +33,68 @@ import 'services/notification_service.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'screens/friend_requests_screen.dart';
 
-final GlobalKey<NavigatorState> navigatorKey =
-    GlobalKey<NavigatorState>();
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  final messaging = FirebaseMessaging.instance;
-
-  final settings = await messaging.requestPermission(
-    alert: true,
-    badge: true,
-    sound: true,
-  );
-
-  print('🔔 Permission: ${settings.authorizationStatus}');
-
-  final fcmToken = await messaging.getToken();
-
-  print('🔥 FCM TOKEN: $fcmToken');
-
-// إذا ضغط الطفل على الإشعار والتطبيق كان بالخلفية
-FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-  if (message.data['type'] == 'friend_request') {
-    navigatorKey.currentState?.pushNamed(
-      '/child/friend-requests',
-      arguments: {
-        'childId': message.data['receiverId'],
-      },
-    );
-  }
-});
-final RemoteMessage? initialMessage =
-    await FirebaseMessaging.instance.getInitialMessage();
-
-runApp(MyApp());
-
-if (initialMessage != null &&
-    initialMessage.data['type'] == 'friend_request') {
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    navigatorKey.currentState?.pushNamed(
-      '/child/friend-requests',
-      arguments: {
-        'childId': initialMessage.data['receiverId'],
-      },
-    );
-  });
-}
+  // Start the app first.
+  // Firebase Messaging should never prevent Faseh from opening.
   runApp(MyApp());
+
+  // Initialize notifications separately.
+  _initializeFirebaseMessaging();
+}
+
+Future<void> _initializeFirebaseMessaging() async {
+  try {
+    final messaging = FirebaseMessaging.instance;
+
+    final settings = await messaging.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+
+    debugPrint('🔔 Permission: ${settings.authorizationStatus}');
+
+    // This may fail on an emulator without Google Play Services.
+    try {
+      final fcmToken = await messaging.getToken();
+      debugPrint('🔥 FCM TOKEN: $fcmToken');
+    } catch (e) {
+      debugPrint('⚠️ FCM token unavailable on this device: $e');
+    }
+
+    // User taps notification while app was in background.
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      if (message.data['type'] == 'friend_request') {
+        navigatorKey.currentState?.pushNamed(
+          '/child/friend-requests',
+          arguments: {'childId': message.data['receiverId']},
+        );
+      }
+    });
+
+    // User opens app by tapping a notification
+    // while the app was completely closed.
+    final RemoteMessage? initialMessage = await FirebaseMessaging.instance
+        .getInitialMessage();
+
+    if (initialMessage != null &&
+        initialMessage.data['type'] == 'friend_request') {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        navigatorKey.currentState?.pushNamed(
+          '/child/friend-requests',
+          arguments: {'childId': initialMessage.data['receiverId']},
+        );
+      });
+    }
+  } catch (e) {
+    // Notifications failing should NOT stop the app.
+    debugPrint('⚠️ Firebase Messaging initialization failed: $e');
+  }
 }
 
 class NoStretchScrollBehavior extends ScrollBehavior {
@@ -102,7 +113,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-        navigatorKey: navigatorKey,
+      navigatorKey: navigatorKey,
       title: 'فصيح',
       scaffoldMessengerKey: rootScaffoldMessengerKey,
       scrollBehavior: NoStretchScrollBehavior(),
@@ -152,19 +163,17 @@ class MyApp extends StatelessWidget {
 
         // ─── مسارات الطفل (Child Routes) ───
         '/child/friend-requests': (context) {
-  final args = ModalRoute.of(context)!.settings.arguments;
-  final String? id = args is String
-      ? args
-      : (args as Map?)?['childId'] ?? ChildSession.currentChildId;
+          final args = ModalRoute.of(context)!.settings.arguments;
+          final String? id = args is String
+              ? args
+              : (args as Map?)?['childId'] ?? ChildSession.currentChildId;
 
-  if (id == null || id.isEmpty) {
-    return const SplashScreen();
-  }
+          if (id == null || id.isEmpty) {
+            return const SplashScreen();
+          }
 
-  return FriendRequestsScreen(
-    childId: id,
-  );
-},
+          return FriendRequestsScreen(childId: id);
+        },
         '/child/home': (context) {
           final args = ModalRoute.of(context)!.settings.arguments;
           // Check arguments first, then check our global ChildSession as a backup

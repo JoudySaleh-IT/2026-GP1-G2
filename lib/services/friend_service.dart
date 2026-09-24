@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_functions/cloud_functions.dart';
+import '../services/practice_together_service.dart';
 
 import 'faseh_id_service.dart';
 
@@ -27,19 +28,20 @@ class FriendService {
     }
 
     // ─── 2. Normalize entered Faseh ID ───
-    final String fasehId =
-        _fasehIdService.normalizeFasehId(enteredFasehId);
-        print('🟣 enteredFasehId = "$enteredFasehId"');
-print('🟣 normalized fasehId = "$fasehId"');
-print('🟣 currentChildId = "$currentChildId"');
+    final String fasehId = _fasehIdService.normalizeFasehId(enteredFasehId);
+    print('🟣 enteredFasehId = "$enteredFasehId"');
+    print('🟣 normalized fasehId = "$fasehId"');
+    print('🟣 currentChildId = "$currentChildId"');
 
     if (fasehId.isEmpty) {
       throw Exception('INVALID_FASEH_ID');
     }
 
     // ─── 3. Exact Faseh ID lookup ───
-    final fasehIdSnapshot =
-        await _db.collection('faseh_ids').doc(fasehId).get();
+    final fasehIdSnapshot = await _db
+        .collection('faseh_ids')
+        .doc(fasehId)
+        .get();
 
     if (!fasehIdSnapshot.exists) {
       throw Exception('FASEH_ID_NOT_FOUND');
@@ -47,8 +49,7 @@ print('🟣 currentChildId = "$currentChildId"');
 
     final fasehIdData = fasehIdSnapshot.data();
 
-    final String? receiverId =
-        fasehIdData?['childId'] as String?;
+    final String? receiverId = fasehIdData?['childId'] as String?;
 
     if (receiverId == null || receiverId.isEmpty) {
       throw Exception('FASEH_ID_NOT_FOUND');
@@ -59,233 +60,204 @@ print('🟣 currentChildId = "$currentChildId"');
       throw Exception('CANNOT_ADD_SELF');
     }
 
-    final String pairId =
-        _buildPairId(currentChildId, receiverId);
+    final String pairId = _buildPairId(currentChildId, receiverId);
 
-    final requestRef =
-        _db.collection('friend_requests').doc(pairId);
-
-    
+    final requestRef = _db.collection('friend_requests').doc(pairId);
 
     final receiverPublicProfileRef = _db
         .collection('child_public_profiles')
         .doc(receiverId);
 
     // Notification for the receiver
-    final notificationRef =
-       _db.collection('notifications').doc();    
-       print('🔔 NOTIFICATION CODE REACHED');
-print('🔔 notificationId: ${notificationRef.id}');
+    final notificationRef = _db.collection('notifications').doc();
+    print('🔔 NOTIFICATION CODE REACHED');
+    print('🔔 notificationId: ${notificationRef.id}');
 
     await _db.runTransaction((transaction) async {
       print('========== FRIEND REQUEST DEBUG ==========');
-print('authUid: ${user.uid}');
-print('isAnonymous: ${user.isAnonymous}');
-print('senderId: $currentChildId');
-print('receiverId: $receiverId');
-print('pairId: $pairId');
+      print('authUid: ${user.uid}');
+      print('isAnonymous: ${user.isAnonymous}');
+      print('senderId: $currentChildId');
+      print('receiverId: $receiverId');
+      print('pairId: $pairId');
 
-final deviceLink = await _db
-    .collection('child_device_links')
-    .doc(user.uid)
-    .get();
+      final deviceLink = await _db
+          .collection('child_device_links')
+          .doc(user.uid)
+          .get();
 
-print('deviceLink exists: ${deviceLink.exists}');
-print('deviceLink data: ${deviceLink.data()}');
+      print('deviceLink exists: ${deviceLink.exists}');
+      print('deviceLink data: ${deviceLink.data()}');
 
-final senderProfile = await _db
-    .collection('child_public_profiles')
-    .doc(currentChildId)
-    .get();
+      final senderProfile = await _db
+          .collection('child_public_profiles')
+          .doc(currentChildId)
+          .get();
 
-print('sender public profile exists: ${senderProfile.exists}');
+      print('sender public profile exists: ${senderProfile.exists}');
 
-print('==========================================');
-  // ALL READS FIRST
-  final receiverProfileSnapshot =
-      await transaction.get(receiverPublicProfileRef);
+      print('==========================================');
+      // ALL READS FIRST
+      final receiverProfileSnapshot = await transaction.get(
+        receiverPublicProfileRef,
+      );
 
-  if (!receiverProfileSnapshot.exists) {
-    throw Exception('PUBLIC_PROFILE_NOT_FOUND');
+      if (!receiverProfileSnapshot.exists) {
+        throw Exception('PUBLIC_PROFILE_NOT_FOUND');
+      }
+
+      // WRITE
+      transaction.set(requestRef, {
+        'senderId': currentChildId,
+        'receiverId': receiverId,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+      print('🔔 CREATING NOTIFICATION');
+      // WRITE: Notification
+      transaction.set(notificationRef, {
+        'receiverId': receiverId,
+        'senderId': currentChildId,
+        'type': 'friend_request',
+        'referenceId': pairId,
+        'isRead': false,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+    });
+    // Send external push notification
+    try {
+      final functions = FirebaseFunctions.instanceFor(region: 'us-central1');
+
+      final callable = functions.httpsCallable('sendPushNotification');
+
+      final result = await callable.call({
+        'receiverId': receiverId,
+        'senderId': currentChildId,
+        'type': 'friend_request',
+        'referenceId': pairId,
+      });
+
+      print('🔔 PUSH RESULT: ${result.data}');
+    } catch (e) {
+      // The friend request is already saved,
+      // so push failure should not cancel it.
+      print('❌ PUSH ERROR: $e');
+    }
   }
 
-  // WRITE
-  transaction.set(requestRef, {
-    'senderId': currentChildId,
-    'receiverId': receiverId,
-    'createdAt': FieldValue.serverTimestamp(),
-  });
-  print('🔔 CREATING NOTIFICATION');
-  // WRITE: Notification
-transaction.set(notificationRef, {
-  'receiverId': receiverId,
-  'senderId': currentChildId,
-  'type': 'friend_request',
-  'referenceId': pairId,
-  'isRead': false,
-  'createdAt': FieldValue.serverTimestamp(),
-});
+  Future<void> acceptFriendRequest({
+    required String currentChildId,
+    required String pairId,
+  }) async {
+    final user = _auth.currentUser;
 
-});
-// Send external push notification
-try {
-  final functions = FirebaseFunctions.instanceFor(
-    region: 'us-central1',
-  );
-
-  final callable = functions.httpsCallable(
-    'sendPushNotification',
-  );
-
-  final result = await callable.call({
-    'receiverId': receiverId,
-    'senderId': currentChildId,
-    'type': 'friend_request',
-    'referenceId': pairId,
-  });
-
-  print('🔔 PUSH RESULT: ${result.data}');
-} catch (e) {
-  // The friend request is already saved,
-  // so push failure should not cancel it.
-  print('❌ PUSH ERROR: $e');
-}
-  }
-Future<void> acceptFriendRequest({
-  required String currentChildId,
-  required String pairId,
-}) async {
-  final user = _auth.currentUser;
-
-  if (user == null) {
-    throw Exception('NOT_AUTHENTICATED');
-  }
-
-  final requestRef =
-      _db.collection('friend_requests').doc(pairId);
-
-  final friendshipRef =
-      _db.collection('friendships').doc(pairId);
-
-  await _db.runTransaction((transaction) async {
-    final requestSnapshot =
-        await transaction.get(requestRef);
-
-    if (!requestSnapshot.exists) {
-      throw Exception('FRIEND_REQUEST_NOT_FOUND');
+    if (user == null) {
+      throw Exception('NOT_AUTHENTICATED');
     }
 
-    final data = requestSnapshot.data();
+    final requestRef = _db.collection('friend_requests').doc(pairId);
 
-    final String? senderId =
-        data?['senderId'] as String?;
+    final friendshipRef = _db.collection('friendships').doc(pairId);
 
-    final String? receiverId =
-        data?['receiverId'] as String?;
+    await _db.runTransaction((transaction) async {
+      final requestSnapshot = await transaction.get(requestRef);
 
-    if (senderId == null || receiverId == null) {
-      throw Exception('INVALID_FRIEND_REQUEST');
-    }
+      if (!requestSnapshot.exists) {
+        throw Exception('FRIEND_REQUEST_NOT_FOUND');
+      }
 
-    // Only the child who received the request can accept it.
-    if (receiverId != currentChildId) {
-      throw Exception('NOT_REQUEST_RECEIVER');
-    }
+      final data = requestSnapshot.data();
 
-    // Keep the IDs in one fixed order.
-    final ids = [
-      senderId,
-      receiverId,
-    ]..sort();
+      final String? senderId = data?['senderId'] as String?;
 
-    final String childA = ids[0];
-    final String childB = ids[1];
+      final String? receiverId = data?['receiverId'] as String?;
 
-    transaction.set(
-      friendshipRef,
-      {
+      if (senderId == null || receiverId == null) {
+        throw Exception('INVALID_FRIEND_REQUEST');
+      }
+
+      // Only the child who received the request can accept it.
+      if (receiverId != currentChildId) {
+        throw Exception('NOT_REQUEST_RECEIVER');
+      }
+
+      // Keep the IDs in one fixed order.
+      final ids = [senderId, receiverId]..sort();
+
+      final String childA = ids[0];
+      final String childB = ids[1];
+
+      transaction.set(friendshipRef, {
         'childA': childA,
         'childB': childB,
-        'memberIds': [
-          childA,
-          childB,
-        ],
+        'memberIds': [childA, childB],
         'createdAt': FieldValue.serverTimestamp(),
-      },
-    );
+      });
 
-    // Remove the pending request after acceptance.
-    transaction.delete(requestRef);
-  });
-}
-
-Future<void> declineFriendRequest({
-  required String currentChildId,
-  required String pairId,
-}) async {
-  final user = _auth.currentUser;
-
-  if (user == null) {
-    throw Exception('NOT_AUTHENTICATED');
+      // Remove the pending request after acceptance.
+      transaction.delete(requestRef);
+    });
   }
 
-  final requestRef =
-      _db.collection('friend_requests').doc(pairId);
+  Future<void> declineFriendRequest({
+    required String currentChildId,
+    required String pairId,
+  }) async {
+    final user = _auth.currentUser;
 
-  await _db.runTransaction((transaction) async {
-    final requestSnapshot =
-        await transaction.get(requestRef);
-
-    if (!requestSnapshot.exists) {
-      throw Exception('FRIEND_REQUEST_NOT_FOUND');
+    if (user == null) {
+      throw Exception('NOT_AUTHENTICATED');
     }
 
-    final data = requestSnapshot.data();
+    final requestRef = _db.collection('friend_requests').doc(pairId);
 
-    final String? receiverId =
-        data?['receiverId'] as String?;
+    await _db.runTransaction((transaction) async {
+      final requestSnapshot = await transaction.get(requestRef);
 
-    if (receiverId == null) {
-      throw Exception('INVALID_FRIEND_REQUEST');
+      if (!requestSnapshot.exists) {
+        throw Exception('FRIEND_REQUEST_NOT_FOUND');
+      }
+
+      final data = requestSnapshot.data();
+
+      final String? receiverId = data?['receiverId'] as String?;
+
+      if (receiverId == null) {
+        throw Exception('INVALID_FRIEND_REQUEST');
+      }
+
+      // Only the receiver can decline.
+      if (receiverId != currentChildId) {
+        throw Exception('NOT_REQUEST_RECEIVER');
+      }
+
+      transaction.delete(requestRef);
+    });
+  }
+
+  Future<void> removeFriend({
+    required String currentChildId,
+    required String friendId,
+  }) async {
+    final user = _auth.currentUser;
+
+    if (user == null) {
+      throw Exception('NOT_AUTHENTICATED');
     }
 
-    // Only the receiver can decline.
-    if (receiverId != currentChildId) {
-      throw Exception('NOT_REQUEST_RECEIVER');
+    if (friendId.isEmpty || friendId == currentChildId) {
+      throw Exception('INVALID_FRIEND');
     }
 
-    transaction.delete(requestRef);
-  });
-}
-Future<void> removeFriend({
-  required String currentChildId,
-  required String friendId,
-}) async {
-  final user = _auth.currentUser;
+    final String pairId = _buildPairId(currentChildId, friendId);
 
-  if (user == null) {
-    throw Exception('NOT_AUTHENTICATED');
+    final friendshipRef = _db.collection('friendships').doc(pairId);
+
+    final friendshipSnapshot = await friendshipRef.get();
+
+    if (!friendshipSnapshot.exists) {
+      throw Exception('FRIENDSHIP_NOT_FOUND');
+    }
+
+    await friendshipRef.delete();
   }
-
-  if (friendId.isEmpty || friendId == currentChildId) {
-    throw Exception('INVALID_FRIEND');
-  }
-
-  final String pairId = _buildPairId(
-    currentChildId,
-    friendId,
-  );
-
-  final friendshipRef =
-      _db.collection('friendships').doc(pairId);
-
-  final friendshipSnapshot =
-      await friendshipRef.get();
-
-  if (!friendshipSnapshot.exists) {
-    throw Exception('FRIENDSHIP_NOT_FOUND');
-  }
-
-  await friendshipRef.delete();
-}
 }

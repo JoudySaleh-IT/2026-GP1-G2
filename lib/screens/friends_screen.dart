@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
 import 'add_friend_screen.dart';
 import 'friend_requests_screen.dart';
 import '../widgets/child_bottom_nav.dart';
 import '../services/friend_service.dart';
+import '../services/practice_together_service.dart';
 import 'style_constants.dart';
 
 class FriendsScreen extends StatelessWidget {
@@ -151,6 +151,230 @@ class FriendsScreen extends StatelessWidget {
         message: 'تعذّرت إزالة الصديق. حاول مرة أخرى.',
         backgroundColor: _coral,
       );
+    }
+  }
+
+  Future<void> _showPracticeTogetherDialog(
+    BuildContext context, {
+    required String friendId,
+    required String friendName,
+  }) async {
+    PracticeExerciseType selectedType = PracticeExerciseType.listening;
+
+    String selectedLetter = 'س';
+    String selectedLevel = 'beginner';
+
+    final bool? shouldSend = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return Directionality(
+              textDirection: TextDirection.rtl,
+              child: AlertDialog(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24),
+                ),
+
+                title: Text(
+                  'تدرّب مع $friendName',
+                  textAlign: TextAlign.right,
+                  style: const TextStyle(
+                    fontFamily: 'Tajawal',
+                    fontWeight: FontWeight.bold,
+                    color: _purple,
+                  ),
+                ),
+
+                content: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const Text(
+                        'اختر نوع التمرين',
+                        textAlign: TextAlign.right,
+                        style: TextStyle(
+                          fontFamily: 'Tajawal',
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+
+                      const SizedBox(height: 8),
+
+                      SegmentedButton<PracticeExerciseType>(
+                        segments: const [
+                          ButtonSegment(
+                            value: PracticeExerciseType.listening,
+                            label: Text('الاستماع'),
+                            icon: Icon(Icons.hearing_rounded),
+                          ),
+                          ButtonSegment(
+                            value: PracticeExerciseType.speaking,
+                            label: Text('النطق'),
+                            icon: Icon(Icons.mic_rounded),
+                          ),
+                        ],
+                        selected: {selectedType},
+                        onSelectionChanged: (selection) {
+                          setDialogState(() {
+                            selectedType = selection.first;
+                          });
+                        },
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      const Text(
+                        'اختر الحرف',
+                        textAlign: TextAlign.right,
+                        style: TextStyle(
+                          fontFamily: 'Tajawal',
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+
+                      const SizedBox(height: 8),
+
+                      DropdownButtonFormField<String>(
+                        value: selectedLetter,
+                        decoration: InputDecoration(
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        items: const [
+                          DropdownMenuItem(value: 'ض', child: Text('ض')),
+                          DropdownMenuItem(value: 'س', child: Text('س')),
+                          DropdownMenuItem(value: 'ص', child: Text('ص')),
+                          DropdownMenuItem(value: 'غ', child: Text('غ')),
+                          DropdownMenuItem(value: 'خ', child: Text('خ')),
+                          DropdownMenuItem(value: 'ق', child: Text('ق')),
+                        ],
+                        onChanged: (value) {
+                          if (value == null) return;
+
+                          setDialogState(() {
+                            selectedLetter = value;
+                          });
+                        },
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      const Text(
+                        'اختر المستوى',
+                        textAlign: TextAlign.right,
+                        style: TextStyle(
+                          fontFamily: 'Tajawal',
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+
+                      const SizedBox(height: 8),
+
+                      DropdownButtonFormField<String>(
+                        value: selectedLevel,
+                        decoration: InputDecoration(
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        items: const [
+                          DropdownMenuItem(
+                            value: 'beginner',
+                            child: Text('مبتدئ'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'intermediate',
+                            child: Text('متوسط'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'advanced',
+                            child: Text('متقدم'),
+                          ),
+                        ],
+                        onChanged: (value) {
+                          if (value == null) return;
+
+                          setDialogState(() {
+                            selectedLevel = value;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pop(dialogContext, false);
+                    },
+                    child: const Text(
+                      'إلغاء',
+                      style: TextStyle(
+                        fontFamily: 'Tajawal',
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ),
+
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(dialogContext, true);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _coral,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: const StadiumBorder(),
+                    ),
+                    child: const Text(
+                      'إرسال الدعوة',
+                      style: TextStyle(
+                        fontFamily: 'Tajawal',
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    if (shouldSend != true) {
+      return;
+    }
+
+    try {
+      await PracticeTogetherService().sendInvitation(
+        senderChildId: childId,
+        receiverChildId: friendId,
+        exerciseType: selectedType,
+        letter: selectedLetter,
+        level: selectedLevel,
+      );
+
+      if (!context.mounted) return;
+
+      _showAppSnackBar(
+        context,
+        message: 'تم إرسال دعوة التدريب إلى $friendName',
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+
+      _showAppSnackBar(
+        context,
+        message: 'تعذّر إرسال الدعوة. حاول مرة أخرى.',
+        backgroundColor: _coral,
+      );
+
+      debugPrint('Practice Together invitation error: $e');
     }
   }
 
@@ -373,6 +597,15 @@ class FriendsScreen extends StatelessWidget {
                                         child: _FriendProfileCard(
                                           key: ValueKey(friendId),
                                           friendId: friendId,
+
+                                          onPracticeTogether: (friendName) {
+                                            _showPracticeTogetherDialog(
+                                              context,
+                                              friendId: friendId,
+                                              friendName: friendName,
+                                            );
+                                          },
+
                                           onRemove: (friendName) {
                                             _confirmRemoveFriend(
                                               context,
@@ -754,11 +987,14 @@ class _FriendsSectionTitle extends StatelessWidget {
 
 class _FriendProfileCard extends StatefulWidget {
   final String friendId;
+
+  final void Function(String friendName) onPracticeTogether;
   final void Function(String friendName) onRemove;
 
   const _FriendProfileCard({
     super.key,
     required this.friendId,
+    required this.onPracticeTogether,
     required this.onRemove,
   });
 
@@ -832,6 +1068,11 @@ class _FriendProfileCardState extends State<_FriendProfileCard> {
         return _FriendCard(
           name: name,
           avatar: avatar,
+
+          onPracticeTogether: () {
+            widget.onPracticeTogether(name);
+          },
+
           onRemove: () {
             widget.onRemove(name);
           },
@@ -848,11 +1089,14 @@ class _FriendProfileCardState extends State<_FriendProfileCard> {
 class _FriendCard extends StatelessWidget {
   final String name;
   final String avatar;
+
+  final VoidCallback onPracticeTogether;
   final VoidCallback onRemove;
 
   const _FriendCard({
     required this.name,
     required this.avatar,
+    required this.onPracticeTogether,
     required this.onRemove,
   });
 
@@ -906,9 +1150,7 @@ class _FriendCard extends StatelessWidget {
                     fontFamily: 'Tajawal',
                   ),
                 ),
-
                 const SizedBox(height: 3),
-
                 const Text(
                   'صديق في فصيح',
                   style: TextStyle(
@@ -921,6 +1163,34 @@ class _FriendCard extends StatelessWidget {
             ),
           ),
 
+          // ─────────────────────────────────────
+          // Practice Together button
+          // ─────────────────────────────────────
+          ElevatedButton.icon(
+            onPressed: onPracticeTogether,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFF3EBFA),
+              foregroundColor: purple,
+              elevation: 0,
+              shape: const StadiumBorder(),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+            ),
+            icon: const Icon(Icons.sports_esports_rounded, size: 17),
+            label: const Text(
+              'تدرّب معي',
+              style: TextStyle(
+                fontFamily: 'Tajawal',
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+
+          const SizedBox(width: 7),
+
+          // ─────────────────────────────────────
+          // Remove friend button
+          // ─────────────────────────────────────
           Container(
             width: 38,
             height: 38,
