@@ -968,6 +968,249 @@
   "targetWord": "تخفيض",
   "imagePath": "assets/images/word_bank/dad_a_08_takhfid.png",
   "audioPath": "audio/dad/advanced/dad_a_08.mp3"
+},
+{
+  "id": "sad_b_01",
+  "letter": "ص",
+  "level": "beginner",
+  "order": 1,
+  "displayWord": "صَحْن",
+  "targetWord": "صحن",
+  "imagePath": "assets/images/word_bank/sad_b_01_sahn.png",
+  "audioPath": "audio/sad/beginner/sad_b_01.mp3"
+},
+{
+  "id": "sad_b_02",
+  "letter": "ص",
+  "level": "beginner",
+  "order": 2,
+  "displayWord": "صُوَر",
+  "targetWord": "صور",
+  "imagePath": "assets/images/word_bank/sad_b_02_suwar.png",
+  "audioPath": "audio/sad/beginner/sad_b_02.mp3"
+},
+{
+  "id": "sad_b_03",
+  "letter": "ص",
+  "level": "beginner",
+  "order": 3,
+  "displayWord": "صَوْم",
+  "targetWord": "صوم",
+  "imagePath": "assets/images/word_bank/sad_b_03_sawm.png",
+  "audioPath": "audio/sad/beginner/sad_b_03.mp3"
+},
+{
+  "id": "sad_b_04",
+  "letter": "ص",
+  "level": "beginner",
+  "order": 4,
+  "displayWord": "عَصَا",
+  "targetWord": "عصا",
+  "imagePath": "assets/images/word_bank/sad_b_04_asa.png",
+  "audioPath": "audio/sad/beginner/sad_b_04.mp3"
+},
+{
+  "id": "sad_b_05",
+  "letter": "ص",
+  "level": "beginner",
+  "order": 5,
+  "displayWord": "حِصْن",
+  "targetWord": "حصن",
+  "imagePath": "assets/images/word_bank/sad_b_05_hisn.png",
+  "audioPath": "audio/sad/beginner/sad_b_05.mp3"
+},
+{
+  "id": "sad_b_06",
+  "letter": "ص",
+  "level": "beginner",
+  "order": 6,
+  "displayWord": "لِصّ",
+  "targetWord": "لص",
+  "imagePath": "assets/images/word_bank/sad_b_06_lis.png",
+  "audioPath": "audio/sad/beginner/sad_b_06.mp3"
+},
+{
+  "id": "sad_b_07",
+  "letter": "ص",
+  "level": "beginner",
+  "order": 7,
+  "displayWord": "حُمُّص",
+  "targetWord": "حمص",
+  "imagePath": "assets/images/word_bank/sad_b_07_hummus.png",
+  "audioPath": "audio/sad/beginner/sad_b_07.mp3"
+},
+{
+  "id": "sad_b_08",
+  "letter": "ص",
+  "level": "beginner",
+  "order": 8,
+  "displayWord": "فَحْص",
+  "targetWord": "فحص",
+  "imagePath": "assets/images/word_bank/sad_b_08_fahs.png",
+  "audioPath": "audio/sad/beginner/sad_b_08.mp3"
+},
+
+{
+  "id": "sad_i_01",
+  "letter": "ص",
+  "level": "intermediate",
+  "order": 1,
+  "displayWord": "صَحْرَاء",
+  "targetWord": "صحراء",
+  "imagePath": "assets/images/word_bank/sad_i_01_sahraa.png",
+  "audioPath": "audio/sad/intermediate/sad_i_01.mp3"
+},
+{
+  "id": "sad_i_02",
+  "letter": "ص",
+  "level": "intermediate",
+  "order": 2,
+  "displayWord": "صَالَة",
+  "targetWord": "صالة",
+  "imagePath": "assets/images/word_bank/sad_i_02_sala.png",
+  "audioPath": "audio/sad/intermediate/sad_i_02.mp3"
+},
+{
+  "id": "sad_i_03",
+  "letter": "ص",
+  "level": "intermediate",
+  "order": 3,
+  "displayWord": "صَيَّاد",
+  "targetWord": "صياد",
+  "imagePath": "assets/images/word_bank/sad_i_03_sayyad.png",
+  "audioPath": "audio/sad/intermediate/sad_i_03.mp3"
+},
+{
+  "id": "sad_i_04",
+  "letter": "ص",
+  "level": "intermediate",
+  "order": 4,
+  "displayWord": "صِيصَان",
+  "targetWord": "صيصان",
+  "imagePath": "assets/images/word_bank/sad_i_04_seesan.png",
+  "audioPath": "audio/sad/intermediate/sad_i_04.mp3"
+},
+{
+  "id": "sad_i_05",
+  "letter": "ص",
+  "level": "intermediate",
+  "order": 5,
+  "displayWord": "عَصِير",
+  "targetWord": "عصير",
+  "imagePath": "assets/images/word_bank/sad_i_05_aseer.png",
+  "audioPath": "audio/sad/intermediate/sad_i_05.mp3"
+},
+{
+  "id": "sad_i_06",
+  "letter": "ص",
+  "level": "intermediate",
+  "order": 6,
+  "displayWord": "حِصَان",
+  "targetWord": "حصان",
+  "imagePath": "assets/images/word_bank/sad_i_06_hisan.png",
+  "audioPath": "audio/sad/intermediate/sad_i_06.mp3"
+},
+{
+  "id": "sad_i_07",
+  "letter": "ص",
+  "level": "intermediate",
+  "order": 7,
+  "displayWord": "عُصْفُور",
+  "targetWord": "عصفور",
+  "imagePath": "assets/images/word_bank/sad_i_07_usfoor.png",
+  "audioPath": "audio/sad/intermediate/sad_i_07.mp3"
+},
+{
+  "id": "sad_i_08",
+  "letter": "ص",
+  "level": "intermediate",
+  "order": 8,
+  "displayWord": "قَمِيص",
+  "targetWord": "قميص",
+  "imagePath": "assets/images/word_bank/sad_i_08_qamees.png",
+  "audioPath": "audio/sad/intermediate/sad_i_08.mp3"
+},
+
+{
+  "id": "sad_a_01",
+  "letter": "ص",
+  "level": "advanced",
+  "order": 1,
+  "displayWord": "أَصَابِع",
+  "targetWord": "أصابع",
+  "imagePath": "assets/images/word_bank/sad_a_01_asabea.png",
+  "audioPath": "audio/sad/advanced/sad_a_01.mp3"
+},
+{
+  "id": "sad_a_02",
+  "letter": "ص",
+  "level": "advanced",
+  "order": 2,
+  "displayWord": "الْمُصَوِّر",
+  "targetWord": "المصور",
+  "imagePath": "assets/images/word_bank/sad_a_02_musawwir.png",
+  "audioPath": "audio/sad/advanced/sad_a_02.mp3"
+},
+{
+  "id": "sad_a_03",
+  "letter": "ص",
+  "level": "advanced",
+  "order": 3,
+  "displayWord": "اِتِّصَالَات",
+  "targetWord": "اتصالات",
+  "imagePath": "assets/images/word_bank/sad_a_03_ittisalat.png",
+  "audioPath": "audio/sad/advanced/sad_a_03.mp3"
+},
+{
+  "id": "sad_a_04",
+  "letter": "ص",
+  "level": "advanced",
+  "order": 4,
+  "displayWord": "مَحَاصِيل",
+  "targetWord": "محاصيل",
+  "imagePath": "assets/images/word_bank/sad_a_04_mahasil.png",
+  "audioPath": "audio/sad/advanced/sad_a_04.mp3"
+},
+{
+  "id": "sad_a_05",
+  "letter": "ص",
+  "level": "advanced",
+  "order": 5,
+  "displayWord": "تَصَامِيم",
+  "targetWord": "تصاميم",
+  "imagePath": "assets/images/word_bank/sad_a_05_tasamim.png",
+  "audioPath": "audio/sad/advanced/sad_a_05.mp3"
+},
+{
+  "id": "sad_a_06",
+  "letter": "ص",
+  "level": "advanced",
+  "order": 6,
+  "displayWord": "مَصَانِع",
+  "targetWord": "مصانع",
+  "imagePath": "assets/images/word_bank/sad_a_06_masanea.png",
+  "audioPath": "audio/sad/advanced/sad_a_06.mp3"
+},
+{
+  "id": "sad_a_07",
+  "letter": "ص",
+  "level": "advanced",
+  "order": 7,
+  "displayWord": "صَلْصَال",
+  "targetWord": "صلصال",
+  "imagePath": "assets/images/word_bank/sad_a_07_salsal.png",
+  "audioPath": "audio/sad/advanced/sad_a_07.mp3"
+},
+{
+  "id": "sad_a_08",
+  "letter": "ص",
+  "level": "advanced",
+  "order": 8,
+  "displayWord": "أَشْخَاص",
+  "targetWord": "أشخاص",
+  "imagePath": "assets/images/word_bank/sad_a_08_ashkhas.png",
+  "audioPath": "audio/sad/advanced/sad_a_08.mp3"
 }
+
   ]
 }

@@ -1371,6 +1371,189 @@
     }
   }
 },
+"beginner": {
+  "code": "b",
+  "folder": "beginner",
+  "words": [
+    {
+      "number": 1,
+      "target": "صحن",
+      "options": [
+        {
+          "word": "صحن",
+          "imagePath": "assets/images/word_bank/sad_b_01_sahn.png"
+        },
+        {
+          "word": "كوب",
+          "imagePath": "assets/images/listening/qaf_listening/beginner/cup.png"
+        },
+        {
+          "word": "ملعقة",
+          "imagePath": "assets/images/listening/sad_listening/beginner/spoon.png"
+        },
+        {
+          "word": "مقص",
+          "imagePath": "assets/images/listening/sad_listening/beginner/scissors.png"
+        }
+      ]
+    },
+    {
+      "number": 2,
+      "target": "صور",
+      "options": [
+        {
+          "word": "صور",
+          "imagePath": "assets/images/word_bank/sad_b_02_suwar.png"
+        },
+        {
+          "word": "كتاب",
+          "imagePath": "assets/images/listening/qaf_listening/beginner/book.png"
+        },
+        {
+          "word": "مرآة",
+          "imagePath": "assets/images/listening/sad_listening/beginner/mirror.png"
+        },
+        {
+          "word": "صندوق",
+          "imagePath": "assets/images/listening/qaf_listening/intermediate/box.png"
+        }
+      ]
+    },
+    {
+      "number": 3,
+      "target": "صوم",
+      "options": [
+        {
+          "word": "صوم",
+          "imagePath": "assets/images/word_bank/sad_b_03_sawm.png"
+        },
+        {
+          "word": "نوم",
+          "imagePath": "assets/images/listening/sad_listening/beginner/sleep.png"
+        },
+        {
+          "word": "صوف",
+          "imagePath": "assets/images/listening/qaf_listening/beginner/wool.png"
+        },
+        {
+          "word": "ثوم",
+          "imagePath": "assets/images/listening/sad_listening/beginner/garlic.png"
+        }
+      ]
+    },
+    {
+      "number": 4,
+      "target": "عصا",
+      "options": [
+        {
+          "word": "عصا",
+          "imagePath": "assets/images/word_bank/sad_b_04_asa.png"
+        },
+        {
+          "word": "عسل",
+          "imagePath": "assets/images/listening/seen_listening/beginner/honey.png"
+        },
+        {
+          "word": "عنب",
+          "imagePath": "assets/images/listening/kha_listening/beginner/grapes.png"
+        },
+        {
+          "word": "مصباح",
+          "imagePath": "assets/images/listening/sad_listening/beginner/lamp.png"
+        }
+      ]
+    },
+    {
+      "number": 5,
+      "target": "حصن",
+      "options": [
+        {
+          "word": "حصن",
+          "imagePath": "assets/images/word_bank/sad_b_05_hisn.png"
+        },
+        {
+          "word": "صقر",
+          "imagePath": "assets/images/listening/sad_listening/beginner/falcon.png"
+        },
+        {
+          "word": "حبل",
+          "imagePath": "assets/images/listening/kha_listening/beginner/rope.png"
+        },
+        {
+          "word": "حوت",
+          "imagePath": "assets/images/listening/sad_listening/beginner/whale.png"
+        }
+      ]
+    },
+    {
+      "number": 6,
+      "target": "لص",
+      "options": [
+        {
+          "word": "لص",
+          "imagePath": "assets/images/word_bank/sad_b_06_lis.png"
+        },
+        {
+          "word": "شرطي",
+          "imagePath": "assets/images/listening/sad_listening/beginner/policeman.png"
+        },
+        {
+          "word": "صبي",
+          "imagePath": "assets/images/listening/sad_listening/beginner/boy.png"
+        },
+        {
+          "word": "طباخ",
+          "imagePath": "assets/images/listening/sad_listening/beginner/chef.png"
+        }
+      ]
+    },
+    {
+      "number": 7,
+      "target": "حمص",
+      "options": [
+        {
+          "word": "حمص",
+          "imagePath": "assets/images/word_bank/sad_b_07_hummus.png"
+        },
+        {
+          "word": "صبار",
+          "imagePath": "assets/images/listening/sad_listening/beginner/cactus.png"
+        },
+        {
+          "word": "تفاح",
+          "imagePath": "assets/images/listening/kha_listening/beginner/apple.png"
+        },
+        {
+          "word": "خبز",
+          "imagePath": "assets/images/listening/kha_listening/beginner/bread.png"
+        }
+      ]
+    },
+    {
+      "number": 8,
+      "target": "فحص",
+      "options": [
+        {
+          "word": "فحص",
+          "imagePath": "assets/images/word_bank/sad_b_08_fahs.png"
+        },
+        {
+          "word": "صافرة",
+          "imagePath": "assets/images/listening/sad_listening/beginner/whistle.png"
+        },
+        {
+          "word": "دواء",
+          "imagePath": "assets/images/listening/sad_listening/beginner/medicine.png"
+        },
+        {
+          "word": "ضماد",
+          "imagePath": "assets/images/listening/sad_listening/beginner/bandage.png"
+        }
+      ]
+    }
+  ]
+},
+
 "ض": {
   "assetFolder": "dad",
   "levels": {
