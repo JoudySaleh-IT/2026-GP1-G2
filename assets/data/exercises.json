@@ -1553,6 +1553,189 @@
     }
   ]
 },
+"intermediate": {
+  "code": "i",
+  "folder": "intermediate",
+  "words": [
+    {
+      "number": 1,
+      "target": "صحراء",
+      "options": [
+        {
+          "word": "صحراء",
+          "imagePath": "assets/images/word_bank/sad_i_01_sahraa.png"
+        },
+        {
+          "word": "جبل",
+          "imagePath": "assets/images/listening/sad_listening/intermediate/mountain.png"
+        },
+        {
+          "word": "غابة",
+          "imagePath": "assets/images/listening/sad_listening/intermediate/forest.png"
+        },
+        {
+          "word": "صبار",
+          "imagePath": "assets/images/listening/sad_listening/beginner/cactus.png"
+        }
+      ]
+    },
+    {
+      "number": 2,
+      "target": "صالة",
+      "options": [
+        {
+          "word": "صالة",
+          "imagePath": "assets/images/word_bank/sad_i_02_sala.png"
+        },
+        {
+          "word": "مطبخ",
+          "imagePath": "assets/images/listening/sad_listening/intermediate/kitchen.png"
+        },
+        {
+          "word": "غرفة",
+          "imagePath": "assets/images/listening/sad_listening/intermediate/room.png"
+        },
+        {
+          "word": "فصل",
+          "imagePath": "assets/images/listening/sad_listening/intermediate/classroom.png"
+        }
+      ]
+    },
+    {
+      "number": 3,
+      "target": "صياد",
+      "options": [
+        {
+          "word": "صياد",
+          "imagePath": "assets/images/word_bank/sad_i_03_sayyad.png"
+        },
+        {
+          "word": "طباخ",
+          "imagePath": "assets/images/listening/sad_listening/beginner/chef.png"
+        },
+        {
+          "word": "شرطي",
+          "imagePath": "assets/images/listening/sad_listening/beginner/policeman.png"
+        },
+        {
+          "word": "غواص",
+          "imagePath": "assets/images/listening/sad_listening/intermediate/diver.png"
+        }
+      ]
+    },
+    {
+      "number": 4,
+      "target": "صيصان",
+      "options": [
+        {
+          "word": "صيصان",
+          "imagePath": "assets/images/word_bank/sad_i_04_seesan.png"
+        },
+        {
+          "word": "دجاجة",
+          "imagePath": "assets/images/listening/sad_listening/intermediate/hen.png"
+        },
+        {
+          "word": "عصفور",
+          "imagePath": "assets/images/word_bank/sad_i_07_usfoor.png"
+        },
+        {
+          "word": "صقر",
+          "imagePath": "assets/images/listening/sad_listening/beginner/falcon.png"
+        }
+      ]
+    },
+    {
+      "number": 5,
+      "target": "عصير",
+      "options": [
+        {
+          "word": "عصير",
+          "imagePath": "assets/images/word_bank/sad_i_05_aseer.png"
+        },
+        {
+          "word": "حليب",
+          "imagePath": "assets/images/listening/sad_listening/intermediate/milk.png"
+        },
+        {
+          "word": "شاي",
+          "imagePath": "assets/images/listening/sad_listening/intermediate/tea.png"
+        },
+        {
+          "word": "صابون",
+          "imagePath": "assets/images/listening/sad_listening/intermediate/soap.png"
+        }
+      ]
+    },
+    {
+      "number": 6,
+      "target": "حصان",
+      "options": [
+        {
+          "word": "حصان",
+          "imagePath": "assets/images/word_bank/sad_i_06_hisan.png"
+        },
+        {
+          "word": "خروف",
+          "imagePath": "assets/images/listening/sad_listening/intermediate/sheep.png"
+        },
+        {
+          "word": "جمل",
+          "imagePath": "assets/images/listening/sad_listening/intermediate/camel.png"
+        },
+        {
+          "word": "صقر",
+          "imagePath": "assets/images/listening/sad_listening/beginner/falcon.png"
+        }
+      ]
+    },
+    {
+      "number": 7,
+      "target": "عصفور",
+      "options": [
+        {
+          "word": "عصفور",
+          "imagePath": "assets/images/word_bank/sad_i_07_usfoor.png"
+        },
+        {
+          "word": "حمامة",
+          "imagePath": "assets/images/listening/sad_listening/intermediate/pigeon.png"
+        },
+        {
+          "word": "فراشة",
+          "imagePath": "assets/images/listening/sad_listening/intermediate/butterfly.png"
+        },
+        {
+          "word": "صقر",
+          "imagePath": "assets/images/listening/sad_listening/beginner/falcon.png"
+        }
+      ]
+    },
+    {
+      "number": 8,
+      "target": "قميص",
+      "options": [
+        {
+          "word": "قميص",
+          "imagePath": "assets/images/word_bank/sad_i_08_qamees.png"
+        },
+        {
+          "word": "حذاء",
+          "imagePath": "assets/images/listening/sad_listening/intermediate/shoe.png"
+        },
+        {
+          "word": "قبعة",
+          "imagePath": "assets/images/listening/sad_listening/intermediate/hat.png"
+        },
+        {
+          "word": "صندل",
+          "imagePath": "assets/images/listening/sad_listening/intermediate/sandal.png"
+        }
+      ]
+    }
+  ]
+},
+
 
 "ض": {
   "assetFolder": "dad",
