@@ -159,10 +159,14 @@ class FriendsScreen extends StatelessWidget {
     required String friendId,
     required String friendName,
   }) async {
+    final service = PracticeTogetherService();
+
     PracticeExerciseType selectedType = PracticeExerciseType.listening;
 
-    String selectedLetter = 'س';
-    String selectedLevel = 'beginner';
+    PracticeAvailableExercise? selectedExercise;
+
+    Future<List<PracticeAvailableExercise>> exercisesFuture = service
+        .getAvailableExercises(childId: childId, exerciseType: selectedType);
 
     final bool? shouldSend = await showDialog<bool>(
       context: context,
@@ -217,8 +221,19 @@ class FriendsScreen extends StatelessWidget {
                         ],
                         selected: {selectedType},
                         onSelectionChanged: (selection) {
+                          final newType = selection.first;
+
                           setDialogState(() {
-                            selectedType = selection.first;
+                            selectedType = newType;
+
+                            // Clear the old selection because
+                            // availability changes by exercise type.
+                            selectedExercise = null;
+
+                            exercisesFuture = service.getAvailableExercises(
+                              childId: childId,
+                              exerciseType: selectedType,
+                            );
                           });
                         },
                       ),
@@ -226,7 +241,7 @@ class FriendsScreen extends StatelessWidget {
                       const SizedBox(height: 20),
 
                       const Text(
-                        'اختر الحرف',
+                        'اختر تمرينك',
                         textAlign: TextAlign.right,
                         style: TextStyle(
                           fontFamily: 'Tajawal',
@@ -236,70 +251,88 @@ class FriendsScreen extends StatelessWidget {
 
                       const SizedBox(height: 8),
 
-                      DropdownButtonFormField<String>(
-                        value: selectedLetter,
-                        decoration: InputDecoration(
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                        ),
-                        items: const [
-                          DropdownMenuItem(value: 'ض', child: Text('ض')),
-                          DropdownMenuItem(value: 'س', child: Text('س')),
-                          DropdownMenuItem(value: 'ص', child: Text('ص')),
-                          DropdownMenuItem(value: 'غ', child: Text('غ')),
-                          DropdownMenuItem(value: 'خ', child: Text('خ')),
-                          DropdownMenuItem(value: 'ق', child: Text('ق')),
-                        ],
-                        onChanged: (value) {
-                          if (value == null) return;
+                      FutureBuilder<List<PracticeAvailableExercise>>(
+                        future: exercisesFuture,
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const Padding(
+                              padding: EdgeInsets.all(18),
+                              child: Center(
+                                child: CircularProgressIndicator(
+                                  color: _purple,
+                                ),
+                              ),
+                            );
+                          }
 
-                          setDialogState(() {
-                            selectedLetter = value;
-                          });
-                        },
-                      ),
+                          if (snapshot.hasError) {
+                            return const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 12),
+                              child: Text(
+                                'تعذّر تحميل تمارينك. حاول مرة أخرى.',
+                                textAlign: TextAlign.right,
+                                style: TextStyle(
+                                  fontFamily: 'Tajawal',
+                                  color: _coral,
+                                ),
+                              ),
+                            );
+                          }
 
-                      const SizedBox(height: 16),
+                          final exercises = snapshot.data ?? [];
 
-                      const Text(
-                        'اختر المستوى',
-                        textAlign: TextAlign.right,
-                        style: TextStyle(
-                          fontFamily: 'Tajawal',
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
+                          if (exercises.isEmpty) {
+                            final message =
+                                selectedType == PracticeExerciseType.speaking
+                                ? 'لا توجد تمارين نطق متاحة حاليًا. أكمل تمارين الاستماع أولًا.'
+                                : 'لا توجد تمارين متاحة حاليًا.';
 
-                      const SizedBox(height: 8),
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              child: Text(
+                                message,
+                                textAlign: TextAlign.right,
+                                style: const TextStyle(
+                                  fontFamily: 'Tajawal',
+                                  color: Color(0xFF777777),
+                                  height: 1.5,
+                                ),
+                              ),
+                            );
+                          }
 
-                      DropdownButtonFormField<String>(
-                        value: selectedLevel,
-                        decoration: InputDecoration(
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                        ),
-                        items: const [
-                          DropdownMenuItem(
-                            value: 'beginner',
-                            child: Text('مبتدئ'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'intermediate',
-                            child: Text('متوسط'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'advanced',
-                            child: Text('متقدم'),
-                          ),
-                        ],
-                        onChanged: (value) {
-                          if (value == null) return;
+                          return DropdownButtonFormField<String>(
+                            value: selectedExercise?.id,
+                            decoration: InputDecoration(
+                              hintText: 'اختر حرفًا',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                            items: exercises.map((exercise) {
+                              return DropdownMenuItem<String>(
+                                value: exercise.id,
+                                child: Text(
+                                  '${exercise.letter} — ${exercise.arabicLevel}',
+                                  style: const TextStyle(fontFamily: 'Tajawal'),
+                                ),
+                              );
+                            }).toList(),
+                            onChanged: (value) {
+                              if (value == null) {
+                                return;
+                              }
 
-                          setDialogState(() {
-                            selectedLevel = value;
-                          });
+                              final exercise = exercises.firstWhere(
+                                (item) => item.id == value,
+                              );
+
+                              setDialogState(() {
+                                selectedExercise = exercise;
+                              });
+                            },
+                          );
                         },
                       ),
                     ],
@@ -322,6 +355,16 @@ class FriendsScreen extends StatelessWidget {
 
                   ElevatedButton(
                     onPressed: () {
+                      if (selectedExercise == null) {
+                        _showAppSnackBar(
+                          context,
+                          message: 'اختر تمرينك أولًا',
+                          backgroundColor: _coral,
+                        );
+
+                        return;
+                      }
+
                       Navigator.pop(dialogContext, true);
                     },
                     style: ElevatedButton.styleFrom(
@@ -346,17 +389,17 @@ class FriendsScreen extends StatelessWidget {
       },
     );
 
-    if (shouldSend != true) {
+    if (shouldSend != true || selectedExercise == null) {
       return;
     }
 
     try {
-      await PracticeTogetherService().sendInvitation(
+      await service.sendInvitation(
         senderChildId: childId,
         receiverChildId: friendId,
         exerciseType: selectedType,
-        letter: selectedLetter,
-        level: selectedLevel,
+        letter: selectedExercise!.letter,
+        level: selectedExercise!.level,
       );
 
       if (!context.mounted) return;

@@ -31,12 +31,16 @@ exports.sendPushNotification = onCall(async (request) => {
         "receiverId and type are required.",
     );
   }
+//We support 2 types of notifications which are friend request and practice invitation
+  const supportedTypes = [
+    "friend_request",
+    "practice_invitation",
+  ];
 
-  // حاليًا ندعم طلب الصداقة فقط
-  if (type !== "friend_request") {
+  if (!supportedTypes.includes(type)) {
     throw new HttpsError(
-        "invalid-argument",
-        "Unsupported notification type.",
+      "invalid-argument",
+      "Unsupported notification type.",
     );
   }
 
@@ -69,8 +73,13 @@ exports.sendPushNotification = onCall(async (request) => {
       token: token,
 
       notification: {
-        title: "طلب صداقة جديد 💜",
-        body: "لديك طلب صداقة جديد في فصيح",
+        title: type === "practice_invitation"
+          ? "دعوة تدريب جديدة 🎮"
+          : "طلب صداقة جديد 💜",
+
+        body: type === "practice_invitation"
+          ? "لديك دعوة جديدة للتدرّب مع صديقك في فصيح"
+          : "لديك طلب صداقة جديد في فصيح",
       },
 
       data: {
