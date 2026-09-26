@@ -1,2005 +1,2757 @@
 {
-"ق": {
-  "assetFolder": "qaf",
-  "levels": {
-    "beginner": {
-      "code": "b",
-      "folder": "beginner",
-      "words": [
-        {
-          "number": 1,
-          "target": "سوق",
-          "options": [
-            {
-              "word": "سوق",
-              "imagePath": "assets/images/listening/qaf_listening/beginner/market.png"
-            },
-            {
-              "word": "سور",
-              "imagePath": "assets/images/listening/qaf_listening/beginner/wall.png"
-            },
-            {
-              "word": "صوف",
-              "imagePath": "assets/images/listening/qaf_listening/beginner/wool.png"
-            },
-            {
-              "word": "كوب",
-              "imagePath": "assets/images/listening/qaf_listening/beginner/cup.png"
-            }
-          ]
-        },
-        {
-          "number": 2,
-          "target": "قمر",
-          "options": [
-            {
-              "word": "قمر",
-              "imagePath": "assets/images/listening/qaf_listening/beginner/moon.png"
-            },
-            {
-              "word": "تمر",
-              "imagePath": "assets/images/listening/qaf_listening/beginner/dates.png"
-            },
-            {
-              "word": "نمر",
-              "imagePath": "assets/images/listening/qaf_listening/beginner/tiger.png"
-            },
-            {
-              "word": "حجر",
-              "imagePath": "assets/images/listening/qaf_listening/beginner/rock.png"
-            }
-          ]
-        },
-        {
-          "number": 3,
-          "target": "قطار",
-          "options": [
-            {
-              "word": "قطار",
-              "imagePath": "assets/images/listening/qaf_listening/beginner/train.png"
-            },
-            {
-              "word": "مطار",
-              "imagePath": "assets/images/listening/qaf_listening/beginner/airport.png"
-            },
-            {
-              "word": "جدار",
-              "imagePath": "assets/images/listening/qaf_listening/beginner/wall.png"
-            },
-            {
-              "word": "غبار",
-              "imagePath": "assets/images/listening/qaf_listening/beginner/dust.png"
-            }
-          ]
-        },
-        {
-          "number": 4,
-          "target": "قارب",
-          "options": [
-            {
-              "word": "قارب",
-              "imagePath": "assets/images/listening/qaf_listening/beginner/boat.png"
-            },
-            {
-              "word": "شارب",
-              "imagePath": "assets/images/listening/qaf_listening/beginner/mustache.png"
-            },
-            {
-              "word": "كاتب",
-              "imagePath": "assets/images/listening/qaf_listening/beginner/student.png"
-            },
-            {
-              "word": "حافلة",
-              "imagePath": "assets/images/listening/qaf_listening/beginner/schoolbus.png"
-            }
-          ]
-        },
-        {
-          "number": 5,
-          "target": "بقر",
-          "options": [
-            {
-              "word": "بقر",
-              "imagePath": "assets/images/listening/qaf_listening/beginner/cow.png"
-            },
-            {
-              "word": "بحر",
-              "imagePath": "assets/images/listening/qaf_listening/beginner/sea.png"
-            },
-            {
-              "word": "نمر",
-              "imagePath": "assets/images/listening/qaf_listening/beginner/tiger.png"
-            },
-            {
-              "word": "جمل",
-              "imagePath": "assets/images/listening/qaf_listening/beginner/camel.png"
-            }
-          ]
-        },
-        {
-          "number": 6,
-          "target": "نقود",
-          "options": [
-            {
-              "word": "نقود",
-              "imagePath": "assets/images/listening/qaf_listening/beginner/money.png"
-            },
-            {
-              "word": "ورود",
-              "imagePath": "assets/images/listening/qaf_listening/beginner/flower.png"
-            },
-            {
-              "word": "جنود",
-              "imagePath": "assets/images/listening/qaf_listening/beginner/soldiers.png"
-            },
-            {
-              "word": "حبوب",
-              "imagePath": "assets/images/listening/qaf_listening/beginner/bean.png"
-            }
-          ]
-        },
-        {
-          "number": 7,
-          "target": "طبق",
-          "options": [
-            {
-              "word": "طبق",
-              "imagePath": "assets/images/listening/qaf_listening/beginner/plate.png"
-            },
-            {
-              "word": "طبل",
-              "imagePath": "assets/images/listening/qaf_listening/beginner/drums.png"
-            },
-            {
-              "word": "كتاب",
-              "imagePath": "assets/images/listening/qaf_listening/beginner/book.png"
-            },
-            {
-              "word": "كوب",
-              "imagePath": "assets/images/listening/qaf_listening/beginner/cup.png"
-            }
-          ]
-        },
-        {
-          "number": 8,
-          "target": "طريق",
-          "options": [
-            {
-              "word": "طريق",
-              "imagePath": "assets/images/listening/qaf_listening/beginner/road.png"
-            },
-            {
-              "word": "سرير",
-              "imagePath": "assets/images/listening/qaf_listening/beginner/bed.png"
-            },
-            {
-              "word": "طبيب",
-              "imagePath": "assets/images/listening/qaf_listening/beginner/doctor.png"
-            },
-            {
-              "word": "حليب",
-              "imagePath": "assets/images/listening/qaf_listening/beginner/milk.png"
-            }
-          ]
-        }
-      ]
-    },
-
-    "intermediate": {
-      "code": "i",
-      "folder": "intermediate",
-      "words": [
-        {
-          "number": 1,
-          "target": "قبة",
-          "options": [
-            {
-              "word": "قبة",
-              "imagePath": "assets/images/listening/qaf_listening/intermediate/dome.png"
-            },
-            {
-              "word": "حبة",
-              "imagePath": "assets/images/listening/qaf_listening/intermediate/bean.png"
-            },
-            {
-              "word": "لعبة",
-              "imagePath": "assets/images/listening/qaf_listening/intermediate/toy.png"
-            },
-            {
-              "word": "سلة",
-              "imagePath": "assets/images/listening/qaf_listening/intermediate/basket.png"
-            }
-          ]
-        },
-        {
-          "number": 2,
-          "target": "قهوة",
-          "options": [
-            {
-              "word": "قهوة",
-              "imagePath": "assets/images/listening/qaf_listening/intermediate/coffee.png"
-            },
-            {
-              "word": "زهرة",
-              "imagePath": "assets/images/listening/qaf_listening/intermediate/flower.png"
-            },
-            {
-              "word": "حلوى",
-              "imagePath": "assets/images/listening/qaf_listening/intermediate/candy.png"
-            },
-            {
-              "word": "شاي",
-              "imagePath": "assets/images/listening/qaf_listening/intermediate/tea.png"
-            }
-          ]
-        },
-        {
-          "number": 3,
-          "target": "قائد",
-          "options": [
-            {
-              "word": "قائد",
-              "imagePath": "assets/images/listening/qaf_listening/intermediate/captain.png"
-            },
-            {
-              "word": "سائق",
-              "imagePath": "assets/images/listening/qaf_listening/intermediate/leader.png"
-            },
-            {
-              "word": "لاعب",
-              "imagePath": "assets/images/listening/qaf_listening/intermediate/athlete.png"
-            },
-            {
-              "word": "حارس",
-              "imagePath": "assets/images/listening/qaf_listening/intermediate/guard.png"
-            }
-          ]
-        },
-        {
-          "number": 4,
-          "target": "لقمة",
-          "options": [
-            {
-              "word": "لقمة",
-              "imagePath": "assets/images/listening/qaf_listening/intermediate/spoonful.png"
-            },
-            {
-              "word": "نجمة",
-              "imagePath": "assets/images/listening/qaf_listening/intermediate/star.png"
-            },
-            {
-              "word": "تمرة",
-              "imagePath": "assets/images/listening/qaf_listening/intermediate/dates.png"
-            },
-            {
-              "word": "كعكة",
-              "imagePath": "assets/images/listening/qaf_listening/intermediate/cake.png"
-            }
-          ]
-        },
-        {
-          "number": 5,
-          "target": "عقدة",
-          "options": [
-            {
-              "word": "عقدة",
-              "imagePath": "assets/images/listening/qaf_listening/intermediate/knot.png"
-            },
-            {
-              "word": "علبة",
-              "imagePath": "assets/images/listening/qaf_listening/intermediate/box.png"
-            },
-            {
-              "word": "عجلة",
-              "imagePath": "assets/images/listening/qaf_listening/intermediate/wheel.png"
-            },
-            {
-              "word": "حبل",
-              "imagePath": "assets/images/listening/qaf_listening/intermediate/rope.png"
-            }
-          ]
-        },
-        {
-          "number": 6,
-          "target": "قرد",
-          "options": [
-            {
-              "word": "قرد",
-              "imagePath": "assets/images/listening/qaf_listening/intermediate/monkey.png"
-            },
-            {
-              "word": "ورد",
-              "imagePath": "assets/images/listening/qaf_listening/intermediate/rose.png"
-            },
-            {
-              "word": "نمر",
-              "imagePath": "assets/images/listening/qaf_listening/intermediate/tiger.png"
-            },
-            {
-              "word": "أسد",
-              "imagePath": "assets/images/listening/qaf_listening/intermediate/lion.png"
-            }
-          ]
-        },
-        {
-          "number": 7,
-          "target": "برق",
-          "options": [
-            {
-              "word": "برق",
-              "imagePath": "assets/images/word_bank/qaf_i_07_barq.jpg"
-            },
-            {
-              "word": "برج",
-              "imagePath": "assets/images/listening/qaf_listening/intermediate/tower.png"
-            },
-            {
-              "word": "برد",
-              "imagePath": "assets/images/listening/qaf_listening/intermediate/cold.png"
-            },
-            {
-              "word": "بحر",
-              "imagePath": "assets/images/listening/qaf_listening/intermediate/sea.png"
-            }
-          ]
-        },
-        {
-          "number": 8,
-          "target": "حرق",
-          "options": [
-            {
-              "word": "حرق",
-              "imagePath": "assets/images/listening/qaf_listening/intermediate/fire.png"
-            },
-            {
-              "word": "حبر",
-              "imagePath": "assets/images/listening/qaf_listening/intermediate/ink.png"
-            },
-            {
-              "word": "حبل",
-              "imagePath": "assets/images/listening/qaf_listening/intermediate/rope.png"
-            },
-            {
-              "word": "بحر",
-              "imagePath": "assets/images/listening/qaf_listening/intermediate/Bahar.png"
-            }
-          ]
-        }
-      ]
-    },
-
-    "advanced": {
-      "code": "a",
-      "folder": "advanced",
-      "words": [
-        {
-          "number": 1,
-          "target": "قلادة",
-          "options": [
-            {
-              "word": "قلادة",
-              "imagePath": "assets/images/listening/qaf_listening/advanced/necklace.png"
-            },
-            {
-              "word": "سجادة",
-              "imagePath": "assets/images/listening/qaf_listening/advanced/carpet.png"
-            },
-            {
-              "word": "وسادة",
-              "imagePath": "assets/images/listening/qaf_listening/advanced/pillow.png"
-            },
-            {
-              "word": "نظارة",
-              "imagePath": "assets/images/listening/qaf_listening/advanced/glasses.png"
-            }
-          ]
-        },
-        {
-          "number": 2,
-          "target": "قائدين",
-          "options": [
-            {
-              "word": "قائدين",
-              "imagePath": "assets/images/listening/seen_listening/intermediate/necklace.png"
-            },
-            {
-              "word": "لاعبين",
-              "imagePath": "assets/images/listening/qaf_listening/advanced/athletes.png"
-            },
-            {
-              "word": "عاملين",
-              "imagePath": "assets/images/listening/qaf_listening/advanced/workers.png"
-            },
-            {
-              "word": "حارسين",
-              "imagePath": "assets/images/listening/qaf_listening/advanced/guards.png"
-            }
-          ]
-        },
-        {
-          "number": 3,
-          "target": "القوارب",
-          "options": [
-            {
-              "word": "القوارب",
-              "imagePath": "assets/images/listening/seen_listening/advanced/boats.png"
-            },
-            {
-              "word": "الطائرات",
-              "imagePath": "assets/images/listening/qaf_listening/advanced/airplanes.png"
-            },
-            {
-              "word": "السيارات",
-              "imagePath": "assets/images/listening/qaf_listening/advanced/cars.png"
-            },
-            {
-              "word": "الدراجات",
-              "imagePath": "assets/images/listening/qaf_listening/advanced/bikes.png"
-            }
-          ]
-        },
-        {
-          "number": 4,
-          "target": "مستقيمة",
-          "options": [
-            {
-              "word": "مستقيمة",
-              "imagePath": "assets/images/word_bank/qaf_a_04_mustaqima.jpg"
-            },
-            {
-              "word": "منحنية",
-              "imagePath": "assets/images/listening/qaf_listening/advanced/curved.png"
-            },
-            {
-              "word": "دائرية",
-              "imagePath": "assets/images/listening/qaf_listening/advanced/circular.png"
-            },
-            {
-              "word": "متعرجة",
-              "imagePath": "assets/images/listening/qaf_listening/advanced/winding.png"
-            }
-          ]
-        },
-        {
-          "number": 5,
-          "target": "الطوابق",
-          "options": [
-            {
-              "word": "الطوابق",
-              "imagePath": "assets/images/listening/seen_listening/advanced/floors.png"
-            },
-            {
-              "word": "السلالم",
-              "imagePath": "assets/images/listening/qaf_listening/advanced/stairs.png"
-            },
-            {
-              "word": "النوافذ",
-              "imagePath": "assets/images/listening/qaf_listening/advanced/windows.png"
-            },
-            {
-              "word": "الأبواب",
-              "imagePath": "assets/images/listening/qaf_listening/advanced/doors.png"
-            }
-          ]
-        },
-        {
-          "number": 6,
-          "target": "البطريق",
-          "options": [
-            {
-              "word": "البطريق",
-              "imagePath": "assets/images/listening/seen_listening/advanced/penguin.png"
-            },
-            {
-              "word": "التمساح",
-              "imagePath": "assets/images/listening/qaf_listening/advanced/crocodile.png"
-            },
-            {
-              "word": "العصفور",
-              "imagePath": "assets/images/listening/qaf_listening/advanced/bird.png"
-            },
-            {
-              "word": "الأرنب",
-              "imagePath": "assets/images/listening/qaf_listening/advanced/rabbit.png"
-            }
-          ]
-        },
-        {
-          "number": 7,
-          "target": "الأوراق",
-          "options": [
-            {
-              "word": "الأوراق",
-              "imagePath": "assets/images/listening/seen_listening/advanced/papers.png"
-            },
-            {
-              "word": "الكتب",
-              "imagePath": "assets/images/listening/qaf_listening/advanced/books.png"
-            },
-            {
-              "word": "الدفاتر",
-              "imagePath": "assets/images/listening/qaf_listening/advanced/notebooks.png"
-            },
-            {
-              "word": "الأزهار",
-              "imagePath": "assets/images/listening/qaf_listening/advanced/flower.png"
-            }
-          ]
-        },
-        {
-          "number": 8,
-          "target": "الإبريق",
-          "options": [
-            {
-              "word": "الإبريق",
-              "imagePath": "assets/images/listening/qaf_listening/advanced/pot.png"
-            },
-            {
-              "word": "الكوب",
-              "imagePath": "assets/images/listening/qaf_listening/advanced/cup.png"
-            },
-            {
-              "word": "الزجاجة",
-              "imagePath": "assets/images/listening/qaf_listening/advanced/bottle.png"
-            },
-            {
-              "word": "الوعاء",
-              "imagePath": "assets/images/listening/qaf_listening/advanced/bowl.png"
-            }
-          ]
-        }
-      ]
+  "ق": {
+    "assetFolder": "qaf",
+    "levels": {
+      "beginner": {
+        "code": "b",
+        "folder": "beginner",
+        "words": [
+          {
+            "number": 1,
+            "target": "سوق",
+            "options": [
+              {
+                "word": "سوق",
+                "imagePath": "assets/images/listening/qaf_listening/beginner/market.png"
+              },
+              {
+                "word": "سور",
+                "imagePath": "assets/images/listening/qaf_listening/beginner/wall.png"
+              },
+              {
+                "word": "صوف",
+                "imagePath": "assets/images/listening/qaf_listening/beginner/wool.png"
+              },
+              {
+                "word": "كوب",
+                "imagePath": "assets/images/listening/qaf_listening/beginner/cup.png"
+              }
+            ]
+          },
+          {
+            "number": 2,
+            "target": "قمر",
+            "options": [
+              {
+                "word": "قمر",
+                "imagePath": "assets/images/listening/qaf_listening/beginner/moon.png"
+              },
+              {
+                "word": "تمر",
+                "imagePath": "assets/images/listening/qaf_listening/beginner/dates.png"
+              },
+              {
+                "word": "نمر",
+                "imagePath": "assets/images/listening/qaf_listening/beginner/tiger.png"
+              },
+              {
+                "word": "حجر",
+                "imagePath": "assets/images/listening/qaf_listening/beginner/rock.png"
+              }
+            ]
+          },
+          {
+            "number": 3,
+            "target": "قطار",
+            "options": [
+              {
+                "word": "قطار",
+                "imagePath": "assets/images/listening/qaf_listening/beginner/train.png"
+              },
+              {
+                "word": "مطار",
+                "imagePath": "assets/images/listening/qaf_listening/beginner/airport.png"
+              },
+              {
+                "word": "جدار",
+                "imagePath": "assets/images/listening/qaf_listening/beginner/wall.png"
+              },
+              {
+                "word": "غبار",
+                "imagePath": "assets/images/listening/qaf_listening/beginner/dust.png"
+              }
+            ]
+          },
+          {
+            "number": 4,
+            "target": "قارب",
+            "options": [
+              {
+                "word": "قارب",
+                "imagePath": "assets/images/listening/qaf_listening/beginner/boat.png"
+              },
+              {
+                "word": "شارب",
+                "imagePath": "assets/images/listening/qaf_listening/beginner/mustache.png"
+              },
+              {
+                "word": "كاتب",
+                "imagePath": "assets/images/listening/qaf_listening/beginner/student.png"
+              },
+              {
+                "word": "حافلة",
+                "imagePath": "assets/images/listening/qaf_listening/beginner/schoolbus.png"
+              }
+            ]
+          },
+          {
+            "number": 5,
+            "target": "بقر",
+            "options": [
+              {
+                "word": "بقر",
+                "imagePath": "assets/images/listening/qaf_listening/beginner/cow.png"
+              },
+              {
+                "word": "بحر",
+                "imagePath": "assets/images/listening/qaf_listening/beginner/sea.png"
+              },
+              {
+                "word": "نمر",
+                "imagePath": "assets/images/listening/qaf_listening/beginner/tiger.png"
+              },
+              {
+                "word": "جمل",
+                "imagePath": "assets/images/listening/qaf_listening/beginner/camel.png"
+              }
+            ]
+          },
+          {
+            "number": 6,
+            "target": "نقود",
+            "options": [
+              {
+                "word": "نقود",
+                "imagePath": "assets/images/listening/qaf_listening/beginner/money.png"
+              },
+              {
+                "word": "ورود",
+                "imagePath": "assets/images/listening/qaf_listening/beginner/flower.png"
+              },
+              {
+                "word": "جنود",
+                "imagePath": "assets/images/listening/qaf_listening/beginner/soldiers.png"
+              },
+              {
+                "word": "حبوب",
+                "imagePath": "assets/images/listening/qaf_listening/beginner/bean.png"
+              }
+            ]
+          },
+          {
+            "number": 7,
+            "target": "طبق",
+            "options": [
+              {
+                "word": "طبق",
+                "imagePath": "assets/images/listening/qaf_listening/beginner/plate.png"
+              },
+              {
+                "word": "طبل",
+                "imagePath": "assets/images/listening/qaf_listening/beginner/drums.png"
+              },
+              {
+                "word": "كتاب",
+                "imagePath": "assets/images/listening/qaf_listening/beginner/book.png"
+              },
+              {
+                "word": "كوب",
+                "imagePath": "assets/images/listening/qaf_listening/beginner/cup.png"
+              }
+            ]
+          },
+          {
+            "number": 8,
+            "target": "طريق",
+            "options": [
+              {
+                "word": "طريق",
+                "imagePath": "assets/images/listening/qaf_listening/beginner/road.png"
+              },
+              {
+                "word": "سرير",
+                "imagePath": "assets/images/listening/qaf_listening/beginner/bed.png"
+              },
+              {
+                "word": "طبيب",
+                "imagePath": "assets/images/listening/qaf_listening/beginner/doctor.png"
+              },
+              {
+                "word": "حليب",
+                "imagePath": "assets/images/listening/qaf_listening/beginner/milk.png"
+              }
+            ]
+          }
+        ]
+      },
+      "intermediate": {
+        "code": "i",
+        "folder": "intermediate",
+        "words": [
+          {
+            "number": 1,
+            "target": "قبة",
+            "options": [
+              {
+                "word": "قبة",
+                "imagePath": "assets/images/listening/qaf_listening/intermediate/dome.png"
+              },
+              {
+                "word": "حبة",
+                "imagePath": "assets/images/listening/qaf_listening/intermediate/bean.png"
+              },
+              {
+                "word": "لعبة",
+                "imagePath": "assets/images/listening/qaf_listening/intermediate/toy.png"
+              },
+              {
+                "word": "سلة",
+                "imagePath": "assets/images/listening/qaf_listening/intermediate/basket.png"
+              }
+            ]
+          },
+          {
+            "number": 2,
+            "target": "قهوة",
+            "options": [
+              {
+                "word": "قهوة",
+                "imagePath": "assets/images/listening/qaf_listening/intermediate/coffee.png"
+              },
+              {
+                "word": "زهرة",
+                "imagePath": "assets/images/listening/qaf_listening/intermediate/flower.png"
+              },
+              {
+                "word": "حلوى",
+                "imagePath": "assets/images/listening/qaf_listening/intermediate/candy.png"
+              },
+              {
+                "word": "شاي",
+                "imagePath": "assets/images/listening/qaf_listening/intermediate/tea.png"
+              }
+            ]
+          },
+          {
+            "number": 3,
+            "target": "قائد",
+            "options": [
+              {
+                "word": "قائد",
+                "imagePath": "assets/images/listening/qaf_listening/intermediate/captain.png"
+              },
+              {
+                "word": "سائق",
+                "imagePath": "assets/images/listening/qaf_listening/intermediate/leader.png"
+              },
+              {
+                "word": "لاعب",
+                "imagePath": "assets/images/listening/qaf_listening/intermediate/athlete.png"
+              },
+              {
+                "word": "حارس",
+                "imagePath": "assets/images/listening/qaf_listening/intermediate/guard.png"
+              }
+            ]
+          },
+          {
+            "number": 4,
+            "target": "لقمة",
+            "options": [
+              {
+                "word": "لقمة",
+                "imagePath": "assets/images/listening/qaf_listening/intermediate/spoonful.png"
+              },
+              {
+                "word": "نجمة",
+                "imagePath": "assets/images/listening/qaf_listening/intermediate/star.png"
+              },
+              {
+                "word": "تمرة",
+                "imagePath": "assets/images/listening/qaf_listening/intermediate/dates.png"
+              },
+              {
+                "word": "كعكة",
+                "imagePath": "assets/images/listening/qaf_listening/intermediate/cake.png"
+              }
+            ]
+          },
+          {
+            "number": 5,
+            "target": "عقدة",
+            "options": [
+              {
+                "word": "عقدة",
+                "imagePath": "assets/images/listening/qaf_listening/intermediate/knot.png"
+              },
+              {
+                "word": "علبة",
+                "imagePath": "assets/images/listening/qaf_listening/intermediate/box.png"
+              },
+              {
+                "word": "عجلة",
+                "imagePath": "assets/images/listening/qaf_listening/intermediate/wheel.png"
+              },
+              {
+                "word": "حبل",
+                "imagePath": "assets/images/listening/qaf_listening/intermediate/rope.png"
+              }
+            ]
+          },
+          {
+            "number": 6,
+            "target": "قرد",
+            "options": [
+              {
+                "word": "قرد",
+                "imagePath": "assets/images/listening/qaf_listening/intermediate/monkey.png"
+              },
+              {
+                "word": "ورد",
+                "imagePath": "assets/images/listening/qaf_listening/intermediate/rose.png"
+              },
+              {
+                "word": "نمر",
+                "imagePath": "assets/images/listening/qaf_listening/intermediate/tiger.png"
+              },
+              {
+                "word": "أسد",
+                "imagePath": "assets/images/listening/qaf_listening/intermediate/lion.png"
+              }
+            ]
+          },
+          {
+            "number": 7,
+            "target": "برق",
+            "options": [
+              {
+                "word": "برق",
+                "imagePath": "assets/images/word_bank/qaf_i_07_barq.jpg"
+              },
+              {
+                "word": "برج",
+                "imagePath": "assets/images/listening/qaf_listening/intermediate/tower.png"
+              },
+              {
+                "word": "برد",
+                "imagePath": "assets/images/listening/qaf_listening/intermediate/cold.png"
+              },
+              {
+                "word": "بحر",
+                "imagePath": "assets/images/listening/qaf_listening/intermediate/sea.png"
+              }
+            ]
+          },
+          {
+            "number": 8,
+            "target": "حرق",
+            "options": [
+              {
+                "word": "حرق",
+                "imagePath": "assets/images/listening/qaf_listening/intermediate/fire.png"
+              },
+              {
+                "word": "حبر",
+                "imagePath": "assets/images/listening/qaf_listening/intermediate/ink.png"
+              },
+              {
+                "word": "حبل",
+                "imagePath": "assets/images/listening/qaf_listening/intermediate/rope.png"
+              },
+              {
+                "word": "بحر",
+                "imagePath": "assets/images/listening/qaf_listening/intermediate/Bahar.png"
+              }
+            ]
+          }
+        ]
+      },
+      "advanced": {
+        "code": "a",
+        "folder": "advanced",
+        "words": [
+          {
+            "number": 1,
+            "target": "قلادة",
+            "options": [
+              {
+                "word": "قلادة",
+                "imagePath": "assets/images/listening/qaf_listening/advanced/necklace.png"
+              },
+              {
+                "word": "سجادة",
+                "imagePath": "assets/images/listening/qaf_listening/advanced/carpet.png"
+              },
+              {
+                "word": "وسادة",
+                "imagePath": "assets/images/listening/qaf_listening/advanced/pillow.png"
+              },
+              {
+                "word": "نظارة",
+                "imagePath": "assets/images/listening/qaf_listening/advanced/glasses.png"
+              }
+            ]
+          },
+          {
+            "number": 2,
+            "target": "قائدين",
+            "options": [
+              {
+                "word": "قائدين",
+                "imagePath": "assets/images/listening/seen_listening/intermediate/necklace.png"
+              },
+              {
+                "word": "لاعبين",
+                "imagePath": "assets/images/listening/qaf_listening/advanced/athletes.png"
+              },
+              {
+                "word": "عاملين",
+                "imagePath": "assets/images/listening/qaf_listening/advanced/workers.png"
+              },
+              {
+                "word": "حارسين",
+                "imagePath": "assets/images/listening/qaf_listening/advanced/guards.png"
+              }
+            ]
+          },
+          {
+            "number": 3,
+            "target": "القوارب",
+            "options": [
+              {
+                "word": "القوارب",
+                "imagePath": "assets/images/listening/seen_listening/advanced/boats.png"
+              },
+              {
+                "word": "الطائرات",
+                "imagePath": "assets/images/listening/qaf_listening/advanced/airplanes.png"
+              },
+              {
+                "word": "السيارات",
+                "imagePath": "assets/images/listening/qaf_listening/advanced/cars.png"
+              },
+              {
+                "word": "الدراجات",
+                "imagePath": "assets/images/listening/qaf_listening/advanced/bikes.png"
+              }
+            ]
+          },
+          {
+            "number": 4,
+            "target": "مستقيمة",
+            "options": [
+              {
+                "word": "مستقيمة",
+                "imagePath": "assets/images/word_bank/qaf_a_04_mustaqima.jpg"
+              },
+              {
+                "word": "منحنية",
+                "imagePath": "assets/images/listening/qaf_listening/advanced/curved.png"
+              },
+              {
+                "word": "دائرية",
+                "imagePath": "assets/images/listening/qaf_listening/advanced/circular.png"
+              },
+              {
+                "word": "متعرجة",
+                "imagePath": "assets/images/listening/qaf_listening/advanced/winding.png"
+              }
+            ]
+          },
+          {
+            "number": 5,
+            "target": "الطوابق",
+            "options": [
+              {
+                "word": "الطوابق",
+                "imagePath": "assets/images/listening/seen_listening/advanced/floors.png"
+              },
+              {
+                "word": "السلالم",
+                "imagePath": "assets/images/listening/qaf_listening/advanced/stairs.png"
+              },
+              {
+                "word": "النوافذ",
+                "imagePath": "assets/images/listening/qaf_listening/advanced/windows.png"
+              },
+              {
+                "word": "الأبواب",
+                "imagePath": "assets/images/listening/qaf_listening/advanced/doors.png"
+              }
+            ]
+          },
+          {
+            "number": 6,
+            "target": "البطريق",
+            "options": [
+              {
+                "word": "البطريق",
+                "imagePath": "assets/images/listening/seen_listening/advanced/penguin.png"
+              },
+              {
+                "word": "التمساح",
+                "imagePath": "assets/images/listening/qaf_listening/advanced/crocodile.png"
+              },
+              {
+                "word": "العصفور",
+                "imagePath": "assets/images/listening/qaf_listening/advanced/bird.png"
+              },
+              {
+                "word": "الأرنب",
+                "imagePath": "assets/images/listening/qaf_listening/advanced/rabbit.png"
+              }
+            ]
+          },
+          {
+            "number": 7,
+            "target": "الأوراق",
+            "options": [
+              {
+                "word": "الأوراق",
+                "imagePath": "assets/images/listening/seen_listening/advanced/papers.png"
+              },
+              {
+                "word": "الكتب",
+                "imagePath": "assets/images/listening/qaf_listening/advanced/books.png"
+              },
+              {
+                "word": "الدفاتر",
+                "imagePath": "assets/images/listening/qaf_listening/advanced/notebooks.png"
+              },
+              {
+                "word": "الأزهار",
+                "imagePath": "assets/images/listening/qaf_listening/advanced/flower.png"
+              }
+            ]
+          },
+          {
+            "number": 8,
+            "target": "الإبريق",
+            "options": [
+              {
+                "word": "الإبريق",
+                "imagePath": "assets/images/listening/qaf_listening/advanced/pot.png"
+              },
+              {
+                "word": "الكوب",
+                "imagePath": "assets/images/listening/qaf_listening/advanced/cup.png"
+              },
+              {
+                "word": "الزجاجة",
+                "imagePath": "assets/images/listening/qaf_listening/advanced/bottle.png"
+              },
+              {
+                "word": "الوعاء",
+                "imagePath": "assets/images/listening/qaf_listening/advanced/bowl.png"
+              }
+            ]
+          }
+        ]
+      }
     }
-  }
-},
-
-  
+  },
   "خ": {
-  "assetFolder": "kha",
-  "levels": {
-    "beginner": {
-      "code": "b",
-      "folder": "beginner",
-      "words": [
-        {
-          "number": 1,
-          "target": "خبز",
-          "options": [
-            {"word": "خبز", "imagePath": "assets/images/word_bank/kha_b_01_khubz.png"},
-            {"word": "أرز", "imagePath": "assets/images/listening/kha_listening/beginner/rice.png"},
-            {"word": "تمر", "imagePath": "assets/images/listening/kha_listening/beginner/dates.png"},
-            {"word": "حليب", "imagePath": "assets/images/listening/kha_listening/beginner/milk.png"}
-          ]
-        },
-        {
-          "number": 2,
-          "target": "خوخ",
-          "options": [
-            {"word": "خوخ", "imagePath": "assets/images/word_bank/kha_b_02_khawkh.png"},
-            {"word": "تفاح", "imagePath": "assets/images/listening/kha_listening/beginner/apple.png"},
-            {"word": "موز", "imagePath": "assets/images/listening/kha_listening/beginner/banana.png"},
-            {"word": "عنب", "imagePath": "assets/images/listening/kha_listening/beginner/grapes.png"}
-          ]
-        },
-        {
-          "number": 3,
-          "target": "خيط",
-          "options": [
-            {"word": "خيط", "imagePath": "assets/images/word_bank/kha_b_03_khayt.png"},
-            {"word": "حبل", "imagePath": "assets/images/listening/kha_listening/beginner/rope.png"},
-            {"word": "قلم", "imagePath": "assets/images/listening/kha_listening/beginner/pen.png"},
-            {"word": "مسمار", "imagePath": "assets/images/listening/kha_listening/beginner/nail.png"}
-          ]
-        },
-        {
-          "number": 4,
-          "target": "خس",
-          "options": [
-            {"word": "خس", "imagePath": "assets/images/word_bank/kha_b_04_khass.png"},
-            {"word": "بصل", "imagePath": "assets/images/listening/kha_listening/beginner/onion.png"},
-            {"word": "جزر", "imagePath": "assets/images/listening/kha_listening/beginner/carrot.png"},
-            {"word": "فلفل", "imagePath": "assets/images/listening/kha_listening/beginner/pepper.png"}
-          ]
-        },
-        {
-          "number": 5,
-          "target": "صخر",
-          "options": [
-            {"word": "صخر", "imagePath": "assets/images/word_bank/kha_b_05_sakhr.png"},
-            {"word": "شجر", "imagePath": "assets/images/listening/kha_listening/beginner/tree.png"},
-            {"word": "رمل", "imagePath": "assets/images/listening/kha_listening/beginner/sand.png"},
-            {"word": "طين", "imagePath": "assets/images/listening/kha_listening/beginner/clay.png"}
-          ]
-        },
-        {
-          "number": 6,
-          "target": "يخت",
-          "options": [
-            {"word": "يخت", "imagePath": "assets/images/word_bank/kha_b_06_yakht.png"},
-            {"word": "قارب", "imagePath": "assets/images/listening/kha_listening/beginner/boat.png"},
-            {"word": "قطار", "imagePath": "assets/images/listening/kha_listening/beginner/train.png"},
-            {"word": "سيارة", "imagePath": "assets/images/listening/kha_listening/beginner/car.png"}
-          ]
-        },
-        {
-          "number": 7,
-          "target": "كوخ",
-          "options": [
-            {"word": "كوخ", "imagePath": "assets/images/word_bank/kha_b_07_kookh.png"},
-            {"word": "بيت", "imagePath": "assets/images/listening/kha_listening/beginner/house.png"},
-            {"word": "قصر", "imagePath": "assets/images/listening/kha_listening/beginner/palace.png"},
-            {"word": "خيمة", "imagePath": "assets/images/word_bank/kha_i_04_khayma.png"}
-          ]
-        },
-        {
-          "number": 8,
-          "target": "مخ",
-          "options": [
-            {"word": "مخ", "imagePath": "assets/images/word_bank/kha_b_08_mukh.png"},
-            {"word": "فم", "imagePath": "assets/images/listening/kha_listening/beginner/mouth.png"},
-            {"word": "يد", "imagePath": "assets/images/listening/kha_listening/beginner/hand.png"},
-            {"word": "عين", "imagePath": "assets/images/listening/kha_listening/beginner/eye.png"}
-          ]
-        }
-      ]
-    },
-
-    "intermediate": {
-      "code": "i",
-      "folder": "intermediate",
-      "words": [
-        {
-          "number": 1,
-          "target": "خروف",
-          "options": [
-            {"word": "خروف", "imagePath": "assets/images/word_bank/kha_i_01_kharoof.png"},
-            {"word": "جمل", "imagePath": "assets/images/listening/kha_listening/intermediate/camel.png"},
-            {"word": "حصان", "imagePath": "assets/images/listening/kha_listening/intermediate/horse.png"},
-            {"word": "أرنب", "imagePath": "assets/images/listening/kha_listening/intermediate/rabbit.png"}
-          ]
-        },
-        {
-          "number": 2,
-          "target": "خيار",
-          "options": [
-            {"word": "خيار", "imagePath": "assets/images/word_bank/kha_i_02_khiyar.png"},
-            {"word": "جزر", "imagePath": "assets/images/listening/kha_listening/intermediate/carrot.png"},
-            {"word": "طماطم", "imagePath": "assets/images/listening/kha_listening/intermediate/tomato.png"},
-            {"word": "بصل", "imagePath": "assets/images/listening/kha_listening/intermediate/onion.png"}
-          ]
-        },
-        {
-          "number": 3,
-          "target": "خاتم",
-          "options": [
-            {"word": "خاتم", "imagePath": "assets/images/word_bank/kha_i_03_khatam.png"},
-            {"word": "سوار", "imagePath": "assets/images/listening/kha_listening/intermediate/bracelet.png"},
-            {"word": "قلادة", "imagePath": "assets/images/listening/kha_listening/intermediate/necklace.png"},
-            {"word": "ساعة", "imagePath": "assets/images/listening/kha_listening/intermediate/watch.png"}
-          ]
-        },
-        {
-          "number": 4,
-          "target": "خيمة",
-          "options": [
-            {"word": "خيمة", "imagePath": "assets/images/word_bank/kha_i_04_khayma.png"},
-            {"word": "بيت", "imagePath": "assets/images/listening/kha_listening/intermediate/house.png"},
-            {"word": "كوخ", "imagePath": "assets/images/word_bank/kha_b_07_kookh.png"},
-            {"word": "قصر", "imagePath": "assets/images/listening/kha_listening/intermediate/palace.png"}
-          ]
-        },
-        {
-          "number": 5,
-          "target": "نخلة",
-          "options": [
-            {"word": "نخلة", "imagePath": "assets/images/word_bank/kha_i_05_nakhla.png"},
-            {"word": "شجرة", "imagePath": "assets/images/listening/kha_listening/intermediate/tree.png"},
-            {"word": "زهرة", "imagePath": "assets/images/listening/kha_listening/intermediate/flower.png"},
-            {"word": "وردة", "imagePath": "assets/images/listening/kha_listening/intermediate/rose.png"}
-          ]
-        },
-        {
-          "number": 6,
-          "target": "فخار",
-          "options": [
-            {"word": "فخار", "imagePath": "assets/images/word_bank/kha_i_06_fakhar.png"},
-            {"word": "زجاج", "imagePath": "assets/images/listening/kha_listening/intermediate/glass.png"},
-            {"word": "حديد", "imagePath": "assets/images/listening/kha_listening/intermediate/iron.png"},
-            {"word": "خشب", "imagePath": "assets/images/listening/kha_listening/intermediate/wood.png"}
-          ]
-        },
-        {
-          "number": 7,
-          "target": "مطبخ",
-          "options": [
-            {"word": "مطبخ", "imagePath": "assets/images/word_bank/kha_i_07_matbakh.png"},
-            {"word": "غرفة", "imagePath": "assets/images/listening/kha_listening/intermediate/room.png"},
-            {"word": "حديقة", "imagePath": "assets/images/listening/kha_listening/intermediate/park.png"},
-            {"word": "مدرسة", "imagePath": "assets/images/listening/kha_listening/intermediate/school.png"}
-          ]
-        },
-        {
-          "number": 8,
-          "target": "بطيخ",
-          "options": [
-            {"word": "بطيخ", "imagePath": "assets/images/word_bank/kha_i_08_batikh.png"},
-            {"word": "تفاح", "imagePath": "assets/images/listening/kha_listening/intermediate/apple.png"},
-            {"word": "برتقال", "imagePath": "assets/images/listening/kha_listening/intermediate/orange.png"},
-            {"word": "عنب", "imagePath": "assets/images/listening/kha_listening/intermediate/grapes.png"}
-          ]
-        }
-      ]
-    },
-
-    "advanced": {
-      "code": "a",
-      "folder": "advanced",
-      "words": [
-        {
-          "number": 1,
-          "target": "خريطة",
-          "options": [
-            {"word": "خريطة", "imagePath": "assets/images/word_bank/kha_a_01_khareeta.png"},
-            {"word": "صحيفة", "imagePath": "assets/images/listening/kha_listening/advanced/newspaper.png"},
-            {"word": "رسالة", "imagePath": "assets/images/listening/kha_listening/advanced/letter.png"},
-            {"word": "صورة", "imagePath": "assets/images/listening/kha_listening/advanced/picture.png"}
-          ]
-        },
-        {
-          "number": 2,
-          "target": "خائفين",
-          "options": [
-            {"word": "خائفين", "imagePath": "assets/images/word_bank/kha_a_02_khaifeen.png"},
-            {"word": "سعيدين", "imagePath": "assets/images/listening/kha_listening/advanced/happy_children.png"},
-            {"word": "نائمين", "imagePath": "assets/images/listening/kha_listening/advanced/sleeping_children.png"},
-            {"word": "واقفين", "imagePath": "assets/images/listening/kha_listening/advanced/standing_children.png"}
-          ]
-        },
-        {
-          "number": 3,
-          "target": "أخطبوط",
-          "options": [
-            {"word": "أخطبوط", "imagePath": "assets/images/word_bank/kha_a_03_ukhtuboot.png"},
-            {"word": "سمكة", "imagePath": "assets/images/listening/kha_listening/advanced/fish.png"},
-            {"word": "سلحفاة", "imagePath": "assets/images/listening/kha_listening/advanced/turtle.png"},
-            {"word": "دلفين", "imagePath": "assets/images/listening/kha_listening/advanced/dolphin.png"}
-          ]
-        },
-        {
-          "number": 4,
-          "target": "طباخات",
-          "options": [
-            {"word": "طباخات", "imagePath": "assets/images/word_bank/kha_a_04_tabakhat.png"},
-            {"word": "معلمات", "imagePath": "assets/images/listening/kha_listening/advanced/teachers.png"},
-            {"word": "طبيبات", "imagePath": "assets/images/listening/kha_listening/advanced/doctors.png"},
-            {"word": "مهندسات", "imagePath": "assets/images/listening/kha_listening/advanced/engineers.png"}
-          ]
-        },
-        {
-          "number": 5,
-          "target": "مختبرات",
-          "options": [
-            {"word": "مختبرات", "imagePath": "assets/images/word_bank/kha_a_05_mukhtabarat.png"},
-            {"word": "مكتبات", "imagePath": "assets/images/listening/kha_listening/advanced/library.png"},
-            {"word": "مدارس", "imagePath": "assets/images/listening/kha_listening/advanced/schools.jpg"},
-            {"word": "مستشفيات", "imagePath": "assets/images/listening/kha_listening/advanced/hospitals.png"}
-          ]
-        },
-        {
-          "number": 6,
-          "target": "صواريخ",
-          "options": [
-            {"word": "صواريخ", "imagePath": "assets/images/word_bank/kha_a_06_sawareekh.png"},
-            {"word": "طائرات", "imagePath": "assets/images/listening/kha_listening/advanced/planes.jpg"},
-            {"word": "سيارات", "imagePath": "assets/images/listening/kha_listening/advanced/cars.png"},
-            {"word": "قطارات", "imagePath": "assets/images/listening/kha_listening/advanced/trains.png"}
-          ]
-        },
-        {
-          "number": 7,
-          "target": "أفخاخ",
-          "options": [
-            {"word": "أفخاخ", "imagePath": "assets/images/word_bank/kha_a_07_afkhakh.png"},
-            {"word": "أقفاص", "imagePath": "assets/images/listening/kha_listening/advanced/cages.png"},
-            {"word": "حبال", "imagePath": "assets/images/listening/kha_listening/advanced/ropes.png"},
-            {"word": "شباك", "imagePath": "assets/images/listening/kha_listening/advanced/net.png"}
-          ]
-        },
-        {
-          "number": 8,
-          "target": "أوساخ",
-          "options": [
-            {"word": "أوساخ", "imagePath": "assets/images/word_bank/kha_a_08_awsakh.png"},
-            {"word": "ألعاب", "imagePath": "assets/images/listening/kha_listening/advanced/games.png"},
-            {"word": "أوراق", "imagePath": "assets/images/listening/kha_listening/advanced/papers.png"},
-            {"word": "ملابس", "imagePath": "assets/images/listening/kha_listening/advanced/clothes.png"}
-          ]
-        }
-      ]
+    "assetFolder": "kha",
+    "levels": {
+      "beginner": {
+        "code": "b",
+        "folder": "beginner",
+        "words": [
+          {
+            "number": 1,
+            "target": "خبز",
+            "options": [
+              {
+                "word": "خبز",
+                "imagePath": "assets/images/word_bank/kha_b_01_khubz.png"
+              },
+              {
+                "word": "أرز",
+                "imagePath": "assets/images/listening/kha_listening/beginner/rice.png"
+              },
+              {
+                "word": "تمر",
+                "imagePath": "assets/images/listening/kha_listening/beginner/dates.png"
+              },
+              {
+                "word": "حليب",
+                "imagePath": "assets/images/listening/kha_listening/beginner/milk.png"
+              }
+            ]
+          },
+          {
+            "number": 2,
+            "target": "خوخ",
+            "options": [
+              {
+                "word": "خوخ",
+                "imagePath": "assets/images/word_bank/kha_b_02_khawkh.png"
+              },
+              {
+                "word": "تفاح",
+                "imagePath": "assets/images/listening/kha_listening/beginner/apple.png"
+              },
+              {
+                "word": "موز",
+                "imagePath": "assets/images/listening/kha_listening/beginner/banana.png"
+              },
+              {
+                "word": "عنب",
+                "imagePath": "assets/images/listening/kha_listening/beginner/grapes.png"
+              }
+            ]
+          },
+          {
+            "number": 3,
+            "target": "خيط",
+            "options": [
+              {
+                "word": "خيط",
+                "imagePath": "assets/images/word_bank/kha_b_03_khayt.png"
+              },
+              {
+                "word": "حبل",
+                "imagePath": "assets/images/listening/kha_listening/beginner/rope.png"
+              },
+              {
+                "word": "قلم",
+                "imagePath": "assets/images/listening/kha_listening/beginner/pen.png"
+              },
+              {
+                "word": "مسمار",
+                "imagePath": "assets/images/listening/kha_listening/beginner/nail.png"
+              }
+            ]
+          },
+          {
+            "number": 4,
+            "target": "خس",
+            "options": [
+              {
+                "word": "خس",
+                "imagePath": "assets/images/word_bank/kha_b_04_khass.png"
+              },
+              {
+                "word": "بصل",
+                "imagePath": "assets/images/listening/kha_listening/beginner/onion.png"
+              },
+              {
+                "word": "جزر",
+                "imagePath": "assets/images/listening/kha_listening/beginner/carrot.png"
+              },
+              {
+                "word": "فلفل",
+                "imagePath": "assets/images/listening/kha_listening/beginner/pepper.png"
+              }
+            ]
+          },
+          {
+            "number": 5,
+            "target": "صخر",
+            "options": [
+              {
+                "word": "صخر",
+                "imagePath": "assets/images/word_bank/kha_b_05_sakhr.png"
+              },
+              {
+                "word": "شجر",
+                "imagePath": "assets/images/listening/kha_listening/beginner/tree.png"
+              },
+              {
+                "word": "رمل",
+                "imagePath": "assets/images/listening/kha_listening/beginner/sand.png"
+              },
+              {
+                "word": "طين",
+                "imagePath": "assets/images/listening/kha_listening/beginner/clay.png"
+              }
+            ]
+          },
+          {
+            "number": 6,
+            "target": "يخت",
+            "options": [
+              {
+                "word": "يخت",
+                "imagePath": "assets/images/word_bank/kha_b_06_yakht.png"
+              },
+              {
+                "word": "قارب",
+                "imagePath": "assets/images/listening/kha_listening/beginner/boat.png"
+              },
+              {
+                "word": "قطار",
+                "imagePath": "assets/images/listening/kha_listening/beginner/train.png"
+              },
+              {
+                "word": "سيارة",
+                "imagePath": "assets/images/listening/kha_listening/beginner/car.png"
+              }
+            ]
+          },
+          {
+            "number": 7,
+            "target": "كوخ",
+            "options": [
+              {
+                "word": "كوخ",
+                "imagePath": "assets/images/word_bank/kha_b_07_kookh.png"
+              },
+              {
+                "word": "بيت",
+                "imagePath": "assets/images/listening/kha_listening/beginner/house.png"
+              },
+              {
+                "word": "قصر",
+                "imagePath": "assets/images/listening/kha_listening/beginner/palace.png"
+              },
+              {
+                "word": "خيمة",
+                "imagePath": "assets/images/word_bank/kha_i_04_khayma.png"
+              }
+            ]
+          },
+          {
+            "number": 8,
+            "target": "مخ",
+            "options": [
+              {
+                "word": "مخ",
+                "imagePath": "assets/images/word_bank/kha_b_08_mukh.png"
+              },
+              {
+                "word": "فم",
+                "imagePath": "assets/images/listening/kha_listening/beginner/mouth.png"
+              },
+              {
+                "word": "يد",
+                "imagePath": "assets/images/listening/kha_listening/beginner/hand.png"
+              },
+              {
+                "word": "عين",
+                "imagePath": "assets/images/listening/kha_listening/beginner/eye.png"
+              }
+            ]
+          }
+        ]
+      },
+      "intermediate": {
+        "code": "i",
+        "folder": "intermediate",
+        "words": [
+          {
+            "number": 1,
+            "target": "خروف",
+            "options": [
+              {
+                "word": "خروف",
+                "imagePath": "assets/images/word_bank/kha_i_01_kharoof.png"
+              },
+              {
+                "word": "جمل",
+                "imagePath": "assets/images/listening/kha_listening/intermediate/camel.png"
+              },
+              {
+                "word": "حصان",
+                "imagePath": "assets/images/listening/kha_listening/intermediate/horse.png"
+              },
+              {
+                "word": "أرنب",
+                "imagePath": "assets/images/listening/kha_listening/intermediate/rabbit.png"
+              }
+            ]
+          },
+          {
+            "number": 2,
+            "target": "خيار",
+            "options": [
+              {
+                "word": "خيار",
+                "imagePath": "assets/images/word_bank/kha_i_02_khiyar.png"
+              },
+              {
+                "word": "جزر",
+                "imagePath": "assets/images/listening/kha_listening/intermediate/carrot.png"
+              },
+              {
+                "word": "طماطم",
+                "imagePath": "assets/images/listening/kha_listening/intermediate/tomato.png"
+              },
+              {
+                "word": "بصل",
+                "imagePath": "assets/images/listening/kha_listening/intermediate/onion.png"
+              }
+            ]
+          },
+          {
+            "number": 3,
+            "target": "خاتم",
+            "options": [
+              {
+                "word": "خاتم",
+                "imagePath": "assets/images/word_bank/kha_i_03_khatam.png"
+              },
+              {
+                "word": "سوار",
+                "imagePath": "assets/images/listening/kha_listening/intermediate/bracelet.png"
+              },
+              {
+                "word": "قلادة",
+                "imagePath": "assets/images/listening/kha_listening/intermediate/necklace.png"
+              },
+              {
+                "word": "ساعة",
+                "imagePath": "assets/images/listening/kha_listening/intermediate/watch.png"
+              }
+            ]
+          },
+          {
+            "number": 4,
+            "target": "خيمة",
+            "options": [
+              {
+                "word": "خيمة",
+                "imagePath": "assets/images/word_bank/kha_i_04_khayma.png"
+              },
+              {
+                "word": "بيت",
+                "imagePath": "assets/images/listening/kha_listening/intermediate/house.png"
+              },
+              {
+                "word": "كوخ",
+                "imagePath": "assets/images/word_bank/kha_b_07_kookh.png"
+              },
+              {
+                "word": "قصر",
+                "imagePath": "assets/images/listening/kha_listening/intermediate/palace.png"
+              }
+            ]
+          },
+          {
+            "number": 5,
+            "target": "نخلة",
+            "options": [
+              {
+                "word": "نخلة",
+                "imagePath": "assets/images/word_bank/kha_i_05_nakhla.png"
+              },
+              {
+                "word": "شجرة",
+                "imagePath": "assets/images/listening/kha_listening/intermediate/tree.png"
+              },
+              {
+                "word": "زهرة",
+                "imagePath": "assets/images/listening/kha_listening/intermediate/flower.png"
+              },
+              {
+                "word": "وردة",
+                "imagePath": "assets/images/listening/kha_listening/intermediate/rose.png"
+              }
+            ]
+          },
+          {
+            "number": 6,
+            "target": "فخار",
+            "options": [
+              {
+                "word": "فخار",
+                "imagePath": "assets/images/word_bank/kha_i_06_fakhar.png"
+              },
+              {
+                "word": "زجاج",
+                "imagePath": "assets/images/listening/kha_listening/intermediate/glass.png"
+              },
+              {
+                "word": "حديد",
+                "imagePath": "assets/images/listening/kha_listening/intermediate/iron.png"
+              },
+              {
+                "word": "خشب",
+                "imagePath": "assets/images/listening/kha_listening/intermediate/wood.png"
+              }
+            ]
+          },
+          {
+            "number": 7,
+            "target": "مطبخ",
+            "options": [
+              {
+                "word": "مطبخ",
+                "imagePath": "assets/images/word_bank/kha_i_07_matbakh.png"
+              },
+              {
+                "word": "غرفة",
+                "imagePath": "assets/images/listening/kha_listening/intermediate/room.png"
+              },
+              {
+                "word": "حديقة",
+                "imagePath": "assets/images/listening/kha_listening/intermediate/park.png"
+              },
+              {
+                "word": "مدرسة",
+                "imagePath": "assets/images/listening/kha_listening/intermediate/school.png"
+              }
+            ]
+          },
+          {
+            "number": 8,
+            "target": "بطيخ",
+            "options": [
+              {
+                "word": "بطيخ",
+                "imagePath": "assets/images/word_bank/kha_i_08_batikh.png"
+              },
+              {
+                "word": "تفاح",
+                "imagePath": "assets/images/listening/kha_listening/intermediate/apple.png"
+              },
+              {
+                "word": "برتقال",
+                "imagePath": "assets/images/listening/kha_listening/intermediate/orange.png"
+              },
+              {
+                "word": "عنب",
+                "imagePath": "assets/images/listening/kha_listening/intermediate/grapes.png"
+              }
+            ]
+          }
+        ]
+      },
+      "advanced": {
+        "code": "a",
+        "folder": "advanced",
+        "words": [
+          {
+            "number": 1,
+            "target": "خريطة",
+            "options": [
+              {
+                "word": "خريطة",
+                "imagePath": "assets/images/word_bank/kha_a_01_khareeta.png"
+              },
+              {
+                "word": "صحيفة",
+                "imagePath": "assets/images/listening/kha_listening/advanced/newspaper.png"
+              },
+              {
+                "word": "رسالة",
+                "imagePath": "assets/images/listening/kha_listening/advanced/letter.png"
+              },
+              {
+                "word": "صورة",
+                "imagePath": "assets/images/listening/kha_listening/advanced/picture.png"
+              }
+            ]
+          },
+          {
+            "number": 2,
+            "target": "خائفين",
+            "options": [
+              {
+                "word": "خائفين",
+                "imagePath": "assets/images/word_bank/kha_a_02_khaifeen.png"
+              },
+              {
+                "word": "سعيدين",
+                "imagePath": "assets/images/listening/kha_listening/advanced/happy_children.png"
+              },
+              {
+                "word": "نائمين",
+                "imagePath": "assets/images/listening/kha_listening/advanced/sleeping_children.png"
+              },
+              {
+                "word": "واقفين",
+                "imagePath": "assets/images/listening/kha_listening/advanced/standing_children.png"
+              }
+            ]
+          },
+          {
+            "number": 3,
+            "target": "أخطبوط",
+            "options": [
+              {
+                "word": "أخطبوط",
+                "imagePath": "assets/images/word_bank/kha_a_03_ukhtuboot.png"
+              },
+              {
+                "word": "سمكة",
+                "imagePath": "assets/images/listening/kha_listening/advanced/fish.png"
+              },
+              {
+                "word": "سلحفاة",
+                "imagePath": "assets/images/listening/kha_listening/advanced/turtle.png"
+              },
+              {
+                "word": "دلفين",
+                "imagePath": "assets/images/listening/kha_listening/advanced/dolphin.png"
+              }
+            ]
+          },
+          {
+            "number": 4,
+            "target": "طباخات",
+            "options": [
+              {
+                "word": "طباخات",
+                "imagePath": "assets/images/word_bank/kha_a_04_tabakhat.png"
+              },
+              {
+                "word": "معلمات",
+                "imagePath": "assets/images/listening/kha_listening/advanced/teachers.png"
+              },
+              {
+                "word": "طبيبات",
+                "imagePath": "assets/images/listening/kha_listening/advanced/doctors.png"
+              },
+              {
+                "word": "مهندسات",
+                "imagePath": "assets/images/listening/kha_listening/advanced/engineers.png"
+              }
+            ]
+          },
+          {
+            "number": 5,
+            "target": "مختبرات",
+            "options": [
+              {
+                "word": "مختبرات",
+                "imagePath": "assets/images/word_bank/kha_a_05_mukhtabarat.png"
+              },
+              {
+                "word": "مكتبات",
+                "imagePath": "assets/images/listening/kha_listening/advanced/library.png"
+              },
+              {
+                "word": "مدارس",
+                "imagePath": "assets/images/listening/kha_listening/advanced/schools.jpg"
+              },
+              {
+                "word": "مستشفيات",
+                "imagePath": "assets/images/listening/kha_listening/advanced/hospitals.png"
+              }
+            ]
+          },
+          {
+            "number": 6,
+            "target": "صواريخ",
+            "options": [
+              {
+                "word": "صواريخ",
+                "imagePath": "assets/images/word_bank/kha_a_06_sawareekh.png"
+              },
+              {
+                "word": "طائرات",
+                "imagePath": "assets/images/listening/kha_listening/advanced/planes.jpg"
+              },
+              {
+                "word": "سيارات",
+                "imagePath": "assets/images/listening/kha_listening/advanced/cars.png"
+              },
+              {
+                "word": "قطارات",
+                "imagePath": "assets/images/listening/kha_listening/advanced/trains.png"
+              }
+            ]
+          },
+          {
+            "number": 7,
+            "target": "أفخاخ",
+            "options": [
+              {
+                "word": "أفخاخ",
+                "imagePath": "assets/images/word_bank/kha_a_07_afkhakh.png"
+              },
+              {
+                "word": "أقفاص",
+                "imagePath": "assets/images/listening/kha_listening/advanced/cages.png"
+              },
+              {
+                "word": "حبال",
+                "imagePath": "assets/images/listening/kha_listening/advanced/ropes.png"
+              },
+              {
+                "word": "شباك",
+                "imagePath": "assets/images/listening/kha_listening/advanced/net.png"
+              }
+            ]
+          },
+          {
+            "number": 8,
+            "target": "أوساخ",
+            "options": [
+              {
+                "word": "أوساخ",
+                "imagePath": "assets/images/word_bank/kha_a_08_awsakh.png"
+              },
+              {
+                "word": "ألعاب",
+                "imagePath": "assets/images/listening/kha_listening/advanced/games.png"
+              },
+              {
+                "word": "أوراق",
+                "imagePath": "assets/images/listening/kha_listening/advanced/papers.png"
+              },
+              {
+                "word": "ملابس",
+                "imagePath": "assets/images/listening/kha_listening/advanced/clothes.png"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "س": {
+    "assetFolder": "seen",
+    "levels": {
+      "beginner": {
+        "code": "b",
+        "folder": "beginner",
+        "words": [
+          {
+            "number": 1,
+            "target": "سلم",
+            "options": [
+              {
+                "word": "سلم",
+                "imagePath": "assets/images/word_bank/seen_b_01_sulam.png"
+              },
+              {
+                "word": "قلم",
+                "imagePath": "assets/images/listening/seen_listening/beginner/pen.png"
+              },
+              {
+                "word": "علم",
+                "imagePath": "assets/images/listening/seen_listening/beginner/flag.png"
+              },
+              {
+                "word": "سهم",
+                "imagePath": "assets/images/listening/seen_listening/beginner/arrow.png"
+              }
+            ]
+          },
+          {
+            "number": 2,
+            "target": "خس",
+            "options": [
+              {
+                "word": "خس",
+                "imagePath": "assets/images/word_bank/seen_b_02_khas.png"
+              },
+              {
+                "word": "خوخ",
+                "imagePath": "assets/images/listening/seen_listening/beginner/peach.png"
+              },
+              {
+                "word": "خبز",
+                "imagePath": "assets/images/listening/seen_listening/beginner/bread.png"
+              },
+              {
+                "word": "كيس",
+                "imagePath": "assets/images/listening/seen_listening/beginner/bag.png"
+              }
+            ]
+          },
+          {
+            "number": 3,
+            "target": "جرس",
+            "options": [
+              {
+                "word": "جرس",
+                "imagePath": "assets/images/word_bank/seen_b_03_jaras.png"
+              },
+              {
+                "word": "فرس",
+                "imagePath": "assets/images/listening/seen_listening/beginner/horse.png"
+              },
+              {
+                "word": "درس",
+                "imagePath": "assets/images/listening/seen_listening/beginner/teachers.png"
+              },
+              {
+                "word": "كرسي",
+                "imagePath": "assets/images/listening/seen_listening/beginner/chair.png"
+              }
+            ]
+          },
+          {
+            "number": 4,
+            "target": "جسر",
+            "options": [
+              {
+                "word": "جسر",
+                "imagePath": "assets/images/word_bank/seen_b_04_jisr.png"
+              },
+              {
+                "word": "نسر",
+                "imagePath": "assets/images/listening/seen_listening/beginner/eagle.png"
+              },
+              {
+                "word": "قصر",
+                "imagePath": "assets/images/listening/seen_listening/beginner/castle.png"
+              },
+              {
+                "word": "بئر",
+                "imagePath": "assets/images/listening/seen_listening/beginner/well.png"
+              }
+            ]
+          },
+          {
+            "number": 5,
+            "target": "أسد",
+            "options": [
+              {
+                "word": "أسد",
+                "imagePath": "assets/images/word_bank/seen_b_05_asad.png"
+              },
+              {
+                "word": "أرنب",
+                "imagePath": "assets/images/listening/seen_listening/beginner/rabbit.png"
+              },
+              {
+                "word": "أسهم",
+                "imagePath": "assets/images/listening/seen_listening/beginner/arrows.png"
+              },
+              {
+                "word": "أسرة",
+                "imagePath": "assets/images/listening/seen_listening/beginner/family.png"
+              }
+            ]
+          },
+          {
+            "number": 6,
+            "target": "رسم",
+            "options": [
+              {
+                "word": "رسم",
+                "imagePath": "assets/images/word_bank/seen_b_06_rasm.png"
+              },
+              {
+                "word": "سهم",
+                "imagePath": "assets/images/listening/seen_listening/beginner/arrow.png"
+              },
+              {
+                "word": "نجم",
+                "imagePath": "assets/images/listening/seen_listening/beginner/star.png"
+              },
+              {
+                "word": "ختم",
+                "imagePath": "assets/images/listening/seen_listening/beginner/stamp.png"
+              }
+            ]
+          },
+          {
+            "number": 7,
+            "target": "عسل",
+            "options": [
+              {
+                "word": "عسل",
+                "imagePath": "assets/images/word_bank/seen_b_07_asal.png"
+              },
+              {
+                "word": "بصل",
+                "imagePath": "assets/images/listening/seen_listening/beginner/onion.png"
+              },
+              {
+                "word": "عجل",
+                "imagePath": "assets/images/listening/seen_listening/beginner/calf.png"
+              },
+              {
+                "word": "عنب",
+                "imagePath": "assets/images/listening/seen_listening/beginner/grape.png"
+              }
+            ]
+          },
+          {
+            "number": 8,
+            "target": "سمك",
+            "options": [
+              {
+                "word": "سمك",
+                "imagePath": "assets/images/word_bank/seen_b_08_smk.png"
+              },
+              {
+                "word": "سماء",
+                "imagePath": "assets/images/listening/seen_listening/beginner/sky.png"
+              },
+              {
+                "word": "سمسم",
+                "imagePath": "assets/images/listening/seen_listening/beginner/sesame.png"
+              },
+              {
+                "word": "سلة",
+                "imagePath": "assets/images/listening/seen_listening/beginner/basket.png"
+              }
+            ]
+          }
+        ]
+      },
+      "intermediate": {
+        "code": "i",
+        "folder": "intermediate",
+        "words": [
+          {
+            "number": 1,
+            "target": "سنجاب",
+            "options": [
+              {
+                "word": "سنجاب",
+                "imagePath": "assets/images/word_bank/seen_i_01_sinjab.png"
+              },
+              {
+                "word": "سنبلة",
+                "imagePath": "assets/images/listening/seen_listening/intermediate/wheatears.png"
+              },
+              {
+                "word": "سلسال",
+                "imagePath": "assets/images/listening/seen_listening/intermediate/necklace.png"
+              },
+              {
+                "word": "أسنان",
+                "imagePath": "assets/images/listening/seen_listening/intermediate/teeth.png"
+              }
+            ]
+          },
+          {
+            "number": 2,
+            "target": "سرير",
+            "options": [
+              {
+                "word": "سرير",
+                "imagePath": "assets/images/word_bank/seen_i_02_sarir.png"
+              },
+              {
+                "word": "حرير",
+                "imagePath": "assets/images/listening/seen_listening/intermediate/silk.png"
+              },
+              {
+                "word": "شرير",
+                "imagePath": "assets/images/listening/seen_listening/intermediate/villain.png"
+              },
+              {
+                "word": "شراب",
+                "imagePath": "assets/images/listening/seen_listening/intermediate/drink.png"
+              }
+            ]
+          },
+          {
+            "number": 3,
+            "target": "سحاب",
+            "options": [
+              {
+                "word": "سحاب",
+                "imagePath": "assets/images/word_bank/seen_i_03_sahab.png"
+              },
+              {
+                "word": "سحلية",
+                "imagePath": "assets/images/listening/seen_listening/intermediate/lizard.png"
+              },
+              {
+                "word": "ضباب",
+                "imagePath": "assets/images/listening/seen_listening/intermediate/fog.png"
+              },
+              {
+                "word": "سوار",
+                "imagePath": "assets/images/listening/seen_listening/intermediate/bracelet.png"
+              }
+            ]
+          },
+          {
+            "number": 4,
+            "target": "طاووس",
+            "options": [
+              {
+                "word": "طاووس",
+                "imagePath": "assets/images/word_bank/seen_i_04_tawoos.png"
+              },
+              {
+                "word": "فانوس",
+                "imagePath": "assets/images/listening/seen_listening/intermediate/lantern.png"
+              },
+              {
+                "word": "جاموس",
+                "imagePath": "assets/images/listening/seen_listening/intermediate/bull.png"
+              },
+              {
+                "word": "ناقوس",
+                "imagePath": "assets/images/listening/seen_listening/intermediate/bells.png"
+              }
+            ]
+          },
+          {
+            "number": 5,
+            "target": "ألماس",
+            "options": [
+              {
+                "word": "ألماس",
+                "imagePath": "assets/images/word_bank/seen_i_05_almas.png"
+              },
+              {
+                "word": "أجراس",
+                "imagePath": "assets/images/listening/seen_listening/intermediate/bells.png"
+              },
+              {
+                "word": "أكياس",
+                "imagePath": "assets/images/listening/seen_listening/intermediate/bags.png"
+              },
+              {
+                "word": "لباس",
+                "imagePath": "assets/images/listening/seen_listening/intermediate/clothing.png"
+              }
+            ]
+          },
+          {
+            "number": 6,
+            "target": "مسبح",
+            "options": [
+              {
+                "word": "مسبح",
+                "imagePath": "assets/images/word_bank/seen_i_06_masbah.png"
+              },
+              {
+                "word": "مسرح",
+                "imagePath": "assets/images/listening/seen_listening/intermediate/theater.png"
+              },
+              {
+                "word": "مسجد",
+                "imagePath": "assets/images/listening/seen_listening/intermediate/mosque.png"
+              },
+              {
+                "word": "ملعب",
+                "imagePath": "assets/images/listening/seen_listening/intermediate/playground.png"
+              }
+            ]
+          },
+          {
+            "number": 7,
+            "target": "أسود",
+            "options": [
+              {
+                "word": "أسود",
+                "imagePath": "assets/images/word_bank/seen_i_07_aswad.png"
+              },
+              {
+                "word": "أسد",
+                "imagePath": "assets/images/listening/seen_listening/intermediate/lion.png"
+              },
+              {
+                "word": "أسوار",
+                "imagePath": "assets/images/listening/seen_listening/intermediate/wall.png"
+              },
+              {
+                "word": "أسواق",
+                "imagePath": "assets/images/listening/seen_listening/intermediate/market.png"
+              }
+            ]
+          },
+          {
+            "number": 8,
+            "target": "مسمار",
+            "options": [
+              {
+                "word": "مسمار",
+                "imagePath": "assets/images/word_bank/seen_i_08_mismar.png"
+              },
+              {
+                "word": "منشار",
+                "imagePath": "assets/images/listening/seen_listening/intermediate/saw.png"
+              },
+              {
+                "word": "مصباح",
+                "imagePath": "assets/images/listening/seen_listening/intermediate/bulb.png"
+              },
+              {
+                "word": "منظار",
+                "imagePath": "assets/images/listening/seen_listening/intermediate/binoculars.png"
+              }
+            ]
+          }
+        ]
+      },
+      "advanced": {
+        "code": "a",
+        "folder": "advanced",
+        "words": [
+          {
+            "number": 1,
+            "target": "سيارة",
+            "options": [
+              {
+                "word": "سيارة",
+                "imagePath": "assets/images/word_bank/seen_a_01_syarh.png"
+              },
+              {
+                "word": "إشارة",
+                "imagePath": "assets/images/listening/seen_listening/advanced/stoplight.png"
+              },
+              {
+                "word": "منارة",
+                "imagePath": "assets/images/listening/seen_listening/advanced/lighthouse.png"
+              },
+              {
+                "word": "نظارة",
+                "imagePath": "assets/images/listening/seen_listening/advanced/glasses.png"
+              }
+            ]
+          },
+          {
+            "number": 2,
+            "target": "سفينة",
+            "options": [
+              {
+                "word": "سفينة",
+                "imagePath": "assets/images/word_bank/seen_a_02_safinah.png"
+              },
+              {
+                "word": "مدينة",
+                "imagePath": "assets/images/listening/seen_listening/advanced/city.png"
+              },
+              {
+                "word": "خزينة",
+                "imagePath": "assets/images/listening/seen_listening/advanced/safe.png"
+              },
+              {
+                "word": "سكينة",
+                "imagePath": "assets/images/listening/seen_listening/advanced/knife.png"
+              }
+            ]
+          },
+          {
+            "number": 3,
+            "target": "مغناطيس",
+            "options": [
+              {
+                "word": "مغناطيس",
+                "imagePath": "assets/images/word_bank/seen_a_03_megnatish.png"
+              },
+              {
+                "word": "مقياس",
+                "imagePath": "assets/images/listening/seen_listening/advanced/measure.png"
+              },
+              {
+                "word": "منظار",
+                "imagePath": "assets/images/listening/seen_listening/advanced/binoculars.png"
+              },
+              {
+                "word": "مكينة",
+                "imagePath": "assets/images/listening/seen_listening/advanced/machine.png"
+              }
+            ]
+          },
+          {
+            "number": 4,
+            "target": "أناناس",
+            "options": [
+              {
+                "word": "أناناس",
+                "imagePath": "assets/images/word_bank/seen_a_04_ananas.png"
+              },
+              {
+                "word": "ألماس",
+                "imagePath": "assets/images/listening/seen_listening/advanced/diamond.png"
+              },
+              {
+                "word": "أكياس",
+                "imagePath": "assets/images/listening/seen_listening/advanced/bags.png"
+              },
+              {
+                "word": "أجراس",
+                "imagePath": "assets/images/listening/seen_listening/advanced/bells.png"
+              }
+            ]
+          },
+          {
+            "number": 5,
+            "target": "مدارس",
+            "options": [
+              {
+                "word": "مدارس",
+                "imagePath": "assets/images/word_bank/seen_a_05_mdars.png"
+              },
+              {
+                "word": "مدرب",
+                "imagePath": "assets/images/listening/seen_listening/advanced/coach.png"
+              },
+              {
+                "word": "ملابس",
+                "imagePath": "assets/images/listening/seen_listening/advanced/clothing.png"
+              },
+              {
+                "word": "مكاتب",
+                "imagePath": "assets/images/listening/seen_listening/advanced/desks.png"
+              }
+            ]
+          },
+          {
+            "number": 6,
+            "target": "استحمام",
+            "options": [
+              {
+                "word": "استحمام",
+                "imagePath": "assets/images/word_bank/seen_a_06_estihmam.png"
+              },
+              {
+                "word": "ابتسام",
+                "imagePath": "assets/images/listening/seen_listening/advanced/smile.png"
+              },
+              {
+                "word": "ازدحام",
+                "imagePath": "assets/images/listening/seen_listening/advanced/traffic.png"
+              },
+              {
+                "word": "احتفال",
+                "imagePath": "assets/images/listening/seen_listening/advanced/celebration.png"
+              }
+            ]
+          },
+          {
+            "number": 7,
+            "target": "مسرحية",
+            "options": [
+              {
+                "word": "مسرحية",
+                "imagePath": "assets/images/word_bank/seen_a_07_masrahiyah.png"
+              },
+              {
+                "word": "مسابقة",
+                "imagePath": "assets/images/listening/seen_listening/advanced/competition.png"
+              },
+              {
+                "word": "مكتبة",
+                "imagePath": "assets/images/listening/seen_listening/advanced/library.png"
+              },
+              {
+                "word": "موسيقى",
+                "imagePath": "assets/images/listening/seen_listening/advanced/music.png"
+              }
+            ]
+          },
+          {
+            "number": 8,
+            "target": "أساتذة",
+            "options": [
+              {
+                "word": "أساتذة",
+                "imagePath": "assets/images/word_bank/seen_a_08_asatidah.png"
+              },
+              {
+                "word": "أساور",
+                "imagePath": "assets/images/listening/seen_listening/advanced/bracelets.png"
+              },
+              {
+                "word": "أصدقاء",
+                "imagePath": "assets/images/listening/seen_listening/advanced/friends.png"
+              },
+              {
+                "word": "أطباء",
+                "imagePath": "assets/images/listening/seen_listening/advanced/doctors.png"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "ص": {
+    "assetFolder": "sad",
+    "levels": {
+      "beginner": {
+        "code": "b",
+        "folder": "beginner",
+        "words": [
+          {
+            "number": 1,
+            "target": "صحن",
+            "options": [
+              {
+                "word": "صحن",
+                "imagePath": "assets/images/word_bank/sad_b_01_sahn.png"
+              },
+              {
+                "word": "كوب",
+                "imagePath": "assets/images/listening/qaf_listening/beginner/cup.png"
+              },
+              {
+                "word": "ملعقة",
+                "imagePath": "assets/images/listening/sad_listening/beginner/spoon.png"
+              },
+              {
+                "word": "مقص",
+                "imagePath": "assets/images/listening/sad_listening/beginner/scissors.png"
+              }
+            ]
+          },
+          {
+            "number": 2,
+            "target": "صور",
+            "options": [
+              {
+                "word": "صور",
+                "imagePath": "assets/images/word_bank/sad_b_02_suwar.png"
+              },
+              {
+                "word": "كتاب",
+                "imagePath": "assets/images/listening/qaf_listening/beginner/book.png"
+              },
+              {
+                "word": "مرآة",
+                "imagePath": "assets/images/listening/sad_listening/beginner/mirror.png"
+              },
+              {
+                "word": "صندوق",
+                "imagePath": "assets/images/listening/qaf_listening/intermediate/box.png"
+              }
+            ]
+          },
+          {
+            "number": 3,
+            "target": "صوم",
+            "options": [
+              {
+                "word": "صوم",
+                "imagePath": "assets/images/word_bank/sad_b_03_sawm.png"
+              },
+              {
+                "word": "نوم",
+                "imagePath": "assets/images/listening/sad_listening/beginner/sleep.png"
+              },
+              {
+                "word": "صوف",
+                "imagePath": "assets/images/listening/qaf_listening/beginner/wool.png"
+              },
+              {
+                "word": "ثوم",
+                "imagePath": "assets/images/listening/sad_listening/beginner/garlic.png"
+              }
+            ]
+          },
+          {
+            "number": 4,
+            "target": "عصا",
+            "options": [
+              {
+                "word": "عصا",
+                "imagePath": "assets/images/word_bank/sad_b_04_asa.png"
+              },
+              {
+                "word": "عسل",
+                "imagePath": "assets/images/listening/seen_listening/beginner/honey.png"
+              },
+              {
+                "word": "عنب",
+                "imagePath": "assets/images/listening/kha_listening/beginner/grapes.png"
+              },
+              {
+                "word": "مصباح",
+                "imagePath": "assets/images/listening/sad_listening/beginner/lamp.png"
+              }
+            ]
+          },
+          {
+            "number": 5,
+            "target": "حصن",
+            "options": [
+              {
+                "word": "حصن",
+                "imagePath": "assets/images/word_bank/sad_b_05_hisn.png"
+              },
+              {
+                "word": "صقر",
+                "imagePath": "assets/images/listening/sad_listening/beginner/falcon.png"
+              },
+              {
+                "word": "حبل",
+                "imagePath": "assets/images/listening/kha_listening/beginner/rope.png"
+              },
+              {
+                "word": "حوت",
+                "imagePath": "assets/images/listening/sad_listening/beginner/whale.png"
+              }
+            ]
+          },
+          {
+            "number": 6,
+            "target": "لص",
+            "options": [
+              {
+                "word": "لص",
+                "imagePath": "assets/images/word_bank/sad_b_06_lis.png"
+              },
+              {
+                "word": "شرطي",
+                "imagePath": "assets/images/listening/sad_listening/beginner/policeman.png"
+              },
+              {
+                "word": "صبي",
+                "imagePath": "assets/images/listening/sad_listening/beginner/boy.png"
+              },
+              {
+                "word": "طباخ",
+                "imagePath": "assets/images/listening/sad_listening/beginner/chef.png"
+              }
+            ]
+          },
+          {
+            "number": 7,
+            "target": "حمص",
+            "options": [
+              {
+                "word": "حمص",
+                "imagePath": "assets/images/word_bank/sad_b_07_hummus.png"
+              },
+              {
+                "word": "صبار",
+                "imagePath": "assets/images/listening/sad_listening/beginner/cactus.png"
+              },
+              {
+                "word": "تفاح",
+                "imagePath": "assets/images/listening/kha_listening/beginner/apple.png"
+              },
+              {
+                "word": "خبز",
+                "imagePath": "assets/images/listening/kha_listening/beginner/bread.png"
+              }
+            ]
+          },
+          {
+            "number": 8,
+            "target": "فحص",
+            "options": [
+              {
+                "word": "فحص",
+                "imagePath": "assets/images/word_bank/sad_b_08_fahs.png"
+              },
+              {
+                "word": "صافرة",
+                "imagePath": "assets/images/listening/sad_listening/beginner/whistle.png"
+              },
+              {
+                "word": "دواء",
+                "imagePath": "assets/images/listening/sad_listening/beginner/medicine.png"
+              },
+              {
+                "word": "ضماد",
+                "imagePath": "assets/images/listening/sad_listening/beginner/bandage.png"
+              }
+            ]
+          }
+        ]
+      },
+      "intermediate": {
+        "code": "i",
+        "folder": "intermediate",
+        "words": [
+          {
+            "number": 1,
+            "target": "صحراء",
+            "options": [
+              {
+                "word": "صحراء",
+                "imagePath": "assets/images/word_bank/sad_i_01_sahraa.png"
+              },
+              {
+                "word": "جبل",
+                "imagePath": "assets/images/listening/sad_listening/intermediate/mountain.png"
+              },
+              {
+                "word": "غابة",
+                "imagePath": "assets/images/listening/sad_listening/intermediate/forest.png"
+              },
+              {
+                "word": "صبار",
+                "imagePath": "assets/images/listening/sad_listening/beginner/cactus.png"
+              }
+            ]
+          },
+          {
+            "number": 2,
+            "target": "صالة",
+            "options": [
+              {
+                "word": "صالة",
+                "imagePath": "assets/images/word_bank/sad_i_02_sala.png"
+              },
+              {
+                "word": "مطبخ",
+                "imagePath": "assets/images/listening/sad_listening/intermediate/kitchen.png"
+              },
+              {
+                "word": "غرفة",
+                "imagePath": "assets/images/listening/sad_listening/intermediate/room.png"
+              },
+              {
+                "word": "فصل",
+                "imagePath": "assets/images/listening/sad_listening/intermediate/classroom.png"
+              }
+            ]
+          },
+          {
+            "number": 3,
+            "target": "صياد",
+            "options": [
+              {
+                "word": "صياد",
+                "imagePath": "assets/images/word_bank/sad_i_03_sayyad.png"
+              },
+              {
+                "word": "طباخ",
+                "imagePath": "assets/images/listening/sad_listening/beginner/chef.png"
+              },
+              {
+                "word": "شرطي",
+                "imagePath": "assets/images/listening/sad_listening/beginner/policeman.png"
+              },
+              {
+                "word": "غواص",
+                "imagePath": "assets/images/listening/sad_listening/intermediate/diver.png"
+              }
+            ]
+          },
+          {
+            "number": 4,
+            "target": "صيصان",
+            "options": [
+              {
+                "word": "صيصان",
+                "imagePath": "assets/images/word_bank/sad_i_04_seesan.png"
+              },
+              {
+                "word": "دجاجة",
+                "imagePath": "assets/images/listening/sad_listening/intermediate/hen.png"
+              },
+              {
+                "word": "عصفور",
+                "imagePath": "assets/images/word_bank/sad_i_07_usfoor.png"
+              },
+              {
+                "word": "صقر",
+                "imagePath": "assets/images/listening/sad_listening/beginner/falcon.png"
+              }
+            ]
+          },
+          {
+            "number": 5,
+            "target": "عصير",
+            "options": [
+              {
+                "word": "عصير",
+                "imagePath": "assets/images/word_bank/sad_i_05_aseer.png"
+              },
+              {
+                "word": "حليب",
+                "imagePath": "assets/images/listening/sad_listening/intermediate/milk.png"
+              },
+              {
+                "word": "شاي",
+                "imagePath": "assets/images/listening/sad_listening/intermediate/tea.png"
+              },
+              {
+                "word": "صابون",
+                "imagePath": "assets/images/listening/sad_listening/intermediate/soap.png"
+              }
+            ]
+          },
+          {
+            "number": 6,
+            "target": "حصان",
+            "options": [
+              {
+                "word": "حصان",
+                "imagePath": "assets/images/word_bank/sad_i_06_hisan.png"
+              },
+              {
+                "word": "خروف",
+                "imagePath": "assets/images/listening/sad_listening/intermediate/sheep.png"
+              },
+              {
+                "word": "جمل",
+                "imagePath": "assets/images/listening/sad_listening/intermediate/camel.png"
+              },
+              {
+                "word": "صقر",
+                "imagePath": "assets/images/listening/sad_listening/beginner/falcon.png"
+              }
+            ]
+          },
+          {
+            "number": 7,
+            "target": "عصفور",
+            "options": [
+              {
+                "word": "عصفور",
+                "imagePath": "assets/images/word_bank/sad_i_07_usfoor.png"
+              },
+              {
+                "word": "حمامة",
+                "imagePath": "assets/images/listening/sad_listening/intermediate/pigeon.png"
+              },
+              {
+                "word": "فراشة",
+                "imagePath": "assets/images/listening/sad_listening/intermediate/butterfly.png"
+              },
+              {
+                "word": "صقر",
+                "imagePath": "assets/images/listening/sad_listening/beginner/falcon.png"
+              }
+            ]
+          },
+          {
+            "number": 8,
+            "target": "قميص",
+            "options": [
+              {
+                "word": "قميص",
+                "imagePath": "assets/images/word_bank/sad_i_08_qamees.png"
+              },
+              {
+                "word": "حذاء",
+                "imagePath": "assets/images/listening/sad_listening/intermediate/shoe.png"
+              },
+              {
+                "word": "قبعة",
+                "imagePath": "assets/images/listening/sad_listening/intermediate/hat.png"
+              },
+              {
+                "word": "صندل",
+                "imagePath": "assets/images/listening/sad_listening/intermediate/sandal.png"
+              }
+            ]
+          }
+        ]
+      },
+      "advanced": {
+        "code": "a",
+        "folder": "advanced",
+        "words": [
+          {
+            "number": 1,
+            "target": "أصابع",
+            "options": [
+              {
+                "word": "أصابع",
+                "imagePath": "assets/images/word_bank/sad_a_01_asabea.png"
+              },
+              {
+                "word": "أسنان",
+                "imagePath": "assets/images/listening/seen_listening/intermediate/teeth.png"
+              },
+              {
+                "word": "أقدام",
+                "imagePath": "assets/images/listening/sad_listening/advanced/feet.png"
+              },
+              {
+                "word": "عيون",
+                "imagePath": "assets/images/listening/sad_listening/advanced/eyes.png"
+              }
+            ]
+          },
+          {
+            "number": 2,
+            "target": "المصور",
+            "options": [
+              {
+                "word": "المصور",
+                "imagePath": "assets/images/word_bank/sad_a_02_musawwir.png"
+              },
+              {
+                "word": "طباخ",
+                "imagePath": "assets/images/listening/sad_listening/beginner/chef.png"
+              },
+              {
+                "word": "طبيب",
+                "imagePath": "assets/images/listening/qaf_listening/beginner/doctor.png"
+              },
+              {
+                "word": "شرطي",
+                "imagePath": "assets/images/listening/sad_listening/beginner/policeman.png"
+              }
+            ]
+          },
+          {
+            "number": 3,
+            "target": "اتصالات",
+            "options": [
+              {
+                "word": "اتصالات",
+                "imagePath": "assets/images/word_bank/sad_a_03_ittisalat.png"
+              },
+              {
+                "word": "رسائل",
+                "imagePath": "assets/images/listening/sad_listening/advanced/messages.png"
+              },
+              {
+                "word": "هواتف",
+                "imagePath": "assets/images/listening/sad_listening/advanced/phones.png"
+              },
+              {
+                "word": "حواسيب",
+                "imagePath": "assets/images/listening/sad_listening/advanced/computers.png"
+              }
+            ]
+          },
+          {
+            "number": 4,
+            "target": "محاصيل",
+            "options": [
+              {
+                "word": "محاصيل",
+                "imagePath": "assets/images/word_bank/sad_a_04_mahasil.png"
+              },
+              {
+                "word": "مفاتيح",
+                "imagePath": "assets/images/listening/sad_listening/advanced/keys.png"
+              },
+              {
+                "word": "مصابيح",
+                "imagePath": "assets/images/listening/sad_listening/advanced/lamps.png"
+              },
+              {
+                "word": "حقائب",
+                "imagePath": "assets/images/listening/sad_listening/advanced/bags.png"
+              }
+            ]
+          },
+          {
+            "number": 5,
+            "target": "تصاميم",
+            "options": [
+              {
+                "word": "تصاميم",
+                "imagePath": "assets/images/word_bank/sad_a_05_tasamim.png"
+              },
+              {
+                "word": "تمارين",
+                "imagePath": "assets/images/listening/sad_listening/advanced/exercises.png"
+              },
+              {
+                "word": "ألوان",
+                "imagePath": "assets/images/listening/sad_listening/advanced/colors.png"
+              },
+              {
+                "word": "رسوم",
+                "imagePath": "assets/images/listening/sad_listening/advanced/drawings.png"
+              }
+            ]
+          },
+          {
+            "number": 6,
+            "target": "مصانع",
+            "options": [
+              {
+                "word": "مصانع",
+                "imagePath": "assets/images/word_bank/sad_a_06_masanea.png"
+              },
+              {
+                "word": "مدرسة",
+                "imagePath": "assets/images/listening/seen_listening/advanced/school.png"
+              },
+              {
+                "word": "مكتبة",
+                "imagePath": "assets/images/listening/seen_listening/advanced/library.png"
+              },
+              {
+                "word": "مدينة",
+                "imagePath": "assets/images/listening/seen_listening/advanced/city.png"
+              }
+            ]
+          },
+          {
+            "number": 7,
+            "target": "صلصال",
+            "options": [
+              {
+                "word": "صلصال",
+                "imagePath": "assets/images/word_bank/sad_a_07_salsal.png"
+              },
+              {
+                "word": "رسوم",
+                "imagePath": "assets/images/listening/sad_listening/advanced/drawings.png"
+              },
+              {
+                "word": "ألوان",
+                "imagePath": "assets/images/listening/sad_listening/advanced/colors.png"
+              },
+              {
+                "word": "حقائب",
+                "imagePath": "assets/images/listening/sad_listening/advanced/bags.png"
+              }
+            ]
+          },
+          {
+            "number": 8,
+            "target": "أشخاص",
+            "options": [
+              {
+                "word": "أشخاص",
+                "imagePath": "assets/images/word_bank/sad_a_08_ashkhas.png"
+              },
+              {
+                "word": "أطباء",
+                "imagePath": "assets/images/listening/seen_listening/advanced/doctors.png"
+              },
+              {
+                "word": "أصدقاء",
+                "imagePath": "assets/images/listening/seen_listening/advanced/friends.png"
+              },
+              {
+                "word": "معلمون",
+                "imagePath": "assets/images/listening/seen_listening/advanced/teachers.png"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "ض": {
+    "assetFolder": "dad",
+    "levels": {
+      "beginner": {
+        "code": "b",
+        "folder": "beginner",
+        "words": [
+          {
+            "number": 1,
+            "target": "ضبع",
+            "options": [
+              {
+                "word": "ضبع",
+                "imagePath": "assets/images/word_bank/dad_b_01_dab.png"
+              },
+              {
+                "word": "أسد",
+                "imagePath": "assets/images/listening/qaf_listening/intermediate/lion.png"
+              },
+              {
+                "word": "نمر",
+                "imagePath": "assets/images/listening/qaf_listening/beginner/tiger.png"
+              },
+              {
+                "word": "أرنب",
+                "imagePath": "assets/images/listening/kha_listening/intermediate/rabbit.png"
+              }
+            ]
+          },
+          {
+            "number": 2,
+            "target": "ضوء",
+            "options": [
+              {
+                "word": "ضوء",
+                "imagePath": "assets/images/word_bank/dad_b_02_daw.png"
+              },
+              {
+                "word": "قمر",
+                "imagePath": "assets/images/listening/qaf_listening/beginner/moon.png"
+              },
+              {
+                "word": "مصباح",
+                "imagePath": "assets/images/listening/seen_listening/intermediate/bulb.png"
+              },
+              {
+                "word": "نجم",
+                "imagePath": "assets/images/listening/seen_listening/beginner/star.png"
+              }
+            ]
+          },
+          {
+            "number": 3,
+            "target": "ضرس",
+            "options": [
+              {
+                "word": "ضرس",
+                "imagePath": "assets/images/word_bank/dad_b_03_dirs.png"
+              },
+              {
+                "word": "فم",
+                "imagePath": "assets/images/listening/kha_listening/beginner/mouth.png"
+              },
+              {
+                "word": "عين",
+                "imagePath": "assets/images/listening/kha_listening/beginner/eye.png"
+              },
+              {
+                "word": "يد",
+                "imagePath": "assets/images/listening/kha_listening/beginner/hand.png"
+              }
+            ]
+          },
+          {
+            "number": 4,
+            "target": "ضغط",
+            "options": [
+              {
+                "word": "ضغط",
+                "imagePath": "assets/images/word_bank/dad_b_04_daght.png"
+              },
+              {
+                "word": "رسم",
+                "imagePath": "assets/images/word_bank/seen_b_06_rasm.png"
+              },
+              {
+                "word": "ختم",
+                "imagePath": "assets/images/listening/seen_listening/beginner/stamp.png"
+              },
+              {
+                "word": "سهم",
+                "imagePath": "assets/images/listening/seen_listening/beginner/arrow.png"
+              }
+            ]
+          },
+          {
+            "number": 5,
+            "target": "بيض",
+            "options": [
+              {
+                "word": "بيض",
+                "imagePath": "assets/images/word_bank/dad_b_05_bayd.png"
+              },
+              {
+                "word": "تفاح",
+                "imagePath": "assets/images/listening/kha_listening/beginner/apple.png"
+              },
+              {
+                "word": "موز",
+                "imagePath": "assets/images/listening/kha_listening/beginner/banana.png"
+              },
+              {
+                "word": "عنب",
+                "imagePath": "assets/images/listening/kha_listening/beginner/grapes.png"
+              }
+            ]
+          },
+          {
+            "number": 6,
+            "target": "أرض",
+            "options": [
+              {
+                "word": "أرض",
+                "imagePath": "assets/images/word_bank/dad_b_06_ard.png"
+              },
+              {
+                "word": "قمر",
+                "imagePath": "assets/images/listening/qaf_listening/beginner/moon.png"
+              },
+              {
+                "word": "سماء",
+                "imagePath": "assets/images/listening/seen_listening/beginner/sky.png"
+              },
+              {
+                "word": "نجم",
+                "imagePath": "assets/images/listening/seen_listening/beginner/star.png"
+              }
+            ]
+          },
+          {
+            "number": 7,
+            "target": "رفض",
+            "options": [
+              {
+                "word": "رفض",
+                "imagePath": "assets/images/word_bank/dad_b_07_rafd.png"
+              },
+              {
+                "word": "سهم",
+                "imagePath": "assets/images/listening/seen_listening/beginner/arrow.png"
+              },
+              {
+                "word": "علم",
+                "imagePath": "assets/images/listening/seen_listening/beginner/flag.png"
+              },
+              {
+                "word": "ختم",
+                "imagePath": "assets/images/listening/seen_listening/beginner/stamp.png"
+              }
+            ]
+          },
+          {
+            "number": 8,
+            "target": "نبض",
+            "options": [
+              {
+                "word": "نبض",
+                "imagePath": "assets/images/word_bank/dad_b_08_nabd.png"
+              },
+              {
+                "word": "فم",
+                "imagePath": "assets/images/listening/kha_listening/beginner/mouth.png"
+              },
+              {
+                "word": "عين",
+                "imagePath": "assets/images/listening/kha_listening/beginner/eye.png"
+              },
+              {
+                "word": "يد",
+                "imagePath": "assets/images/listening/kha_listening/beginner/hand.png"
+              }
+            ]
+          }
+        ]
+      },
+      "intermediate": {
+        "code": "i",
+        "folder": "intermediate",
+        "words": [
+          {
+            "number": 1,
+            "target": "ضروس",
+            "options": [
+              {
+                "word": "ضروس",
+                "imagePath": "assets/images/word_bank/dad_i_01_durus.png"
+              },
+              {
+                "word": "فم",
+                "imagePath": "assets/images/listening/kha_listening/beginner/mouth.png"
+              },
+              {
+                "word": "عين",
+                "imagePath": "assets/images/listening/kha_listening/beginner/eye.png"
+              },
+              {
+                "word": "يد",
+                "imagePath": "assets/images/listening/kha_listening/beginner/hand.png"
+              }
+            ]
+          },
+          {
+            "number": 2,
+            "target": "ضفدع",
+            "options": [
+              {
+                "word": "ضفدع",
+                "imagePath": "assets/images/word_bank/dad_i_02_difda.png"
+              },
+              {
+                "word": "أرنب",
+                "imagePath": "assets/images/listening/kha_listening/intermediate/rabbit.png"
+              },
+              {
+                "word": "حصان",
+                "imagePath": "assets/images/listening/kha_listening/intermediate/horse.png"
+              },
+              {
+                "word": "جمل",
+                "imagePath": "assets/images/listening/kha_listening/intermediate/camel.png"
+              }
+            ]
+          },
+          {
+            "number": 3,
+            "target": "خضار",
+            "options": [
+              {
+                "word": "خضار",
+                "imagePath": "assets/images/word_bank/dad_i_03_khodar.png"
+              },
+              {
+                "word": "جزر",
+                "imagePath": "assets/images/listening/kha_listening/intermediate/carrot.png"
+              },
+              {
+                "word": "طماطم",
+                "imagePath": "assets/images/listening/kha_listening/intermediate/tomato.png"
+              },
+              {
+                "word": "بصل",
+                "imagePath": "assets/images/listening/kha_listening/intermediate/onion.png"
+              }
+            ]
+          },
+          {
+            "number": 4,
+            "target": "روضة",
+            "options": [
+              {
+                "word": "روضة",
+                "imagePath": "assets/images/word_bank/dad_i_04_rawda.png"
+              },
+              {
+                "word": "مدرسة",
+                "imagePath": "assets/images/listening/kha_listening/intermediate/school.png"
+              },
+              {
+                "word": "حديقة",
+                "imagePath": "assets/images/listening/kha_listening/intermediate/park.png"
+              },
+              {
+                "word": "غرفة",
+                "imagePath": "assets/images/listening/kha_listening/intermediate/room.png"
+              }
+            ]
+          },
+          {
+            "number": 5,
+            "target": "فضاء",
+            "options": [
+              {
+                "word": "فضاء",
+                "imagePath": "assets/images/word_bank/dad_i_05_fadaa.png"
+              },
+              {
+                "word": "قمر",
+                "imagePath": "assets/images/listening/qaf_listening/beginner/moon.png"
+              },
+              {
+                "word": "سماء",
+                "imagePath": "assets/images/listening/seen_listening/beginner/sky.png"
+              },
+              {
+                "word": "نجم",
+                "imagePath": "assets/images/listening/seen_listening/beginner/star.png"
+              }
+            ]
+          },
+          {
+            "number": 6,
+            "target": "بعوض",
+            "options": [
+              {
+                "word": "بعوض",
+                "imagePath": "assets/images/word_bank/dad_i_06_baood.png"
+              },
+              {
+                "word": "أرنب",
+                "imagePath": "assets/images/listening/kha_listening/intermediate/rabbit.png"
+              },
+              {
+                "word": "حصان",
+                "imagePath": "assets/images/listening/kha_listening/intermediate/horse.png"
+              },
+              {
+                "word": "جمل",
+                "imagePath": "assets/images/listening/kha_listening/intermediate/camel.png"
+              }
+            ]
+          },
+          {
+            "number": 7,
+            "target": "مريض",
+            "options": [
+              {
+                "word": "مريض",
+                "imagePath": "assets/images/word_bank/dad_i_07_mareed.png"
+              },
+              {
+                "word": "خائف",
+                "imagePath": "assets/images/word_bank/kha_a_02_khaifeen.png"
+              },
+              {
+                "word": "فم",
+                "imagePath": "assets/images/listening/kha_listening/beginner/mouth.png"
+              },
+              {
+                "word": "عين",
+                "imagePath": "assets/images/listening/kha_listening/beginner/eye.png"
+              }
+            ]
+          },
+          {
+            "number": 8,
+            "target": "أبيض",
+            "options": [
+              {
+                "word": "أبيض",
+                "imagePath": "assets/images/word_bank/dad_i_08_abyad.png"
+              },
+              {
+                "word": "رمل",
+                "imagePath": "assets/images/listening/kha_listening/beginner/sand.png"
+              },
+              {
+                "word": "طين",
+                "imagePath": "assets/images/listening/kha_listening/beginner/clay.png"
+              },
+              {
+                "word": "خشب",
+                "imagePath": "assets/images/listening/kha_listening/intermediate/wood.png"
+              }
+            ]
+          }
+        ]
+      },
+      "advanced": {
+        "code": "a",
+        "folder": "advanced",
+        "words": [
+          {
+            "number": 1,
+            "target": "ضاحية",
+            "options": [
+              {
+                "word": "ضاحية",
+                "imagePath": "assets/images/word_bank/dad_a_01_dahiya.png"
+              },
+              {
+                "word": "مدينة",
+                "imagePath": "assets/images/listening/kha_listening/advanced/city.png"
+              },
+              {
+                "word": "مدرسة",
+                "imagePath": "assets/images/listening/kha_listening/intermediate/school.png"
+              },
+              {
+                "word": "حديقة",
+                "imagePath": "assets/images/listening/kha_listening/intermediate/park.png"
+              }
+            ]
+          },
+          {
+            "number": 2,
+            "target": "ضحكات",
+            "options": [
+              {
+                "word": "ضحكات",
+                "imagePath": "assets/images/word_bank/dad_a_02_dahikat.png"
+              },
+              {
+                "word": "خائفين",
+                "imagePath": "assets/images/word_bank/kha_a_02_khaifeen.png"
+              },
+              {
+                "word": "لاعبين",
+                "imagePath": "assets/images/listening/qaf_listening/advanced/athletes.png"
+              },
+              {
+                "word": "عاملين",
+                "imagePath": "assets/images/listening/qaf_listening/advanced/workers.png"
+              }
+            ]
+          },
+          {
+            "number": 3,
+            "target": "ضمادات",
+            "options": [
+              {
+                "word": "ضمادات",
+                "imagePath": "assets/images/word_bank/dad_a_03_damadat.png"
+              },
+              {
+                "word": "زجاجة",
+                "imagePath": "assets/images/listening/qaf_listening/advanced/bottle.png"
+              },
+              {
+                "word": "كوب",
+                "imagePath": "assets/images/listening/qaf_listening/advanced/cup.png"
+              },
+              {
+                "word": "وعاء",
+                "imagePath": "assets/images/listening/qaf_listening/advanced/bowl.png"
+              }
+            ]
+          },
+          {
+            "number": 4,
+            "target": "ضائعون",
+            "options": [
+              {
+                "word": "ضائعون",
+                "imagePath": "assets/images/word_bank/dad_a_04_daioon.png"
+              },
+              {
+                "word": "خائفين",
+                "imagePath": "assets/images/word_bank/kha_a_02_khaifeen.png"
+              },
+              {
+                "word": "لاعبين",
+                "imagePath": "assets/images/listening/qaf_listening/advanced/athletes.png"
+              },
+              {
+                "word": "عاملين",
+                "imagePath": "assets/images/listening/qaf_listening/advanced/workers.png"
+              }
+            ]
+          },
+          {
+            "number": 5,
+            "target": "رياضة",
+            "options": [
+              {
+                "word": "رياضة",
+                "imagePath": "assets/images/word_bank/dad_a_05_riyada.png"
+              },
+              {
+                "word": "سيارات",
+                "imagePath": "assets/images/listening/qaf_listening/advanced/cars.png"
+              },
+              {
+                "word": "دراجات",
+                "imagePath": "assets/images/listening/qaf_listening/advanced/bikes.png"
+              },
+              {
+                "word": "قوارب",
+                "imagePath": "assets/images/listening/seen_listening/advanced/boats.png"
+              }
+            ]
+          },
+          {
+            "number": 6,
+            "target": "العضلات",
+            "options": [
+              {
+                "word": "العضلات",
+                "imagePath": "assets/images/word_bank/dad_a_06_adalat.png"
+              },
+              {
+                "word": "عين",
+                "imagePath": "assets/images/listening/kha_listening/beginner/eye.png"
+              },
+              {
+                "word": "يد",
+                "imagePath": "assets/images/listening/kha_listening/beginner/hand.png"
+              },
+              {
+                "word": "فم",
+                "imagePath": "assets/images/listening/kha_listening/beginner/mouth.png"
+              }
+            ]
+          },
+          {
+            "number": 7,
+            "target": "رضاعة",
+            "options": [
+              {
+                "word": "رضاعة",
+                "imagePath": "assets/images/word_bank/dad_a_07_radaa.png"
+              },
+              {
+                "word": "كوب",
+                "imagePath": "assets/images/listening/qaf_listening/advanced/cup.png"
+              },
+              {
+                "word": "زجاجة",
+                "imagePath": "assets/images/listening/qaf_listening/advanced/bottle.png"
+              },
+              {
+                "word": "وعاء",
+                "imagePath": "assets/images/listening/qaf_listening/advanced/bowl.png"
+              }
+            ]
+          },
+          {
+            "number": 8,
+            "target": "تخفيض",
+            "options": [
+              {
+                "word": "تخفيض",
+                "imagePath": "assets/images/word_bank/dad_a_08_takhfid.png"
+              },
+              {
+                "word": "الأوراق",
+                "imagePath": "assets/images/listening/seen_listening/advanced/papers.png"
+              },
+              {
+                "word": "الكتب",
+                "imagePath": "assets/images/listening/qaf_listening/advanced/books.png"
+              },
+              {
+                "word": "الدفاتر",
+                "imagePath": "assets/images/listening/qaf_listening/advanced/notebooks.png"
+              }
+            ]
+          }
+        ]
+      }
     }
   }
-},   "س": {
-  "assetFolder": "seen",
-  "levels": {
-    "beginner": {
-      "code": "b",
-      "folder": "beginner",
-      "words": [
-        {
-          "number": 1,
-          "target": "سلم",
-          "options": [
-            {
-              "word": "سلم",
-              "imagePath": "assets/images/word_bank/seen_b_01_sulam.png"
-            },
-            {
-              "word": "قلم",
-              "imagePath": "assets/images/listening/seen_listening/beginner/pen.png"
-            },
-            {
-              "word": "علم",
-              "imagePath": "assets/images/listening/seen_listening/beginner/flag.png"
-            },
-            {
-              "word": "سهم",
-              "imagePath": "assets/images/listening/seen_listening/beginner/arrow.png"
-            }
-          ]
-        },
-        {
-          "number": 2,
-          "target": "خس",
-          "options": [
-            {
-              "word": "خس",
-              "imagePath": "assets/images/word_bank/seen_b_02_khas.png"
-            },
-            {
-              "word": "خوخ",
-              "imagePath": "assets/images/listening/seen_listening/beginner/peach.png"
-            },
-            {
-              "word": "خبز",
-              "imagePath": "assets/images/listening/seen_listening/beginner/bread.png"
-            },
-            {
-              "word": "كيس",
-              "imagePath": "assets/images/listening/seen_listening/beginner/bag.png"
-            }
-          ]
-        },
-        {
-          "number": 3,
-          "target": "جرس",
-          "options": [
-            {
-              "word": "جرس",
-              "imagePath": "assets/images/word_bank/seen_b_03_jaras.png"
-            },
-            {
-              "word": "فرس",
-              "imagePath": "assets/images/listening/seen_listening/beginner/horse.png"
-            },
-            {
-              "word": "درس",
-              "imagePath": "assets/images/listening/seen_listening/beginner/teachers.png"
-            },
-            {
-              "word": "كرسي",
-              "imagePath": "assets/images/listening/seen_listening/beginner/chair.png"
-            }
-          ]
-        },
-        {
-          "number": 4,
-          "target": "جسر",
-          "options": [
-            {
-              "word": "جسر",
-              "imagePath": "assets/images/word_bank/seen_b_04_jisr.png"
-            },
-            {
-              "word": "نسر",
-              "imagePath": "assets/images/listening/seen_listening/beginner/eagle.png"
-            },
-            {
-              "word": "قصر",
-              "imagePath": "assets/images/listening/seen_listening/beginner/castle.png"
-            },
-            {
-              "word": "بئر",
-              "imagePath": "assets/images/listening/seen_listening/beginner/well.png"
-            }
-          ]
-        },
-        {
-          "number": 5,
-          "target": "أسد",
-          "options": [
-            {
-              "word": "أسد",
-              "imagePath": "assets/images/word_bank/seen_b_05_asad.png"
-            },
-            {
-              "word": "أرنب",
-              "imagePath": "assets/images/listening/seen_listening/beginner/rabbit.png"
-            },
-            {
-              "word": "أسهم",
-              "imagePath": "assets/images/listening/seen_listening/beginner/arrows.png"
-            },
-            {
-              "word": "أسرة",
-              "imagePath": "assets/images/listening/seen_listening/beginner/family.png"
-            }
-          ]
-        },
-        {
-          "number": 6,
-          "target": "رسم",
-          "options": [
-            {
-              "word": "رسم",
-              "imagePath": "assets/images/word_bank/seen_b_06_rasm.png"
-            },
-            {
-              "word": "سهم",
-              "imagePath": "assets/images/listening/seen_listening/beginner/arrow.png"
-            },
-            {
-              "word": "نجم",
-              "imagePath": "assets/images/listening/seen_listening/beginner/star.png"
-            },
-            {
-              "word": "ختم",
-              "imagePath": "assets/images/listening/seen_listening/beginner/stamp.png"
-            }
-          ]
-        },
-        {
-          "number": 7,
-          "target": "عسل",
-          "options": [
-            {
-              "word": "عسل",
-              "imagePath": "assets/images/word_bank/seen_b_07_asal.png"
-            },
-            {
-              "word": "بصل",
-              "imagePath": "assets/images/listening/seen_listening/beginner/onion.png"
-            },
-            {
-              "word": "عجل",
-              "imagePath": "assets/images/listening/seen_listening/beginner/calf.png"
-            },
-            {
-              "word": "عنب",
-              "imagePath": "assets/images/listening/seen_listening/beginner/grape.png"
-            }
-          ]
-        },
-        {
-          "number": 8,
-          "target": "سمك",
-          "options": [
-            {
-              "word": "سمك",
-              "imagePath": "assets/images/word_bank/seen_b_08_smk.png"
-            },
-            {
-              "word": "سماء",
-              "imagePath": "assets/images/listening/seen_listening/beginner/sky.png"
-            },
-            {
-              "word": "سمسم",
-              "imagePath": "assets/images/listening/seen_listening/beginner/sesame.png"
-            },
-            {
-              "word": "سلة",
-              "imagePath": "assets/images/listening/seen_listening/beginner/basket.png"
-            }
-          ]
-        }
-      ]
-    },
-
-    "intermediate": {
-      "code": "i",
-      "folder": "intermediate",
-      "words": [
-        {
-          "number": 1,
-          "target": "سنجاب",
-          "options": [
-            {
-              "word": "سنجاب",
-              "imagePath": "assets/images/word_bank/seen_i_01_sinjab.png"
-            },
-            {
-              "word": "سنبلة",
-              "imagePath": "assets/images/listening/seen_listening/intermediate/wheatears.png"
-            },
-            {
-              "word": "سلسال",
-              "imagePath": "assets/images/listening/seen_listening/intermediate/necklace.png"
-            },
-            {
-              "word": "أسنان",
-              "imagePath": "assets/images/listening/seen_listening/intermediate/teeth.png"
-            }
-          ]
-        },
-        {
-          "number": 2,
-          "target": "سرير",
-          "options": [
-            {
-              "word": "سرير",
-              "imagePath": "assets/images/word_bank/seen_i_02_sarir.png"
-            },
-            {
-              "word": "حرير",
-              "imagePath": "assets/images/listening/seen_listening/intermediate/silk.png"
-            },
-            {
-              "word": "شرير",
-              "imagePath": "assets/images/listening/seen_listening/intermediate/villain.png"
-            },
-            {
-              "word": "شراب",
-              "imagePath": "assets/images/listening/seen_listening/intermediate/drink.png"
-            }
-          ]
-        },
-        {
-          "number": 3,
-          "target": "سحاب",
-          "options": [
-            {
-              "word": "سحاب",
-              "imagePath": "assets/images/word_bank/seen_i_03_sahab.png"
-            },
-            {
-              "word": "سحلية",
-              "imagePath": "assets/images/listening/seen_listening/intermediate/lizard.png"
-            },
-            {
-              "word": "ضباب",
-              "imagePath": "assets/images/listening/seen_listening/intermediate/fog.png"
-            },
-            {
-              "word": "سوار",
-              "imagePath": "assets/images/listening/seen_listening/intermediate/bracelet.png"
-            }
-          ]
-        },
-        {
-          "number": 4,
-          "target": "طاووس",
-          "options": [
-            {
-              "word": "طاووس",
-              "imagePath": "assets/images/word_bank/seen_i_04_tawoos.png"
-            },
-            {
-              "word": "فانوس",
-              "imagePath": "assets/images/listening/seen_listening/intermediate/lantern.png"
-            },
-            {
-              "word": "جاموس",
-              "imagePath": "assets/images/listening/seen_listening/intermediate/bull.png"
-            },
-            {
-              "word": "ناقوس",
-              "imagePath": "assets/images/listening/seen_listening/intermediate/bells.png"
-            }
-          ]
-        },
-        {
-          "number": 5,
-          "target": "ألماس",
-          "options": [
-            {
-              "word": "ألماس",
-              "imagePath": "assets/images/word_bank/seen_i_05_almas.png"
-            },
-            {
-              "word": "أجراس",
-              "imagePath": "assets/images/listening/seen_listening/intermediate/bells.png"
-            },
-            {
-              "word": "أكياس",
-              "imagePath": "assets/images/listening/seen_listening/intermediate/bags.png"
-            },
-            {
-              "word": "لباس",
-              "imagePath": "assets/images/listening/seen_listening/intermediate/clothing.png"
-            }
-          ]
-        },
-        {
-          "number": 6,
-          "target": "مسبح",
-          "options": [
-            {
-              "word": "مسبح",
-              "imagePath": "assets/images/word_bank/seen_i_06_masbah.png"
-            },
-            {
-              "word": "مسرح",
-              "imagePath": "assets/images/listening/seen_listening/intermediate/theater.png"
-            },
-            {
-              "word": "مسجد",
-              "imagePath": "assets/images/listening/seen_listening/intermediate/mosque.png"
-            },
-            {
-              "word": "ملعب",
-              "imagePath": "assets/images/listening/seen_listening/intermediate/playground.png"
-            }
-          ]
-        },
-        {
-          "number": 7,
-          "target": "أسود",
-          "options": [
-            {
-              "word": "أسود",
-              "imagePath": "assets/images/word_bank/seen_i_07_aswad.png"
-            },
-            {
-              "word": "أسد",
-              "imagePath": "assets/images/listening/seen_listening/intermediate/lion.png"
-            },
-            {
-              "word": "أسوار",
-              "imagePath": "assets/images/listening/seen_listening/intermediate/wall.png"
-            },
-            {
-              "word": "أسواق",
-              "imagePath": "assets/images/listening/seen_listening/intermediate/market.png"
-            }
-          ]
-        },
-        {
-          "number": 8,
-          "target": "مسمار",
-          "options": [
-            {
-              "word": "مسمار",
-              "imagePath": "assets/images/word_bank/seen_i_08_mismar.png"
-            },
-            {
-              "word": "منشار",
-              "imagePath": "assets/images/listening/seen_listening/intermediate/saw.png"
-            },
-            {
-              "word": "مصباح",
-              "imagePath": "assets/images/listening/seen_listening/intermediate/bulb.png"
-            },
-            {
-              "word": "منظار",
-              "imagePath": "assets/images/listening/seen_listening/intermediate/binoculars.png"
-            }
-          ]
-        }
-      ]
-    },
-
-    "advanced": {
-      "code": "a",
-      "folder": "advanced",
-      "words": [
-        {
-          "number": 1,
-          "target": "سيارة",
-          "options": [
-            {
-              "word": "سيارة",
-              "imagePath": "assets/images/word_bank/seen_a_01_syarh.png"
-            },
-            {
-              "word": "إشارة",
-              "imagePath": "assets/images/listening/seen_listening/advanced/stoplight.png"
-            },
-            {
-              "word": "منارة",
-              "imagePath": "assets/images/listening/seen_listening/advanced/lighthouse.png"
-            },
-            {
-              "word": "نظارة",
-              "imagePath": "assets/images/listening/seen_listening/advanced/glasses.png"
-            }
-          ]
-        },
-        {
-          "number": 2,
-          "target": "سفينة",
-          "options": [
-            {
-              "word": "سفينة",
-              "imagePath": "assets/images/word_bank/seen_a_02_safinah.png"
-            },
-            {
-              "word": "مدينة",
-              "imagePath": "assets/images/listening/seen_listening/advanced/city.png"
-            },
-            {
-              "word": "خزينة",
-              "imagePath": "assets/images/listening/seen_listening/advanced/safe.png"
-            },
-            {
-              "word": "سكينة",
-              "imagePath": "assets/images/listening/seen_listening/advanced/knife.png"
-            }
-          ]
-        },
-        {
-          "number": 3,
-          "target": "مغناطيس",
-          "options": [
-            {
-              "word": "مغناطيس",
-              "imagePath": "assets/images/word_bank/seen_a_03_megnatish.png"
-            },
-            {
-              "word": "مقياس",
-              "imagePath": "assets/images/listening/seen_listening/advanced/measure.png"
-            },
-            {
-              "word": "منظار",
-              "imagePath": "assets/images/listening/seen_listening/advanced/binoculars.png"
-            },
-            {
-              "word": "مكينة",
-              "imagePath": "assets/images/listening/seen_listening/advanced/machine.png"
-            }
-          ]
-        },
-        {
-          "number": 4,
-          "target": "أناناس",
-          "options": [
-            {
-              "word": "أناناس",
-              "imagePath": "assets/images/word_bank/seen_a_04_ananas.png"
-            },
-            {
-              "word": "ألماس",
-              "imagePath": "assets/images/listening/seen_listening/advanced/diamond.png"
-            },
-            {
-              "word": "أكياس",
-              "imagePath": "assets/images/listening/seen_listening/advanced/bags.png"
-            },
-            {
-              "word": "أجراس",
-              "imagePath": "assets/images/listening/seen_listening/advanced/bells.png"
-            }
-          ]
-        },
-        {
-          "number": 5,
-          "target": "مدارس",
-          "options": [
-            {
-              "word": "مدارس",
-              "imagePath": "assets/images/word_bank/seen_a_05_mdars.png"
-            },
-            {
-              "word": "مدرب",
-              "imagePath": "assets/images/listening/seen_listening/advanced/coach.png"
-            },
-            {
-              "word": "ملابس",
-              "imagePath": "assets/images/listening/seen_listening/advanced/clothing.png"
-            },
-            {
-              "word": "مكاتب",
-              "imagePath": "assets/images/listening/seen_listening/advanced/desks.png"
-            }
-          ]
-        },
-        {
-          "number": 6,
-          "target": "استحمام",
-          "options": [
-            {
-              "word": "استحمام",
-              "imagePath": "assets/images/word_bank/seen_a_06_estihmam.png"
-            },
-            {
-              "word": "ابتسام",
-              "imagePath": "assets/images/listening/seen_listening/advanced/smile.png"
-            },
-            {
-              "word": "ازدحام",
-              "imagePath": "assets/images/listening/seen_listening/advanced/traffic.png"
-            },
-            {
-              "word": "احتفال",
-              "imagePath": "assets/images/listening/seen_listening/advanced/celebration.png"
-            }
-          ]
-        },
-        {
-          "number": 7,
-          "target": "مسرحية",
-          "options": [
-            {
-              "word": "مسرحية",
-              "imagePath": "assets/images/word_bank/seen_a_07_masrahiyah.png"
-            },
-            {
-              "word": "مسابقة",
-              "imagePath": "assets/images/listening/seen_listening/advanced/competition.png"
-            },
-            {
-              "word": "مكتبة",
-              "imagePath": "assets/images/listening/seen_listening/advanced/library.png"
-            },
-            {
-              "word": "موسيقى",
-              "imagePath": "assets/images/listening/seen_listening/advanced/music.png"
-            }
-          ]
-        },
-        {
-          "number": 8,
-          "target": "أساتذة",
-          "options": [
-            {
-              "word": "أساتذة",
-              "imagePath": "assets/images/word_bank/seen_a_08_asatidah.png"
-            },
-            {
-              "word": "أساور",
-              "imagePath": "assets/images/listening/seen_listening/advanced/bracelets.png"
-            },
-            {
-              "word": "أصدقاء",
-              "imagePath": "assets/images/listening/seen_listening/advanced/friends.png"
-            },
-            {
-              "word": "أطباء",
-              "imagePath": "assets/images/listening/seen_listening/advanced/doctors.png"
-            }
-          ]
-        }
-      ]
-    }
-  }
-},
-"beginner": {
-  "code": "b",
-  "folder": "beginner",
-  "words": [
-    {
-      "number": 1,
-      "target": "صحن",
-      "options": [
-        {
-          "word": "صحن",
-          "imagePath": "assets/images/word_bank/sad_b_01_sahn.png"
-        },
-        {
-          "word": "كوب",
-          "imagePath": "assets/images/listening/qaf_listening/beginner/cup.png"
-        },
-        {
-          "word": "ملعقة",
-          "imagePath": "assets/images/listening/sad_listening/beginner/spoon.png"
-        },
-        {
-          "word": "مقص",
-          "imagePath": "assets/images/listening/sad_listening/beginner/scissors.png"
-        }
-      ]
-    },
-    {
-      "number": 2,
-      "target": "صور",
-      "options": [
-        {
-          "word": "صور",
-          "imagePath": "assets/images/word_bank/sad_b_02_suwar.png"
-        },
-        {
-          "word": "كتاب",
-          "imagePath": "assets/images/listening/qaf_listening/beginner/book.png"
-        },
-        {
-          "word": "مرآة",
-          "imagePath": "assets/images/listening/sad_listening/beginner/mirror.png"
-        },
-        {
-          "word": "صندوق",
-          "imagePath": "assets/images/listening/qaf_listening/intermediate/box.png"
-        }
-      ]
-    },
-    {
-      "number": 3,
-      "target": "صوم",
-      "options": [
-        {
-          "word": "صوم",
-          "imagePath": "assets/images/word_bank/sad_b_03_sawm.png"
-        },
-        {
-          "word": "نوم",
-          "imagePath": "assets/images/listening/sad_listening/beginner/sleep.png"
-        },
-        {
-          "word": "صوف",
-          "imagePath": "assets/images/listening/qaf_listening/beginner/wool.png"
-        },
-        {
-          "word": "ثوم",
-          "imagePath": "assets/images/listening/sad_listening/beginner/garlic.png"
-        }
-      ]
-    },
-    {
-      "number": 4,
-      "target": "عصا",
-      "options": [
-        {
-          "word": "عصا",
-          "imagePath": "assets/images/word_bank/sad_b_04_asa.png"
-        },
-        {
-          "word": "عسل",
-          "imagePath": "assets/images/listening/seen_listening/beginner/honey.png"
-        },
-        {
-          "word": "عنب",
-          "imagePath": "assets/images/listening/kha_listening/beginner/grapes.png"
-        },
-        {
-          "word": "مصباح",
-          "imagePath": "assets/images/listening/sad_listening/beginner/lamp.png"
-        }
-      ]
-    },
-    {
-      "number": 5,
-      "target": "حصن",
-      "options": [
-        {
-          "word": "حصن",
-          "imagePath": "assets/images/word_bank/sad_b_05_hisn.png"
-        },
-        {
-          "word": "صقر",
-          "imagePath": "assets/images/listening/sad_listening/beginner/falcon.png"
-        },
-        {
-          "word": "حبل",
-          "imagePath": "assets/images/listening/kha_listening/beginner/rope.png"
-        },
-        {
-          "word": "حوت",
-          "imagePath": "assets/images/listening/sad_listening/beginner/whale.png"
-        }
-      ]
-    },
-    {
-      "number": 6,
-      "target": "لص",
-      "options": [
-        {
-          "word": "لص",
-          "imagePath": "assets/images/word_bank/sad_b_06_lis.png"
-        },
-        {
-          "word": "شرطي",
-          "imagePath": "assets/images/listening/sad_listening/beginner/policeman.png"
-        },
-        {
-          "word": "صبي",
-          "imagePath": "assets/images/listening/sad_listening/beginner/boy.png"
-        },
-        {
-          "word": "طباخ",
-          "imagePath": "assets/images/listening/sad_listening/beginner/chef.png"
-        }
-      ]
-    },
-    {
-      "number": 7,
-      "target": "حمص",
-      "options": [
-        {
-          "word": "حمص",
-          "imagePath": "assets/images/word_bank/sad_b_07_hummus.png"
-        },
-        {
-          "word": "صبار",
-          "imagePath": "assets/images/listening/sad_listening/beginner/cactus.png"
-        },
-        {
-          "word": "تفاح",
-          "imagePath": "assets/images/listening/kha_listening/beginner/apple.png"
-        },
-        {
-          "word": "خبز",
-          "imagePath": "assets/images/listening/kha_listening/beginner/bread.png"
-        }
-      ]
-    },
-    {
-      "number": 8,
-      "target": "فحص",
-      "options": [
-        {
-          "word": "فحص",
-          "imagePath": "assets/images/word_bank/sad_b_08_fahs.png"
-        },
-        {
-          "word": "صافرة",
-          "imagePath": "assets/images/listening/sad_listening/beginner/whistle.png"
-        },
-        {
-          "word": "دواء",
-          "imagePath": "assets/images/listening/sad_listening/beginner/medicine.png"
-        },
-        {
-          "word": "ضماد",
-          "imagePath": "assets/images/listening/sad_listening/beginner/bandage.png"
-        }
-      ]
-    }
-  ]
-},
-"intermediate": {
-  "code": "i",
-  "folder": "intermediate",
-  "words": [
-    {
-      "number": 1,
-      "target": "صحراء",
-      "options": [
-        {
-          "word": "صحراء",
-          "imagePath": "assets/images/word_bank/sad_i_01_sahraa.png"
-        },
-        {
-          "word": "جبل",
-          "imagePath": "assets/images/listening/sad_listening/intermediate/mountain.png"
-        },
-        {
-          "word": "غابة",
-          "imagePath": "assets/images/listening/sad_listening/intermediate/forest.png"
-        },
-        {
-          "word": "صبار",
-          "imagePath": "assets/images/listening/sad_listening/beginner/cactus.png"
-        }
-      ]
-    },
-    {
-      "number": 2,
-      "target": "صالة",
-      "options": [
-        {
-          "word": "صالة",
-          "imagePath": "assets/images/word_bank/sad_i_02_sala.png"
-        },
-        {
-          "word": "مطبخ",
-          "imagePath": "assets/images/listening/sad_listening/intermediate/kitchen.png"
-        },
-        {
-          "word": "غرفة",
-          "imagePath": "assets/images/listening/sad_listening/intermediate/room.png"
-        },
-        {
-          "word": "فصل",
-          "imagePath": "assets/images/listening/sad_listening/intermediate/classroom.png"
-        }
-      ]
-    },
-    {
-      "number": 3,
-      "target": "صياد",
-      "options": [
-        {
-          "word": "صياد",
-          "imagePath": "assets/images/word_bank/sad_i_03_sayyad.png"
-        },
-        {
-          "word": "طباخ",
-          "imagePath": "assets/images/listening/sad_listening/beginner/chef.png"
-        },
-        {
-          "word": "شرطي",
-          "imagePath": "assets/images/listening/sad_listening/beginner/policeman.png"
-        },
-        {
-          "word": "غواص",
-          "imagePath": "assets/images/listening/sad_listening/intermediate/diver.png"
-        }
-      ]
-    },
-    {
-      "number": 4,
-      "target": "صيصان",
-      "options": [
-        {
-          "word": "صيصان",
-          "imagePath": "assets/images/word_bank/sad_i_04_seesan.png"
-        },
-        {
-          "word": "دجاجة",
-          "imagePath": "assets/images/listening/sad_listening/intermediate/hen.png"
-        },
-        {
-          "word": "عصفور",
-          "imagePath": "assets/images/word_bank/sad_i_07_usfoor.png"
-        },
-        {
-          "word": "صقر",
-          "imagePath": "assets/images/listening/sad_listening/beginner/falcon.png"
-        }
-      ]
-    },
-    {
-      "number": 5,
-      "target": "عصير",
-      "options": [
-        {
-          "word": "عصير",
-          "imagePath": "assets/images/word_bank/sad_i_05_aseer.png"
-        },
-        {
-          "word": "حليب",
-          "imagePath": "assets/images/listening/sad_listening/intermediate/milk.png"
-        },
-        {
-          "word": "شاي",
-          "imagePath": "assets/images/listening/sad_listening/intermediate/tea.png"
-        },
-        {
-          "word": "صابون",
-          "imagePath": "assets/images/listening/sad_listening/intermediate/soap.png"
-        }
-      ]
-    },
-    {
-      "number": 6,
-      "target": "حصان",
-      "options": [
-        {
-          "word": "حصان",
-          "imagePath": "assets/images/word_bank/sad_i_06_hisan.png"
-        },
-        {
-          "word": "خروف",
-          "imagePath": "assets/images/listening/sad_listening/intermediate/sheep.png"
-        },
-        {
-          "word": "جمل",
-          "imagePath": "assets/images/listening/sad_listening/intermediate/camel.png"
-        },
-        {
-          "word": "صقر",
-          "imagePath": "assets/images/listening/sad_listening/beginner/falcon.png"
-        }
-      ]
-    },
-    {
-      "number": 7,
-      "target": "عصفور",
-      "options": [
-        {
-          "word": "عصفور",
-          "imagePath": "assets/images/word_bank/sad_i_07_usfoor.png"
-        },
-        {
-          "word": "حمامة",
-          "imagePath": "assets/images/listening/sad_listening/intermediate/pigeon.png"
-        },
-        {
-          "word": "فراشة",
-          "imagePath": "assets/images/listening/sad_listening/intermediate/butterfly.png"
-        },
-        {
-          "word": "صقر",
-          "imagePath": "assets/images/listening/sad_listening/beginner/falcon.png"
-        }
-      ]
-    },
-    {
-      "number": 8,
-      "target": "قميص",
-      "options": [
-        {
-          "word": "قميص",
-          "imagePath": "assets/images/word_bank/sad_i_08_qamees.png"
-        },
-        {
-          "word": "حذاء",
-          "imagePath": "assets/images/listening/sad_listening/intermediate/shoe.png"
-        },
-        {
-          "word": "قبعة",
-          "imagePath": "assets/images/listening/sad_listening/intermediate/hat.png"
-        },
-        {
-          "word": "صندل",
-          "imagePath": "assets/images/listening/sad_listening/intermediate/sandal.png"
-        }
-      ]
-    }
-  ]
-},
-
-
-"ض": {
-  "assetFolder": "dad",
-  "levels": {
-    "beginner": {
-  "code": "b",
-  "folder": "beginner",
-  "words": [
-    {
-      "number": 1,
-      "target": "ضبع",
-      "options": [
-        {"word": "ضبع", "imagePath": "assets/images/word_bank/dad_b_01_dab.png"},
-        {"word": "أسد", "imagePath": "assets/images/listening/qaf_listening/intermediate/lion.png"},
-        {"word": "نمر", "imagePath": "assets/images/listening/qaf_listening/beginner/tiger.png"},
-        {"word": "أرنب", "imagePath": "assets/images/listening/kha_listening/intermediate/rabbit.png"}
-      ]
-    },
-    {
-      "number": 2,
-      "target": "ضوء",
-      "options": [
-        {"word": "ضوء", "imagePath": "assets/images/word_bank/dad_b_02_daw.png"},
-        {"word": "قمر", "imagePath": "assets/images/listening/qaf_listening/beginner/moon.png"},
-        {"word": "مصباح", "imagePath": "assets/images/listening/seen_listening/intermediate/bulb.png"},
-        {"word": "نجم", "imagePath": "assets/images/listening/seen_listening/beginner/star.png"}
-      ]
-    },
-    {
-      "number": 3,
-      "target": "ضرس",
-      "options": [
-        {"word": "ضرس", "imagePath": "assets/images/word_bank/dad_b_03_dirs.png"},
-        {"word": "فم", "imagePath": "assets/images/listening/kha_listening/beginner/mouth.png"},
-        {"word": "عين", "imagePath": "assets/images/listening/kha_listening/beginner/eye.png"},
-        {"word": "يد", "imagePath": "assets/images/listening/kha_listening/beginner/hand.png"}
-      ]
-    },
-    {
-      "number": 4,
-      "target": "ضغط",
-      "options": [
-        {"word": "ضغط", "imagePath": "assets/images/word_bank/dad_b_04_daght.png"},
-        {"word": "رسم", "imagePath": "assets/images/word_bank/seen_b_06_rasm.png"},
-        {"word": "ختم", "imagePath": "assets/images/listening/seen_listening/beginner/stamp.png"},
-        {"word": "سهم", "imagePath": "assets/images/listening/seen_listening/beginner/arrow.png"}
-      ]
-    },
-    {
-      "number": 5,
-      "target": "بيض",
-      "options": [
-        {"word": "بيض", "imagePath": "assets/images/word_bank/dad_b_05_bayd.png"},
-        {"word": "تفاح", "imagePath": "assets/images/listening/kha_listening/beginner/apple.png"},
-        {"word": "موز", "imagePath": "assets/images/listening/kha_listening/beginner/banana.png"},
-        {"word": "عنب", "imagePath": "assets/images/listening/kha_listening/beginner/grapes.png"}
-      ]
-    },
-    {
-      "number": 6,
-      "target": "أرض",
-      "options": [
-        {"word": "أرض", "imagePath": "assets/images/word_bank/dad_b_06_ard.png"},
-        {"word": "قمر", "imagePath": "assets/images/listening/qaf_listening/beginner/moon.png"},
-        {"word": "سماء", "imagePath": "assets/images/listening/seen_listening/beginner/sky.png"},
-        {"word": "نجم", "imagePath": "assets/images/listening/seen_listening/beginner/star.png"}
-      ]
-    },
-    {
-      "number": 7,
-      "target": "رفض",
-      "options": [
-        {"word": "رفض", "imagePath": "assets/images/word_bank/dad_b_07_rafd.png"},
-        {"word": "سهم", "imagePath": "assets/images/listening/seen_listening/beginner/arrow.png"},
-        {"word": "علم", "imagePath": "assets/images/listening/seen_listening/beginner/flag.png"},
-        {"word": "ختم", "imagePath": "assets/images/listening/seen_listening/beginner/stamp.png"}
-      ]
-    },
-    {
-      "number": 8,
-      "target": "نبض",
-      "options": [
-        {"word": "نبض", "imagePath": "assets/images/word_bank/dad_b_08_nabd.png"},
-        {"word": "فم", "imagePath": "assets/images/listening/kha_listening/beginner/mouth.png"},
-        {"word": "عين", "imagePath": "assets/images/listening/kha_listening/beginner/eye.png"},
-        {"word": "يد", "imagePath": "assets/images/listening/kha_listening/beginner/hand.png"}
-      ]
-    }
-  ]
-},
-
-    "intermediate": {
-  "code": "i",
-  "folder": "intermediate",
-  "words": [
-    {
-      "number": 1,
-      "target": "ضروس",
-      "options": [
-        {"word": "ضروس", "imagePath": "assets/images/word_bank/dad_i_01_durus.png"},
-        {"word": "فم", "imagePath": "assets/images/listening/kha_listening/beginner/mouth.png"},
-        {"word": "عين", "imagePath": "assets/images/listening/kha_listening/beginner/eye.png"},
-        {"word": "يد", "imagePath": "assets/images/listening/kha_listening/beginner/hand.png"}
-      ]
-    },
-    {
-      "number": 2,
-      "target": "ضفدع",
-      "options": [
-        {"word": "ضفدع", "imagePath": "assets/images/word_bank/dad_i_02_difda.png"},
-        {"word": "أرنب", "imagePath": "assets/images/listening/kha_listening/intermediate/rabbit.png"},
-        {"word": "حصان", "imagePath": "assets/images/listening/kha_listening/intermediate/horse.png"},
-        {"word": "جمل", "imagePath": "assets/images/listening/kha_listening/intermediate/camel.png"}
-      ]
-    },
-    {
-      "number": 3,
-      "target": "خضار",
-      "options": [
-        {"word": "خضار", "imagePath": "assets/images/word_bank/dad_i_03_khodar.png"},
-        {"word": "جزر", "imagePath": "assets/images/listening/kha_listening/intermediate/carrot.png"},
-        {"word": "طماطم", "imagePath": "assets/images/listening/kha_listening/intermediate/tomato.png"},
-        {"word": "بصل", "imagePath": "assets/images/listening/kha_listening/intermediate/onion.png"}
-      ]
-    },
-    {
-      "number": 4,
-      "target": "روضة",
-      "options": [
-        {"word": "روضة", "imagePath": "assets/images/word_bank/dad_i_04_rawda.png"},
-        {"word": "مدرسة", "imagePath": "assets/images/listening/kha_listening/intermediate/school.png"},
-        {"word": "حديقة", "imagePath": "assets/images/listening/kha_listening/intermediate/park.png"},
-        {"word": "غرفة", "imagePath": "assets/images/listening/kha_listening/intermediate/room.png"}
-      ]
-    },
-    {
-      "number": 5,
-      "target": "فضاء",
-      "options": [
-        {"word": "فضاء", "imagePath": "assets/images/word_bank/dad_i_05_fadaa.png"},
-        {"word": "قمر", "imagePath": "assets/images/listening/qaf_listening/beginner/moon.png"},
-        {"word": "سماء", "imagePath": "assets/images/listening/seen_listening/beginner/sky.png"},
-        {"word": "نجم", "imagePath": "assets/images/listening/seen_listening/beginner/star.png"}
-      ]
-    },
-    {
-      "number": 6,
-      "target": "بعوض",
-      "options": [
-        {"word": "بعوض", "imagePath": "assets/images/word_bank/dad_i_06_baood.png"},
-        {"word": "أرنب", "imagePath": "assets/images/listening/kha_listening/intermediate/rabbit.png"},
-        {"word": "حصان", "imagePath": "assets/images/listening/kha_listening/intermediate/horse.png"},
-        {"word": "جمل", "imagePath": "assets/images/listening/kha_listening/intermediate/camel.png"}
-      ]
-    },
-    {
-      "number": 7,
-      "target": "مريض",
-      "options": [
-        {"word": "مريض", "imagePath": "assets/images/word_bank/dad_i_07_mareed.png"},
-        {"word": "خائف", "imagePath": "assets/images/word_bank/kha_a_02_khaifeen.png"},
-        {"word": "فم", "imagePath": "assets/images/listening/kha_listening/beginner/mouth.png"},
-        {"word": "عين", "imagePath": "assets/images/listening/kha_listening/beginner/eye.png"}
-      ]
-    },
-    {
-      "number": 8,
-      "target": "أبيض",
-      "options": [
-        {"word": "أبيض", "imagePath": "assets/images/word_bank/dad_i_08_abyad.png"},
-        {"word": "رمل", "imagePath": "assets/images/listening/kha_listening/beginner/sand.png"},
-        {"word": "طين", "imagePath": "assets/images/listening/kha_listening/beginner/clay.png"},
-        {"word": "خشب", "imagePath": "assets/images/listening/kha_listening/intermediate/wood.png"}
-      ]
-    }
-  ]
-},
-
-    "advanced": {
-  "code": "a",
-  "folder": "advanced",
-  "words": [
-    {
-      "number": 1,
-      "target": "ضاحية",
-      "options": [
-        {"word": "ضاحية", "imagePath": "assets/images/word_bank/dad_a_01_dahiya.png"},
-        {"word": "مدينة", "imagePath": "assets/images/listening/kha_listening/advanced/city.png"},
-        {"word": "مدرسة", "imagePath": "assets/images/listening/kha_listening/intermediate/school.png"},
-        {"word": "حديقة", "imagePath": "assets/images/listening/kha_listening/intermediate/park.png"}
-      ]
-    },
-    {
-      "number": 2,
-      "target": "ضحكات",
-      "options": [
-        {"word": "ضحكات", "imagePath": "assets/images/word_bank/dad_a_02_dahikat.png"},
-        {"word": "خائفين", "imagePath": "assets/images/word_bank/kha_a_02_khaifeen.png"},
-        {"word": "لاعبين", "imagePath": "assets/images/listening/qaf_listening/advanced/athletes.png"},
-        {"word": "عاملين", "imagePath": "assets/images/listening/qaf_listening/advanced/workers.png"}
-      ]
-    },
-    {
-      "number": 3,
-      "target": "ضمادات",
-      "options": [
-        {"word": "ضمادات", "imagePath": "assets/images/word_bank/dad_a_03_damadat.png"},
-        {"word": "زجاجة", "imagePath": "assets/images/listening/qaf_listening/advanced/bottle.png"},
-        {"word": "كوب", "imagePath": "assets/images/listening/qaf_listening/advanced/cup.png"},
-        {"word": "وعاء", "imagePath": "assets/images/listening/qaf_listening/advanced/bowl.png"}
-      ]
-    },
-    {
-      "number": 4,
-      "target": "ضائعون",
-      "options": [
-        {"word": "ضائعون", "imagePath": "assets/images/word_bank/dad_a_04_daioon.png"},
-        {"word": "خائفين", "imagePath": "assets/images/word_bank/kha_a_02_khaifeen.png"},
-        {"word": "لاعبين", "imagePath": "assets/images/listening/qaf_listening/advanced/athletes.png"},
-        {"word": "عاملين", "imagePath": "assets/images/listening/qaf_listening/advanced/workers.png"}
-      ]
-    },
-    {
-      "number": 5,
-      "target": "رياضة",
-      "options": [
-        {"word": "رياضة", "imagePath": "assets/images/word_bank/dad_a_05_riyada.png"},
-        {"word": "سيارات", "imagePath": "assets/images/listening/qaf_listening/advanced/cars.png"},
-        {"word": "دراجات", "imagePath": "assets/images/listening/qaf_listening/advanced/bikes.png"},
-        {"word": "قوارب", "imagePath": "assets/images/listening/seen_listening/advanced/boats.png"}
-      ]
-    },
-    {
-      "number": 6,
-      "target": "العضلات",
-      "options": [
-        {"word": "العضلات", "imagePath": "assets/images/word_bank/dad_a_06_adalat.png"},
-        {"word": "عين", "imagePath": "assets/images/listening/kha_listening/beginner/eye.png"},
-        {"word": "يد", "imagePath": "assets/images/listening/kha_listening/beginner/hand.png"},
-        {"word": "فم", "imagePath": "assets/images/listening/kha_listening/beginner/mouth.png"}
-      ]
-    },
-    {
-      "number": 7,
-      "target": "رضاعة",
-      "options": [
-        {"word": "رضاعة", "imagePath": "assets/images/word_bank/dad_a_07_radaa.png"},
-        {"word": "كوب", "imagePath": "assets/images/listening/qaf_listening/advanced/cup.png"},
-        {"word": "زجاجة", "imagePath": "assets/images/listening/qaf_listening/advanced/bottle.png"},
-        {"word": "وعاء", "imagePath": "assets/images/listening/qaf_listening/advanced/bowl.png"}
-      ]
-    },
-    {
-      "number": 8,
-      "target": "تخفيض",
-      "options": [
-        {"word": "تخفيض", "imagePath": "assets/images/word_bank/dad_a_08_takhfid.png"},
-        {"word": "الأوراق", "imagePath": "assets/images/listening/seen_listening/advanced/papers.png"},
-        {"word": "الكتب", "imagePath": "assets/images/listening/qaf_listening/advanced/books.png"},
-        {"word": "الدفاتر", "imagePath": "assets/images/listening/qaf_listening/advanced/notebooks.png"}
-      ]
-    }
-  ]
-}
-  }
-}
 }
