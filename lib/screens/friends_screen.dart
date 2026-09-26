@@ -6,6 +6,7 @@ import '../widgets/child_bottom_nav.dart';
 import '../services/friend_service.dart';
 import '../services/practice_together_service.dart';
 import 'style_constants.dart';
+import 'practice_lobby_screen.dart';
 
 class FriendsScreen extends StatelessWidget {
   final String childId;
@@ -394,7 +395,7 @@ class FriendsScreen extends StatelessWidget {
     }
 
     try {
-      await service.sendInvitation(
+      final sessionId = await service.sendInvitation(
         senderChildId: childId,
         receiverChildId: friendId,
         exerciseType: selectedType,
@@ -404,9 +405,12 @@ class FriendsScreen extends StatelessWidget {
 
       if (!context.mounted) return;
 
-      _showAppSnackBar(
+      Navigator.push(
         context,
-        message: 'تم إرسال دعوة التدريب إلى $friendName',
+        MaterialPageRoute(
+          builder: (_) =>
+              PracticeLobbyScreen(sessionId: sessionId, childId: childId),
+        ),
       );
     } catch (e) {
       if (!context.mounted) return;

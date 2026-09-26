@@ -1,24 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
+import '../services/practice_together_service.dart';
 import 'friend_requests_screen.dart';
 import 'style_constants.dart';
+import 'practice_lobby_screen.dart';
 
 class NotificationsScreen extends StatelessWidget {
   final String childId;
 
-  const NotificationsScreen({
-    super.key,
-    required this.childId,
-  });
+  const NotificationsScreen({super.key, required this.childId});
 
   static const Color _purple = Color(0xFF511281);
   static const Color _coral = Color(0xFFFF6969);
   static const Color _background = Color(0xFFFCF9EA);
 
-  Future<Map<String, dynamic>?> _getSenderProfile(
-    String senderId,
-  ) async {
+  Future<Map<String, dynamic>?> _getSenderProfile(String senderId) async {
     final snapshot = await FirebaseFirestore.instance
         .collection('child_public_profiles')
         .doc(senderId)
@@ -27,6 +23,389 @@ class NotificationsScreen extends StatelessWidget {
     if (!snapshot.exists) return null;
 
     return snapshot.data();
+  }
+
+  void _showMessage(
+    BuildContext context,
+    String message, {
+    bool isError = false,
+  }) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: isError ? const Color(0xFFD7685B) : _purple,
+        content: Directionality(
+          textDirection: TextDirection.rtl,
+          child: Text(
+            message,
+            textAlign: TextAlign.right,
+            style: const TextStyle(fontFamily: 'Tajawal', color: Colors.white),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _declinePracticeInvitation(
+    BuildContext context,
+    QueryDocumentSnapshot<Map<String, dynamic>> notification,
+  ) async {
+    final data = notification.data();
+
+    final String sessionId = data['referenceId']?.toString() ?? '';
+
+    if (sessionId.isEmpty) {
+      _showMessage(context, 'تعذّر العثور على الدعوة', isError: true);
+      return;
+    }
+
+    try {
+      await PracticeTogetherService().declineInvitation(
+        sessionId: sessionId,
+        childId: childId,
+      );
+
+      // We no longer need the notification after rejection.
+      await notification.reference.delete();
+
+      if (!context.mounted) return;
+
+      _showMessage(context, 'تم رفض الدعوة');
+    } catch (e) {
+      if (!context.mounted) return;
+
+      _showMessage(context, 'تعذّر رفض الدعوة، حاول مرة أخرى', isError: true);
+    }
+  }
+
+  Future<void> _acceptPracticeInvitation(
+    BuildContext context,
+    QueryDocumentSnapshot<Map<String, dynamic>> notification,
+  ) async {
+    final notificationData = notification.data();
+
+    final String sessionId = notificationData['referenceId']?.toString() ?? '';
+
+    if (sessionId.isEmpty) {
+      _showMessage(context, 'تعذّر العثور على الدعوة', isError: true);
+      return;
+    }
+
+    try {
+      final service = PracticeTogetherService();
+
+      final sessionSnapshot = await FirebaseFirestore.instance
+          .collection('practice_sessions')
+          .doc(sessionId)
+          .get();
+
+      if (!sessionSnapshot.exists || sessionSnapshot.data() == null) {
+        throw Exception('SESSION_NOT_FOUND');
+      }
+
+      final sessionData = sessionSnapshot.data()!;
+
+      if (sessionData['receiverId'] != childId) {
+        throw Exception('NOT_INVITATION_RECEIVER');
+      }
+
+      final String status = sessionData['status']?.toString() ?? '';
+
+      final String type = sessionData['exerciseType']?.toString() ?? '';
+
+      final PracticeExerciseType exerciseType;
+
+      if (type == 'listening') {
+        exerciseType = PracticeExerciseType.listening;
+      } else if (type == 'speaking') {
+        exerciseType = PracticeExerciseType.speaking;
+      } else {
+        throw Exception('INVALID_EXERCISE_TYPE');
+      }
+
+      // Get only exercises Child B is actually allowed to use.
+      final availableExercises = await service.getAvailableExercises(
+        childId: childId,
+        exerciseType: exerciseType,
+      );
+
+      if (availableExercises.isEmpty) {
+        if (!context.mounted) return;
+
+        _showMessage(
+          context,
+          'لا توجد تمارين متاحة لهذا التحدي',
+          isError: true,
+        );
+
+        return;
+      }
+
+      // Normally status is pending.
+      // If the app was closed after acceptance but before
+      // exercise selection, accepted lets us safely resume.
+      if (status == 'pending') {
+        await service.acceptInvitation(sessionId: sessionId, childId: childId);
+      } else if (status != 'accepted') {
+        throw Exception('INVITATION_NOT_AVAILABLE');
+      }
+
+      if (!context.mounted) return;
+
+      await _showReceiverExercisePicker(
+        context: context,
+        notification: notification,
+        sessionId: sessionId,
+        exerciseType: exerciseType,
+        availableExercises: availableExercises,
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+
+      _showMessage(context, 'تعذّر قبول الدعوة، حاول مرة أخرى', isError: true);
+    }
+  }
+
+  Future<void> _showReceiverExercisePicker({
+    required BuildContext context,
+    required QueryDocumentSnapshot<Map<String, dynamic>> notification,
+    required String sessionId,
+    required PracticeExerciseType exerciseType,
+    required List<PracticeAvailableExercise> availableExercises,
+  }) async {
+    PracticeAvailableExercise? selectedExercise;
+    bool isSaving = false;
+
+    final String exerciseTypeText =
+        exerciseType == PracticeExerciseType.listening
+        ? 'تمارين الاستماع'
+        : 'تمارين النطق';
+
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return PopScope(
+          canPop: false,
+          child: StatefulBuilder(
+            builder: (context, setDialogState) {
+              return Directionality(
+                textDirection: TextDirection.rtl,
+                child: AlertDialog(
+                  backgroundColor: const Color(0xFFFCF9EA),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(26),
+                  ),
+                  title: const Text(
+                    'اختر تمرينك',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontFamily: 'Tajawal',
+                      fontWeight: FontWeight.w700,
+                      color: _purple,
+                    ),
+                  ),
+                  content: SizedBox(
+                    width: double.maxFinite,
+                    child: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'اختر أحد $exerciseTypeText المتاحة لك',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontFamily: 'Tajawal',
+                              fontSize: 13,
+                              color: Color(0xFF777177),
+                            ),
+                          ),
+
+                          const SizedBox(height: 18),
+
+                          ...availableExercises.map((exercise) {
+                            final bool isSelected =
+                                selectedExercise?.id == exercise.id;
+
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 10),
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(18),
+                                onTap: isSaving
+                                    ? null
+                                    : () {
+                                        setDialogState(() {
+                                          selectedExercise = exercise;
+                                        });
+                                      },
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 180),
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 14,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: isSelected
+                                        ? const Color(0xFFF1E8F8)
+                                        : Colors.white,
+                                    borderRadius: BorderRadius.circular(18),
+                                    border: Border.all(
+                                      color: isSelected
+                                          ? _purple
+                                          : _purple.withValues(alpha: 0.08),
+                                      width: isSelected ? 1.5 : 1,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 46,
+                                        height: 46,
+                                        alignment: Alignment.center,
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFF7F0FF),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: Text(
+                                          exercise.letter,
+                                          style: const TextStyle(
+                                            fontFamily: 'Tajawal',
+                                            fontSize: 23,
+                                            fontWeight: FontWeight.w700,
+                                            color: _purple,
+                                          ),
+                                        ),
+                                      ),
+
+                                      const SizedBox(width: 12),
+
+                                      Expanded(
+                                        child: Text(
+                                          'حرف ${exercise.letter} • ${exercise.arabicLevel}',
+                                          style: const TextStyle(
+                                            fontFamily: 'Tajawal',
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w600,
+                                            color: Color(0xFF564F56),
+                                          ),
+                                        ),
+                                      ),
+
+                                      Icon(
+                                        isSelected
+                                            ? Icons.check_circle_rounded
+                                            : Icons
+                                                  .radio_button_unchecked_rounded,
+                                        color: isSelected
+                                            ? _purple
+                                            : const Color(0xFFC8C2C8),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            );
+                          }),
+                        ],
+                      ),
+                    ),
+                  ),
+                  actionsAlignment: MainAxisAlignment.center,
+                  actions: [
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: ElevatedButton(
+                        onPressed: selectedExercise == null || isSaving
+                            ? null
+                            : () async {
+                                setDialogState(() {
+                                  isSaving = true;
+                                });
+
+                                try {
+                                  await PracticeTogetherService()
+                                      .selectReceiverExercise(
+                                        sessionId: sessionId,
+                                        childId: childId,
+                                        letter: selectedExercise!.letter,
+                                        level: selectedExercise!.level,
+                                      );
+
+                                  // Session is now in the lobby,
+                                  // so this invitation is finished.
+                                  await notification.reference.delete();
+
+                                  if (!dialogContext.mounted) {
+                                    return;
+                                  }
+
+                                  Navigator.pop(dialogContext);
+
+                                  if (!context.mounted) {
+                                    return;
+                                  }
+
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => PracticeLobbyScreen(
+                                        sessionId: sessionId,
+                                        childId: childId,
+                                      ),
+                                    ),
+                                  );
+                                } catch (e) {
+                                  setDialogState(() {
+                                    isSaving = false;
+                                  });
+
+                                  if (!context.mounted) {
+                                    return;
+                                  }
+
+                                  _showMessage(
+                                    context,
+                                    'تعذّر اختيار التمرين، حاول مرة أخرى',
+                                    isError: true,
+                                  );
+                                }
+                              },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _purple,
+                          foregroundColor: Colors.white,
+                          disabledBackgroundColor: const Color(0xFFD6CEDC),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        child: isSaving
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Text(
+                                'متابعة',
+                                style: TextStyle(
+                                  fontFamily: 'Tajawal',
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _openNotification(
@@ -38,9 +417,7 @@ class NotificationsScreen extends StatelessWidget {
 
     // Mark as read
     if (data['isRead'] != true) {
-      await notification.reference.update({
-        'isRead': true,
-      });
+      await notification.reference.update({'isRead': true});
     }
 
     if (!context.mounted) return;
@@ -49,9 +426,7 @@ class NotificationsScreen extends StatelessWidget {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => FriendRequestsScreen(
-            childId: childId,
-          ),
+          builder: (_) => FriendRequestsScreen(childId: childId),
         ),
       );
     }
@@ -59,61 +434,63 @@ class NotificationsScreen extends StatelessWidget {
     // practice_invitation
     // بنربطه لاحقًا بشاشة Practice Together
   }
-String _formatNotificationTime(Timestamp? timestamp) {
-  if (timestamp == null) return '';
 
-  final DateTime createdAt = timestamp.toDate();
-  final DateTime now = DateTime.now();
+  String _formatNotificationTime(Timestamp? timestamp) {
+    if (timestamp == null) return '';
 
-  final Duration difference = now.difference(createdAt);
+    final DateTime createdAt = timestamp.toDate();
+    final DateTime now = DateTime.now();
 
-  if (difference.inSeconds < 60) {
-    final seconds = difference.inSeconds;
+    final Duration difference = now.difference(createdAt);
 
-    if (seconds <= 5) {
-      return 'الآن';
+    if (difference.inSeconds < 60) {
+      final seconds = difference.inSeconds;
+
+      if (seconds <= 5) {
+        return 'الآن';
+      }
+
+      return 'منذ $seconds ثانية';
     }
 
-    return 'منذ $seconds ثانية';
-  }
+    if (difference.inMinutes < 60) {
+      final minutes = difference.inMinutes;
 
-  if (difference.inMinutes < 60) {
-    final minutes = difference.inMinutes;
+      if (minutes == 1) {
+        return 'منذ دقيقة';
+      }
 
-    if (minutes == 1) {
-      return 'منذ دقيقة';
+      return 'منذ $minutes دقائق';
     }
 
-    return 'منذ $minutes دقائق';
-  }
+    if (difference.inHours < 24) {
+      final hours = difference.inHours;
 
-  if (difference.inHours < 24) {
-    final hours = difference.inHours;
+      if (hours == 1) {
+        return 'منذ ساعة';
+      }
 
-    if (hours == 1) {
-      return 'منذ ساعة';
+      return 'منذ $hours ساعات';
     }
 
-    return 'منذ $hours ساعات';
+    const months = [
+      'يناير',
+      'فبراير',
+      'مارس',
+      'أبريل',
+      'مايو',
+      'يونيو',
+      'يوليو',
+      'أغسطس',
+      'سبتمبر',
+      'أكتوبر',
+      'نوفمبر',
+      'ديسمبر',
+    ];
+
+    return '${createdAt.day} ${months[createdAt.month - 1]} ${createdAt.year}';
   }
 
-  const months = [
-    'يناير',
-    'فبراير',
-    'مارس',
-    'أبريل',
-    'مايو',
-    'يونيو',
-    'يوليو',
-    'أغسطس',
-    'سبتمبر',
-    'أكتوبر',
-    'نوفمبر',
-    'ديسمبر',
-  ];
-
-  return '${createdAt.day} ${months[createdAt.month - 1]} ${createdAt.year}';
-}
   @override
   Widget build(BuildContext context) {
     return Directionality(
@@ -168,27 +545,18 @@ String _formatNotificationTime(Timestamp? timestamp) {
             // BODY
             // ===============================================================
             Expanded(
-              child:
-                  StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+              child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
                 stream: FirebaseFirestore.instance
                     .collection('notifications')
-                    .where(
-                      'receiverId',
-                      isEqualTo: childId,
-                    )
+                    .where('receiverId', isEqualTo: childId)
                     .snapshots(),
                 builder: (context, snapshot) {
-                  if (snapshot.connectionState ==
-                      ConnectionState.waiting) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Stack(
                       children: [
-                        Positioned.fill(
-                          child: _NotificationsBackground(),
-                        ),
+                        Positioned.fill(child: _NotificationsBackground()),
                         Center(
-                          child: CircularProgressIndicator(
-                            color: _purple,
-                          ),
+                          child: CircularProgressIndicator(color: _purple),
                         ),
                       ],
                     );
@@ -197,9 +565,7 @@ String _formatNotificationTime(Timestamp? timestamp) {
                   if (snapshot.hasError) {
                     return const Stack(
                       children: [
-                        Positioned.fill(
-                          child: _NotificationsBackground(),
-                        ),
+                        Positioned.fill(child: _NotificationsBackground()),
                         _NotificationMessageView(
                           isError: true,
                           title: 'تعذّر تحميل الإشعارات',
@@ -209,39 +575,37 @@ String _formatNotificationTime(Timestamp? timestamp) {
                     );
                   }
 
-                  final allNotifications =
-    snapshot.data?.docs.toList() ?? [];
+                  final allNotifications = snapshot.data?.docs.toList() ?? [];
 
-final sevenDaysAgo =
-    DateTime.now().subtract(const Duration(days: 7));
+                  final sevenDaysAgo = DateTime.now().subtract(
+                    const Duration(days: 7),
+                  );
 
-final notifications = allNotifications.where((notification) {
-  final data = notification.data();
+                  final notifications = allNotifications.where((notification) {
+                    final data = notification.data();
 
-  final bool isRead = data['isRead'] == true;
-  final Timestamp? createdAt =
-      data['createdAt'] as Timestamp?;
+                    final bool isRead = data['isRead'] == true;
+                    final Timestamp? createdAt =
+                        data['createdAt'] as Timestamp?;
 
-  // الإشعار غير المقروء يبقى مهما كان عمره
-  if (!isRead) {
-    return true;
-  }
+                    // الإشعار غير المقروء يبقى مهما كان عمره
+                    if (!isRead) {
+                      return true;
+                    }
 
-  // احتياطًا: إذا ما عنده تاريخ نخليه ظاهر
-  if (createdAt == null) {
-    return true;
-  }
+                    // احتياطًا: إذا ما عنده تاريخ نخليه ظاهر
+                    if (createdAt == null) {
+                      return true;
+                    }
 
-  // المقروء يظهر فقط إذا عمره أقل من 7 أيام
-  return createdAt.toDate().isAfter(sevenDaysAgo);
-}).toList();
+                    // المقروء يظهر فقط إذا عمره أقل من 7 أيام
+                    return createdAt.toDate().isAfter(sevenDaysAgo);
+                  }).toList();
 
                   // Newest first
                   notifications.sort((a, b) {
-                    final aTime =
-                        a.data()['createdAt'] as Timestamp?;
-                    final bTime =
-                        b.data()['createdAt'] as Timestamp?;
+                    final aTime = a.data()['createdAt'] as Timestamp?;
+                    final bTime = b.data()['createdAt'] as Timestamp?;
 
                     if (aTime == null && bTime == null) return 0;
                     if (aTime == null) return 1;
@@ -253,9 +617,7 @@ final notifications = allNotifications.where((notification) {
                   if (notifications.isEmpty) {
                     return const Stack(
                       children: [
-                        Positioned.fill(
-                          child: _NotificationsBackground(),
-                        ),
+                        Positioned.fill(child: _NotificationsBackground()),
                         _NotificationMessageView(
                           title: 'لا توجد إشعارات جديدة',
                           message: 'ستظهر إشعاراتك ودعوات أصدقائك هنا',
@@ -267,44 +629,29 @@ final notifications = allNotifications.where((notification) {
                   return Stack(
                     children: [
                       const Positioned.fill(
-                        child: IgnorePointer(
-                          child: _NotificationsBackground(),
-                        ),
+                        child: IgnorePointer(child: _NotificationsBackground()),
                       ),
 
                       ListView.separated(
-                        padding: const EdgeInsets.fromLTRB(
-                          18,
-                          18,
-                          18,
-                          30,
-                        ),
+                        padding: const EdgeInsets.fromLTRB(18, 18, 18, 30),
                         itemCount: notifications.length,
-                        separatorBuilder: (_, __) =>
-                            const SizedBox(height: 11),
+                        separatorBuilder: (_, __) => const SizedBox(height: 11),
                         itemBuilder: (context, index) {
-                          final notification =
-                              notifications[index];
+                          final notification = notifications[index];
 
                           final data = notification.data();
 
-                          final senderId =
-                              data['senderId']?.toString() ?? '';
+                          final senderId = data['senderId']?.toString() ?? '';
 
-                          final type =
-                              data['type']?.toString() ?? '';
+                          final type = data['type']?.toString() ?? '';
 
-                          final isRead =
-                              data['isRead'] == true;
+                          final isRead = data['isRead'] == true;
 
-                              final createdAt =
-    data['createdAt'] as Timestamp?;
+                          final createdAt = data['createdAt'] as Timestamp?;
 
-final timeText =
-    _formatNotificationTime(createdAt);
+                          final timeText = _formatNotificationTime(createdAt);
 
-                          return FutureBuilder<
-                              Map<String, dynamic>?>(
+                          return FutureBuilder<Map<String, dynamic>?>(
                             future: _getSenderProfile(senderId),
                             builder: (context, profileSnapshot) {
                               if (profileSnapshot.connectionState ==
@@ -312,16 +659,13 @@ final timeText =
                                 return const _NotificationLoadingCard();
                               }
 
-                              final profile =
-                                  profileSnapshot.data;
+                              final profile = profileSnapshot.data;
 
                               final name =
-                                  profile?['name']?.toString() ??
-                                      'صديقك';
+                                  profile?['name']?.toString() ?? 'صديقك';
 
                               final avatar =
-                                  profile?['avatar']?.toString() ??
-                                      '🌟';
+                                  profile?['avatar']?.toString() ?? '🌟';
 
                               return _NotificationCard(
                                 name: name,
@@ -330,12 +674,29 @@ final timeText =
                                 isRead: isRead,
                                 timeText: timeText,
 
-                                onTap: () {
-                                  _openNotification(
-                                    context,
-                                    notification,
-                                  );
-                                },
+                                // Practice invitations use their own buttons.
+                                onTap: type == 'practice_invitation'
+                                    ? null
+                                    : () {
+                                        _openNotification(
+                                          context,
+                                          notification,
+                                        );
+                                      },
+
+                                onAccept: type == 'practice_invitation'
+                                    ? () => _acceptPracticeInvitation(
+                                        context,
+                                        notification,
+                                      )
+                                    : null,
+
+                                onDecline: type == 'practice_invitation'
+                                    ? () => _declinePracticeInvitation(
+                                        context,
+                                        notification,
+                                      )
+                                    : null,
                               );
                             },
                           );
@@ -362,7 +723,9 @@ class _NotificationCard extends StatelessWidget {
   final String avatar;
   final String type;
   final bool isRead;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
+  final Future<void> Function()? onAccept;
+  final Future<void> Function()? onDecline;
   final String timeText;
 
   const _NotificationCard({
@@ -372,6 +735,8 @@ class _NotificationCard extends StatelessWidget {
     required this.isRead,
     required this.onTap,
     required this.timeText,
+    this.onAccept,
+    this.onDecline,
   });
 
   @override
@@ -379,11 +744,9 @@ class _NotificationCard extends StatelessWidget {
     const purple = Color(0xFF511281);
     const coral = Color(0xFFFF6969);
 
-    final bool isFriendRequest =
-        type == 'friend_request';
+    final bool isFriendRequest = type == 'friend_request';
 
-    final bool isPracticeInvitation =
-        type == 'practice_invitation';
+    final bool isPracticeInvitation = type == 'practice_invitation';
 
     String title;
     String message;
@@ -449,14 +812,9 @@ class _NotificationCard extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: const Color(0xFFF3EBFA),
                       shape: BoxShape.circle,
-                      border: Border.all(
-                        color: purple.withValues(alpha: 0.08),
-                      ),
+                      border: Border.all(color: purple.withValues(alpha: 0.08)),
                     ),
-                    child: Text(
-                      avatar,
-                      style: const TextStyle(fontSize: 34),
-                    ),
+                    child: Text(avatar, style: const TextStyle(fontSize: 34)),
                   ),
 
                   Positioned(
@@ -487,8 +845,7 @@ class _NotificationCard extends StatelessWidget {
 
               Expanded(
                 child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
@@ -520,40 +877,40 @@ class _NotificationCard extends StatelessWidget {
                     const SizedBox(height: 4),
 
                     Text(
-  message,
-  textAlign: TextAlign.right,
-  style: const TextStyle(
-    fontFamily: 'Tajawal',
-    fontSize: 11.5,
-    color: Color(0xFF808080),
-  ),
-),
+                      message,
+                      textAlign: TextAlign.right,
+                      style: const TextStyle(
+                        fontFamily: 'Tajawal',
+                        fontSize: 11.5,
+                        color: Color(0xFF808080),
+                      ),
+                    ),
 
-const SizedBox(height: 5),
+                    const SizedBox(height: 5),
 
-if (timeText.isNotEmpty)
-  Row(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      const Icon(
-        Icons.access_time_rounded,
-        size: 12,
-        color: Color(0xFFA9A0AE),
-      ),
-      const SizedBox(width: 4),
-      Text(
-        timeText,
-        style: const TextStyle(
-          fontFamily: 'Tajawal',
-          fontSize: 9.5,
-          fontWeight: FontWeight.w500,
-          color: Color(0xFFA9A0AE),
-        ),
-      ),
-    ],
-  ),
+                    if (timeText.isNotEmpty)
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.access_time_rounded,
+                            size: 12,
+                            color: Color(0xFFA9A0AE),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            timeText,
+                            style: const TextStyle(
+                              fontFamily: 'Tajawal',
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFFA9A0AE),
+                            ),
+                          ),
+                        ],
+                      ),
 
-const SizedBox(height: 7),
+                    const SizedBox(height: 7),
 
                     Container(
                       padding: const EdgeInsets.symmetric(
@@ -567,18 +924,14 @@ const SizedBox(height: 7),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(
-                            typeIcon,
-                            size: 13,
-                            color: tagColor,
-                          ),
+                          Icon(typeIcon, size: 13, color: tagColor),
                           const SizedBox(width: 4),
                           Text(
                             isFriendRequest
                                 ? 'طلب صداقة'
                                 : isPracticeInvitation
-                                    ? 'تدرّب معًا'
-                                    : 'إشعار',
+                                ? 'تدرّب معًا'
+                                : 'إشعار',
                             style: TextStyle(
                               fontFamily: 'Tajawal',
                               fontSize: 9,
@@ -589,15 +942,125 @@ const SizedBox(height: 7),
                         ],
                       ),
                     ),
+                    if (isPracticeInvitation &&
+                        onAccept != null &&
+                        onDecline != null) ...[
+                      const SizedBox(height: 12),
+
+                      _PracticeInvitationActions(
+                        onAccept: onAccept!,
+                        onDecline: onDecline!,
+                      ),
+                    ],
                   ],
                 ),
               ),
-
-              
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+class _PracticeInvitationActions extends StatefulWidget {
+  final Future<void> Function() onAccept;
+  final Future<void> Function() onDecline;
+
+  const _PracticeInvitationActions({
+    required this.onAccept,
+    required this.onDecline,
+  });
+
+  @override
+  State<_PracticeInvitationActions> createState() =>
+      _PracticeInvitationActionsState();
+}
+
+class _PracticeInvitationActionsState
+    extends State<_PracticeInvitationActions> {
+  bool _isBusy = false;
+
+  Future<void> _run(Future<void> Function() action) async {
+    if (_isBusy) return;
+
+    setState(() {
+      _isBusy = true;
+    });
+
+    try {
+      await action();
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isBusy = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const purple = Color(0xFF511281);
+    const coral = Color(0xFFFF6969);
+
+    if (_isBusy) {
+      return const Center(
+        child: SizedBox(
+          width: 22,
+          height: 22,
+          child: CircularProgressIndicator(strokeWidth: 2, color: purple),
+        ),
+      );
+    }
+
+    return Row(
+      children: [
+        Expanded(
+          child: ElevatedButton(
+            onPressed: () => _run(widget.onAccept),
+            style: ElevatedButton.styleFrom(
+              elevation: 0,
+              backgroundColor: purple,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+            ),
+            child: const Text(
+              'قبول',
+              style: TextStyle(
+                fontFamily: 'Tajawal',
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ),
+
+        const SizedBox(width: 8),
+
+        Expanded(
+          child: OutlinedButton(
+            onPressed: () => _run(widget.onDecline),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: coral,
+              side: const BorderSide(color: coral),
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+            ),
+            child: const Text(
+              'رفض',
+              style: TextStyle(
+                fontFamily: 'Tajawal',
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -618,9 +1081,7 @@ class _NotificationLoadingCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(23),
       ),
       child: const Center(
-        child: CircularProgressIndicator(
-          color: Color(0xFF511281),
-        ),
+        child: CircularProgressIndicator(color: Color(0xFF511281)),
       ),
     );
   }
@@ -648,23 +1109,14 @@ class _NotificationMessageView extends StatelessWidget {
         padding: const EdgeInsets.all(24),
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.fromLTRB(
-            20,
-            24,
-            20,
-            22,
-          ),
+          padding: const EdgeInsets.fromLTRB(20, 24, 20, 22),
           decoration: BoxDecoration(
-            color: isError
-                ? const Color(0xFFFFF4F1)
-                : const Color(0xFFF7F0FF),
+            color: isError ? const Color(0xFFFFF4F1) : const Color(0xFFF7F0FF),
             borderRadius: BorderRadius.circular(28),
             border: Border.all(
               color: isError
-                  ? const Color(0xFFFF6969)
-                      .withValues(alpha: 0.08)
-                  : const Color(0xFF511281)
-                      .withValues(alpha: 0.07),
+                  ? const Color(0xFFFF6969).withValues(alpha: 0.08)
+                  : const Color(0xFF511281).withValues(alpha: 0.07),
             ),
           ),
           child: Column(
@@ -673,9 +1125,7 @@ class _NotificationMessageView extends StatelessWidget {
               SizedBox(
                 width: 120,
                 height: 118,
-                child: _NotificationBunny(
-                  isError: isError,
-                ),
+                child: _NotificationBunny(isError: isError),
               ),
 
               const SizedBox(height: 9),
@@ -749,38 +1199,22 @@ class _NotificationsBackground extends StatelessWidget {
         Positioned(
           top: 45,
           right: -55,
-          child: _circle(
-            145,
-            const Color(0xFFDCC9F5)
-                .withValues(alpha: 0.18),
-          ),
+          child: _circle(145, const Color(0xFFDCC9F5).withValues(alpha: 0.18)),
         ),
         Positioned(
           top: 300,
           left: -65,
-          child: _circle(
-            155,
-            const Color(0xFFDDF2E3)
-                .withValues(alpha: 0.25),
-          ),
+          child: _circle(155, const Color(0xFFDDF2E3).withValues(alpha: 0.25)),
         ),
         Positioned(
           top: 575,
           right: -50,
-          child: _circle(
-            125,
-            const Color(0xFFFFDCE3)
-                .withValues(alpha: 0.23),
-          ),
+          child: _circle(125, const Color(0xFFFFDCE3).withValues(alpha: 0.23)),
         ),
         Positioned(
           bottom: 40,
           left: 38,
-          child: _circle(
-            20,
-            const Color(0xFFD5BFE9)
-                .withValues(alpha: 0.33),
-          ),
+          child: _circle(20, const Color(0xFFD5BFE9).withValues(alpha: 0.33)),
         ),
       ],
     );
@@ -790,10 +1224,7 @@ class _NotificationsBackground extends StatelessWidget {
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
-      ),
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
     );
   }
 }
@@ -805,17 +1236,13 @@ class _NotificationsBackground extends StatelessWidget {
 class _NotificationBunny extends StatelessWidget {
   final bool isError;
 
-  const _NotificationBunny({
-    this.isError = false,
-  });
+  const _NotificationBunny({this.isError = false});
 
   @override
   Widget build(BuildContext context) {
     const face = Color(0xFFFFDCE7);
 
-    final body = isError
-        ? const Color(0xFFD5A1A1)
-        : const Color(0xFFB497C9);
+    final body = isError ? const Color(0xFFD5A1A1) : const Color(0xFFB497C9);
 
     return Stack(
       alignment: Alignment.center,
@@ -850,9 +1277,7 @@ class _NotificationBunny extends StatelessWidget {
         Positioned(
           top: 5,
           right: 30,
-          child: _NotificationBunnyEar(
-            color: face,
-          ),
+          child: _NotificationBunnyEar(color: face),
         ),
 
         Positioned(
@@ -860,9 +1285,7 @@ class _NotificationBunny extends StatelessWidget {
           left: 21,
           child: Transform.rotate(
             angle: -0.48,
-            child: _NotificationBunnyEar(
-              color: face,
-            ),
+            child: _NotificationBunnyEar(color: face),
           ),
         ),
 
@@ -972,8 +1395,7 @@ class _NotificationBunny extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: const Color(0xFF9A73B8)
-            .withValues(alpha: 0.45),
+        color: const Color(0xFF9A73B8).withValues(alpha: 0.45),
         shape: BoxShape.circle,
       ),
     );
@@ -983,9 +1405,7 @@ class _NotificationBunny extends StatelessWidget {
 class _NotificationBunnyEar extends StatelessWidget {
   final Color color;
 
-  const _NotificationBunnyEar({
-    required this.color,
-  });
+  const _NotificationBunnyEar({required this.color});
 
   @override
   Widget build(BuildContext context) {
@@ -1001,8 +1421,7 @@ class _NotificationBunnyEar extends StatelessWidget {
           width: 7,
           height: 24,
           decoration: BoxDecoration(
-            color: const Color(0xFFFFA1B7)
-                .withValues(alpha: 0.52),
+            color: const Color(0xFFFFA1B7).withValues(alpha: 0.52),
             borderRadius: BorderRadius.circular(12),
           ),
         ),
@@ -1052,8 +1471,7 @@ class _NotificationBunnyCheek extends StatelessWidget {
       width: 9,
       height: 5,
       decoration: BoxDecoration(
-        color: const Color(0xFFFF96AC)
-            .withValues(alpha: 0.45),
+        color: const Color(0xFFFF96AC).withValues(alpha: 0.45),
         borderRadius: BorderRadius.circular(10),
       ),
     );

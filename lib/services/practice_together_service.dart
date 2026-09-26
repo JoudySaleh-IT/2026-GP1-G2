@@ -349,6 +349,294 @@ class PracticeTogetherService {
   }
 
   // ---------------------------------------------------------------------------
+  // Receiver selects their exercise
+  // ---------------------------------------------------------------------------
+
+  Future<void> selectReceiverExercise({
+    required String sessionId,
+    required String childId,
+    required String letter,
+    required String level,
+  }) async {
+    final user = _auth.currentUser;
+
+    if (user == null) {
+      throw Exception('NOT_AUTHENTICATED');
+    }
+
+    final sessionRef = _db.collection('practice_sessions').doc(sessionId);
+
+    final sessionSnapshot = await sessionRef.get();
+
+    if (!sessionSnapshot.exists || sessionSnapshot.data() == null) {
+      throw Exception('SESSION_NOT_FOUND');
+    }
+
+    final data = sessionSnapshot.data()!;
+
+    if (data['receiverId'] != childId) {
+      throw Exception('NOT_INVITATION_RECEIVER');
+    }
+
+    if (data['status'] != 'accepted') {
+      throw Exception('SESSION_NOT_ACCEPTED');
+    }
+
+    final String exerciseTypeRaw = data['exerciseType']?.toString() ?? '';
+
+    final PracticeExerciseType exerciseType;
+
+    if (exerciseTypeRaw == 'listening') {
+      exerciseType = PracticeExerciseType.listening;
+    } else if (exerciseTypeRaw == 'speaking') {
+      exerciseType = PracticeExerciseType.speaking;
+    } else {
+      throw Exception('INVALID_EXERCISE_TYPE');
+    }
+
+    // Make sure B is actually allowed to use this exercise.
+    final availableExercises = await getAvailableExercises(
+      childId: childId,
+      exerciseType: exerciseType,
+    );
+
+    final bool exerciseIsAvailable = availableExercises.any(
+      (exercise) => exercise.letter == letter && exercise.level == level,
+    );
+
+    if (!exerciseIsAvailable) {
+      throw Exception('EXERCISE_NOT_AVAILABLE');
+    }
+
+    await _db.runTransaction((transaction) async {
+      final freshSnapshot = await transaction.get(sessionRef);
+
+      if (!freshSnapshot.exists || freshSnapshot.data() == null) {
+        throw Exception('SESSION_NOT_FOUND');
+      }
+
+      final freshData = freshSnapshot.data()!;
+
+      if (freshData['receiverId'] != childId) {
+        throw Exception('NOT_INVITATION_RECEIVER');
+      }
+
+      if (freshData['status'] != 'accepted') {
+        throw Exception('SESSION_NOT_ACCEPTED');
+      }
+
+      transaction.update(sessionRef, {
+        'receiverLetter': letter,
+        'receiverLevel': level,
+
+        // Both children start the lobby as not ready.
+        'senderReady': false,
+        'receiverReady': false,
+
+        'status': 'lobby',
+
+        'receiverSelectedAt': FieldValue.serverTimestamp(),
+
+        'lobbyStartedAt': FieldValue.serverTimestamp(),
+      });
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Mark child as ready in the lobby
+  // ---------------------------------------------------------------------------
+
+  Future<void> markReady({
+    required String sessionId,
+    required String childId,
+  }) async {
+    final user = _auth.currentUser;
+
+    if (user == null) {
+      throw Exception('NOT_AUTHENTICATED');
+    }
+
+    final sessionRef = _db.collection('practice_sessions').doc(sessionId);
+
+    await _db.runTransaction((transaction) async {
+      final snapshot = await transaction.get(sessionRef);
+
+      if (!snapshot.exists || snapshot.data() == null) {
+        throw Exception('SESSION_NOT_FOUND');
+      }
+
+      final data = snapshot.data()!;
+
+      final String status = data['status']?.toString() ?? '';
+
+      // Another device may already have started the countdown.
+      if (status == 'countdown' || status == 'active') {
+        return;
+      }
+
+      if (status != 'lobby') {
+        throw Exception('SESSION_NOT_IN_LOBBY');
+      }
+
+      final String senderId = data['senderId']?.toString() ?? '';
+
+      final String receiverId = data['receiverId']?.toString() ?? '';
+
+      if (childId != senderId && childId != receiverId) {
+        throw Exception('NOT_SESSION_MEMBER');
+      }
+
+      final bool isSender = childId == senderId;
+
+      final String ownReadyKey = isSender ? 'senderReady' : 'receiverReady';
+
+      final String otherReadyKey = isSender ? 'receiverReady' : 'senderReady';
+
+      // Already ready — nothing else to do.
+      if (data[ownReadyKey] == true) {
+        return;
+      }
+
+      final bool otherChildReady = data[otherReadyKey] == true;
+
+      final Map<String, dynamic> updates = {ownReadyKey: true};
+
+      // This child is the second player to become ready.
+      // Start one shared countdown for both devices.
+      if (otherChildReady) {
+        updates['status'] = 'countdown';
+        updates['countdownStartedAt'] = FieldValue.serverTimestamp();
+      }
+
+      transaction.update(sessionRef, updates);
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Cancel lobby if both children do not become ready within 60 seconds
+  // ---------------------------------------------------------------------------
+
+  Future<bool> cancelLobbyAfterTimeout({
+    required String sessionId,
+    required String childId,
+  }) async {
+    final user = _auth.currentUser;
+
+    if (user == null) {
+      throw Exception('NOT_AUTHENTICATED');
+    }
+
+    final sessionRef = _db.collection('practice_sessions').doc(sessionId);
+
+    return _db.runTransaction<bool>((transaction) async {
+      final snapshot = await transaction.get(sessionRef);
+
+      if (!snapshot.exists || snapshot.data() == null) {
+        throw Exception('SESSION_NOT_FOUND');
+      }
+
+      final data = snapshot.data()!;
+
+      final String senderId = data['senderId']?.toString() ?? '';
+
+      final String receiverId = data['receiverId']?.toString() ?? '';
+
+      if (childId != senderId && childId != receiverId) {
+        throw Exception('NOT_SESSION_MEMBER');
+      }
+
+      // Someone may have become ready at the last moment.
+      if (data['status'] != 'lobby') {
+        return false;
+      }
+
+      final Timestamp? lobbyStartedAt = data['lobbyStartedAt'] as Timestamp?;
+
+      if (lobbyStartedAt == null) {
+        throw Exception('MISSING_LOBBY_START_TIME');
+      }
+
+      final elapsed = DateTime.now().difference(lobbyStartedAt.toDate());
+
+      if (elapsed < const Duration(seconds: 60)) {
+        return false;
+      }
+
+      transaction.update(sessionRef, {
+        'status': 'cancelled',
+        'cancelReason': 'ready_timeout',
+        'cancelledAt': FieldValue.serverTimestamp(),
+      });
+
+      return true;
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Start session after the shared 3-second countdown
+  // ---------------------------------------------------------------------------
+
+  Future<bool> startSessionAfterCountdown({
+    required String sessionId,
+    required String childId,
+  }) async {
+    final user = _auth.currentUser;
+
+    if (user == null) {
+      throw Exception('NOT_AUTHENTICATED');
+    }
+
+    final sessionRef = _db.collection('practice_sessions').doc(sessionId);
+
+    return _db.runTransaction<bool>((transaction) async {
+      final snapshot = await transaction.get(sessionRef);
+
+      if (!snapshot.exists || snapshot.data() == null) {
+        throw Exception('SESSION_NOT_FOUND');
+      }
+
+      final data = snapshot.data()!;
+
+      final String senderId = data['senderId']?.toString() ?? '';
+
+      final String receiverId = data['receiverId']?.toString() ?? '';
+
+      if (childId != senderId && childId != receiverId) {
+        throw Exception('NOT_SESSION_MEMBER');
+      }
+
+      // The other device may already have activated it.
+      if (data['status'] == 'active') {
+        return true;
+      }
+
+      if (data['status'] != 'countdown') {
+        return false;
+      }
+
+      final Timestamp? countdownStartedAt =
+          data['countdownStartedAt'] as Timestamp?;
+
+      if (countdownStartedAt == null) {
+        throw Exception('MISSING_COUNTDOWN_START_TIME');
+      }
+
+      final elapsed = DateTime.now().difference(countdownStartedAt.toDate());
+
+      if (elapsed < const Duration(seconds: 3)) {
+        return false;
+      }
+
+      transaction.update(sessionRef, {
+        'status': 'active',
+        'startedAt': FieldValue.serverTimestamp(),
+      });
+
+      return true;
+    });
+  }
+
+  // ---------------------------------------------------------------------------
   // Decline invitation
   // ---------------------------------------------------------------------------
 
