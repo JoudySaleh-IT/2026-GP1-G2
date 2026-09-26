@@ -98,4 +98,10 @@ flutter:
     - assets/images/listening/sad_listening/advanced/
 
     - assets/data/
+    - assets/audio/ghain/beginner/
+    - assets/audio/ghain/intermediate/
+    - assets/audio/ghain/advanced/
+    - assets/images/listening/ghain_listening/beginner/
+    - assets/images/listening/ghain_listening/intermediate/
+    - assets/images/listening/ghain_listening/advanced/
    
