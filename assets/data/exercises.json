@@ -2753,5 +2753,559 @@
         ]
       }
     }
+  },
+
+  "غ": {
+  "assetFolder": "ghain",
+  "levels": {
+    "beginner": {
+      "code": "b",
+      "folder": "beginner",
+      "words": [
+        {
+          "number": 1,
+          "target": "غزال",
+          "options": [
+            {
+              "word": "غزال",
+              "imagePath": "assets/images/listening/ghain_listening/beginner/gazelle.png"
+            },
+            {
+              "word": "هلال",
+              "imagePath": "assets/images/listening/ghain_listening/beginner/crescent.png"
+            },
+            {
+              "word": "جبال",
+              "imagePath": "assets/images/listening/ghain_listening/beginner/mountains.png"
+            },
+            {
+              "word": "رجال",
+              "imagePath": "assets/images/listening/ghain_listening/beginner/men.png"
+            }
+          ]
+        },
+        {
+          "number": 2,
+          "target": "غراب",
+          "options": [
+            {
+              "word": "غراب",
+              "imagePath": "assets/images/listening/ghain_listening/beginner/crow.png"
+            },
+            {
+              "word": "تراب",
+              "imagePath": "assets/images/listening/ghain_listening/beginner/soil.png"
+            },
+            {
+              "word": "شراب",
+              "imagePath": "assets/images/listening/ghain_listening/beginner/drink.png"
+            },
+            {
+              "word": "كتاب",
+              "imagePath": "assets/images/listening/ghain_listening/beginner/book.png"
+            }
+          ]
+        },
+        {
+          "number": 3,
+          "target": "غابة",
+          "options": [
+            {
+              "word": "غابة",
+              "imagePath": "assets/images/listening/ghain_listening/beginner/forest.png"
+            },
+            {
+              "word": "لعبة",
+              "imagePath": "assets/images/listening/ghain_listening/beginner/toy.png"
+            },
+            {
+              "word": "علبة",
+              "imagePath": "assets/images/listening/ghain_listening/beginner/box.png"
+            },
+            {
+              "word": "حبة",
+              "imagePath": "assets/images/listening/ghain_listening/beginner/pill.png"
+            }
+          ]
+        },
+        {
+          "number": 4,
+          "target": "غيمة",
+          "options": [
+            {
+              "word": "غيمة",
+              "imagePath": "assets/images/listening/ghain_listening/beginner/cloud.png"
+            },
+            {
+              "word": "خيمة",
+              "imagePath": "assets/images/listening/ghain_listening/beginner/tent.png"
+            },
+            {
+              "word": "دمية",
+              "imagePath": "assets/images/listening/ghain_listening/beginner/doll.png"
+            },
+            {
+              "word": "بيضة",
+              "imagePath": "assets/images/listening/ghain_listening/beginner/egg.png"
+            }
+          ]
+        },
+        {
+          "number": 5,
+          "target": "غرفة",
+          "options": [
+            {
+              "word": "غرفة",
+              "imagePath": "assets/images/listening/ghain_listening/beginner/room.png"
+            },
+            {
+              "word": "شرفة",
+              "imagePath": "assets/images/listening/ghain_listening/beginner/balcony.png"
+            },
+            {
+              "word": "قرفة",
+              "imagePath": "assets/images/listening/ghain_listening/beginner/cinnamon.png"
+            },
+            {
+              "word": "ورقة",
+              "imagePath": "assets/images/listening/ghain_listening/beginner/paper.png"
+            }
+          ]
+        },
+        {
+          "number": 6,
+          "target": "غنم",
+          "options": [
+            {
+              "word": "غنم",
+              "imagePath": "assets/images/listening/ghain_listening/beginner/sheep.png"
+            },
+            {
+              "word": "صنم",
+              "imagePath": "assets/images/listening/ghain_listening/beginner/statue.png"
+            },
+            {
+              "word": "علم",
+              "imagePath": "assets/images/listening/ghain_listening/beginner/flag.png"
+            },
+            {
+              "word": "قلم",
+              "imagePath": "assets/images/listening/ghain_listening/beginner/pencil.png"
+            }
+          ]
+        },
+        {
+          "number": 7,
+          "target": "غلط",
+          "options": [
+            {
+              "word": "غلط",
+              "imagePath": "assets/images/listening/ghain_listening/beginner/wrong.png"
+            },
+            {
+              "word": "خلط",
+              "imagePath": "assets/images/listening/ghain_listening/beginner/mixing.png"
+            },
+            {
+              "word": "ولد",
+              "imagePath": "assets/images/listening/ghain_listening/beginner/boy.png"
+            },
+            {
+              "word": "جلد",
+              "imagePath": "assets/images/listening/ghain_listening/beginner/leather.png"
+            }
+          ]
+        },
+        {
+          "number": 8,
+          "target": "غبار",
+          "options": [
+            {
+              "word": "غبار",
+              "imagePath": "assets/images/listening/ghain_listening/beginner/dust.png"
+            },
+            {
+              "word": "جدار",
+              "imagePath": "assets/images/listening/ghain_listening/beginner/wall.png"
+            },
+            {
+              "word": "حمار",
+              "imagePath": "assets/images/listening/ghain_listening/beginner/donkey.png"
+            },
+            {
+              "word": "قطار",
+              "imagePath": "assets/images/listening/ghain_listening/beginner/train.png"
+            }
+          ]
+        }
+      ]
+    },
+
+    "intermediate": {
+      "code": "i",
+      "folder": "intermediate",
+      "words": [
+        {
+          "number": 1,
+          "target": "ببغاء",
+          "options": [
+            {
+              "word": "ببغاء",
+              "imagePath": "assets/images/listening/ghain_listening/intermediate/parrot.png"
+            },
+            {
+              "word": "بناء",
+              "imagePath": "assets/images/listening/ghain_listening/intermediate/building.png"
+            },
+            {
+              "word": "وعاء",
+              "imagePath": "assets/images/listening/ghain_listening/intermediate/bowl.png"
+            },
+            {
+              "word": "دواء",
+              "imagePath": "assets/images/listening/ghain_listening/intermediate/medicine.png"
+            }
+          ]
+        },
+        {
+          "number": 2,
+          "target": "دماغ",
+          "options": [
+            {
+              "word": "دماغ",
+              "imagePath": "assets/images/listening/ghain_listening/intermediate/brain.png"
+            },
+            {
+              "word": "رماح",
+              "imagePath": "assets/images/listening/ghain_listening/intermediate/spears.png"
+            },
+            {
+              "word": "جناح",
+              "imagePath": "assets/images/listening/ghain_listening/intermediate/wing.png"
+            },
+            {
+              "word": "مصباح",
+              "imagePath": "assets/images/listening/ghain_listening/intermediate/lightbulb.png"
+            }
+          ]
+        },
+        {
+          "number": 3,
+          "target": "غفوة",
+          "options": [
+            {
+              "word": "غفوة",
+              "imagePath": "assets/images/listening/ghain_listening/intermediate/nap.png"
+            },
+            {
+              "word": "قهوة",
+              "imagePath": "assets/images/listening/ghain_listening/intermediate/coffee.png"
+            },
+            {
+              "word": "دعوة",
+              "imagePath": "assets/images/listening/ghain_listening/intermediate/invitation.png"
+            },
+            {
+              "word": "فروة",
+              "imagePath": "assets/images/listening/ghain_listening/intermediate/fur_coat.png"
+            }
+          ]
+        },
+        {
+          "number": 4,
+          "target": "غترة",
+          "options": [
+            {
+              "word": "غترة",
+              "imagePath": "assets/images/listening/ghain_listening/intermediate/ghutra.png"
+            },
+            {
+              "word": "قطرة",
+              "imagePath": "assets/images/listening/ghain_listening/intermediate/drop.png"
+            },
+            {
+              "word": "تمرة",
+              "imagePath": "assets/images/listening/ghain_listening/intermediate/date.png"
+            },
+            {
+              "word": "زهرة",
+              "imagePath": "assets/images/listening/ghain_listening/intermediate/flower.png"
+            }
+          ]
+        },
+        {
+          "number": 5,
+          "target": "مغارة",
+          "options": [
+            {
+              "word": "مغارة",
+              "imagePath": "assets/images/listening/ghain_listening/intermediate/cave.png"
+            },
+            {
+              "word": "منارة",
+              "imagePath": "assets/images/listening/ghain_listening/intermediate/lighthouse.png"
+            },
+            {
+              "word": "نظارة",
+              "imagePath": "assets/images/listening/ghain_listening/intermediate/glasses.png"
+            },
+            {
+              "word": "سيارة",
+              "imagePath": "assets/images/listening/ghain_listening/intermediate/car.png"
+            }
+          ]
+        },
+        {
+          "number": 6,
+          "target": "غلاية",
+          "options": [
+            {
+              "word": "غلاية",
+              "imagePath": "assets/images/listening/ghain_listening/intermediate/kettle.png"
+            },
+            {
+              "word": "عباية",
+              "imagePath": "assets/images/listening/ghain_listening/intermediate/abaya.png"
+            },
+            {
+              "word": "حكاية",
+              "imagePath": "assets/images/listening/ghain_listening/intermediate/storybook.png"
+            },
+            {
+              "word": "راية",
+              "imagePath": "assets/images/listening/ghain_listening/intermediate/banner.png"
+            }
+          ]
+        },
+        {
+          "number": 7,
+          "target": "غداء",
+          "options": [
+            {
+              "word": "غداء",
+              "imagePath": "assets/images/listening/ghain_listening/intermediate/lunch.png"
+            },
+            {
+              "word": "حذاء",
+              "imagePath": "assets/images/listening/ghain_listening/intermediate/shoe.png"
+            },
+            {
+              "word": "دواء",
+              "imagePath": "assets/images/listening/ghain_listening/intermediate/medicine.png"
+            },
+            {
+              "word": "وعاء",
+              "imagePath": "assets/images/listening/ghain_listening/intermediate/bowl.png"
+            }
+          ]
+        },
+        {
+          "number": 8,
+          "target": "برغي",
+          "options": [
+            {
+              "word": "برغي",
+              "imagePath": "assets/images/listening/ghain_listening/intermediate/screw.png"
+            },
+            {
+              "word": "برميل",
+              "imagePath": "assets/images/listening/ghain_listening/intermediate/barrel.png"
+            },
+            {
+              "word": "كرسي",
+              "imagePath": "assets/images/listening/ghain_listening/intermediate/chair.png"
+            },
+            {
+              "word": "مرمى",
+              "imagePath": "assets/images/listening/ghain_listening/intermediate/goal.png"
+            }
+          ]
+        }
+      ]
+    },
+
+    "advanced": {
+      "code": "a",
+      "folder": "advanced",
+      "words": [
+        {
+          "number": 1,
+          "target": "غوريلا",
+          "options": [
+            {
+              "word": "غوريلا",
+              "imagePath": "assets/images/listening/ghain_listening/advanced/gorilla.png"
+            },
+            {
+              "word": "فانيلا",
+              "imagePath": "assets/images/listening/ghain_listening/advanced/vanilla.png"
+            },
+            {
+              "word": "مظلة",
+              "imagePath": "assets/images/listening/ghain_listening/advanced/umbrella.png"
+            },
+            {
+              "word": "طاولة",
+              "imagePath": "assets/images/listening/ghain_listening/advanced/table.png"
+            }
+          ]
+        },
+        {
+          "number": 2,
+          "target": "غيتارات",
+          "options": [
+            {
+              "word": "غيتارات",
+              "imagePath": "assets/images/listening/ghain_listening/advanced/guitars.png"
+            },
+            {
+              "word": "قطارات",
+              "imagePath": "assets/images/listening/ghain_listening/advanced/trains.png"
+            },
+            {
+              "word": "سيارات",
+              "imagePath": "assets/images/listening/ghain_listening/advanced/cars.png"
+            },
+            {
+              "word": "إشارات",
+              "imagePath": "assets/images/listening/ghain_listening/advanced/traffic_lights.png"
+            }
+          ]
+        },
+        {
+          "number": 3,
+          "target": "أرغفة",
+          "options": [
+            {
+              "word": "أرغفة",
+              "imagePath": "assets/images/listening/ghain_listening/advanced/loaves.png"
+            },
+            {
+              "word": "أظرفة",
+              "imagePath": "assets/images/listening/ghain_listening/advanced/envelopes.png"
+            },
+            {
+              "word": "أرفف",
+              "imagePath": "assets/images/listening/ghain_listening/advanced/shelves.png"
+            },
+            {
+              "word": "أرجل",
+              "imagePath": "assets/images/listening/ghain_listening/advanced/legs.png"
+            }
+          ]
+        },
+        {
+          "number": 4,
+          "target": "مغنية",
+          "options": [
+            {
+              "word": "مغنية",
+              "imagePath": "assets/images/listening/ghain_listening/advanced/singer.png"
+            },
+            {
+              "word": "دمية",
+              "imagePath": "assets/images/listening/ghain_listening/advanced/doll.png"
+            },
+            {
+              "word": "هدية",
+              "imagePath": "assets/images/listening/ghain_listening/advanced/gift.png"
+            },
+            {
+              "word": "صينية",
+              "imagePath": "assets/images/listening/ghain_listening/advanced/tray.png"
+            }
+          ]
+        },
+        {
+          "number": 5,
+          "target": "مغامر",
+          "options": [
+            {
+              "word": "مغامر",
+              "imagePath": "assets/images/listening/ghain_listening/advanced/adventurer.png"
+            },
+            {
+              "word": "مسافر",
+              "imagePath": "assets/images/listening/ghain_listening/advanced/traveler.png"
+            },
+            {
+              "word": "مزارع",
+              "imagePath": "assets/images/listening/ghain_listening/advanced/farmer.png"
+            },
+            {
+              "word": "محارب",
+              "imagePath": "assets/images/listening/ghain_listening/advanced/warrior.png"
+            }
+          ]
+        },
+        {
+          "number": 6,
+          "target": "نغمات",
+          "options": [
+            {
+              "word": "نغمات",
+              "imagePath": "assets/images/listening/ghain_listening/advanced/notes.png"
+            },
+            {
+              "word": "نجمات",
+              "imagePath": "assets/images/listening/ghain_listening/advanced/stars.png"
+            },
+            {
+              "word": "كلمات",
+              "imagePath": "assets/images/listening/ghain_listening/advanced/words.png"
+            },
+            {
+              "word": "رسمات",
+              "imagePath": "assets/images/listening/ghain_listening/advanced/drawings.png"
+            }
+          ]
+        },
+        {
+          "number": 7,
+          "target": "ألغاز",
+          "options": [
+            {
+              "word": "ألغاز",
+              "imagePath": "assets/images/listening/ghain_listening/advanced/puzzles.png"
+            },
+            {
+              "word": "ألماس",
+              "imagePath": "assets/images/listening/ghain_listening/advanced/diamonds.png"
+            },
+            {
+              "word": "أعلام",
+              "imagePath": "assets/images/listening/ghain_listening/advanced/flags.png"
+            },
+            {
+              "word": "أقلام",
+              "imagePath": "assets/images/listening/ghain_listening/advanced/pens.png"
+            }
+          ]
+        },
+        {
+          "number": 8,
+          "target": "مغادرة",
+          "options": [
+            {
+              "word": "مغادرة",
+              "imagePath": "assets/images/listening/ghain_listening/advanced/departure.png"
+            },
+            {
+              "word": "مغامرة",
+              "imagePath": "assets/images/listening/ghain_listening/advanced/adventure.png"
+            },
+            {
+              "word": "منارة",
+              "imagePath": "assets/images/listening/ghain_listening/advanced/lighthouse.png"
+            },
+            {
+              "word": "نظارة",
+              "imagePath": "assets/images/listening/ghain_listening/advanced/glasses.png"
+            }
+          ]
+        }
+      ]
+    }
   }
+}
 }
