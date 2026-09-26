@@ -84,5 +84,18 @@ flutter:
     - assets/audio/dad/intermediate/
     - assets/audio/dad/advanced/
 
+    - assets/audio/sad/
+    - assets/audio/sad/beginner/
+    - assets/audio/sad/intermediate/
+    - assets/audio/sad/advanced/
+
+    - assets/images/listening/sad_listening/beginner/
+    - assets/images/listening/sad_listening/intermediate/
+    - assets/images/listening/sad_listening/advanced/
+
+    - assets/images/listening/sad_listening/beginner/
+    - assets/images/listening/sad_listening/intermediate/
+    - assets/images/listening/sad_listening/advanced/
+
     - assets/data/
    
