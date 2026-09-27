@@ -308,46 +308,46 @@ class PracticeTogetherService {
   // Accept invitation
   // ---------------------------------------------------------------------------
 
-  Future<void> acceptInvitation({
-    required String sessionId,
-    required String childId,
-  }) async {
-    final user = _auth.currentUser;
+Future<void> acceptInvitation({
+  required String sessionId,
+  required String childId,
+}) async {
+  final user = _auth.currentUser;
 
-    if (user == null) {
-      throw Exception('NOT_AUTHENTICATED');
-    }
-
-    final sessionRef = _db.collection('practice_sessions').doc(sessionId);
-
-    await _db.runTransaction((transaction) async {
-      final snapshot = await transaction.get(sessionRef);
-
-      if (!snapshot.exists) {
-        throw Exception('SESSION_NOT_FOUND');
-      }
-
-      final data = snapshot.data();
-
-      if (data == null) {
-        throw Exception('INVALID_SESSION');
-      }
-
-      if (data['receiverId'] != childId) {
-        throw Exception('NOT_INVITATION_RECEIVER');
-      }
-
-      if (data['status'] != 'pending') {
-        throw Exception('INVITATION_NOT_PENDING');
-      }
-
-      transaction.update(sessionRef, {
-        'status': 'accepted',
-        'acceptedAt': FieldValue.serverTimestamp(),
-      });
-    });
+  if (user == null) {
+    throw Exception('NOT_AUTHENTICATED');
   }
 
+  final sessionRef =
+      _db.collection('practice_sessions').doc(sessionId);
+
+  await _db.runTransaction((transaction) async {
+    final snapshot = await transaction.get(sessionRef);
+
+    if (!snapshot.exists) {
+      throw Exception('SESSION_NOT_FOUND');
+    }
+
+    final data = snapshot.data();
+
+    if (data == null) {
+      throw Exception('INVALID_SESSION');
+    }
+
+    if (data['receiverId'] != childId) {
+      throw Exception('NOT_INVITATION_RECEIVER');
+    }
+
+    if (data['status'] != 'pending') {
+      throw Exception('INVITATION_NOT_PENDING');
+    }
+
+    transaction.update(sessionRef, {
+      'status': 'accepted',
+      'acceptedAt': FieldValue.serverTimestamp(),
+    });
+  });
+}
   // ---------------------------------------------------------------------------
   // Receiver selects their exercise
   // ---------------------------------------------------------------------------
@@ -641,86 +641,88 @@ class PracticeTogetherService {
   // ---------------------------------------------------------------------------
 
   Future<void> declineInvitation({
-    required String sessionId,
-    required String childId,
-  }) async {
-    final user = _auth.currentUser;
+  required String sessionId,
+  required String childId,
+}) async {
+  final user = _auth.currentUser;
 
-    if (user == null) {
-      throw Exception('NOT_AUTHENTICATED');
-    }
-
-    final sessionRef = _db.collection('practice_sessions').doc(sessionId);
-
-    await _db.runTransaction((transaction) async {
-      final snapshot = await transaction.get(sessionRef);
-
-      if (!snapshot.exists) {
-        throw Exception('SESSION_NOT_FOUND');
-      }
-
-      final data = snapshot.data();
-
-      if (data == null) {
-        throw Exception('INVALID_SESSION');
-      }
-
-      if (data['receiverId'] != childId) {
-        throw Exception('NOT_INVITATION_RECEIVER');
-      }
-
-      if (data['status'] != 'pending') {
-        throw Exception('INVITATION_NOT_PENDING');
-      }
-
-      transaction.update(sessionRef, {
-        'status': 'declined',
-        'respondedAt': FieldValue.serverTimestamp(),
-      });
-    });
+  if (user == null) {
+    throw Exception('NOT_AUTHENTICATED');
   }
 
+  final sessionRef =
+      _db.collection('practice_sessions').doc(sessionId);
+
+  await _db.runTransaction((transaction) async {
+    final snapshot = await transaction.get(sessionRef);
+
+    if (!snapshot.exists) {
+      throw Exception('SESSION_NOT_FOUND');
+    }
+
+    final data = snapshot.data();
+
+    if (data == null) {
+      throw Exception('INVALID_SESSION');
+    }
+
+    if (data['receiverId'] != childId) {
+      throw Exception('NOT_INVITATION_RECEIVER');
+    }
+
+    if (data['status'] != 'pending') {
+      throw Exception('INVITATION_NOT_PENDING');
+    }
+
+    transaction.update(sessionRef, {
+      'status': 'declined',
+      'respondedAt': FieldValue.serverTimestamp(),
+    });
+  });
+}
   // ---------------------------------------------------------------------------
   // Cancel invitation
   // ---------------------------------------------------------------------------
 
-  Future<void> cancelInvitation({
-    required String sessionId,
-    required String childId,
-  }) async {
-    final user = _auth.currentUser;
+ Future<void> cancelInvitation({
+  required String sessionId,
+  required String childId,
+}) async {
+  final user = _auth.currentUser;
 
-    if (user == null) {
-      throw Exception('NOT_AUTHENTICATED');
+  if (user == null) {
+    throw Exception('NOT_AUTHENTICATED');
+  }
+
+  final sessionRef =
+      _db.collection('practice_sessions').doc(sessionId);
+
+  await _db.runTransaction((transaction) async {
+    final snapshot = await transaction.get(sessionRef);
+
+    if (!snapshot.exists) {
+      throw Exception('SESSION_NOT_FOUND');
     }
 
-    final sessionRef = _db.collection('practice_sessions').doc(sessionId);
+    final data = snapshot.data();
 
-    await _db.runTransaction((transaction) async {
-      final snapshot = await transaction.get(sessionRef);
+    if (data == null) {
+      throw Exception('INVALID_SESSION');
+    }
 
-      if (!snapshot.exists) {
-        throw Exception('SESSION_NOT_FOUND');
-      }
+    if (data['senderId'] != childId) {
+      throw Exception('NOT_INVITATION_SENDER');
+    }
 
-      final data = snapshot.data();
+    if (data['status'] != 'pending') {
+      throw Exception('INVITATION_NOT_PENDING');
+    }
 
-      if (data == null) {
-        throw Exception('INVALID_SESSION');
-      }
-
-      if (data['senderId'] != childId) {
-        throw Exception('NOT_INVITATION_SENDER');
-      }
-
-      if (data['status'] != 'pending') {
-        throw Exception('INVITATION_NOT_PENDING');
-      }
-
-      transaction.update(sessionRef, {
-        'status': 'cancelled',
-        'respondedAt': FieldValue.serverTimestamp(),
-      });
+    transaction.update(sessionRef, {
+      'status': 'cancelled',
+      'respondedAt': FieldValue.serverTimestamp(),
     });
-  }
+  });
+
+}
 }

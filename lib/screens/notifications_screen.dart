@@ -14,6 +14,14 @@ class NotificationsScreen extends StatelessWidget {
   static const Color _coral = Color(0xFFFF6969);
   static const Color _background = Color(0xFFFCF9EA);
 
+Stream<DocumentSnapshot<Map<String, dynamic>>> _watchPracticeSession(
+  String sessionId,
+) {
+  return FirebaseFirestore.instance
+      .collection('practice_sessions')
+      .doc(sessionId)
+      .snapshots();
+}
   Future<Map<String, dynamic>?> _getSenderProfile(String senderId) async {
     final snapshot = await FirebaseFirestore.instance
         .collection('child_public_profiles')
@@ -65,8 +73,7 @@ class NotificationsScreen extends StatelessWidget {
         childId: childId,
       );
 
-      // We no longer need the notification after rejection.
-      await notification.reference.delete();
+    
 
       if (!context.mounted) return;
 
@@ -334,8 +341,7 @@ class NotificationsScreen extends StatelessWidget {
                                       );
 
                                   // Session is now in the lobby,
-                                  // so this invitation is finished.
-                                  await notification.reference.delete();
+                                  
 
                                   if (!dialogContext.mounted) {
                                     return;
@@ -491,6 +497,64 @@ class NotificationsScreen extends StatelessWidget {
     return '${createdAt.day} ${months[createdAt.month - 1]} ${createdAt.year}';
   }
 
+Widget _buildNotificationItem(
+  BuildContext context,
+  QueryDocumentSnapshot<Map<String, dynamic>> notification,
+) {
+  final data = notification.data();
+
+  final senderId = data['senderId']?.toString() ?? '';
+  final type = data['type']?.toString() ?? '';
+  final isRead = data['isRead'] == true;
+  final createdAt = data['createdAt'] as Timestamp?;
+  final timeText = _formatNotificationTime(createdAt);
+
+  return FutureBuilder<Map<String, dynamic>?>(
+    future: _getSenderProfile(senderId),
+    builder: (context, profileSnapshot) {
+      if (profileSnapshot.connectionState == ConnectionState.waiting) {
+        return const _NotificationLoadingCard();
+      }
+
+      final profile = profileSnapshot.data;
+
+      final name = profile?['name']?.toString() ?? 'صديقك';
+      final avatar = profile?['avatar']?.toString() ?? '🌟';
+
+      return _NotificationCard(
+        name: name,
+        avatar: avatar,
+        type: type,
+        isRead: isRead,
+        timeText: timeText,
+
+        onTap: type == 'practice_invitation'
+            ? null
+            : () {
+                _openNotification(
+                  context,
+                  notification,
+                );
+              },
+
+        onAccept: type == 'practice_invitation'
+            ? () => _acceptPracticeInvitation(
+                  context,
+                  notification,
+                )
+            : null,
+
+        onDecline: type == 'practice_invitation'
+            ? () => _declinePracticeInvitation(
+                  context,
+                  notification,
+                )
+            : null,
+      );
+    },
+  );
+}
+
   @override
   Widget build(BuildContext context) {
     return Directionality(
@@ -637,70 +701,15 @@ class NotificationsScreen extends StatelessWidget {
                         itemCount: notifications.length,
                         separatorBuilder: (_, __) => const SizedBox(height: 11),
                         itemBuilder: (context, index) {
-                          final notification = notifications[index];
+  final notification = notifications[index];
 
-                          final data = notification.data();
+  return _buildNotificationItem(
+    context,
+    notification,
+  );
+},
 
-                          final senderId = data['senderId']?.toString() ?? '';
-
-                          final type = data['type']?.toString() ?? '';
-
-                          final isRead = data['isRead'] == true;
-
-                          final createdAt = data['createdAt'] as Timestamp?;
-
-                          final timeText = _formatNotificationTime(createdAt);
-
-                          return FutureBuilder<Map<String, dynamic>?>(
-                            future: _getSenderProfile(senderId),
-                            builder: (context, profileSnapshot) {
-                              if (profileSnapshot.connectionState ==
-                                  ConnectionState.waiting) {
-                                return const _NotificationLoadingCard();
-                              }
-
-                              final profile = profileSnapshot.data;
-
-                              final name =
-                                  profile?['name']?.toString() ?? 'صديقك';
-
-                              final avatar =
-                                  profile?['avatar']?.toString() ?? '🌟';
-
-                              return _NotificationCard(
-                                name: name,
-                                avatar: avatar,
-                                type: type,
-                                isRead: isRead,
-                                timeText: timeText,
-
-                                // Practice invitations use their own buttons.
-                                onTap: type == 'practice_invitation'
-                                    ? null
-                                    : () {
-                                        _openNotification(
-                                          context,
-                                          notification,
-                                        );
-                                      },
-
-                                onAccept: type == 'practice_invitation'
-                                    ? () => _acceptPracticeInvitation(
-                                        context,
-                                        notification,
-                                      )
-                                    : null,
-
-                                onDecline: type == 'practice_invitation'
-                                    ? () => _declinePracticeInvitation(
-                                        context,
-                                        notification,
-                                      )
-                                    : null,
-                              );
-                            },
-                          );
-                        },
+  
                       ),
                     ],
                   );

@@ -32,6 +32,7 @@ import 'services/childSession.dart';
 import 'services/notification_service.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'screens/friend_requests_screen.dart';
+import 'screens/notifications_screen.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 void main() async {
@@ -69,28 +70,45 @@ Future<void> _initializeFirebaseMessaging() async {
 
     // User taps notification while app was in background.
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      if (message.data['type'] == 'friend_request') {
-        navigatorKey.currentState?.pushNamed(
-          '/child/friend-requests',
-          arguments: {'childId': message.data['receiverId']},
-        );
-      }
-    });
+  final type = message.data['type'];
+  final receiverId = message.data['receiverId'];
+
+  if (type == 'friend_request') {
+    navigatorKey.currentState?.pushNamed(
+      '/child/friend-requests',
+      arguments: {'childId': receiverId},
+    );
+  } else if (type == 'practice_invitation') {
+    navigatorKey.currentState?.pushNamed(
+      '/child/notifications',
+      arguments: {'childId': receiverId},
+    );
+  }
+});
 
     // User opens app by tapping a notification
     // while the app was completely closed.
     final RemoteMessage? initialMessage = await FirebaseMessaging.instance
         .getInitialMessage();
 
-    if (initialMessage != null &&
-        initialMessage.data['type'] == 'friend_request') {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        navigatorKey.currentState?.pushNamed(
-          '/child/friend-requests',
-          arguments: {'childId': initialMessage.data['receiverId']},
-        );
-      });
+    if (initialMessage != null) {
+  final type = initialMessage.data['type'];
+  final receiverId = initialMessage.data['receiverId'];
+
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (type == 'friend_request') {
+      navigatorKey.currentState?.pushNamed(
+        '/child/friend-requests',
+        arguments: {'childId': receiverId},
+      );
+    } else if (type == 'practice_invitation') {
+      navigatorKey.currentState?.pushNamed(
+        '/child/notifications',
+        arguments: {'childId': receiverId},
+      );
     }
+  });
+}
   } catch (e) {
     // Notifications failing should NOT stop the app.
     debugPrint('⚠️ Firebase Messaging initialization failed: $e');
@@ -174,6 +192,19 @@ class MyApp extends StatelessWidget {
 
           return FriendRequestsScreen(childId: id);
         },
+        '/child/notifications': (context) {
+  final args = ModalRoute.of(context)!.settings.arguments;
+
+  final String? id = args is String
+      ? args
+      : (args as Map?)?['childId'] ?? ChildSession.currentChildId;
+
+  if (id == null || id.isEmpty) {
+    return const SplashScreen();
+  }
+
+  return NotificationsScreen(childId: id);
+},
         '/child/home': (context) {
           final args = ModalRoute.of(context)!.settings.arguments;
           // Check arguments first, then check our global ChildSession as a backup
