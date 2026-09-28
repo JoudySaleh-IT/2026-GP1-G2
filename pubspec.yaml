@@ -104,4 +104,5 @@ flutter:
     - assets/images/listening/ghain_listening/beginner/
     - assets/images/listening/ghain_listening/intermediate/
     - assets/images/listening/ghain_listening/advanced/
+    - assets/audio/ghain/ghain_letter_sound.mp3
    

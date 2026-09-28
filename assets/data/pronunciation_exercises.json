@@ -1210,7 +1210,248 @@
   "targetWord": "أشخاص",
   "imagePath": "assets/images/word_bank/sad_a_08_ashkhas.png",
   "audioPath": "audio/sad/advanced/sad_a_08.mp3"
-}
+},
+{
+  "id": "ghain_b_01",
+  "letter": "غ",
+  "level": "beginner",
+  "order": 1,
+  "displayWord": "غَزَال",
+  "targetWord": "غزال",
+  "imagePath": "assets/images/word_bank/ghain_b_01_gazelle.png",
+  "audioPath": "audio/ghain/beginner/ghain_b_01.mp3"
+},
+{
+  "id": "ghain_b_02",
+  "letter": "غ",
+  "level": "beginner",
+  "order": 2,
+  "displayWord": "غُرَاب",
+  "targetWord": "غراب",
+  "imagePath": "assets/images/word_bank/ghain_b_02_crow.png",
+  "audioPath": "audio/ghain/beginner/ghain_b_02.mp3"
+},
+{
+  "id": "ghain_b_03",
+  "letter": "غ",
+  "level": "beginner",
+  "order": 3,
+  "displayWord": "غَابَة",
+  "targetWord": "غابة",
+  "imagePath": "assets/images/word_bank/ghain_b_03_forest.png",
+  "audioPath": "audio/ghain/beginner/ghain_b_03.mp3"
+},
+{
+  "id": "ghain_b_04",
+  "letter": "غ",
+  "level": "beginner",
+  "order": 4,
+  "displayWord": "غَيْمَة",
+  "targetWord": "غيمة",
+  "imagePath": "assets/images/word_bank/ghain_b_04_cloud.png",
+  "audioPath": "audio/ghain/beginner/ghain_b_04.mp3"
+},
+{
+  "id": "ghain_b_05",
+  "letter": "غ",
+  "level": "beginner",
+  "order": 5,
+  "displayWord": "غُرْفَة",
+  "targetWord": "غرفة",
+  "imagePath": "assets/images/word_bank/ghain_b_05_room.png",
+  "audioPath": "audio/ghain/beginner/ghain_b_05.mp3"
+},
+{
+  "id": "ghain_b_06",
+  "letter": "غ",
+  "level": "beginner",
+  "order": 6,
+  "displayWord": "غَنَم",
+  "targetWord": "غنم",
+  "imagePath": "assets/images/word_bank/ghain_b_06_sheep.png",
+  "audioPath": "audio/ghain/beginner/ghain_b_06.mp3"
+},
+{
+  "id": "ghain_b_07",
+  "letter": "غ",
+  "level": "beginner",
+  "order": 7,
+  "displayWord": "غَلَط",
+  "targetWord": "غلط",
+  "imagePath": "assets/images/word_bank/ghain_b_07_wrong.png",
+  "audioPath": "audio/ghain/beginner/ghain_b_07.mp3"
+},
+{
+  "id": "ghain_b_08",
+  "letter": "غ",
+  "level": "beginner",
+  "order": 8,
+  "displayWord": "غُبَار",
+  "targetWord": "غبار",
+  "imagePath": "assets/images/word_bank/ghain_b_08_dust.png",
+  "audioPath": "audio/ghain/beginner/ghain_b_08.mp3"
+},
 
+{
+  "id": "ghain_i_01",
+  "letter": "غ",
+  "level": "intermediate",
+  "order": 1,
+  "displayWord": "بَبَّغَاء",
+  "targetWord": "ببغاء",
+  "imagePath": "assets/images/word_bank/ghain_i_01_parrot.png",
+  "audioPath": "audio/ghain/intermediate/ghain_i_01.mp3"
+},
+{
+  "id": "ghain_i_02",
+  "letter": "غ",
+  "level": "intermediate",
+  "order": 2,
+  "displayWord": "دِمَاغ",
+  "targetWord": "دماغ",
+  "imagePath": "assets/images/word_bank/ghain_i_02_brain.png",
+  "audioPath": "audio/ghain/intermediate/ghain_i_02.mp3"
+},
+{
+  "id": "ghain_i_03",
+  "letter": "غ",
+  "level": "intermediate",
+  "order": 3,
+  "displayWord": "غَفْوَة",
+  "targetWord": "غفوة",
+  "imagePath": "assets/images/word_bank/ghain_i_03_nap.png",
+  "audioPath": "audio/ghain/intermediate/ghain_i_03.mp3"
+},
+{
+  "id": "ghain_i_04",
+  "letter": "غ",
+  "level": "intermediate",
+  "order": 4,
+  "displayWord": "غُتْرَة",
+  "targetWord": "غترة",
+  "imagePath": "assets/images/word_bank/ghain_i_04_ghutra.png",
+  "audioPath": "audio/ghain/intermediate/ghain_i_04.mp3"
+},
+{
+  "id": "ghain_i_05",
+  "letter": "غ",
+  "level": "intermediate",
+  "order": 5,
+  "displayWord": "مَغَارَة",
+  "targetWord": "مغارة",
+  "imagePath": "assets/images/word_bank/ghain_i_05_cave.png",
+  "audioPath": "audio/ghain/intermediate/ghain_i_05.mp3"
+},
+{
+  "id": "ghain_i_06",
+  "letter": "غ",
+  "level": "intermediate",
+  "order": 6,
+  "displayWord": "غَلَّايَة",
+  "targetWord": "غلاية",
+  "imagePath": "assets/images/word_bank/ghain_i_06_kettle.png",
+  "audioPath": "audio/ghain/intermediate/ghain_i_06.mp3"
+},
+{
+  "id": "ghain_i_07",
+  "letter": "غ",
+  "level": "intermediate",
+  "order": 7,
+  "displayWord": "غَدَاء",
+  "targetWord": "غداء",
+  "imagePath": "assets/images/word_bank/ghain_i_07_lunch.png",
+  "audioPath": "audio/ghain/intermediate/ghain_i_07.mp3"
+},
+{
+  "id": "ghain_i_08",
+  "letter": "غ",
+  "level": "intermediate",
+  "order": 8,
+  "displayWord": "بُرْغِيّ",
+  "targetWord": "برغي",
+  "imagePath": "assets/images/word_bank/ghain_i_08_screw.png",
+  "audioPath": "audio/ghain/intermediate/ghain_i_08.mp3"
+},
+
+{
+  "id": "ghain_a_01",
+  "letter": "غ",
+  "level": "advanced",
+  "order": 1,
+  "displayWord": "غُورِيلَا",
+  "targetWord": "غوريلا",
+  "imagePath": "assets/images/word_bank/ghain_a_01_gorilla.png",
+  "audioPath": "audio/ghain/advanced/ghain_a_01.mp3"
+},
+{
+  "id": "ghain_a_02",
+  "letter": "غ",
+  "level": "advanced",
+  "order": 2,
+  "displayWord": "غِيتَارَات",
+  "targetWord": "غيتارات",
+  "imagePath": "assets/images/word_bank/ghain_a_02_guitars.png",
+  "audioPath": "audio/ghain/advanced/ghain_a_02.mp3"
+},
+{
+  "id": "ghain_a_03",
+  "letter": "غ",
+  "level": "advanced",
+  "order": 3,
+  "displayWord": "أَرْغِفَة",
+  "targetWord": "أرغفة",
+  "imagePath": "assets/images/word_bank/ghain_a_03_loaves.png",
+  "audioPath": "audio/ghain/advanced/ghain_a_03.mp3"
+},
+{
+  "id": "ghain_a_04",
+  "letter": "غ",
+  "level": "advanced",
+  "order": 4,
+  "displayWord": "مُغَنِّيَة",
+  "targetWord": "مغنية",
+  "imagePath": "assets/images/word_bank/ghain_a_04_singer.png",
+  "audioPath": "audio/ghain/advanced/ghain_a_04.mp3"
+},
+{
+  "id": "ghain_a_05",
+  "letter": "غ",
+  "level": "advanced",
+  "order": 5,
+  "displayWord": "مُغَامِر",
+  "targetWord": "مغامر",
+  "imagePath": "assets/images/word_bank/ghain_a_05_adventurer.png",
+  "audioPath": "audio/ghain/advanced/ghain_a_05.mp3"
+},
+{
+  "id": "ghain_a_06",
+  "letter": "غ",
+  "level": "advanced",
+  "order": 6,
+  "displayWord": "نَغَمَات",
+  "targetWord": "نغمات",
+  "imagePath": "assets/images/word_bank/ghain_a_06_notes.png",
+  "audioPath": "audio/ghain/advanced/ghain_a_06.mp3"
+},
+{
+  "id": "ghain_a_07",
+  "letter": "غ",
+  "level": "advanced",
+  "order": 7,
+  "displayWord": "أَلْغَاز",
+  "targetWord": "ألغاز",
+  "imagePath": "assets/images/word_bank/ghain_a_07_puzzles.png",
+  "audioPath": "audio/ghain/advanced/ghain_a_07.mp3"
+},
+{
+  "id": "ghain_a_08",
+  "letter": "غ",
+  "level": "advanced",
+  "order": 8,
+  "displayWord": "مُغَادَرَة",
+  "targetWord": "مغادرة",
+  "imagePath": "assets/images/word_bank/ghain_a_08_departure.png",
+  "audioPath": "audio/ghain/advanced/ghain_a_08.mp3"
+}
   ]
 }

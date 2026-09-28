@@ -11,6 +11,11 @@ class ExerciseListeningResultScreen extends StatelessWidget {
       return 'استمر في التدريب';
     }
 
+    // يحتاج 6 من 8 لاجتياز تمارين الاستماع
+    if (score < 6) {
+      return 'تحتاج إلى 6 إجابات صحيحة من 8 لاجتياز المستوى. حاول مرة أخرى!';
+    }
+
     final ratio = score / total;
 
     if (ratio == 1) {
@@ -21,11 +26,7 @@ class ExerciseListeningResultScreen extends StatelessWidget {
       return 'رائع! أداء متميز جدًا';
     }
 
-    if (ratio >= 0.6) {
-      return 'أحسنت! استمر وستتقدم أكثر';
-    }
-
-    return 'استمر في التدريب، أنت تتحسن';
+    return 'أحسنت! اجتزت تمارين الاستماع';
   }
 
   @override
@@ -99,13 +100,17 @@ class ExerciseListeningResultScreen extends StatelessWidget {
                                 'childId': args['childId'],
                               },
                             ),
-                            icon: const Icon(
-                              Icons.arrow_forward_rounded,
+                            icon: Icon(
+                              score >= 6
+                                  ? Icons.arrow_forward_rounded
+                                  : Icons.replay_rounded,
                               size: 18,
                             ),
-                            label: const Text(
-                              'متابعة التمارين',
-                              style: TextStyle(
+                            label: Text(
+                              score >= 6
+                                  ? 'متابعة التمارين'
+                                  : 'إعادة تمارين الاستماع',
+                              style: const TextStyle(
                                 fontFamily: 'Tajawal',
                                 fontWeight: FontWeight.w600,
                               ),
@@ -266,9 +271,9 @@ class _ResultHeroCard extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              'أحسنت!',
-                              style: TextStyle(
+                            Text(
+                              score >= 6 ? 'أحسنت!' : 'حاول مرة أخرى!',
+                              style: const TextStyle(
                                 fontFamily: 'Tajawal',
                                 fontSize: 21,
                                 fontWeight: FontWeight.w800,
