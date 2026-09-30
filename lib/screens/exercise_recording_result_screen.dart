@@ -108,19 +108,7 @@ class _ExerciseRecordingResultScreenState
   }).length;
 }
 
-String? _getNextLevel() {
-  switch (_level.toLowerCase()) {
-    case 'beginner':
-      return 'intermediate';
 
-    case 'intermediate':
-      return 'advanced';
-
-    // Advanced هو آخر مستوى
-    default:
-      return null;
-  }
-}
 
 Future<void> _savePronunciationProgress() async {
   if (_childId.isEmpty || _letter.isEmpty || _level.isEmpty) {
@@ -150,16 +138,7 @@ Future<void> _savePronunciationProgress() async {
         canAdvance,
   });
 
-  // إذا حقق الشرطين، ينتقل مستوى واحد فقط
-  if (canAdvance) {
-    final String? nextLevel = _getNextLevel();
 
-    if (nextLevel != null) {
-      await childRef.update({
-        'level': nextLevel,
-      });
-    }
-  }
 
   debugPrint(
     'Pronunciation result → '
@@ -599,9 +578,10 @@ if (hasPendingRetry) ...[
                         (route) =>
                             route.settings.name == '/child/exercises',
                         arguments: {
-                          'letter': _letter,
-                          'childId': _childId,
-                        },
+  'letter': _letter,
+  'childId': _childId,
+  'startingLevel': _level,
+},
                       );
                     },
                     style: OutlinedButton.styleFrom(

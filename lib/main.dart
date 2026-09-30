@@ -226,12 +226,14 @@ class MyApp extends StatelessWidget {
         },
 
         '/child/letter-levels': (context) {
-          final args = ModalRoute.of(context)!.settings.arguments as Map?;
-          return LetterLevelsScreen(
-            letter: args?['letter'] ?? 'ض',
-            childId: args?['childId'] ?? '',
-          );
-        },
+  final args = ModalRoute.of(context)!.settings.arguments as Map?;
+
+  return LetterLevelsScreen(
+    letter: args?['letter'] ?? 'ض',
+    childId: args?['childId'] ?? '',
+    startingLevel: args?['startingLevel']?.toString() ?? 'مبتدئ',
+  );
+},
 
         '/child/letter-introduction': (context) {
           final args = ModalRoute.of(context)!.settings.arguments as Map?;
@@ -264,13 +266,15 @@ class MyApp extends StatelessWidget {
           );
         },
 
-        '/child/exercise/listening': (context) {
-          final args = ModalRoute.of(context)!.settings.arguments as Map?;
-          return ExerciseListeningScreen(
-            letter: args?['letter'] ?? 'ض',
-            childId: args?['childId'] ?? '',
-          );
-        },
+      '/child/exercise/listening': (context) {
+  final args = ModalRoute.of(context)!.settings.arguments as Map?;
+
+  return ExerciseListeningScreen(
+    letter: args?['letter'] ?? 'ض',
+    childId: args?['childId'] ?? '',
+    level: args?['level']?.toString() ?? 'beginner',
+  );
+},
 
         '/child/exercise/recording': (context) {
           final args = ModalRoute.of(context)!.settings.arguments as Map?;

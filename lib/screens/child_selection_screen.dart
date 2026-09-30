@@ -259,19 +259,16 @@ final String displayName = nickname.isNotEmpty
             ? legacyName
             : 'بدون اسم';
 
-                      // 1. 👈 استخراج حالة اكتمال الاختبار
-                      final bool hasCompletedPlacement =
-                          data['placementDone'] ?? false;
+                     
 
                       return _ChildCard(
                         name: displayName,
                         fullName: fullName,
                         avatar: data['avatar'] ?? '👦',
                         age: data['age'] ?? 0,
-                        level: data['level'] ?? 'مبتدئ',
+                        
 
-                        // 2. 👈 تمرير الحالة للبطاقة
-                        hasCompletedPlacement: hasCompletedPlacement,
+                 
 
                         onTap: () => _onChildSelected(
   context,
@@ -412,8 +409,6 @@ class _ChildCard extends StatefulWidget {
   final String fullName;
   final String avatar;
   final int age;
-  final String level;
-  final bool hasCompletedPlacement; // 👈 إضافة المتغير الجديد هنا
   final VoidCallback onTap;
   final VoidCallback onPairingTap;
 
@@ -422,8 +417,6 @@ class _ChildCard extends StatefulWidget {
     required this.fullName,
     required this.avatar,
     required this.age,
-    required this.level,
-    required this.hasCompletedPlacement, // 👈 إضافته للمُنشئ
     required this.onTap,
     required this.onPairingTap,
   });
@@ -455,10 +448,7 @@ class _ChildCardState extends State<_ChildCard>
 
   @override
   Widget build(BuildContext context) {
-    // 👈 تحديد اللون بناءً على حالة الاختبار (بنفسجي للمكتمل، أحمر للمتبقي)
-    final Color badgeColor = widget.hasCompletedPlacement
-        ? const Color(0xFF511281)
-        : const Color(0xFFFF6969);
+  
 
     return ScaleTransition(
       scale: _scaleAnim,
@@ -530,29 +520,8 @@ class _ChildCardState extends State<_ChildCard>
                           color: Color(0xFFFF6969),
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      // 👈 الحفاظ على نفس تصميم "الكبسولة" مع نصوص وألوان ديناميكية
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: badgeColor.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          widget.hasCompletedPlacement
-                              ? 'المستوى: ${widget.level} '
-                              : 'لم يُحدَّد المستوى بعد', // نص قصير ليناسب حجم البطاقة
-                          style: TextStyle(
-                            fontSize: 10, // تصغير الخط قليلاً لتجنب التكدس
-                            color: badgeColor,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
+                      
+                     
                     ],
                   ),
                 ),

@@ -977,11 +977,14 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
             icon: const Icon(Icons.arrow_back, color: Colors.white),
 
             onPressed: () => Navigator.pushNamed(
-              context,
-              '/child/letter-levels',
-
-              arguments: {'letter': widget.letter, 'childId': widget.childId},
-            ),
+  context,
+  '/child/letter-levels',
+  arguments: {
+    'letter': widget.letter,
+    'childId': widget.childId,
+    'startingLevel': widget.level,
+  },
+),
           ),
 
           const SizedBox(width: 8),

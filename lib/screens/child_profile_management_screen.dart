@@ -154,13 +154,7 @@ class _ChildProfileManagementScreenState
             ? snapshot.data!.data() as Map<String, dynamic>
             : {'name': 'تحميل...', 'avatar': '👤', 'age': 0};
 
-        // 1.  استخراج حالة اكتمال الاختبار
-        final bool hasCompletedPlacement = realData['placementDone'] ?? false;
-
-        // 2.  تنسيق النص بناءً على الحالة
-        final String formattedLevel = hasCompletedPlacement
-            ? 'المستوى: ${realData['level'] ?? 'مبتدئ'} '
-            : 'لم يُحدَّد المستوى بعد';
+        
 final String firstName =
     (realData['firstName'] ?? '').toString().trim();
 
@@ -202,7 +196,7 @@ final String secondaryName =
   fullName: secondaryName,
   avatar: realData['avatar'] ?? '🦁',
   age: realData['age'] ?? 0,
-  level: formattedLevel,
+
 ),
                 Expanded(
                   child: Scrollbar(
@@ -392,7 +386,7 @@ class _ProfileHeader extends StatelessWidget {
   final String fullName;
   final String avatar;
   final int age;
-  final String level;
+  
 
   const _ProfileHeader({
     this.childId,
@@ -401,7 +395,7 @@ class _ProfileHeader extends StatelessWidget {
     required this.fullName,
     required this.avatar,
     required this.age,
-    required this.level,
+    
   });
 
 
@@ -458,14 +452,14 @@ String formatAge(int age) {
     ),
   ),
                 Text(
-           
-                  '${formatAge(age)} | $level',
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 13,
-                    fontFamily: 'Tajawal',
-                  ),
-                ),
+  formatAge(age),
+  style: const TextStyle(
+    color: Colors.white70,
+    fontSize: 13,
+    fontFamily: 'Tajawal',
+  ),
+),
+                  
               ],
             ),
           ),

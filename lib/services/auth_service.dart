@@ -128,7 +128,6 @@ final String cleanNickname = nickname?.trim() ?? '';
   'gender': gender,
   'avatar': avatar,
   'progress': 0,
-  'level': 'لم يتم تحديد المستوى ',
   'placementDone': false,
   'fasehId': fasehId,
   'createdAt': FieldValue.serverTimestamp(),

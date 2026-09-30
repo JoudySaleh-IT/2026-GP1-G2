@@ -32,11 +32,13 @@ class _LevelInfo {
 class LetterLevelsScreen extends StatefulWidget {
   final String letter;
   final String childId;
+  final String startingLevel;
 
   const LetterLevelsScreen({
     super.key,
     required this.letter,
     required this.childId,
+    required this.startingLevel,
   });
 
   @override
@@ -139,45 +141,83 @@ class _LetterLevelsScreenState extends State<LetterLevelsScreen> {
 
       final Map<String, dynamic> data = doc.data()!;
 
-      // =============================================================
-      // Current child level
-      // =============================================================
 
-      final String currentLevel = _normalizeLevel(data['level']);
+// =============================================================
+// Current level for this letter
+// =============================================================
+String currentLevel = _normalizeLevel(widget.startingLevel);
 
-      bool listeningPassed = false;
-      bool pronunciationPassed = false;
+bool listeningPassed = false;
+bool pronunciationPassed = false;
 
-      // =============================================================
-      // Read exerciseProgress
-      // =============================================================
+final dynamic rawExerciseProgress = data['exerciseProgress'];
 
-      final dynamic rawExerciseProgress = data['exerciseProgress'];
+if (rawExerciseProgress is Map) {
+  final Map<String, dynamic> exerciseProgress =
+      Map<String, dynamic>.from(rawExerciseProgress);
 
-      if (rawExerciseProgress is Map) {
-        final Map<String, dynamic> exerciseProgress = Map<String, dynamic>.from(
-          rawExerciseProgress,
-        );
+  final dynamic rawLetterProgress = exerciseProgress[widget.letter];
 
-        final dynamic rawLetterProgress = exerciseProgress[widget.letter];
+  if (rawLetterProgress is Map) {
+    final Map<String, dynamic> letterProgress =
+        Map<String, dynamic>.from(rawLetterProgress);
 
-        if (rawLetterProgress is Map) {
-          final Map<String, dynamic> letterProgress = Map<String, dynamic>.from(
-            rawLetterProgress,
-          );
+    const levelOrder = [
+      'beginner',
+      'intermediate',
+      'advanced',
+    ];
 
-          final dynamic rawLevelProgress = letterProgress[currentLevel];
+    int currentIndex = levelOrder.indexOf(currentLevel);
 
-          if (rawLevelProgress is Map) {
-            final Map<String, dynamic> levelProgress =
-                Map<String, dynamic>.from(rawLevelProgress);
+    if (currentIndex == -1) {
+      currentIndex = 0;
+      currentLevel = 'beginner';
+    }
 
-            listeningPassed = levelProgress['listeningPassed'] == true;
+    for (int i = currentIndex; i < levelOrder.length; i++) {
+      final String levelKey = levelOrder[i];
 
-            pronunciationPassed = levelProgress['pronunciationPassed'] == true;
-          }
-        }
+      final dynamic rawLevelProgress = letterProgress[levelKey];
+
+      if (rawLevelProgress is! Map) {
+        currentLevel = levelKey;
+        listeningPassed = false;
+        pronunciationPassed = false;
+        break;
       }
+
+      final Map<String, dynamic> levelProgress =
+          Map<String, dynamic>.from(rawLevelProgress);
+
+      final bool levelListeningPassed =
+          levelProgress['listeningPassed'] == true;
+
+      final bool levelPronunciationPassed =
+          levelProgress['pronunciationPassed'] == true;
+
+      // إذا المستوى ما اكتمل، هذا هو المستوى الحالي
+      if (!levelListeningPassed || !levelPronunciationPassed) {
+        currentLevel = levelKey;
+        listeningPassed = levelListeningPassed;
+        pronunciationPassed = levelPronunciationPassed;
+        break;
+      }
+
+      // المستوى مكتمل، ننتقل للي بعده
+      if (i < levelOrder.length - 1) {
+        currentLevel = levelOrder[i + 1];
+        listeningPassed = false;
+        pronunciationPassed = false;
+      } else {
+        // أنهى Advanced بالكامل
+        currentLevel = 'advanced';
+        listeningPassed = true;
+        pronunciationPassed = true;
+      }
+    }
+  }
+}
 
       if (!mounted) return;
 

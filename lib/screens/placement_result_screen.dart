@@ -49,7 +49,6 @@ class PlacementResultScreen extends StatefulWidget {
 }
 
 class _PlacementResultScreenState extends State<PlacementResultScreen> {
-  String _childName = '';
 
   // ─── Constants ──────────────────────────────────────────────────────────────
   static const _purple = Color(0xFF511281);
@@ -79,29 +78,10 @@ class _PlacementResultScreenState extends State<PlacementResultScreen> {
   void initState() {
     super.initState();
 
-    _loadChildName();
     _markPlacementDone();
   }
 
-  // ─── Load Child Name ────────────────────────────────────────────────────────
-  Future<void> _loadChildName() async {
-    try {
-      final doc = await FirebaseFirestore.instance
-          .collection('children')
-          .doc(widget.childId)
-          .get();
 
-      if (doc.exists && mounted) {
-        final data = doc.data();
-
-        setState(() {
-          _childName = data?['name'] ?? '';
-        });
-      }
-    } catch (e) {
-      debugPrint('خطأ أثناء جلب اسم الطفل: $e');
-    }
-  }
 
   // ─── Save Placement Result ──────────────────────────────────────────────────
   Future<void> _markPlacementDone() async {
@@ -110,15 +90,7 @@ class _PlacementResultScreenState extends State<PlacementResultScreen> {
         for (var item in widget.letterScores) item.letter: item.score,
       };
 
-      String levelToSave;
-
-      if (widget.score >= _masteryMinScore) {
-        levelToSave = 'متقن';
-      } else if (widget.score <= _beginnerMaxScore) {
-        levelToSave = 'مبتدئ';
-      } else {
-        levelToSave = 'متوسط';
-      }
+    
 
       await FirebaseFirestore.instance
           .collection('children')
@@ -128,53 +100,24 @@ class _PlacementResultScreenState extends State<PlacementResultScreen> {
             'placementScore': widget.score,
             'placementDate': FieldValue.serverTimestamp(),
             'letterScores': scoresMap,
-            'level': levelToSave,
+            
           });
 
-      debugPrint('✅ تم حفظ نتائج اختبار تحديد المستوى وحقل level بنجاح');
+     debugPrint('✅ تم حفظ نتائج اختبار تحديد المستوى بنجاح');
     } catch (e) {
       debugPrint('❌ خطأ أثناء تحديث بيانات اختبار تحديد المستوى: $e');
     }
   }
 
-  // ─── Overall Child Level ────────────────────────────────────────────────────
-  String get _overallLevel {
-    if (widget.score >= _masteryMinScore) {
-      return 'مستوى متقن';
-    }
 
-    if (widget.score <= _beginnerMaxScore) {
-      return 'مستوى مبتدئ';
-    }
 
-    return 'مستوى متوسط';
+ String get _encouragementMessage {
+  if (_lettersToPractice.isEmpty) {
+    return 'رائع! أتقنت جميع الحروف 🎉';
   }
 
-  // ─── Encouragement Message ──────────────────────────────────────────────────
-  String get _encouragementMessage {
-    if (_childName.isEmpty) {
-      if (widget.score >= _masteryMinScore) {
-        return 'ممتاز!';
-      }
-
-      if (widget.score <= _beginnerMaxScore) {
-        return 'بداية جميلة! سنتدرّب معًا';
-      }
-
-      return 'أحسنت!';
-    }
-
-    if (widget.score >= _masteryMinScore) {
-      return 'ممتاز يا $_childName!';
-    }
-
-    if (widget.score <= _beginnerMaxScore) {
-      return 'بداية جميلة يا $_childName! سنتدرّب معًا';
-    }
-
-    return 'أحسنت يا $_childName!';
-  }
-
+  return 'هيا نبدأ التدريب!';
+}
   // ─── Sorted Letter Scores ───────────────────────────────────────────────────
   List<LetterScore> get _sortedScores =>
       [...widget.letterScores]..sort((a, b) => a.score.compareTo(b.score));
@@ -210,12 +153,7 @@ class _PlacementResultScreenState extends State<PlacementResultScreen> {
 
                       const SizedBox(height: 14),
 
-                      // ======================================================
-                      // SCORE
-                      // ======================================================
-                      _buildScoreCard(),
-
-                      const SizedBox(height: 14),
+            
 
                       // ======================================================
                       // PRACTICE LETTERS
@@ -352,14 +290,14 @@ class _PlacementResultScreenState extends State<PlacementResultScreen> {
                         const SizedBox(height: 4),
 
                         const Text(
-                          'أنهيت اختبار تحديد المستوى',
-                          style: TextStyle(
-                            color: Color(0xFF777777),
-                            fontSize: 11.5,
-                            height: 1.4,
-                            fontFamily: 'Tajawal',
-                          ),
-                        ),
+  'أنهيت الاختبار! الآن نبدأ التدريب على حروفك',
+  style: TextStyle(
+    color: Color(0xFF777777),
+    fontSize: 11.5,
+    height: 1.4,
+    fontFamily: 'Tajawal',
+  ),
+),
 
                         const SizedBox(height: 9),
 
@@ -397,118 +335,7 @@ class _PlacementResultScreenState extends State<PlacementResultScreen> {
   // ===========================================================================
   // SCORE CARD
   // ===========================================================================
-  Widget _buildScoreCard() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFFBF5),
-        borderRadius: BorderRadius.circular(26),
-        border: Border.all(color: _purple.withOpacity(0.08)),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x09000000),
-            blurRadius: 8,
-            offset: Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          // =========================================================
-          // Score circle
-          // =========================================================
-          Container(
-            width: 105,
-            height: 105,
-            decoration: BoxDecoration(
-              color: const Color(0xFFF4EBFA),
-              shape: BoxShape.circle,
-              border: Border.all(color: const Color(0xFFD9C1EA), width: 2),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  '${toArabicDigits(widget.score)}٪',
-                  style: const TextStyle(
-                    color: _purple,
-                    fontSize: 30,
-                    fontWeight: FontWeight.w800,
-                    fontFamily: 'Tajawal',
-                  ),
-                ),
-                const Text(
-                  'درجتك',
-                  style: TextStyle(
-                    color: Color(0xFF8B55B3),
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    fontFamily: 'Tajawal',
-                  ),
-                ),
-              ],
-            ),
-          ),
 
-          const SizedBox(width: 17),
-
-          // =========================================================
-          // Level
-          // =========================================================
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Row(
-                  children: [
-                    Icon(
-                      Icons.auto_awesome_rounded,
-                      color: Color(0xFFF3B82F),
-                      size: 18,
-                    ),
-                    SizedBox(width: 6),
-                    Text(
-                      'مستواك الآن',
-                      style: TextStyle(
-                        color: Color(0xFF777777),
-                        fontSize: 11,
-                        fontFamily: 'Tajawal',
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 7),
-
-                Text(
-                  _overallLevel,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                    color: _purple,
-                    fontFamily: 'Tajawal',
-                  ),
-                ),
-
-                const SizedBox(height: 6),
-
-                const Text(
-                  'استمر بالتدريب وتقدّم خطوة بخطوة',
-                  style: TextStyle(
-                    fontSize: 10,
-                    height: 1.4,
-                    color: Color(0xFF858085),
-                    fontFamily: 'Tajawal',
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   // ===========================================================================
   // LETTERS TO PRACTICE
@@ -673,8 +500,8 @@ class _PlacementResultScreenState extends State<PlacementResultScreen> {
 
         Color borderColor = const Color(0xFFCFE5D5);
 
-        // 0–50% = Beginner
-        if (item.score <= _beginnerMaxScore) {
+       // <50% = Beginner
+if (item.score < _beginnerMaxScore) {
           badge = 'مبتدئ';
 
           cardColor = const Color(0xFFFFF4F4);
@@ -824,10 +651,10 @@ class _PlacementResultScreenState extends State<PlacementResultScreen> {
   // ===========================================================================
   Widget _buildScoreRow(LetterScore item) {
     final String label = item.score >= _masteryMinScore
-        ? 'متقن'
-        : item.score <= _beginnerMaxScore
-        ? 'مبتدئ'
-        : 'متوسط';
+    ? 'متقن'
+    : item.score < _beginnerMaxScore
+    ? 'مبتدئ'
+    : 'متوسط';
 
     Color badgeColor;
     Color badgeBackground;
@@ -836,7 +663,7 @@ class _PlacementResultScreenState extends State<PlacementResultScreen> {
       badgeColor = const Color(0xFF66997A);
 
       badgeBackground = const Color(0xFFE5F3E9);
-    } else if (item.score <= _beginnerMaxScore) {
+    } else if (item.score < _beginnerMaxScore) {
       badgeColor = _coral;
 
       badgeBackground = const Color(0xFFFFE7EC);
@@ -941,9 +768,13 @@ class _PlacementResultScreenState extends State<PlacementResultScreen> {
   // ACTION BUTTONS
   // نفس الـfunctionality الأصلية
   // ===========================================================================
-  Widget _buildActionButtons(BuildContext context) {
-    return Column(
-      children: [
+ // ===========================================================================
+// ACTION BUTTONS
+// ===========================================================================
+Widget _buildActionButtons(BuildContext context) {
+  return Column(
+    children: [
+      if (_lettersToPractice.isNotEmpty) ...[
         SizedBox(
           width: double.infinity,
           height: 56,
@@ -953,9 +784,12 @@ class _PlacementResultScreenState extends State<PlacementResultScreen> {
               '/child/exercises',
               arguments: widget.childId,
             ),
-            icon: const Icon(Icons.record_voice_over_rounded, size: 21),
+            icon: const Icon(
+              Icons.record_voice_over_rounded,
+              size: 21,
+            ),
             label: const Text(
-              'ابدأ التدريب',
+              'هيا نتدرّب!',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
@@ -972,37 +806,44 @@ class _PlacementResultScreenState extends State<PlacementResultScreen> {
         ),
 
         const SizedBox(height: 10),
+      ],
 
-        SizedBox(
-          width: double.infinity,
-          height: 54,
-          child: OutlinedButton.icon(
-            onPressed: () => Navigator.pushNamedAndRemoveUntil(
-              context,
-              '/child/home',
-              (route) => false,
-              arguments: widget.childId,
+      SizedBox(
+        width: double.infinity,
+        height: 54,
+        child: OutlinedButton.icon(
+          onPressed: () => Navigator.pushNamedAndRemoveUntil(
+            context,
+            '/child/home',
+            (route) => false,
+            arguments: widget.childId,
+          ),
+          icon: const Icon(
+            Icons.home_rounded,
+            size: 20,
+          ),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: _purple,
+            backgroundColor: Colors.white.withOpacity(0.72),
+            side: BorderSide(
+              color: _purple.withOpacity(0.14),
+              width: 1.5,
             ),
-            icon: const Icon(Icons.home_rounded, size: 20),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: _purple,
-              backgroundColor: Colors.white.withOpacity(0.72),
-              side: BorderSide(color: _purple.withOpacity(0.14), width: 1.5),
-              shape: const StadiumBorder(),
-            ),
-            label: const Text(
-              'العودة للرئيسية',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                fontFamily: 'Tajawal',
-              ),
+            shape: const StadiumBorder(),
+          ),
+          label: const Text(
+            'العودة للرئيسية',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              fontFamily: 'Tajawal',
             ),
           ),
         ),
-      ],
-    );
-  }
+      ),
+    ],
+  );
+}
 
   // ===========================================================================
   // EMPTY STATE

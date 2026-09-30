@@ -96,9 +96,10 @@ class ExerciseListeningResultScreen extends StatelessWidget {
                               '/child/letter-levels',
                               (route) => false,
                               arguments: {
-                                'letter': args['letter'],
-                                'childId': args['childId'],
-                              },
+  'letter': args['letter'],
+  'childId': args['childId'],
+  'startingLevel': args['level'] ?? 'beginner',
+},
                             ),
                             icon: Icon(
                               score >= 6

@@ -46,11 +46,13 @@ class _Exercise {
 class ExerciseListeningScreen extends StatefulWidget {
   final String letter;
   final String childId;
+  final String level;
 
   const ExerciseListeningScreen({
     super.key,
     required this.letter,
     required this.childId,
+    required this.level,
   });
 
   @override
@@ -251,13 +253,13 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
       // 2. Get Child Level
       // ==============================================================
 
-      final String childLevel = _normalizeLevel(childData['level']);
-      _currentLevelKey = childLevel;
+     final String childLevel = _normalizeLevel(widget.level);
+_currentLevelKey = childLevel;
 
-      debugPrint(
-        'Listening Exercise → '
-        'Child level: ${childData['level']} → $childLevel',
-      );
+debugPrint(
+  'Listening Exercise → '
+  'Letter level: ${widget.level} → $childLevel',
+);
 
       // ==============================================================
       // 3. Load JSON

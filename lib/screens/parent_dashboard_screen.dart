@@ -218,8 +218,7 @@ class ParentDashboardScreen extends StatelessWidget {
     Map<String, dynamic> data,
   ) {
     final int progress = data['progress'] ?? 0;
-    // 1. 👈 استخراج حالة اكتمال الاختبار من قاعدة البيانات
-    final bool hasCompletedPlacement = data['placementDone'] ?? false;
+    
     final String firstName =
     (data['firstName'] ?? '').toString().trim();
 
@@ -258,7 +257,10 @@ final String secondaryName =
         ],
       ),
       child: ListTile(
-        contentPadding: const EdgeInsets.all(16),
+        contentPadding: const EdgeInsets.symmetric(
+  horizontal: 16,
+  vertical: 10,
+),
         leading: CircleAvatar(
           radius: 28,
           backgroundColor: const Color(0xFFFCF9EA),
@@ -267,11 +269,14 @@ final String secondaryName =
             style: const TextStyle(fontSize: 30),
           ),
         ),
-        title: Text(
+  title: Text(
   displayName,
-  style: const TextStyle(
+  style: TextStyle(
     fontWeight: FontWeight.bold,
     fontFamily: 'Tajawal',
+    color: nickname.isNotEmpty
+        ? const Color(0xFF511281)
+        : const Color(0xFF222222),
   ),
 ),
         subtitle: Column(
@@ -289,23 +294,7 @@ final String secondaryName =
     ),
   ),
 ],
-            const SizedBox(height: 4),
-            // 2. 👈 تحديث واجهة المستوى بناءً على حالة الاختبار مع ألوان ديناميكية
-            Text(
-              hasCompletedPlacement
-                  ? 'المستوى: ${data['level'] ?? 'مبتدئ'} '
-                  : 'لم يُحدَّد المستوى بعد',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                fontFamily: 'Tajawal',
-                // إذا لم يكمل الاختبار، يظهر باللون الأحمر/البرتقالي للتنبيه، وإلا باللون البنفسجي
-                color: hasCompletedPlacement
-                    ? const Color(0xFF511281)
-                    : const Color.fromARGB(147, 255, 105, 105),
-              ),
-            ),
-            const SizedBox(height: 8),
+   const SizedBox(height: 12),        
             ClipRRect(
               borderRadius: BorderRadius.circular(10),
               child: LinearProgressIndicator(
