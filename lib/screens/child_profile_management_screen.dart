@@ -161,6 +161,33 @@ class _ChildProfileManagementScreenState
         final String formattedLevel = hasCompletedPlacement
             ? 'المستوى: ${realData['level'] ?? 'مبتدئ'} '
             : 'لم يُحدَّد المستوى بعد';
+final String firstName =
+    (realData['firstName'] ?? '').toString().trim();
+
+final String lastName =
+    (realData['lastName'] ?? '').toString().trim();
+
+final String nickname =
+    (realData['nickname'] ?? '').toString().trim();
+
+final String legacyName =
+    (realData['name'] ?? '').toString().trim();
+
+final String fullName = [
+  firstName,
+  lastName,
+].where((part) => part.isNotEmpty).join(' ');
+
+final String displayName = nickname.isNotEmpty
+    ? nickname
+    : firstName.isNotEmpty
+        ? firstName
+        : legacyName.isNotEmpty
+            ? legacyName
+            : 'بدون اسم';
+
+final String secondaryName =
+    fullName.isNotEmpty ? fullName : legacyName;
 
         return Directionality(
           textDirection: TextDirection.rtl,
@@ -169,13 +196,14 @@ class _ChildProfileManagementScreenState
             body: Column(
               children: [
                 _ProfileHeader(
-                  childId: widget.childId,
-                  onDelete: _confirmDelete,
-                  name: realData['name'] ?? 'بدون اسم',
-                  avatar: realData['avatar'] ?? '🦁',
-                  age: realData['age'] ?? 0,
-                  level: formattedLevel, // 3. 👈 تمرير النص المنسق هنا
-                ),
+  childId: widget.childId,
+  onDelete: _confirmDelete,
+  name: displayName,
+  fullName: secondaryName,
+  avatar: realData['avatar'] ?? '🦁',
+  age: realData['age'] ?? 0,
+  level: formattedLevel,
+),
                 Expanded(
                   child: Scrollbar(
                     controller: _scrollController,
@@ -361,6 +389,7 @@ class _ProfileHeader extends StatelessWidget {
   final String? childId;
   final VoidCallback onDelete;
   final String name;
+  final String fullName;
   final String avatar;
   final int age;
   final String level;
@@ -369,6 +398,7 @@ class _ProfileHeader extends StatelessWidget {
     this.childId,
     required this.onDelete,
     required this.name,
+    required this.fullName,
     required this.avatar,
     required this.age,
     required this.level,
@@ -418,6 +448,15 @@ String formatAge(int age) {
                     fontFamily: 'Tajawal',
                   ),
                 ),
+                if (fullName.isNotEmpty && fullName != name)
+  Text(
+    fullName,
+    style: const TextStyle(
+      color: Colors.white70,
+      fontSize: 12,
+      fontFamily: 'Tajawal',
+    ),
+  ),
                 Text(
            
                   '${formatAge(age)} | $level',

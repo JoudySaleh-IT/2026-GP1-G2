@@ -49,7 +49,9 @@ class CreateChildProfileScreen extends StatefulWidget {
 
 class _CreateChildProfileScreenState extends State<CreateChildProfileScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
+final _firstNameController = TextEditingController();
+final _lastNameController = TextEditingController();
+final _nicknameController = TextEditingController();
 
   final AuthService _authService = AuthService();
 
@@ -61,10 +63,12 @@ class _CreateChildProfileScreenState extends State<CreateChildProfileScreen> {
   bool _dobError = false;
 
   @override
-  void dispose() {
-    _nameController.dispose();
-    super.dispose();
-  }
+void dispose() {
+  _firstNameController.dispose();
+  _lastNameController.dispose();
+  _nicknameController.dispose();
+  super.dispose();
+}
 
   void _handleSubmit() async {
     setState(() {
@@ -88,12 +92,14 @@ class _CreateChildProfileScreenState extends State<CreateChildProfileScreen> {
       try {
         final age = _calcAge(_dob!);
         final success = await _authService.createChildProfile(
-          name: _nameController.text.trim(),
-          age: age,
-          dob: _dob!,
-          gender: _gender,
-          avatar: _selectedAvatar,
-        );
+  firstName: _firstNameController.text.trim(),
+  lastName: _lastNameController.text.trim(),
+  nickname: _nicknameController.text.trim(),
+  age: age,
+  dob: _dob!,
+  gender: _gender,
+  avatar: _selectedAvatar,
+);
 
         if (mounted) Navigator.pop(context); // إغلاق لودينج
 
@@ -192,25 +198,104 @@ class _CreateChildProfileScreenState extends State<CreateChildProfileScreen> {
                           ),
                         ),
                         const SizedBox(height: 24),
-                        const _FieldLabel('اسم الطفل'),
-                        const SizedBox(height: 6),
-                        TextFormField(
-                          controller: _nameController,
-                          decoration: _inputDecoration('أدخل اسم الطفل'),
-                          validator: (v) {
-                            final val = v?.trim() ?? '';
-                            if (val.isEmpty) return 'يرجى إدخال اسم الطفل';
-                            final nameRegExp = RegExp(
-                              r'^[a-zA-Z\s\u0600-\u06FF]+$',
-                            );
-                            if (!nameRegExp.hasMatch(val)) {
-                              return 'يجب أن يحتوي الاسم على حروف فقط';
-                            }
-                            if (val.length < 2) return 'الاسم قصير جداً';
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
+                        // ── الاسم الأول ──
+const _FieldLabel('الاسم الأول'),
+const SizedBox(height: 6),
+TextFormField(
+  controller: _firstNameController,
+  decoration: _inputDecoration('أدخل الاسم الأول'),
+  validator: (v) {
+    final val = v?.trim() ?? '';
+
+    if (val.isEmpty) {
+      return 'يرجى إدخال الاسم الأول';
+    }
+
+    final nameRegExp = RegExp(
+     r'^[a-zA-Z\s\u0600-\u06FF]+$',
+    );
+
+    if (!nameRegExp.hasMatch(val)) {
+      return 'يجب أن يحتوي الاسم على حروف فقط';
+    }
+
+    if (val.length < 2) {
+      return 'الاسم قصير جداً';
+    }
+
+    return null;
+  },
+),
+
+const SizedBox(height: 16),
+
+// ── اسم العائلة ──
+const _FieldLabel('اسم العائلة'),
+const SizedBox(height: 6),
+TextFormField(
+  controller: _lastNameController,
+  decoration: _inputDecoration('أدخل اسم العائلة'),
+  validator: (v) {
+    final val = v?.trim() ?? '';
+
+    if (val.isEmpty) {
+      return 'يرجى إدخال اسم العائلة';
+    }
+
+    final nameRegExp = RegExp(
+     r'^[a-zA-Z\s\u0600-\u06FF]+$',
+    );
+
+    if (!nameRegExp.hasMatch(val)) {
+      return 'يجب أن يحتوي اسم العائلة على حروف فقط';
+    }
+
+    if (val.length < 2) {
+      return 'اسم العائلة قصير جداً';
+    }
+
+    return null;
+  },
+),
+
+const SizedBox(height: 16),
+
+// ── الاسم المستعار ──
+const _FieldLabel('الاسم المستعار (اختياري)'),
+const SizedBox(height: 4),
+
+const Text(
+  'الاسم الذي تفضّل أن ننادي طفلك به داخل فصيح',
+  style: TextStyle(
+    fontSize: 12,
+    color: Colors.grey,
+  ),
+),
+
+const SizedBox(height: 6),
+
+TextFormField(
+  controller: _nicknameController,
+  decoration: _inputDecoration('مثال: جوجو'),
+ validator: (v) {
+  final val = v?.trim() ?? '';
+
+  // اختياري
+  if (val.isEmpty) return null;
+
+  final nicknameRegExp = RegExp(
+    r'^[a-zA-Z\s\u0600-\u06FF]+$',
+  );
+
+  if (!nicknameRegExp.hasMatch(val)) {
+    return 'يجب أن يحتوي الاسم المستعار على حروف فقط';
+  }
+
+  return null;
+},
+),
+
+const SizedBox(height: 16),
                         const _FieldLabel('تاريخ الميلاد'),
                         const SizedBox(height: 6),
                         _DobPicker(

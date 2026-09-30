@@ -1108,20 +1108,39 @@ class _FriendProfileCardState extends State<_FriendProfileCard> {
 
         final profile = snapshot.data!;
 
-        final String name = profile['name']?.toString() ?? 'صديق';
+final String firstName =
+    (profile['firstName'] ?? '').toString().trim();
 
-        final String avatar = profile['avatar']?.toString() ?? '🌟';
+final String lastName =
+    (profile['lastName'] ?? '').toString().trim();
+
+final String legacyName =
+    (profile['name'] ?? '').toString().trim();
+
+final String fullName = [
+  firstName,
+  lastName,
+].where((part) => part.isNotEmpty).join(' ');
+
+final String displayName = fullName.isNotEmpty
+    ? fullName
+    : legacyName.isNotEmpty
+        ? legacyName
+        : 'صديق';
+
+final String avatar =
+    profile['avatar']?.toString() ?? '🌟';
 
         return _FriendCard(
-          name: name,
+          name: displayName,
           avatar: avatar,
 
           onPracticeTogether: () {
-            widget.onPracticeTogether(name);
+            widget.onPracticeTogether(displayName);
           },
 
           onRemove: () {
-            widget.onRemove(name);
+            widget.onRemove(displayName);
           },
         );
       },

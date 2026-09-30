@@ -300,8 +300,25 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
                                 return const SizedBox.shrink();
                               }
 
-                              final String name =
-                                  profile['name']?.toString() ?? 'صديق جديد';
+                              final String firstName =
+    (profile['firstName'] ?? '').toString().trim();
+
+final String lastName =
+    (profile['lastName'] ?? '').toString().trim();
+
+final String legacyName =
+    (profile['name'] ?? '').toString().trim();
+
+final String fullName = [
+  firstName,
+  lastName,
+].where((part) => part.isNotEmpty).join(' ');
+
+final String displayName = fullName.isNotEmpty
+    ? fullName
+    : legacyName.isNotEmpty
+        ? legacyName
+        : 'صديق جديد';
 
                               final String avatar =
                                   profile['avatar']?.toString() ?? '🌟';
@@ -310,7 +327,7 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
                                   _processingPairId == request.id;
 
                               return _FriendRequestCard(
-                                name: name,
+                                name: displayName,
                                 avatar: avatar,
                                 processing: processing,
                                 onAccept: () => _acceptRequest(request.id),

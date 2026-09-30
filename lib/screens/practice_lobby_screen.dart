@@ -413,7 +413,25 @@ class _PracticeLobbyScreenState extends State<PracticeLobbyScreen> {
     required bool isSender,
     required Map<String, dynamic> receiverProfile,
   }) {
-    final receiverName = receiverProfile['name']?.toString() ?? 'صديقك';
+    final String firstName =
+    (receiverProfile['firstName'] ?? '').toString().trim();
+
+final String lastName =
+    (receiverProfile['lastName'] ?? '').toString().trim();
+
+final String legacyName =
+    (receiverProfile['name'] ?? '').toString().trim();
+
+final String fullName = [
+  firstName,
+  lastName,
+].where((part) => part.isNotEmpty).join(' ');
+
+final String receiverName = fullName.isNotEmpty
+    ? fullName
+    : legacyName.isNotEmpty
+        ? legacyName
+        : 'صديقك';
 
     final receiverAvatar = receiverProfile['avatar']?.toString() ?? '🌟';
 
@@ -705,7 +723,25 @@ class _PlayerCard extends StatelessWidget {
     const purple = Color(0xFF511281);
     const green = Color(0xFF70A884);
 
-    final name = profile['name']?.toString() ?? 'صديق';
+    final String firstName =
+    (profile['firstName'] ?? '').toString().trim();
+
+final String lastName =
+    (profile['lastName'] ?? '').toString().trim();
+
+final String legacyName =
+    (profile['name'] ?? '').toString().trim();
+
+final String fullName = [
+  firstName,
+  lastName,
+].where((part) => part.isNotEmpty).join(' ');
+
+final String name = fullName.isNotEmpty
+    ? fullName
+    : legacyName.isNotEmpty
+        ? legacyName
+        : 'صديق';
 
     final avatar = profile['avatar']?.toString() ?? '🌟';
 

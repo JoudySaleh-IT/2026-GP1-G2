@@ -171,7 +171,7 @@ class ChildSelectionScreen extends StatelessWidget {
     );
 
     NotificationService.showSuccessSnackBar(
-      'اهلًا $childName! جاهز تكون فصيح؟',
+      'أهلًا $childName! جاهز تكون فصيح؟',
     );
   } catch (e) {
     if (!context.mounted) return;
@@ -234,14 +234,38 @@ class ChildSelectionScreen extends StatelessWidget {
                     itemBuilder: (context, index) {
                       final data = docs[index].data() as Map<String, dynamic>;
                       final String docId = docs[index].id;
-                      final String name = data['name'] ?? 'بدون اسم';
+                      final String firstName =
+    (data['firstName'] ?? '').toString().trim();
+
+final String lastName =
+    (data['lastName'] ?? '').toString().trim();
+
+final String nickname =
+    (data['nickname'] ?? '').toString().trim();
+
+final String legacyName =
+    (data['name'] ?? '').toString().trim();
+
+final String fullName = [
+  firstName,
+  lastName,
+].where((part) => part.isNotEmpty).join(' ');
+
+final String displayName = nickname.isNotEmpty
+    ? nickname
+    : firstName.isNotEmpty
+        ? firstName
+        : legacyName.isNotEmpty
+            ? legacyName
+            : 'بدون اسم';
 
                       // 1. 👈 استخراج حالة اكتمال الاختبار
                       final bool hasCompletedPlacement =
                           data['placementDone'] ?? false;
 
                       return _ChildCard(
-                        name: name,
+                        name: displayName,
+                        fullName: fullName,
                         avatar: data['avatar'] ?? '👦',
                         age: data['age'] ?? 0,
                         level: data['level'] ?? 'مبتدئ',
@@ -249,9 +273,13 @@ class ChildSelectionScreen extends StatelessWidget {
                         // 2. 👈 تمرير الحالة للبطاقة
                         hasCompletedPlacement: hasCompletedPlacement,
 
-                        onTap: () => _onChildSelected(context, docId, name),
+                        onTap: () => _onChildSelected(
+  context,
+  docId,
+  displayName,
+),
                         onPairingTap: () =>
-                            _showPairingDialog(context, docId, name),
+    _showPairingDialog(context, docId, displayName),
                       );
                     },
                   );
@@ -381,6 +409,7 @@ class _HeaderIconBtn extends StatelessWidget {
 // ─── Child Card Widget ───
 class _ChildCard extends StatefulWidget {
   final String name;
+  final String fullName;
   final String avatar;
   final int age;
   final String level;
@@ -390,6 +419,7 @@ class _ChildCard extends StatefulWidget {
 
   const _ChildCard({
     required this.name,
+    required this.fullName,
     required this.avatar,
     required this.age,
     required this.level,
@@ -478,6 +508,21 @@ class _ChildCardState extends State<_ChildCard>
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 4),
+                      if (widget.fullName.isNotEmpty &&
+    widget.fullName != widget.name) ...[
+  const SizedBox(height: 2),
+  Text(
+    widget.fullName,
+    style: const TextStyle(
+      fontSize: 11,
+      color: Colors.grey,
+      fontFamily: 'Tajawal',
+    ),
+    textAlign: TextAlign.center,
+    maxLines: 1,
+    overflow: TextOverflow.ellipsis,
+  ),
+],
                       Text(
                         'العمر: ${toArabicDigits(widget.age)} ${widget.age >= 11 ? 'سنة' : 'سنوات'}',
                         style: const TextStyle(

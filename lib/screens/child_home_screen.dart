@@ -162,6 +162,22 @@ class ChildHomeScreen extends StatelessWidget {
         final data = snapshot.data!.data() as Map<String, dynamic>;
 
         final bool hasCompletedPlacement = data['placementDone'] ?? false;
+        final String firstName =
+    (data['firstName'] ?? '').toString().trim();
+
+final String nickname =
+    (data['nickname'] ?? '').toString().trim();
+
+final String legacyName =
+    (data['name'] ?? '').toString().trim();
+
+final String displayName = nickname.isNotEmpty
+    ? nickname
+    : firstName.isNotEmpty
+        ? firstName
+        : legacyName.isNotEmpty
+            ? legacyName
+            : 'بطل فصيح';
 
         // ✅ حساب هل يحق له إعادة التقييم
         final bool canReassess = _canReassess(data);
@@ -239,7 +255,7 @@ class ChildHomeScreen extends StatelessWidget {
                 // لم يتم تغيير تصميمه أو وظيفته
                 // ============================================================
                 _ChildHeader(
-                  name: data['name'] ?? 'بطل فصيح',
+                  name: displayName,
                    childId: childId,
                   avatar: data['avatar'] ?? '🦁',
                   level: hasCompletedPlacement

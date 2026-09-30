@@ -220,6 +220,33 @@ class ParentDashboardScreen extends StatelessWidget {
     final int progress = data['progress'] ?? 0;
     // 1. 👈 استخراج حالة اكتمال الاختبار من قاعدة البيانات
     final bool hasCompletedPlacement = data['placementDone'] ?? false;
+    final String firstName =
+    (data['firstName'] ?? '').toString().trim();
+
+final String lastName =
+    (data['lastName'] ?? '').toString().trim();
+
+final String nickname =
+    (data['nickname'] ?? '').toString().trim();
+
+final String legacyName =
+    (data['name'] ?? '').toString().trim();
+
+final String fullName = [
+  firstName,
+  lastName,
+].where((part) => part.isNotEmpty).join(' ');
+
+final String displayName = nickname.isNotEmpty
+    ? nickname
+    : firstName.isNotEmpty
+        ? firstName
+        : legacyName.isNotEmpty
+            ? legacyName
+            : 'بدون اسم';
+
+final String secondaryName =
+    fullName.isNotEmpty ? fullName : legacyName;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -241,12 +268,27 @@ class ParentDashboardScreen extends StatelessWidget {
           ),
         ),
         title: Text(
-          data['name'] ?? 'بدون اسم',
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
+  displayName,
+  style: const TextStyle(
+    fontWeight: FontWeight.bold,
+    fontFamily: 'Tajawal',
+  ),
+),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (secondaryName.isNotEmpty &&
+    secondaryName != displayName) ...[
+  const SizedBox(height: 2),
+  Text(
+    secondaryName,
+    style: const TextStyle(
+      fontSize: 11,
+      color: Colors.grey,
+      fontFamily: 'Tajawal',
+    ),
+  ),
+],
             const SizedBox(height: 4),
             // 2. 👈 تحديث واجهة المستوى بناءً على حالة الاختبار مع ألوان ديناميكية
             Text(

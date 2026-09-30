@@ -103,8 +103,25 @@ class MyFriendQrScreen extends StatelessWidget {
 
                       final String fasehId = data?['fasehId']?.toString() ?? '';
 
-                      final String name =
-                          data?['name']?.toString() ?? 'بطل فصيح';
+                      final String firstName =
+    (data?['firstName'] ?? '').toString().trim();
+
+final String lastName =
+    (data?['lastName'] ?? '').toString().trim();
+
+final String legacyName =
+    (data?['name'] ?? '').toString().trim();
+
+final String fullName = [
+  firstName,
+  lastName,
+].where((part) => part.isNotEmpty).join(' ');
+
+final String displayName = fullName.isNotEmpty
+    ? fullName
+    : legacyName.isNotEmpty
+        ? legacyName
+        : 'بطل فصيح';
 
                       final String avatar = data?['avatar']?.toString() ?? '🌟';
 
@@ -184,7 +201,7 @@ class MyFriendQrScreen extends StatelessWidget {
                                               CrossAxisAlignment.start,
                                           children: [
                                             Text(
-                                              name,
+                                              displayName,
                                               style: const TextStyle(
                                                 fontSize: 18,
                                                 fontWeight: FontWeight.w700,
