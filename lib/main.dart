@@ -70,21 +70,21 @@ Future<void> _initializeFirebaseMessaging() async {
 
     // User taps notification while app was in background.
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-  final type = message.data['type'];
-  final receiverId = message.data['receiverId'];
+      final type = message.data['type'];
+      final receiverId = message.data['receiverId'];
 
-  if (type == 'friend_request') {
-    navigatorKey.currentState?.pushNamed(
-      '/child/friend-requests',
-      arguments: {'childId': receiverId},
-    );
-  } else if (type == 'practice_invitation') {
-    navigatorKey.currentState?.pushNamed(
-      '/child/notifications',
-      arguments: {'childId': receiverId},
-    );
-  }
-});
+      if (type == 'friend_request') {
+        navigatorKey.currentState?.pushNamed(
+          '/child/friend-requests',
+          arguments: {'childId': receiverId},
+        );
+      } else if (type == 'practice_invitation') {
+        navigatorKey.currentState?.pushNamed(
+          '/child/notifications',
+          arguments: {'childId': receiverId},
+        );
+      }
+    });
 
     // User opens app by tapping a notification
     // while the app was completely closed.
@@ -92,23 +92,23 @@ Future<void> _initializeFirebaseMessaging() async {
         .getInitialMessage();
 
     if (initialMessage != null) {
-  final type = initialMessage.data['type'];
-  final receiverId = initialMessage.data['receiverId'];
+      final type = initialMessage.data['type'];
+      final receiverId = initialMessage.data['receiverId'];
 
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    if (type == 'friend_request') {
-      navigatorKey.currentState?.pushNamed(
-        '/child/friend-requests',
-        arguments: {'childId': receiverId},
-      );
-    } else if (type == 'practice_invitation') {
-      navigatorKey.currentState?.pushNamed(
-        '/child/notifications',
-        arguments: {'childId': receiverId},
-      );
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (type == 'friend_request') {
+          navigatorKey.currentState?.pushNamed(
+            '/child/friend-requests',
+            arguments: {'childId': receiverId},
+          );
+        } else if (type == 'practice_invitation') {
+          navigatorKey.currentState?.pushNamed(
+            '/child/notifications',
+            arguments: {'childId': receiverId},
+          );
+        }
+      });
     }
-  });
-}
   } catch (e) {
     // Notifications failing should NOT stop the app.
     debugPrint('⚠️ Firebase Messaging initialization failed: $e');
@@ -193,18 +193,18 @@ class MyApp extends StatelessWidget {
           return FriendRequestsScreen(childId: id);
         },
         '/child/notifications': (context) {
-  final args = ModalRoute.of(context)!.settings.arguments;
+          final args = ModalRoute.of(context)!.settings.arguments;
 
-  final String? id = args is String
-      ? args
-      : (args as Map?)?['childId'] ?? ChildSession.currentChildId;
+          final String? id = args is String
+              ? args
+              : (args as Map?)?['childId'] ?? ChildSession.currentChildId;
 
-  if (id == null || id.isEmpty) {
-    return const SplashScreen();
-  }
+          if (id == null || id.isEmpty) {
+            return const SplashScreen();
+          }
 
-  return NotificationsScreen(childId: id);
-},
+          return NotificationsScreen(childId: id);
+        },
         '/child/home': (context) {
           final args = ModalRoute.of(context)!.settings.arguments;
           // Check arguments first, then check our global ChildSession as a backup
@@ -226,14 +226,14 @@ class MyApp extends StatelessWidget {
         },
 
         '/child/letter-levels': (context) {
-  final args = ModalRoute.of(context)!.settings.arguments as Map?;
+          final args = ModalRoute.of(context)!.settings.arguments as Map?;
 
-  return LetterLevelsScreen(
-    letter: args?['letter'] ?? 'ض',
-    childId: args?['childId'] ?? '',
-    startingLevel: args?['startingLevel']?.toString() ?? 'مبتدئ',
-  );
-},
+          return LetterLevelsScreen(
+            letter: args?['letter'] ?? 'ض',
+            childId: args?['childId'] ?? '',
+            startingLevel: args?['startingLevel']?.toString() ?? 'مبتدئ',
+          );
+        },
 
         '/child/letter-introduction': (context) {
           final args = ModalRoute.of(context)!.settings.arguments as Map?;
@@ -266,15 +266,15 @@ class MyApp extends StatelessWidget {
           );
         },
 
-      '/child/exercise/listening': (context) {
-  final args = ModalRoute.of(context)!.settings.arguments as Map?;
+        '/child/exercise/listening': (context) {
+          final args = ModalRoute.of(context)!.settings.arguments as Map?;
 
-  return ExerciseListeningScreen(
-    letter: args?['letter'] ?? 'ض',
-    childId: args?['childId'] ?? '',
-    level: args?['level']?.toString() ?? 'beginner',
-  );
-},
+          return ExerciseListeningScreen(
+            letter: args?['letter'] ?? 'ض',
+            childId: args?['childId'] ?? '',
+            level: args?['level']?.toString() ?? 'beginner',
+          );
+        },
 
         '/child/exercise/recording': (context) {
           final args = ModalRoute.of(context)!.settings.arguments as Map?;
@@ -283,6 +283,8 @@ class MyApp extends StatelessWidget {
             letter: args?['letter'] ?? 'ض',
             childId: args?['childId'] ?? '',
             level: args?['level'] ?? 'beginner',
+
+            practiceSessionId: args?['practiceSessionId']?.toString(),
           );
         },
         // ── اختبار تحديد المستوى ──

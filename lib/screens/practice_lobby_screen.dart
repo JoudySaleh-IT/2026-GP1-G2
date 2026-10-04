@@ -274,6 +274,7 @@ class _PracticeLobbyScreenState extends State<PracticeLobbyScreen> {
             'letter': letter,
             'level': level,
             'childId': widget.childId,
+            'practiceSessionId': widget.sessionId,
           },
         );
 
@@ -288,6 +289,7 @@ class _PracticeLobbyScreenState extends State<PracticeLobbyScreen> {
             'letter': letter,
             'level': level,
             'childId': widget.childId,
+            'practiceSessionId': widget.sessionId,
           },
         );
 
@@ -413,23 +415,24 @@ class _PracticeLobbyScreenState extends State<PracticeLobbyScreen> {
     required bool isSender,
     required Map<String, dynamic> receiverProfile,
   }) {
-    final String firstName =
-    (receiverProfile['firstName'] ?? '').toString().trim();
+    final String firstName = (receiverProfile['firstName'] ?? '')
+        .toString()
+        .trim();
 
-final String lastName =
-    (receiverProfile['lastName'] ?? '').toString().trim();
+    final String lastName = (receiverProfile['lastName'] ?? '')
+        .toString()
+        .trim();
 
-final String legacyName =
-    (receiverProfile['name'] ?? '').toString().trim();
+    final String legacyName = (receiverProfile['name'] ?? '').toString().trim();
 
-final String fullName = [
-  firstName,
-  lastName,
-].where((part) => part.isNotEmpty).join(' ');
+    final String fullName = [
+      firstName,
+      lastName,
+    ].where((part) => part.isNotEmpty).join(' ');
 
-final String receiverName = fullName.isNotEmpty
-    ? fullName
-    : legacyName.isNotEmpty
+    final String receiverName = fullName.isNotEmpty
+        ? fullName
+        : legacyName.isNotEmpty
         ? legacyName
         : 'صديقك';
 
@@ -723,23 +726,20 @@ class _PlayerCard extends StatelessWidget {
     const purple = Color(0xFF511281);
     const green = Color(0xFF70A884);
 
-    final String firstName =
-    (profile['firstName'] ?? '').toString().trim();
+    final String firstName = (profile['firstName'] ?? '').toString().trim();
 
-final String lastName =
-    (profile['lastName'] ?? '').toString().trim();
+    final String lastName = (profile['lastName'] ?? '').toString().trim();
 
-final String legacyName =
-    (profile['name'] ?? '').toString().trim();
+    final String legacyName = (profile['name'] ?? '').toString().trim();
 
-final String fullName = [
-  firstName,
-  lastName,
-].where((part) => part.isNotEmpty).join(' ');
+    final String fullName = [
+      firstName,
+      lastName,
+    ].where((part) => part.isNotEmpty).join(' ');
 
-final String name = fullName.isNotEmpty
-    ? fullName
-    : legacyName.isNotEmpty
+    final String name = fullName.isNotEmpty
+        ? fullName
+        : legacyName.isNotEmpty
         ? legacyName
         : 'صديق';
 
