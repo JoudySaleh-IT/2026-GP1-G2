@@ -29,15 +29,6 @@ class ChildHomeScreen extends StatelessWidget {
 
   const ChildHomeScreen({super.key, required this.childId});
 
-  // ✅ دالة التحقق من إتمام التمارين
-  // يجب أن تكون جميع درجات الحروف >= 70 لإعادة التقييم
-  bool _canReassess(Map<String, dynamic> data) {
-    final Map<String, dynamic> scores = data['letterScores'] ?? {};
-
-    if (scores.isEmpty) return false;
-
-    return !scores.values.any((score) => (score as num) < 70);
-  }
 
   // ─── Friend Request Test Dialog ────────────────────────────────────────────
   Future<void> _showFriendRequestTestDialog(BuildContext context) async {
@@ -160,11 +151,48 @@ class ChildHomeScreen extends StatelessWidget {
         }
 
         final data = snapshot.data!.data() as Map<String, dynamic>;
+        bool isLetterCompleted(String letter) {
+  final dynamic rawExerciseProgress = data['exerciseProgress'];
+
+  if (rawExerciseProgress is! Map) {
+    return false;
+  }
+
+  final dynamic letterProgress = rawExerciseProgress[letter];
+
+  if (letterProgress is! Map) {
+    return false;
+  }
+
+  final dynamic advancedProgress = letterProgress['advanced'];
+
+  if (advancedProgress is! Map) {
+    return false;
+  }
+
+  return advancedProgress['listeningPassed'] == true &&
+      advancedProgress['pronunciationPassed'] == true;
+}
 
         final bool hasCompletedPlacement = data['placementDone'] ?? false;
+        final String firstName =
+    (data['firstName'] ?? '').toString().trim();
 
-        // ✅ حساب هل يحق له إعادة التقييم
-        final bool canReassess = _canReassess(data);
+final String nickname =
+    (data['nickname'] ?? '').toString().trim();
+
+final String legacyName =
+    (data['name'] ?? '').toString().trim();
+
+final String displayName = nickname.isNotEmpty
+    ? nickname
+    : firstName.isNotEmpty
+        ? firstName
+        : legacyName.isNotEmpty
+            ? legacyName
+            : 'بطل فصيح';
+
+       
 
         // ─── Dynamic Daily Goal Logic ────────────────────────────────────────
         int assignedLettersCount = 0;
@@ -172,12 +200,14 @@ class ChildHomeScreen extends StatelessWidget {
         if (data['letterScores'] != null) {
           final Map<dynamic, dynamic> scores = data['letterScores'] as Map;
 
-          // نحسب فقط الحروف التي درجتها أقل من 70
-          assignedLettersCount = scores.values.where((score) {
-            final num scoreValue = (score is num) ? score : 0;
+        assignedLettersCount = scores.entries.where((entry) {
+  final num scoreValue =
+      entry.value is num ? entry.value : 0;
 
-            return scoreValue < 70;
-          }).length;
+  final String letter = entry.key.toString();
+
+  return scoreValue < 80 && !isLetterCompleted(letter);
+}).length;
         } else if (data['assignedLetters'] != null) {
           assignedLettersCount = (data['assignedLetters'] as List).length;
         }
@@ -196,9 +226,11 @@ class ChildHomeScreen extends StatelessWidget {
           for (final entry in scores.entries) {
             final num score = entry.value is num ? entry.value : 0;
 
-            if (score < 70) {
-              practiceLetters.add(entry.key.toString());
-            }
+        final String letter = entry.key.toString();
+
+if (score < 80 && !isLetterCompleted(letter)) {
+  practiceLetters.add(letter);
+}
           }
         } else if (data['assignedLetters'] != null) {
           practiceLetters.addAll(
@@ -239,48 +271,33 @@ class ChildHomeScreen extends StatelessWidget {
                 // لم يتم تغيير تصميمه أو وظيفته
                 // ============================================================
                 _ChildHeader(
-                  name: data['name'] ?? 'بطل فصيح',
-                   childId: childId,
-                  avatar: data['avatar'] ?? '🦁',
-                  level: hasCompletedPlacement
-                      ? (data['level'] ?? 'مبتدئ')
-                      : 'لم يُحدَّد المستوى بعد',
-                ),
+  name: displayName,
+  childId: childId,
+  avatar: data['avatar'] ?? '🦁',
+),
 
                 Expanded(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
                     child: Column(
                       children: [
-                        // ====================================================
-                        // PLACEMENT TEST BANNER
-                        // ====================================================
-                        _TestBanner(
-                          isReassessment: hasCompletedPlacement,
-                          isLocked: hasCompletedPlacement && !canReassess,
-                          onTap: () {
-                            if (hasCompletedPlacement && !canReassess) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    'أكمل تمارينك أولاً لتتمكن من إعادة التقييم! 💪',
-                                  ),
-                                  backgroundColor: Color(0xFF511281),
-                                ),
-                              );
+                       // ====================================================
+// PLACEMENT TEST BANNER
+// يظهر فقط إذا الطفل لم يأخذ الاختبار
+// ====================================================
+if (!hasCompletedPlacement) ...[
+_TestBanner(
+  onTap: ()  {
+      Navigator.pushNamed(
+        context,
+        '/child/placement-test',
+        arguments: childId,
+      );
+    },
+  ),
 
-                              return;
-                            }
-
-                            Navigator.pushNamed(
-                              context,
-                              '/child/placement-test',
-                              arguments: childId,
-                            );
-                          },
-                        ),
-
-                        const SizedBox(height: 18),
+  const SizedBox(height: 18),
+],
 
                         // ====================================================
                         // STATS
@@ -370,13 +387,13 @@ class _ChildHeader extends StatelessWidget {
   final String childId;
   final String name;
   final String avatar;
-  final String level;
+  
 
   const _ChildHeader({
     required this.childId,
     required this.name,
     required this.avatar,
-    required this.level,
+    
   });
 
   void _showLogoutDialog(BuildContext context) {
@@ -490,7 +507,7 @@ class _ChildHeader extends StatelessWidget {
     return FaseehStyle.buildLargeHeader(
       context: context,
       title: 'مرحبًا $name!',
-      subtitle: level,
+      subtitle: 'هيا نبدأ التدريب!',
 
       leading: SizedBox(
         width: 48,
@@ -817,14 +834,10 @@ class _ParentPasswordDialogState extends State<_ParentPasswordDialog> {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _TestBanner extends StatefulWidget {
-  final bool isReassessment;
-  final bool isLocked;
   final VoidCallback onTap;
 
   const _TestBanner({
-    required this.isReassessment,
     required this.onTap,
-    this.isLocked = false,
   });
 
   @override
@@ -848,7 +861,12 @@ class _TestBannerState extends State<_TestBanner>
     _scale = Tween<double>(
       begin: 1,
       end: 0.97,
-    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
+    ).animate(
+      CurvedAnimation(
+        parent: _ctrl,
+        curve: Curves.easeInOut,
+      ),
+    );
   }
 
   @override
@@ -859,282 +877,201 @@ class _TestBannerState extends State<_TestBanner>
 
   @override
   Widget build(BuildContext context) {
-    final bool locked = widget.isLocked;
-
-    final Color cardColor = locked
-        ? const Color(0xFFF2EFF3)
-        : const Color(0xFFF7F0FF);
-
-    final Color titleColor = locked
-        ? const Color(0xFF817987)
-        : const Color(0xFF511281);
-
-    final Color actionColor = locked
-        ? const Color(0xFFAAA5AD)
-        : const Color(0xFFFF6969);
+    const Color cardColor = Color(0xFFF7F0FF);
+    const Color titleColor = Color(0xFF511281);
+    const Color actionColor = Color(0xFFFF6969);
 
     return AnimatedBuilder(
       animation: _scale,
       builder: (_, child) {
-        return Transform.scale(scale: _scale.value, child: child);
+        return Transform.scale(
+          scale: _scale.value,
+          child: child,
+        );
       },
       child: GestureDetector(
-        onTapDown: (_) {
-          if (!widget.isLocked) {
-            _ctrl.forward();
-          }
-        },
+        onTapDown: (_) => _ctrl.forward(),
         onTapUp: (_) {
           _ctrl.reverse();
-
-          // نفس الـfunctionality الأصلية
           widget.onTap();
         },
-        onTapCancel: () {
-          _ctrl.reverse();
-        },
-        child: Opacity(
-          opacity: locked ? 0.88 : 1,
-          child: Container(
-            width: double.infinity,
-            constraints: const BoxConstraints(minHeight: 176),
-            decoration: BoxDecoration(
-              color: cardColor,
-              borderRadius: BorderRadius.circular(28),
-              border: Border.all(
-                color: locked
-                    ? const Color(0xFFAAA5AD).withOpacity(0.12)
-                    : const Color(0xFF511281).withOpacity(0.07),
+        onTapCancel: () => _ctrl.reverse(),
+        child: Container(
+          width: double.infinity,
+          constraints: const BoxConstraints(minHeight: 176),
+          decoration: BoxDecoration(
+            color: cardColor,
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(
+              color: const Color(0xFF511281).withOpacity(0.07),
+            ),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x09000000),
+                blurRadius: 8,
+                offset: Offset(0, 3),
               ),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x09000000),
-                  blurRadius: 8,
-                  offset: Offset(0, 3),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(28),
+            child: Stack(
+              children: [
+                Positioned(
+                  right: -52,
+                  top: -62,
+                  child: Container(
+                    width: 160,
+                    height: 160,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFDCC9F5).withOpacity(0.30),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+
+                Positioned(
+                  left: 20,
+                  bottom: -65,
+                  child: Container(
+                    width: 150,
+                    height: 120,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFD9E2).withOpacity(0.42),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+
+                Positioned(
+                  left: -20,
+                  bottom: -42,
+                  child: Container(
+                    width: 175,
+                    height: 90,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFDDF2E3).withOpacity(0.65),
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(100),
+                        topRight: Radius.circular(100),
+                      ),
+                    ),
+                  ),
+                ),
+
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 14, 16, 14),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      const SizedBox(
+                        width: 108,
+                        height: 140,
+                        child: _PlacementBannerBunny(),
+                      ),
+
+                      const SizedBox(width: 11),
+
+                      Expanded(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'اكتشف مستواك!',
+                              style: TextStyle(
+                                color: titleColor,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w800,
+                                fontFamily: 'Tajawal',
+                              ),
+                            ),
+
+                            const SizedBox(height: 5),
+
+                            const Text(
+                              'اختبار قصير يساعدنا على اختيار التمارين المناسبة لك',
+                              style: TextStyle(
+                                color: Color(0xFF777777),
+                                fontSize: 10.8,
+                                height: 1.45,
+                                fontFamily: 'Tajawal',
+                              ),
+                            ),
+
+                            const SizedBox(height: 10),
+
+                            const Row(
+                              children: [
+                                _PlacementMiniStep(
+                                  icon: Icons.image_outlined,
+                                  text: 'شاهد',
+                                  background: Color(0xFFFFE7EC),
+                                  iconColor: Color(0xFFFF7890),
+                                ),
+                                SizedBox(width: 5),
+                                _PlacementMiniStep(
+                                  icon: Icons.mic_rounded,
+                                  text: 'انطق',
+                                  background: Color(0xFFE6F4EA),
+                                  iconColor: Color(0xFF69AD7D),
+                                ),
+                                SizedBox(width: 5),
+                                _PlacementMiniStep(
+                                  icon: Icons.auto_awesome_rounded,
+                                  text: 'اكتشف',
+                                  background: Color(0xFFFFF1C9),
+                                  iconColor: Color(0xFFD79A21),
+                                ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 10),
+
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 7,
+                              ),
+                              decoration: BoxDecoration(
+                                color: actionColor,
+                                borderRadius: BorderRadius.circular(18),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: actionColor.withOpacity(0.20),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.play_arrow_rounded,
+                                    color: Colors.white,
+                                    size: 15,
+                                  ),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    'ابدأ الاختبار',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10.5,
+                                      fontWeight: FontWeight.w700,
+                                      fontFamily: 'Tajawal',
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(28),
-              child: Stack(
-                children: [
-                  // ===========================================================
-                  // Purple pastel circle
-                  // ===========================================================
-                  Positioned(
-                    right: -52,
-                    top: -62,
-                    child: Container(
-                      width: 160,
-                      height: 160,
-                      decoration: BoxDecoration(
-                        color: const Color(
-                          0xFFDCC9F5,
-                        ).withOpacity(locked ? 0.14 : 0.30),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ),
-
-                  // ===========================================================
-                  // Pink pastel circle
-                  // ===========================================================
-                  Positioned(
-                    left: 20,
-                    bottom: -65,
-                    child: Container(
-                      width: 150,
-                      height: 120,
-                      decoration: BoxDecoration(
-                        color: const Color(
-                          0xFFFFD9E2,
-                        ).withOpacity(locked ? 0.15 : 0.42),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ),
-
-                  // ===========================================================
-                  // Green hill
-                  // ===========================================================
-                  Positioned(
-                    left: -20,
-                    bottom: -42,
-                    child: Container(
-                      width: 175,
-                      height: 90,
-                      decoration: BoxDecoration(
-                        color: const Color(
-                          0xFFDDF2E3,
-                        ).withOpacity(locked ? 0.22 : 0.65),
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(100),
-                          topRight: Radius.circular(100),
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  // ===========================================================
-                  // Main content
-                  // ===========================================================
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(14, 14, 16, 14),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        // =====================================================
-                        // Signature Bunny
-                        // =====================================================
-                        SizedBox(
-                          width: 108,
-                          height: 140,
-                          child: locked
-                              ? const _PlacementBannerBunny(locked: true)
-                              : const _PlacementBannerBunny(),
-                        ),
-
-                        const SizedBox(width: 11),
-
-                        // =====================================================
-                        // Text
-                        // =====================================================
-                        Expanded(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                locked
-                                    ? 'إعادة التقييم'
-                                    : widget.isReassessment
-                                    ? 'أعد اكتشاف مستواك'
-                                    : 'اكتشف مستواك!',
-                                style: TextStyle(
-                                  color: titleColor,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w800,
-                                  fontFamily: 'Tajawal',
-                                ),
-                              ),
-
-                              const SizedBox(height: 5),
-
-                              Text(
-                                locked
-                                    ? 'أكمل تمارينك أولًا لفتح الاختبار'
-                                    : widget.isReassessment
-                                    ? 'اختبار قصير يساعدنا على تحديث مستواك'
-                                    : 'اختبار قصير يساعدنا على اختيار التمارين المناسبة لك',
-                                style: TextStyle(
-                                  color: locked
-                                      ? const Color(0xFF8D878F)
-                                      : const Color(0xFF777777),
-                                  fontSize: 10.8,
-                                  height: 1.45,
-                                  fontFamily: 'Tajawal',
-                                ),
-                              ),
-
-                              const SizedBox(height: 10),
-
-                              // =================================================
-                              // Simple steps
-                              // =================================================
-                              if (!locked)
-                                const Row(
-                                  children: [
-                                    _PlacementMiniStep(
-                                      icon: Icons.image_outlined,
-                                      text: 'شاهد',
-                                      background: Color(0xFFFFE7EC),
-                                      iconColor: Color(0xFFFF7890),
-                                    ),
-
-                                    SizedBox(width: 5),
-
-                                    _PlacementMiniStep(
-                                      icon: Icons.mic_rounded,
-                                      text: 'انطق',
-                                      background: Color(0xFFE6F4EA),
-                                      iconColor: Color(0xFF69AD7D),
-                                    ),
-
-                                    SizedBox(width: 5),
-
-                                    _PlacementMiniStep(
-                                      icon: Icons.auto_awesome_rounded,
-                                      text: 'اكتشف',
-                                      background: Color(0xFFFFF1C9),
-                                      iconColor: Color(0xFFD79A21),
-                                    ),
-                                  ],
-                                ),
-
-                              if (!locked) const SizedBox(height: 10),
-
-                              // =================================================
-                              // CTA
-                              // =================================================
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 7,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: actionColor,
-                                  borderRadius: BorderRadius.circular(18),
-                                  boxShadow: locked
-                                      ? null
-                                      : [
-                                          BoxShadow(
-                                            color: actionColor.withOpacity(
-                                              0.20,
-                                            ),
-                                            blurRadius: 6,
-                                            offset: const Offset(0, 2),
-                                          ),
-                                        ],
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      locked
-                                          ? Icons.lock_outline_rounded
-                                          : widget.isReassessment
-                                          ? Icons.refresh_rounded
-                                          : Icons.play_arrow_rounded,
-                                      color: Colors.white,
-                                      size: 15,
-                                    ),
-
-                                    const SizedBox(width: 4),
-
-                                    Text(
-                                      locked
-                                          ? 'مغلق الآن'
-                                          : widget.isReassessment
-                                          ? 'أعد التقييم'
-                                          : 'ابدأ الاختبار',
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 10.5,
-                                        fontWeight: FontWeight.w700,
-                                        fontFamily: 'Tajawal',
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
             ),
           ),
         ),
@@ -1195,9 +1132,7 @@ class _PlacementMiniStep extends StatelessWidget {
 // =============================================================================
 
 class _PlacementBannerBunny extends StatelessWidget {
-  final bool locked;
-
-  const _PlacementBannerBunny({this.locked = false});
+ const _PlacementBannerBunny();
 
   @override
   Widget build(BuildContext context) {
@@ -1206,9 +1141,8 @@ class _PlacementBannerBunny extends StatelessWidget {
     const Color innerEar = Color(0xFFFFA1B7);
     const Color details = Color(0xFF4D3855);
 
-    final Color faceColor = locked ? const Color(0xFFE6E2E7) : normalFace;
-
-    final Color bodyColor = locked ? const Color(0xFFAAA5AD) : normalBody;
+ const Color faceColor = normalFace;
+const Color bodyColor = normalBody;
 
     return Stack(
       alignment: Alignment.center,
@@ -1226,12 +1160,10 @@ class _PlacementBannerBunny extends StatelessWidget {
               color: Colors.white.withOpacity(0.88),
               borderRadius: BorderRadius.circular(13),
             ),
-            child: Text(
-              locked ? 'بعد قليل' : 'هيا!',
-              style: TextStyle(
-                color: locked
-                    ? const Color(0xFF8D878F)
-                    : const Color(0xFF8B55B3),
+            child: const Text(
+  'هيا!',
+  style: TextStyle(
+    color: Color(0xFF8B55B3),
                 fontSize: 9,
                 fontWeight: FontWeight.w700,
                 fontFamily: 'Tajawal',
@@ -1243,7 +1175,6 @@ class _PlacementBannerBunny extends StatelessWidget {
         // =========================================================
         // Happy decorative lines
         // =========================================================
-        if (!locked)
           Positioned(
             top: 38,
             right: 3,
@@ -1260,7 +1191,6 @@ class _PlacementBannerBunny extends StatelessWidget {
             ),
           ),
 
-        if (!locked)
           Positioned(
             top: 47,
             right: 0,
@@ -1295,9 +1225,7 @@ class _PlacementBannerBunny extends StatelessWidget {
                 width: 7,
                 height: 27,
                 decoration: BoxDecoration(
-                  color: locked
-                      ? const Color(0xFFCFC9D0)
-                      : innerEar.withOpacity(0.55),
+                  color: innerEar.withOpacity(0.55),
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
@@ -1325,9 +1253,7 @@ class _PlacementBannerBunny extends StatelessWidget {
                   width: 7,
                   height: 27,
                   decoration: BoxDecoration(
-                    color: locked
-                        ? const Color(0xFFCFC9D0)
-                        : innerEar.withOpacity(0.55),
+                    color: innerEar.withOpacity(0.55),
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
@@ -1385,7 +1311,7 @@ class _PlacementBannerBunny extends StatelessWidget {
                     width: 6,
                     height: 7,
                     decoration: BoxDecoration(
-                      color: locked ? const Color(0xFF807A82) : details,
+                      color: details,
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -1397,14 +1323,13 @@ class _PlacementBannerBunny extends StatelessWidget {
                     width: 6,
                     height: 7,
                     decoration: BoxDecoration(
-                      color: locked ? const Color(0xFF807A82) : details,
+                      color: details,
                       shape: BoxShape.circle,
                     ),
                   ),
                 ),
 
                 // Cheeks
-                if (!locked)
                   Positioned(
                     top: 35,
                     right: 7,
@@ -1418,7 +1343,6 @@ class _PlacementBannerBunny extends StatelessWidget {
                     ),
                   ),
 
-                if (!locked)
                   Positioned(
                     top: 35,
                     left: 7,
@@ -1440,9 +1364,7 @@ class _PlacementBannerBunny extends StatelessWidget {
                     width: 7,
                     height: 5,
                     decoration: BoxDecoration(
-                      color: locked
-                          ? const Color(0xFFAAA5AD)
-                          : const Color(0xFFFF7890),
+                      color: const Color(0xFFFF7890),
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -1458,7 +1380,7 @@ class _PlacementBannerBunny extends StatelessWidget {
                     decoration: BoxDecoration(
                       border: Border(
                         bottom: BorderSide(
-                          color: locked ? const Color(0xFF807A82) : details,
+color: details,
                           width: 1.5,
                         ),
                       ),
@@ -1473,32 +1395,12 @@ class _PlacementBannerBunny extends StatelessWidget {
             ),
           ),
         ),
-
-        // =========================================================
-        // Lock icon when reassessment unavailable
-        // =========================================================
-        if (locked)
-          Positioned(
-            left: 2,
-            bottom: 9,
-            child: Container(
-              width: 31,
-              height: 31,
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.lock_outline_rounded,
-                color: Color(0xFF8D878F),
-                size: 17,
-              ),
-            ),
-          ),
-      ],
+              ],
     );
   }
 }
+
+       
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Stat Card

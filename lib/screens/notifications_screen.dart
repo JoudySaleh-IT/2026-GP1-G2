@@ -518,11 +518,29 @@ Widget _buildNotificationItem(
 
       final profile = profileSnapshot.data;
 
-      final name = profile?['name']?.toString() ?? 'صديقك';
+      final String firstName =
+    (profile?['firstName'] ?? '').toString().trim();
+
+final String lastName =
+    (profile?['lastName'] ?? '').toString().trim();
+
+final String legacyName =
+    (profile?['name'] ?? '').toString().trim();
+
+final String fullName = [
+  firstName,
+  lastName,
+].where((part) => part.isNotEmpty).join(' ');
+
+final String displayName = fullName.isNotEmpty
+    ? fullName
+    : legacyName.isNotEmpty
+        ? legacyName
+        : 'صديقك';
       final avatar = profile?['avatar']?.toString() ?? '🌟';
 
       return _NotificationCard(
-        name: name,
+        name: displayName,
         avatar: avatar,
         type: type,
         isRead: isRead,

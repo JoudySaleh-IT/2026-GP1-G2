@@ -16,6 +16,7 @@ import '../data/pronunciation_repository.dart';
 // إذا الشاشة داخل lib/screens بدلاً من lib مباشرة، استخدمي:
 // import '../models/pronunciation_exercise_data.dart';
 // import '../data/pronunciation_repository.dart';
+import '../services/practice_together_service.dart';
 
 // ---------------------------------------------------------------------------
 // Recording state
@@ -32,12 +33,20 @@ class ExerciseRecordingScreen extends StatefulWidget {
   final String level;
   final String childId;
 
+  // null = normal exercise
+  // non-null = Practice Together competition
+  final String? practiceSessionId;
+
   const ExerciseRecordingScreen({
     super.key,
     required this.letter,
     required this.level,
     required this.childId,
+    this.practiceSessionId,
   });
+
+  bool get isPracticeTogether =>
+      practiceSessionId != null && practiceSessionId!.isNotEmpty;
 
   @override
   State<ExerciseRecordingScreen> createState() =>
@@ -60,6 +69,7 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
 
   final AudioPlayer _audioPlayer = AudioPlayer();
   final AudioRecorder _recorder = AudioRecorder();
+  final PracticeTogetherService _practiceService = PracticeTogetherService();
 
   String? _recordedFilePath;
 
@@ -462,7 +472,7 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
       final request = http.MultipartRequest(
         'POST',
         Uri.parse(
-          'https://faseeh-api-best-model-816737402071.me-central1.run.app/process-audio/',
+          'https://faseeh-api-final-model-816737402071.me-central1.run.app/process-audio/',
         ),
       );
 
@@ -582,11 +592,40 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
   // Next exercise
   // -------------------------------------------------------------------------
 
-  void _handleNext() {
+  Future<void> _handleNext() async {
     if (_recordingState != RecordingState.recorded) {
       return;
     }
 
+    // Practice Together:
+    if (widget.isPracticeTogether) {
+      try {
+        await _practiceService.updateProgress(
+          sessionId: widget.practiceSessionId!,
+          childId: widget.childId,
+
+          // _currentExercise is zero-based:
+          // question 0 completed = progress 1
+          completedQuestions: _currentExercise + 1,
+        );
+      } catch (e) {
+        debugPrint('Practice Together progress update failed: $e');
+
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'تعذر تحديث التحدي، حاول مرة أخرى',
+              textDirection: TextDirection.rtl,
+              style: TextStyle(fontFamily: 'Tajawal'),
+            ),
+          ),
+        );
+
+        return;
+      }
+    }
     // ---------------------------------------------------------
     // يوجد تمرين آخر
     // ---------------------------------------------------------
@@ -979,8 +1018,11 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
             onPressed: () => Navigator.pushNamed(
               context,
               '/child/letter-levels',
-
-              arguments: {'letter': widget.letter, 'childId': widget.childId},
+              arguments: {
+                'letter': widget.letter,
+                'childId': widget.childId,
+                'startingLevel': widget.level,
+              },
             ),
           ),
 

@@ -75,10 +75,16 @@ class _ExercisesScreenState extends State<ExercisesScreen> {
             // إظهار الحروف التي تحتاج إلى تدريب فقط
             if (score < 80) {
               final progress = _getCurrentLevelProgress(
-                rawExerciseProgress,
-                letter.toString(),
-              );
+  rawExerciseProgress,
+  letter.toString(),
+  score,
+);
+final bool letterCompleted =
+    progress.level == 'متقدم' && progress.completed == 2;
 
+if (letterCompleted) {
+  return;
+}
               loaded.add(
                 _LetterData(
                   letter: letter.toString(),
@@ -137,58 +143,96 @@ class _ExercisesScreenState extends State<ExercisesScreen> {
     return names[letter] ?? letter;
   }
 
-  ({String level, int completed}) _getCurrentLevelProgress(
-    dynamic rawExerciseProgress,
-    String letter,
-  ) {
-    if (rawExerciseProgress is! Map) {
-      return (level: 'مبتدئ', completed: 0);
-    }
+({String level, int completed}) _getCurrentLevelProgress(
+  dynamic rawExerciseProgress,
+  String letter,
+  int placementScore,
+) {
+  // Placement:
+  // < 50   = Foundational  → يبدأ Beginner
+  // 50–79  = Developing    → يبدأ Intermediate
+  // >= 80  = Mastered      → لا يصل لهذه الدالة أصلًا
 
-    final dynamic letterProgress = rawExerciseProgress[letter];
+  final String startingLevel =
+      placementScore < 50 ? 'beginner' : 'intermediate';
 
-    if (letterProgress is! Map) {
-      return (level: 'مبتدئ', completed: 0);
-    }
+  final String startingArabicLevel =
+      placementScore < 50 ? 'مبتدئ' : 'متوسط';
 
-    const levels = [
-      ('beginner', 'مبتدئ'),
-      ('intermediate', 'متوسط'),
-      ('advanced', 'متقدم'),
-    ];
-
-    for (final item in levels) {
-      final String key = item.$1;
-      final String arabicLevel = item.$2;
-
-      final dynamic levelProgress = letterProgress[key];
-
-      if (levelProgress is! Map) {
-        return (level: arabicLevel, completed: 0);
-      }
-
-      final bool listeningPassed = levelProgress['listeningPassed'] == true;
-
-      final bool pronunciationPassed =
-          levelProgress['pronunciationPassed'] == true;
-
-      // ما خلص الاستماع
-      if (!listeningPassed) {
-        return (level: arabicLevel, completed: 0);
-      }
-
-      // خلص الاستماع لكن ما خلص النطق
-      if (listeningPassed && !pronunciationPassed) {
-        return (level: arabicLevel, completed: 1);
-      }
-
-      // لو خلص الاثنين نكمل ونشوف المستوى التالي
-    }
-
-    // خلص جميع المستويات
-    return (level: 'متقدم', completed: 2);
+  // لا يوجد أي تقدم محفوظ
+  if (rawExerciseProgress is! Map) {
+    return (
+      level: startingArabicLevel,
+      completed: 0,
+    );
   }
 
+  final dynamic letterProgress = rawExerciseProgress[letter];
+
+  // الطفل لم يبدأ تمارين هذا الحرف بعد
+  if (letterProgress is! Map) {
+    return (
+      level: startingArabicLevel,
+      completed: 0,
+    );
+  }
+
+  const levels = [
+    ('beginner', 'مبتدئ'),
+    ('intermediate', 'متوسط'),
+    ('advanced', 'متقدم'),
+  ];
+
+  // Foundational يبدأ من Beginner
+  // Developing يبدأ من Intermediate
+  final int startIndex = startingLevel == 'beginner' ? 0 : 1;
+
+  for (int i = startIndex; i < levels.length; i++) {
+    final String key = levels[i].$1;
+    final String arabicLevel = levels[i].$2;
+
+    final dynamic levelProgress = letterProgress[key];
+
+    // هذا المستوى لم يبدأ بعد
+    if (levelProgress is! Map) {
+      return (
+        level: arabicLevel,
+        completed: 0,
+      );
+    }
+
+    final bool listeningPassed =
+        levelProgress['listeningPassed'] == true;
+
+    final bool pronunciationPassed =
+        levelProgress['pronunciationPassed'] == true;
+
+    // لم يجتز الاستماع
+    if (!listeningPassed) {
+      return (
+        level: arabicLevel,
+        completed: 0,
+      );
+    }
+
+    // اجتاز الاستماع ولم يجتز النطق
+    if (listeningPassed && !pronunciationPassed) {
+      return (
+        level: arabicLevel,
+        completed: 1,
+      );
+    }
+
+    // إذا اجتاز Listening + Speaking
+    // نكمل تلقائيًا للمستوى التالي
+  }
+
+  // أنهى كل المستويات المطلوبة لهذا الحرف
+  return (
+    level: 'متقدم',
+    completed: 2,
+  );
+}
   @override
   Widget build(BuildContext context) {
     final double screenWidth = MediaQuery.of(context).size.width;
@@ -240,12 +284,14 @@ class _ExercisesScreenState extends State<ExercisesScreen> {
                   ),
 
                   _isLoading
-                      ? const Center(
-                          child: CircularProgressIndicator(color: _purple),
-                        )
-                      : _filteredLetters.isEmpty
-                      ? _buildEmptyState()
-                      : SingleChildScrollView(
+    ? const Center(
+        child: CircularProgressIndicator(color: _purple),
+      )
+    : !_hasCompletedPlacement
+    ? _buildEmptyState()
+    : _filteredLetters.isEmpty
+    ? _buildEmptyState()
+    : SingleChildScrollView(
                           padding: EdgeInsets.fromLTRB(
                             isTablet ? screenWidth * 0.1 : 16,
                             16,
@@ -313,10 +359,11 @@ class _ExercisesScreenState extends State<ExercisesScreen> {
                                         context,
                                         '/child/letter-levels',
                                         arguments: {
-                                          'letter': item.letter,
-                                          'currentProgress': item.completed,
-                                          'childId': widget.childId,
-                                        },
+  'letter': item.letter,
+  'currentProgress': item.completed,
+  'childId': widget.childId,
+  'startingLevel': item.level,
+},
                                       );
                                     },
                                   );
@@ -630,8 +677,7 @@ class _LetterCardState extends State<_LetterCard>
   Widget build(BuildContext context) {
     final double percent = widget.item.completed / widget.item.total;
 
-    final bool isCritical = widget.item.score < 40;
-
+final bool isCritical = widget.item.score < 50;
     final Color statusColor = isCritical
         ? const Color(0xFFFF6969)
         : const Color(0xFFF1A340);

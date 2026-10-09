@@ -218,8 +218,34 @@ class ParentDashboardScreen extends StatelessWidget {
     Map<String, dynamic> data,
   ) {
     final int progress = data['progress'] ?? 0;
-    // 1. 👈 استخراج حالة اكتمال الاختبار من قاعدة البيانات
-    final bool hasCompletedPlacement = data['placementDone'] ?? false;
+    
+    final String firstName =
+    (data['firstName'] ?? '').toString().trim();
+
+final String lastName =
+    (data['lastName'] ?? '').toString().trim();
+
+final String nickname =
+    (data['nickname'] ?? '').toString().trim();
+
+final String legacyName =
+    (data['name'] ?? '').toString().trim();
+
+final String fullName = [
+  firstName,
+  lastName,
+].where((part) => part.isNotEmpty).join(' ');
+
+final String displayName = nickname.isNotEmpty
+    ? nickname
+    : firstName.isNotEmpty
+        ? firstName
+        : legacyName.isNotEmpty
+            ? legacyName
+            : 'بدون اسم';
+
+final String secondaryName =
+    fullName.isNotEmpty ? fullName : legacyName;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -231,7 +257,10 @@ class ParentDashboardScreen extends StatelessWidget {
         ],
       ),
       child: ListTile(
-        contentPadding: const EdgeInsets.all(16),
+        contentPadding: const EdgeInsets.symmetric(
+  horizontal: 16,
+  vertical: 10,
+),
         leading: CircleAvatar(
           radius: 28,
           backgroundColor: const Color(0xFFFCF9EA),
@@ -240,30 +269,32 @@ class ParentDashboardScreen extends StatelessWidget {
             style: const TextStyle(fontSize: 30),
           ),
         ),
-        title: Text(
-          data['name'] ?? 'بدون اسم',
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
+  title: Text(
+  displayName,
+  style: TextStyle(
+    fontWeight: FontWeight.bold,
+    fontFamily: 'Tajawal',
+    color: nickname.isNotEmpty
+        ? const Color(0xFF511281)
+        : const Color(0xFF222222),
+  ),
+),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 4),
-            // 2. 👈 تحديث واجهة المستوى بناءً على حالة الاختبار مع ألوان ديناميكية
-            Text(
-              hasCompletedPlacement
-                  ? 'المستوى: ${data['level'] ?? 'مبتدئ'} '
-                  : 'لم يُحدَّد المستوى بعد',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                fontFamily: 'Tajawal',
-                // إذا لم يكمل الاختبار، يظهر باللون الأحمر/البرتقالي للتنبيه، وإلا باللون البنفسجي
-                color: hasCompletedPlacement
-                    ? const Color(0xFF511281)
-                    : const Color.fromARGB(147, 255, 105, 105),
-              ),
-            ),
-            const SizedBox(height: 8),
+            if (secondaryName.isNotEmpty &&
+    secondaryName != displayName) ...[
+  const SizedBox(height: 2),
+  Text(
+    secondaryName,
+    style: const TextStyle(
+      fontSize: 11,
+      color: Colors.grey,
+      fontFamily: 'Tajawal',
+    ),
+  ),
+],
+   const SizedBox(height: 12),        
             ClipRRect(
               borderRadius: BorderRadius.circular(10),
               child: LinearProgressIndicator(

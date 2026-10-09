@@ -67,7 +67,9 @@ class AuthService {
   // ─── إضافة ملف طفل جديد (يدعم تعدد الأطفال) ───
   // ─── إضافة ملف طفل جديد (تحديث القيم الابتدائية) ───
 Future<bool> createChildProfile({
-  required String name,
+  required String firstName,
+  required String lastName,
+  String? nickname,
   required int age,
   required DateTime dob,
   required String gender,
@@ -79,6 +81,8 @@ Future<bool> createChildProfile({
     if (currentParentId == null) {
       return false;
     }
+final String fullName = '$firstName $lastName'.trim();
+final String cleanNickname = nickname?.trim() ?? '';
 
     const int maxAttempts = 10;
 
@@ -109,18 +113,25 @@ Future<bool> createChildProfile({
 
           // 1. Private child document
           transaction.set(childRef, {
-            'parentId': currentParentId,
-            'name': name,
-            'dob': Timestamp.fromDate(dob),
-            'age': age,
-            'gender': gender,
-            'avatar': avatar,
-            'progress': 0,
-            'level': 'لم يتم تحديد المستوى ',
-            'placementDone': false,
-            'fasehId': fasehId,
-            'createdAt': FieldValue.serverTimestamp(),
-          });
+  'parentId': currentParentId,
+
+  // Child identity
+  'firstName': firstName.trim(),
+  'lastName': lastName.trim(),
+  'nickname': cleanNickname,
+
+  // Keep name temporarily for compatibility with existing screens
+  'name': fullName,
+
+  'dob': Timestamp.fromDate(dob),
+  'age': age,
+  'gender': gender,
+  'avatar': avatar,
+  'progress': 0,
+  'placementDone': false,
+  'fasehId': fasehId,
+  'createdAt': FieldValue.serverTimestamp(),
+});
 
           // 2. Faseh ID lookup document
           transaction.set(fasehIdRef, {
@@ -130,11 +141,17 @@ Future<bool> createChildProfile({
 
           // 3. Safe public profile
           transaction.set(publicProfileRef, {
-            'fasehId': fasehId,
-            'name': name,
-            'avatar': avatar,
-            'createdAt': FieldValue.serverTimestamp(),
-          });
+  'fasehId': fasehId,
+
+  'firstName': firstName.trim(),
+  'lastName': lastName.trim(),
+
+  // Temporary compatibility field
+  'name': fullName,
+
+  'avatar': avatar,
+  'createdAt': FieldValue.serverTimestamp(),
+});
         });
 
         // Everything was created successfully.
@@ -241,10 +258,18 @@ Future<String> ensureChildFasehIdentity(String childId) async {
           }
 
           final String childName =
-              (latestChildData['name'] ?? '').toString();
+    (latestChildData['name'] ?? '').toString().trim();
 
-          final String childAvatar =
-              (latestChildData['avatar'] ?? '').toString();
+final String firstName =
+    (latestChildData['firstName'] ?? '').toString().trim();
+
+final String lastName =
+    (latestChildData['lastName'] ?? '').toString().trim();
+
+
+
+final String childAvatar =
+    (latestChildData['avatar'] ?? '').toString();
 
           // 1. Add fasehId to the EXISTING private child document.
           transaction.update(childRef, {
@@ -259,11 +284,18 @@ Future<String> ensureChildFasehIdentity(String childId) async {
 
           // 3. Create safe public profile.
           transaction.set(publicProfileRef, {
-            'fasehId': fasehId,
-            'name': childName,
-            'avatar': childAvatar,
-            'createdAt': FieldValue.serverTimestamp(),
-          });
+  'fasehId': fasehId,
+
+  // New identity fields
+  'firstName': firstName,
+  'lastName': lastName,
+
+  // Keep legacy/full name for compatibility
+  'name': childName,
+
+  'avatar': childAvatar,
+  'createdAt': FieldValue.serverTimestamp(),
+});
 
           return fasehId;
         });
@@ -344,9 +376,11 @@ Future<String> ensureChildFasehIdentity(String childId) async {
   User? get currentUser => _auth.currentUser;
 
   // ─── تحديث بيانات الطفل (تم حذف gradeLevel تماماً) ───
- Future<void> updateChildProfile({
+Future<void> updateChildProfile({
   required String childId,
-  required String name,
+  required String firstName,
+  required String lastName,
+  String? nickname,
   required int age,
   required String avatar,
   required DateTime dob,
@@ -357,6 +391,12 @@ Future<String> ensureChildFasehIdentity(String childId) async {
     if (currentParentId == null) {
       throw Exception('Parent is not authenticated.');
     }
+  final String cleanFirstName = firstName.trim();
+final String cleanLastName = lastName.trim();
+final String cleanNickname = nickname?.trim() ?? '';
+
+final String fullName =
+    '$cleanFirstName $cleanLastName'.trim();
 
     final childRef =
         _db.collection('children').doc(childId);
@@ -388,20 +428,31 @@ Future<String> ensureChildFasehIdentity(String childId) async {
       // ─── ALL WRITES AFTER READS ───
 
       transaction.update(childRef, {
-        'name': name,
-        'age': age,
-        'dob': Timestamp.fromDate(dob),
-        'avatar': avatar,
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
+  'firstName': cleanFirstName,
+  'lastName': cleanLastName,
+  'nickname': cleanNickname,
+
+  // Keep for compatibility with old screens
+  'name': fullName,
+
+  'age': age,
+  'dob': Timestamp.fromDate(dob),
+  'avatar': avatar,
+  'updatedAt': FieldValue.serverTimestamp(),
+});
 
       // Keep the safe public profile synchronized.
       if (publicProfileSnapshot.exists) {
-        transaction.update(publicProfileRef, {
-          'name': name,
-          'avatar': avatar,
-        });
-      }
+  transaction.update(publicProfileRef, {
+    'firstName': cleanFirstName,
+    'lastName': cleanLastName,
+
+    // Keep for compatibility
+    'name': fullName,
+
+    'avatar': avatar,
+  });
+}
     });
   } catch (e) {
     print("Error updating child: $e");
