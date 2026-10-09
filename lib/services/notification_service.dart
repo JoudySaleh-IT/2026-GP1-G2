@@ -5,31 +5,93 @@ final GlobalKey<ScaffoldMessengerState> rootScaffoldMessengerKey =
     GlobalKey<ScaffoldMessengerState>();
 
 class NotificationService {
-  static void showSuccessSnackBar(String message) {
-    rootScaffoldMessengerKey.currentState?.showSnackBar(
-      SnackBar(
-        content: Text(
-          message,
-          style: const TextStyle(fontFamily: 'Tajawal'),
-        ),
-        backgroundColor: const Color(0xFF511281),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
+ static void showSuccessSnackBar(String message) {
+  final messenger = rootScaffoldMessengerKey.currentState;
 
-  static void showErrorSnackBar(String message) {
-    rootScaffoldMessengerKey.currentState?.showSnackBar(
-      SnackBar(
-        content: Text(
-          message,
-          style: const TextStyle(fontFamily: 'Tajawal'),
-        ),
-        backgroundColor: Colors.red.shade700,
-        behavior: SnackBarBehavior.floating,
+  if (messenger == null) return;
+
+  // Prevent multiple SnackBars from stacking.
+  messenger.hideCurrentSnackBar();
+
+  messenger.showSnackBar(
+    SnackBar(
+      behavior: SnackBarBehavior.floating,
+      duration: const Duration(seconds: 4),
+      backgroundColor: const Color(0xFF511281),
+      margin: const EdgeInsets.all(16),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
       ),
-    );
-  }
+      content: Directionality(
+        textDirection: TextDirection.rtl,
+        child: Row(
+          children: [
+            const Icon(
+  Icons.notifications_rounded,
+              color: Colors.white,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(
+                  fontFamily: 'Tajawal',
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+static void showErrorSnackBar(String message) {
+  final messenger = rootScaffoldMessengerKey.currentState;
+
+  if (messenger == null) return;
+
+  // Prevent multiple SnackBars from stacking.
+  messenger.hideCurrentSnackBar();
+
+  messenger.showSnackBar(
+    SnackBar(
+      behavior: SnackBarBehavior.floating,
+      duration: const Duration(seconds: 4),
+      backgroundColor: Colors.red.shade700,
+      margin: const EdgeInsets.all(16),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      content: Directionality(
+        textDirection: TextDirection.rtl,
+        child: Row(
+          children: [
+            const Icon(
+              Icons.error_outline_rounded,
+              color: Colors.white,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(
+                  fontFamily: 'Tajawal',
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
 
   static void showLiveNotification({
     required String title,

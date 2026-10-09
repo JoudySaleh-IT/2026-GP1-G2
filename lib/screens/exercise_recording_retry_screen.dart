@@ -9,6 +9,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:http/http.dart' as http;
 
 import 'style_constants.dart';
+import '../services/notification_service.dart';
 
 // ---------------------------------------------------------------------------
 // Retry state
@@ -497,35 +498,12 @@ class _ExerciseRecordingRetryScreenState
   // -------------------------------------------------------------------------
 
   void _showAppSnackBar(String message, {bool isError = false}) {
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        behavior: SnackBarBehavior.fixed,
-
-        backgroundColor: isError ? _red : _deepPurple,
-
-        content: Directionality(
-          textDirection: TextDirection.rtl,
-
-          child: Align(
-            alignment: Alignment.centerRight,
-
-            child: Text(
-              message,
-
-              textAlign: TextAlign.right,
-
-              style: const TextStyle(
-                fontFamily: 'Tajawal',
-                color: Colors.white,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
+  if (isError) {
+    NotificationService.showErrorSnackBar(message);
+  } else {
+    NotificationService.showSuccessSnackBar(message);
   }
+}
 
   // -------------------------------------------------------------------------
   // Build

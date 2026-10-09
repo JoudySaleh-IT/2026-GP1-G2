@@ -9,7 +9,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:http/http.dart' as http;
 
 import 'style_constants.dart';
-
+import '../services/notification_service.dart';
 // إذا exercise_recording_screen.dart موجود مباشرة داخل lib
 import '../models/pronunciation_exercise_data.dart';
 import '../data/pronunciation_repository.dart';
@@ -267,14 +267,9 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
         _isExampleAudioPlaying = false;
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'تعذر تشغيل الصوت: ${_exercise.audioPath}',
-            textAlign: TextAlign.center,
-          ),
-        ),
-      );
+      NotificationService.showErrorSnackBar(
+  'تعذر تشغيل الصوت: ${_exercise.audioPath}',
+);
     }
   }
 
@@ -291,14 +286,9 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
     if (!hasPermission) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'نحتاج إذن الميكروفون لتسجيل صوتك',
-            textAlign: TextAlign.center,
-          ),
-        ),
-      );
+     NotificationService.showErrorSnackBar(
+  'نحتاج إذن الميكروفون لتسجيل صوتك',
+);
 
       return;
     }
@@ -613,15 +603,9 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
 
         if (!mounted) return;
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'تعذر تحديث التحدي، حاول مرة أخرى',
-              textDirection: TextDirection.rtl,
-              style: TextStyle(fontFamily: 'Tajawal'),
-            ),
-          ),
-        );
+        NotificationService.showErrorSnackBar(
+  'تعذر تحديث التحدي، حاول مرة أخرى',
+);
 
         return;
       }

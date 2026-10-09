@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../services/friend_service.dart';
 import 'style_constants.dart';
+import '../services/notification_service.dart';
 
 class FriendRequestsScreen extends StatefulWidget {
   final String childId;
@@ -26,35 +27,13 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
   // Standard App SnackBar
   // بدون تغيير
   // ─────────────────────────────────────────────
-  void _showAppSnackBar(String message, {Color backgroundColor = _purple}) {
-    final messenger = ScaffoldMessenger.of(context);
-
-    messenger.hideCurrentSnackBar();
-
-    messenger.showSnackBar(
-      SnackBar(
-        backgroundColor: backgroundColor,
-        behavior: SnackBarBehavior.fixed,
-        elevation: 0,
-        duration: const Duration(seconds: 3),
-        content: Directionality(
-          textDirection: TextDirection.rtl,
-          child: Align(
-            alignment: Alignment.centerRight,
-            child: Text(
-              message,
-              textAlign: TextAlign.right,
-              style: const TextStyle(
-                fontFamily: 'Tajawal',
-                fontSize: 14,
-                color: Colors.white,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
+ void _showAppSnackBar(String message, {Color backgroundColor = _purple}) {
+  if (backgroundColor == _coral) {
+    NotificationService.showErrorSnackBar(message);
+  } else {
+    NotificationService.showSuccessSnackBar(message);
   }
+}
 
   // ─────────────────────────────────────────────
   // Get Sender Profile

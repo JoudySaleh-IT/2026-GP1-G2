@@ -143,11 +143,9 @@ class ChildSelectionScreen extends StatelessWidget {
   } catch (e) {
     if (!context.mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('حدث خطأ في إنشاء الكود'),
-      ),
-    );
+    NotificationService.showErrorSnackBar(
+  'حدث خطأ في إنشاء الكود',
+);
   }
 }
 
@@ -176,13 +174,9 @@ class ChildSelectionScreen extends StatelessWidget {
   } catch (e) {
     if (!context.mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'حدث خطأ أثناء تجهيز ملف الطفل. حاول مرة أخرى.',
-        ),
-      ),
-    );
+  NotificationService.showErrorSnackBar(
+  'حدث خطأ أثناء تجهيز ملف الطفل. حاول مرة أخرى.',
+);
   }
 }
 

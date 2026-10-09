@@ -4,6 +4,7 @@ import '../services/practice_together_service.dart';
 import 'friend_requests_screen.dart';
 import 'style_constants.dart';
 import 'practice_lobby_screen.dart';
+import '../services/notification_service.dart';
 
 class NotificationsScreen extends StatelessWidget {
   final String childId;
@@ -33,26 +34,17 @@ Stream<DocumentSnapshot<Map<String, dynamic>>> _watchPracticeSession(
     return snapshot.data();
   }
 
-  void _showMessage(
-    BuildContext context,
-    String message, {
-    bool isError = false,
-  }) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: isError ? const Color(0xFFD7685B) : _purple,
-        content: Directionality(
-          textDirection: TextDirection.rtl,
-          child: Text(
-            message,
-            textAlign: TextAlign.right,
-            style: const TextStyle(fontFamily: 'Tajawal', color: Colors.white),
-          ),
-        ),
-      ),
-    );
+ void _showMessage(
+  BuildContext context,
+  String message, {
+  bool isError = false,
+}) {
+  if (isError) {
+    NotificationService.showErrorSnackBar(message);
+  } else {
+    NotificationService.showSuccessSnackBar(message);
   }
+}
 
   Future<void> _declinePracticeInvitation(
     BuildContext context,

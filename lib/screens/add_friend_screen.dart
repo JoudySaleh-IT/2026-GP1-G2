@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-
+import '../../services/notification_service.dart';
 import 'my_friend_qr_screen.dart';
 import 'scan_friend_qr_screen.dart';
 import '../services/friend_service.dart';
@@ -27,35 +27,7 @@ class _AddFriendScreenState extends State<AddFriendScreen> {
   // Standard App SnackBar
   // بدون تغيير
   // ─────────────────────────────────────────────
-  void _showAppSnackBar(String message, {Color backgroundColor = _purple}) {
-    final messenger = ScaffoldMessenger.of(context);
-
-    messenger.hideCurrentSnackBar();
-
-    messenger.showSnackBar(
-      SnackBar(
-        backgroundColor: backgroundColor,
-        behavior: SnackBarBehavior.fixed,
-        elevation: 0,
-        duration: const Duration(seconds: 3),
-        content: Directionality(
-          textDirection: TextDirection.rtl,
-          child: Align(
-            alignment: Alignment.centerRight,
-            child: Text(
-              message,
-              textAlign: TextAlign.right,
-              style: const TextStyle(
-                fontFamily: 'Tajawal',
-                fontSize: 14,
-                color: Colors.white,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+ 
 
   // ─────────────────────────────────────────────
   // Send Friend Request Using Faseh ID
@@ -80,8 +52,9 @@ class _AddFriendScreenState extends State<AddFriendScreen> {
         _loading = false;
       });
 
-      _showAppSnackBar('تم إرسال طلب الصداقة بنجاح 🎉');
-    }
+NotificationService.showSuccessSnackBar(
+  'تم إرسال طلب الصداقة بنجاح 🎉',
+);    }
     // Firestore errors
     on FirebaseException catch (e) {
       if (!mounted) return;
@@ -96,8 +69,7 @@ class _AddFriendScreenState extends State<AddFriendScreen> {
         _loading = false;
       });
 
-      _showAppSnackBar(message, backgroundColor: _coral);
-    }
+NotificationService.showErrorSnackBar(message);    }
     // FriendService custom errors
     catch (e) {
       if (!mounted) return;
@@ -122,8 +94,7 @@ class _AddFriendScreenState extends State<AddFriendScreen> {
         _loading = false;
       });
 
-      _showAppSnackBar(message, backgroundColor: _coral);
-    }
+NotificationService.showErrorSnackBar(message);    }
   }
 
   @override

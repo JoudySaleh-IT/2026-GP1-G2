@@ -95,9 +95,9 @@ class _ChildProfileManagementScreenState
                     'تم حذف ملف الطفل الشخصي بنجاح!',
                   );
                 } catch (e) {
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(const SnackBar(content: Text('فشل الحذف')));
+                  NotificationService.showErrorSnackBar(
+  'فشل الحذف',
+);
                 }
               },
               style: ElevatedButton.styleFrom(

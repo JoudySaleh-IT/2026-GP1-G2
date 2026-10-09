@@ -136,10 +136,8 @@ void dispose() {
         if (mounted) Navigator.pop(context);
         String message = 'حدث خطأ أثناء حفظ البيانات، يرجى المحاولة لاحقاً';
         if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(message)));
-        }
+  NotificationService.showErrorSnackBar(message);
+}
       }
     }
   }

@@ -7,6 +7,7 @@ import '../services/friend_service.dart';
 import '../services/practice_together_service.dart';
 import 'style_constants.dart';
 import 'practice_lobby_screen.dart';
+import '../../services/notification_service.dart';
 
 class FriendsScreen extends StatelessWidget {
   final String childId;
@@ -21,39 +22,7 @@ class FriendsScreen extends StatelessWidget {
   // Standard app SnackBar
   // بدون تغيير
   // ─────────────────────────────────────────────
-  void _showAppSnackBar(
-    BuildContext context, {
-    required String message,
-    Color backgroundColor = _purple,
-  }) {
-    final messenger = ScaffoldMessenger.of(context);
-
-    messenger.hideCurrentSnackBar();
-
-    messenger.showSnackBar(
-      SnackBar(
-        backgroundColor: backgroundColor,
-        behavior: SnackBarBehavior.fixed,
-        elevation: 0,
-        duration: const Duration(seconds: 3),
-        content: Directionality(
-          textDirection: TextDirection.rtl,
-          child: Align(
-            alignment: Alignment.centerRight,
-            child: Text(
-              message,
-              textAlign: TextAlign.right,
-              style: const TextStyle(
-                fontFamily: 'Tajawal',
-                fontSize: 14,
-                color: Colors.white,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+ 
 
   // ─────────────────────────────────────────────
   // Confirm + Remove Friend
@@ -131,28 +100,24 @@ class FriendsScreen extends StatelessWidget {
 
     if (confirmed != true) return;
 
-    try {
-      await FriendService().removeFriend(
-        currentChildId: childId,
-        friendId: friendId,
-      );
+try {
+  await FriendService().removeFriend(
+    currentChildId: childId,
+    friendId: friendId,
+  );
 
-      if (!context.mounted) return;
+  if (!context.mounted) return;
 
-      _showAppSnackBar(
-        context,
-        message: 'تمت إزالة $friendName من قائمة أصدقائك',
-        backgroundColor: _purple,
-      );
-    } catch (_) {
-      if (!context.mounted) return;
+  NotificationService.showSuccessSnackBar(
+    'تمت إزالة $friendName من قائمة أصدقائك',
+  );
+} catch (_) {
+  if (!context.mounted) return;
 
-      _showAppSnackBar(
-        context,
-        message: 'تعذّرت إزالة الصديق. حاول مرة أخرى.',
-        backgroundColor: _coral,
-      );
-    }
+  NotificationService.showErrorSnackBar(
+    'تعذّرت إزالة الصديق. حاول مرة أخرى.',
+  );
+}
   }
 
   Future<void> _showPracticeTogetherDialog(
@@ -357,11 +322,9 @@ class FriendsScreen extends StatelessWidget {
                   ElevatedButton(
                     onPressed: () {
                       if (selectedExercise == null) {
-                        _showAppSnackBar(
-                          context,
-                          message: 'اختر تمرينك أولًا',
-                          backgroundColor: _coral,
-                        );
+                        NotificationService.showErrorSnackBar(
+  'اختر تمرينك أولًا',
+);
 
                         return;
                       }
@@ -415,11 +378,9 @@ class FriendsScreen extends StatelessWidget {
     } catch (e) {
       if (!context.mounted) return;
 
-      _showAppSnackBar(
-        context,
-        message: 'تعذّر إرسال الدعوة. حاول مرة أخرى.',
-        backgroundColor: _coral,
-      );
+      NotificationService.showErrorSnackBar(
+  'تعذّر إرسال الدعوة. حاول مرة أخرى.',
+);
 
       debugPrint('Practice Together invitation error: $e');
     }

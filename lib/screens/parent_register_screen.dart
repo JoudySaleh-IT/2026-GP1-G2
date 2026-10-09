@@ -85,20 +85,15 @@ class _ParentRegisterScreenState extends State<ParentRegisterScreen> {
         }
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(errorMessage), backgroundColor: Colors.red),
-          );
-        }
+  NotificationService.showErrorSnackBar(errorMessage);
+}
       } catch (e) {
         // 5. في حال حدوث أي خطأ غير متوقع آخر
-        if (mounted) Navigator.pop(context);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('حدث خطأ غير متوقع، يرجى المحاولة لاحقاً'),
-            ),
-          );
-        }
+      if (mounted) {
+  NotificationService.showErrorSnackBar(
+    'حدث خطأ غير متوقع، يرجى المحاولة لاحقاً',
+  );
+}
       }
     }
   }

@@ -4,6 +4,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../services/friend_service.dart';
 import 'style_constants.dart';
+import '../services/notification_service.dart';
 
 class ScanFriendQrScreen extends StatefulWidget {
   final String childId;
@@ -33,37 +34,15 @@ class _ScanFriendQrScreenState extends State<ScanFriendQrScreen> {
   // Standard App SnackBar
   // ─────────────────────────────────────────────
   void _showAppSnackBar(
-    String message, {
-    Color backgroundColor = _purple,
-  }) {
-    final messenger = ScaffoldMessenger.of(context);
-
-    messenger.hideCurrentSnackBar();
-
-    messenger.showSnackBar(
-      SnackBar(
-        backgroundColor: backgroundColor,
-        behavior: SnackBarBehavior.fixed,
-        elevation: 0,
-        duration: const Duration(seconds: 3),
-        content: Directionality(
-          textDirection: TextDirection.rtl,
-          child: Align(
-            alignment: Alignment.centerRight,
-            child: Text(
-              message,
-              textAlign: TextAlign.right,
-              style: const TextStyle(
-                fontFamily: 'Tajawal',
-                fontSize: 14,
-                color: Colors.white,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
+  String message, {
+  Color backgroundColor = _purple,
+}) {
+  if (backgroundColor == _coral) {
+    NotificationService.showErrorSnackBar(message);
+  } else {
+    NotificationService.showSuccessSnackBar(message);
   }
+}
 
   // ─────────────────────────────────────────────
   // Read QR

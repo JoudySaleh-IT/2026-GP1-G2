@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../utils/arabic_numbers.dart';
 import 'style_constants.dart';
+import '../services/notification_service.dart';
 
 // ─── Data Model ──────────────────────────────────────────────────────────────
 class PlacementWord {
@@ -155,17 +156,14 @@ bool _isCalculatingFinalScore = false;
     _isRecording = false;
   });
 
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(
-      content: Text(
-        'تعذر حفظ التسجيل، حاول مرة أخرى',
-        style: TextStyle(fontFamily: 'Tajawal'),
-      ),
-    ),
+  NotificationService.showErrorSnackBar(
+    'تعذر حفظ التسجيل، حاول مرة أخرى',
   );
+    
 
   return;
 }
+
 
 setState(() {
   _lastRecordedPath = path;
@@ -196,11 +194,9 @@ _processQueue();
 
       _pulseController.repeat(reverse: true);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('الرجاء السماح بالوصول للمايكروفون'),
-        ),
-      );
+      NotificationService.showErrorSnackBar(
+  'الرجاء السماح بالوصول للمايكروفون',
+);
     }
   }
 }

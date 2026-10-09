@@ -67,9 +67,9 @@ class ChildHomeScreen extends StatelessWidget {
 
                   Navigator.pop(dialogContext);
 
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('تم إرسال طلب الصداقة ✅')),
-                  );
+                  NotificationService.showSuccessSnackBar(
+  'تم إرسال طلب الصداقة ✅',
+);
                 } on FirebaseException catch (e) {
                   print('Friend request test error: $e');
 
@@ -82,12 +82,7 @@ class ChildHomeScreen extends StatelessWidget {
                         'تم إرسال طلب صداقة لهذا الطفل مسبقًا أو أنكما أصدقاء بالفعل';
                   }
 
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(message),
-                      backgroundColor: const Color(0xFF511281),
-                    ),
-                  );
+                  NotificationService.showErrorSnackBar(message);
                 } catch (e) {
                   print('Friend request test error: $e');
 
@@ -109,12 +104,7 @@ class ChildHomeScreen extends StatelessWidget {
                     message = 'تعذر العثور على ملف الطفل';
                   }
 
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(message),
-                      backgroundColor: const Color(0xFF511281),
-                    ),
-                  );
+                 NotificationService.showErrorSnackBar(message);
                 }
               },
               child: const Text('إرسال'),

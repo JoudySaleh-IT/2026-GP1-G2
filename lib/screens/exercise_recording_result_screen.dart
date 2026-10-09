@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'exercise_recording_retry_screen.dart';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../services/notification_service.dart';
 // ---------------------------------------------------------------------------
 // Screen
 // ---------------------------------------------------------------------------
@@ -325,17 +326,9 @@ final bool hasPendingRetry =
 
     onPopInvokedWithResult: (didPop, result) {
       if (!didPop && hasPendingRetry) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'أكمل محاولاتك لنحسب نتيجتك',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: 'Tajawal',
-              ),
-            ),
-          ),
-        );
+        NotificationService.showSuccessSnackBar(
+  'أكمل محاولاتك لنحسب نتيجتك',
+);
       }
     },
 

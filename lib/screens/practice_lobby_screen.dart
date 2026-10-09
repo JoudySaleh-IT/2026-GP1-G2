@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../services/practice_together_service.dart';
 import 'style_constants.dart';
+import '../services/notification_service.dart';
 
 class PracticeLobbyScreen extends StatefulWidget {
   final String sessionId;
@@ -84,23 +85,14 @@ class _PracticeLobbyScreenState extends State<PracticeLobbyScreen> {
   }
 
   void _showMessage(String message, {bool isError = false}) {
-    if (!mounted) return;
+  if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: isError ? const Color(0xFFD7685B) : _purple,
-        content: Directionality(
-          textDirection: TextDirection.rtl,
-          child: Text(
-            message,
-            textAlign: TextAlign.right,
-            style: const TextStyle(fontFamily: 'Tajawal', color: Colors.white),
-          ),
-        ),
-      ),
-    );
+  if (isError) {
+    NotificationService.showErrorSnackBar(message);
+  } else {
+    NotificationService.showSuccessSnackBar(message);
   }
+}
 
   Future<void> _markReady() async {
     if (_readyBusy) return;

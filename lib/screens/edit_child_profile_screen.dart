@@ -132,9 +132,9 @@ _selectedAvatar = data['avatar'] ?? '🦁';
     } catch (e) {
       if (mounted) {
         // You can also change this one to your new NotificationService if you want!
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('خطأ في تحميل البيانات')));
+       NotificationService.showErrorSnackBar(
+  'خطأ في تحميل البيانات',
+);
       }
     }
   }

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../utils/arabic_numbers.dart';
-
+import '../services/notification_service.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 // Level Info
 // ─────────────────────────────────────────────────────────────────────────────
@@ -385,19 +385,13 @@ if (rawExerciseProgress is Map) {
                                 // Locked
                                 // ===========================================
 
-                                if (level.isLocked) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        'احصل على ٦ من ٨ على الأقل في تمارين الاستماع أولًا',
-                                        textDirection: TextDirection.rtl,
-                                      ),
-                                      duration: Duration(seconds: 2),
-                                    ),
-                                  );
+                               if (level.isLocked) {
+  NotificationService.showSuccessSnackBar(
+    'احصل على ٦ من ٨ على الأقل في تمارين الاستماع أولًا',
+  );
 
-                                  return;
-                                }
+  return;
+}
 
                                 // ===========================================
                                 // Pronunciation

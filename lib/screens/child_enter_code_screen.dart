@@ -142,11 +142,9 @@ class _ChildEnterCodeScreenState extends State<ChildEnterCodeScreen> {
     }
   }
 
-  void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Colors.redAccent),
-    );
-  }
+ void _showError(String message) {
+  NotificationService.showErrorSnackBar(message);
+}
 
   // ─────────────────────────────────────────────────────────────────────────
   // BUILD
