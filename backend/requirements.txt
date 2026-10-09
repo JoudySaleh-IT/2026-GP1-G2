@@ -9,3 +9,4 @@ firebase-admin
 transformers
 safetensors
 webrtcvad-wheels
+torch

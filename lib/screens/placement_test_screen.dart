@@ -233,7 +233,7 @@ Future<void> _startPreprocessing(
   String targetLetter,
 ) async {
   const String baseUrl =
-      "https://faseeh-api-best-model-816737402071.me-central1.run.app";
+      "https://faseeh-api-final-model-816737402071.me-central1.run.app";
 
   final url = Uri.parse('$baseUrl/process-audio/');
 
