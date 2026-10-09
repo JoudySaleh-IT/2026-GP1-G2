@@ -87,17 +87,33 @@ Future<void> _initializeFirebaseMessaging() async {
     });
 
 FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-  final type = message.data['type'];
+ final type = message.data['type'];
+final receiverId = message.data['receiverId'];
 
-  if (type == 'friend_request') {
-    NotificationService.showLiveNotification(
-      title: 'طلب صداقة جديد',
-      message: 'لديك طلب صداقة جديد 👋',
-    );
+if (type == 'friend_request') {
+  NotificationService.showLiveNotification(
+    title: 'طلب صداقة جديد',
+    message: 'لديك طلب صداقة جديد 👋',
+    onTap: () {
+      navigatorKey.currentState?.pushNamed(
+        '/child/friend-requests',
+        arguments: {
+          'childId': receiverId,
+        },
+      );
+    },
+  );
+
   } else if (type == 'practice_invitation') {
     NotificationService.showLiveNotification(
       title: 'دعوة جديدة',
       message: 'لديك دعوة جديدة للتدرب معًا 🎮',
+      onTap: () {
+        navigatorKey.currentState?.pushNamed(
+          '/child/notifications',
+          arguments: {'childId': receiverId},
+        );
+      },
     );
   }
 });

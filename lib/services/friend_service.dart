@@ -72,6 +72,9 @@ class FriendService {
     final notificationRef = _db.collection('notifications').doc();
     print('🔔 NOTIFICATION CODE REACHED');
     print('🔔 notificationId: ${notificationRef.id}');
+       final notificationExpiresAt = Timestamp.fromDate(
+  DateTime.now().add(const Duration(hours: 48)),
+);
 
     await _db.runTransaction((transaction) async {
       print('========== FRIEND REQUEST DEBUG ==========');
@@ -121,6 +124,7 @@ class FriendService {
         'referenceId': pairId,
         'isRead': false,
         'createdAt': FieldValue.serverTimestamp(),
+          'expiresAt': notificationExpiresAt,
       });
     });
     // Send external push notification
@@ -157,6 +161,7 @@ class FriendService {
     final requestRef = _db.collection('friend_requests').doc(pairId);
 
     final friendshipRef = _db.collection('friendships').doc(pairId);
+  
 
     await _db.runTransaction((transaction) async {
       final requestSnapshot = await transaction.get(requestRef);

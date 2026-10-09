@@ -207,6 +207,10 @@ class PracticeTogetherService {
 
     final notificationRef = _db.collection('notifications').doc();
 
+    final notificationExpiresAt = Timestamp.fromDate(
+  DateTime.now().add(const Duration(hours: 48)),
+);
+
     await _db.runTransaction((transaction) async {
       // Verify friendship first.
       final friendshipSnapshot = await transaction.get(friendshipRef);
@@ -255,6 +259,7 @@ class PracticeTogetherService {
         'referenceId': sessionRef.id,
         'isRead': false,
         'createdAt': FieldValue.serverTimestamp(),
+        'expiresAt': notificationExpiresAt,
       });
     });
 
@@ -340,6 +345,19 @@ class PracticeTogetherService {
       if (data['status'] != 'pending') {
         throw Exception('INVITATION_NOT_PENDING');
       }
+      final Timestamp? createdAt = data['createdAt'] as Timestamp?;
+
+if (createdAt == null) {
+  throw Exception('MISSING_INVITATION_TIME');
+}
+
+final elapsed = DateTime.now().difference(
+  createdAt.toDate(),
+);
+
+if (elapsed >= const Duration(minutes: 30)) {
+  throw Exception('INVITATION_EXPIRED');
+}
 
       transaction.update(sessionRef, {
         'status': 'accepted',

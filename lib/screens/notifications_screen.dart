@@ -505,10 +505,76 @@ Widget _buildNotificationItem(
 
   final senderId = data['senderId']?.toString() ?? '';
   final type = data['type']?.toString() ?? '';
+  final referenceId = data['referenceId']?.toString() ?? '';
   final isRead = data['isRead'] == true;
   final createdAt = data['createdAt'] as Timestamp?;
   final timeText = _formatNotificationTime(createdAt);
 
+  // Practice Together invitation:
+  // show it only while its session is still pending.
+  if (type == 'practice_invitation' && referenceId.isNotEmpty) {
+    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      stream: FirebaseFirestore.instance
+          .collection('practice_sessions')
+          .doc(referenceId)
+          .snapshots(),
+      builder: (context, sessionSnapshot) {
+        if (sessionSnapshot.connectionState == ConnectionState.waiting) {
+          return const _NotificationLoadingCard();
+        }
+
+     final sessionData = sessionSnapshot.data?.data();
+
+// Session no longer exists or invitation is no longer pending.
+if (sessionData == null || sessionData['status'] != 'pending') {
+  return const SizedBox.shrink();
+}
+
+final Timestamp? sessionCreatedAt =
+    sessionData['createdAt'] as Timestamp?;
+
+// Hide invitations that are 30 minutes old or more.
+if (sessionCreatedAt == null) {
+  return const SizedBox.shrink();
+}
+
+final invitationAge = DateTime.now().difference(
+  sessionCreatedAt.toDate(),
+);
+
+if (invitationAge >= const Duration(minutes: 30)) {
+  return const SizedBox.shrink();
+}
+        return _buildNotificationCardWithProfile(
+          context,
+          notification,
+          senderId,
+          type,
+          isRead,
+          timeText,
+        );
+      },
+    );
+  }
+
+  // Other notification types.
+  return _buildNotificationCardWithProfile(
+    context,
+    notification,
+    senderId,
+    type,
+    isRead,
+    timeText,
+  );
+}
+Widget _buildNotificationCardWithProfile(
+  BuildContext context,
+  QueryDocumentSnapshot<Map<String, dynamic>> notification,
+  String senderId,
+  String type,
+  bool isRead,
+  String timeText,
+) {
   return FutureBuilder<Map<String, dynamic>?>(
     future: _getSenderProfile(senderId),
     builder: (context, profileSnapshot) {
@@ -519,24 +585,25 @@ Widget _buildNotificationItem(
       final profile = profileSnapshot.data;
 
       final String firstName =
-    (profile?['firstName'] ?? '').toString().trim();
+          (profile?['firstName'] ?? '').toString().trim();
 
-final String lastName =
-    (profile?['lastName'] ?? '').toString().trim();
+      final String lastName =
+          (profile?['lastName'] ?? '').toString().trim();
 
-final String legacyName =
-    (profile?['name'] ?? '').toString().trim();
+      final String legacyName =
+          (profile?['name'] ?? '').toString().trim();
 
-final String fullName = [
-  firstName,
-  lastName,
-].where((part) => part.isNotEmpty).join(' ');
+      final String fullName = [
+        firstName,
+        lastName,
+      ].where((part) => part.isNotEmpty).join(' ');
 
-final String displayName = fullName.isNotEmpty
-    ? fullName
-    : legacyName.isNotEmpty
-        ? legacyName
-        : 'صديقك';
+      final String displayName = fullName.isNotEmpty
+          ? fullName
+          : legacyName.isNotEmpty
+              ? legacyName
+              : 'صديقك';
+
       final avatar = profile?['avatar']?.toString() ?? '🌟';
 
       return _NotificationCard(
@@ -659,30 +726,24 @@ final String displayName = fullName.isNotEmpty
 
                   final allNotifications = snapshot.data?.docs.toList() ?? [];
 
-                  final sevenDaysAgo = DateTime.now().subtract(
-                    const Duration(days: 7),
-                  );
+                 final fortyEightHoursAgo = DateTime.now().subtract(
+  const Duration(hours: 48),
+);
 
-                  final notifications = allNotifications.where((notification) {
-                    final data = notification.data();
+final notifications = allNotifications.where((notification) {
+  final data = notification.data();
 
-                    final bool isRead = data['isRead'] == true;
-                    final Timestamp? createdAt =
-                        data['createdAt'] as Timestamp?;
+  final Timestamp? createdAt =
+      data['createdAt'] as Timestamp?;
 
-                    // الإشعار غير المقروء يبقى مهما كان عمره
-                    if (!isRead) {
-                      return true;
-                    }
+  // If the notification has no creation time, do not show it.
+  if (createdAt == null) {
+    return false;
+  }
 
-                    // احتياطًا: إذا ما عنده تاريخ نخليه ظاهر
-                    if (createdAt == null) {
-                      return true;
-                    }
-
-                    // المقروء يظهر فقط إذا عمره أقل من 7 أيام
-                    return createdAt.toDate().isAfter(sevenDaysAgo);
-                  }).toList();
+  // Show notifications from the last 48 hours only.
+  return createdAt.toDate().isAfter(fortyEightHoursAgo);
+}).toList();
 
                   // Newest first
                   notifications.sort((a, b) {

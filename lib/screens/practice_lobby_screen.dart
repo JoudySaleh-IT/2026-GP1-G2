@@ -138,7 +138,37 @@ class _PracticeLobbyScreenState extends State<PracticeLobbyScreen> {
 
   Future<void> _checkTimedActions(Map<String, dynamic> data) async {
     final status = data['status']?.toString() ?? '';
+// ----------------------------------------------------------
+// Pending invitation expiration
+// ----------------------------------------------------------
 
+if (status == 'pending' && !_timeoutBusy) {
+  final createdAt = data['createdAt'] as Timestamp?;
+
+  if (createdAt != null) {
+    final elapsed = DateTime.now().difference(
+      createdAt.toDate(),
+    );
+
+    if (elapsed >= const Duration(minutes: 30)) {
+      _timeoutBusy = true;
+
+      try {
+        await _service.cancelInvitation(
+          sessionId: widget.sessionId,
+          childId: widget.childId,
+        );
+      } catch (_) {
+        // The invitation may already have been accepted,
+        // declined, or cancelled on the other device.
+      } finally {
+        _timeoutBusy = false;
+      }
+
+      return;
+    }
+  }
+}
     // ----------------------------------------------------------
     // 60-second lobby timeout
     // ----------------------------------------------------------
