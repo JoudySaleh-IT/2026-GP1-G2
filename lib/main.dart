@@ -86,6 +86,22 @@ Future<void> _initializeFirebaseMessaging() async {
   }
 });
 
+FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+  final type = message.data['type'];
+
+  if (type == 'friend_request') {
+    NotificationService.showLiveNotification(
+      title: 'طلب صداقة جديد',
+      message: 'لديك طلب صداقة جديد 👋',
+    );
+  } else if (type == 'practice_invitation') {
+    NotificationService.showLiveNotification(
+      title: 'دعوة جديدة',
+      message: 'لديك دعوة جديدة للتدرب معًا 🎮',
+    );
+  }
+});
+
     // User opens app by tapping a notification
     // while the app was completely closed.
     final RemoteMessage? initialMessage = await FirebaseMessaging.instance

@@ -30,4 +30,64 @@ class NotificationService {
       ),
     );
   }
+  static void showLiveNotification({
+  required String title,
+  required String message,
+}) {
+  final messenger = rootScaffoldMessengerKey.currentState;
+
+  if (messenger == null) return;
+
+  // Prevent multiple SnackBars from stacking.
+  messenger.hideCurrentSnackBar();
+
+  messenger.showSnackBar(
+    SnackBar(
+      behavior: SnackBarBehavior.floating,
+      duration: const Duration(seconds: 4),
+      backgroundColor: const Color(0xFF511281),
+      margin: const EdgeInsets.all(16),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      content: Directionality(
+        textDirection: TextDirection.rtl,
+        child: Row(
+          children: [
+            const Icon(
+              Icons.notifications_rounded,
+              color: Colors.white,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontFamily: 'Tajawal',
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    message,
+                    style: const TextStyle(
+                      fontFamily: 'Tajawal',
+                      fontSize: 12,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
 }
