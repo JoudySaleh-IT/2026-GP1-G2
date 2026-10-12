@@ -1,11 +1,12 @@
+import 'dart:async';
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:audioplayers/audioplayers.dart';
-
 import 'style_constants.dart';
+import '../services/practice_together_service.dart';
+import '../widgets/practice_race_progress.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Exercise Model
@@ -14,10 +15,7 @@ class _ListeningOption {
   final String word;
   final String imagePath;
 
-  const _ListeningOption({
-    required this.word,
-    required this.imagePath,
-  });
+  const _ListeningOption({required this.word, required this.imagePath});
 }
 
 class _Exercise {
@@ -48,12 +46,20 @@ class ExerciseListeningScreen extends StatefulWidget {
   final String childId;
   final String level;
 
+  // null = normal listening exercise
+  // non-null = Practice Together competition
+  final String? practiceSessionId;
+
   const ExerciseListeningScreen({
     super.key,
     required this.letter,
     required this.childId,
     required this.level,
+    this.practiceSessionId,
   });
+
+  bool get isPracticeTogether =>
+      practiceSessionId != null && practiceSessionId!.isNotEmpty;
 
   @override
   State<ExerciseListeningScreen> createState() =>
@@ -72,6 +78,19 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
   int _playCount = 0;
 
   final AudioPlayer _audioPlayer = AudioPlayer();
+  final PracticeTogetherService _practiceService = PracticeTogetherService();
+
+  static const int _questionDurationSeconds = 60;
+
+  Timer? _questionTimer;
+  DateTime? _questionDeadline;
+
+  int _questionSecondsLeft = _questionDurationSeconds;
+
+  bool _questionAdvanceBusy = false;
+  bool _questionTimeoutHandling = false;
+
+  bool get _isQuestionTimerRunning => _questionTimer?.isActive ?? false;
 
   final List<Map<String, String>> _answers = [];
 
@@ -124,6 +143,7 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
 
   @override
   void dispose() {
+    _questionTimer?.cancel();
     _pulseCtrl.dispose();
     _audioPlayer.dispose();
 
@@ -253,13 +273,13 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
       // 2. Get Child Level
       // ==============================================================
 
-     final String childLevel = _normalizeLevel(widget.level);
-_currentLevelKey = childLevel;
+      final String childLevel = _normalizeLevel(widget.level);
+      _currentLevelKey = childLevel;
 
-debugPrint(
-  'Listening Exercise → '
-  'Letter level: ${widget.level} → $childLevel',
-);
+      debugPrint(
+        'Listening Exercise → '
+        'Letter level: ${widget.level} → $childLevel',
+      );
 
       // ==============================================================
       // 3. Load JSON
@@ -340,29 +360,29 @@ debugPrint(
 
         final int number = (item['number'] as num).toInt();
 
-       final String target = item['target'].toString();
+        final String target = item['target'].toString();
 
-final List<_ListeningOption> options =
-    List<dynamic>.from(item['options']).map((optionData) {
-  // الشكل الجديد: الكلمة معها صورة
-  if (optionData is Map) {
-    final option = Map<String, dynamic>.from(optionData);
+        final List<_ListeningOption> options =
+            List<dynamic>.from(item['options']).map((optionData) {
+              // الشكل الجديد: الكلمة معها صورة
+              if (optionData is Map) {
+                final option = Map<String, dynamic>.from(optionData);
 
-    return _ListeningOption(
-      word: option['word']?.toString() ?? '',
-      imagePath: option['imagePath']?.toString() ?? '',
-    );
-  }
+                return _ListeningOption(
+                  word: option['word']?.toString() ?? '',
+                  imagePath: option['imagePath']?.toString() ?? '',
+                );
+              }
 
-  // الشكل القديم: الكلمة فقط
-  return _ListeningOption(
-    word: optionData.toString(),
-    imagePath: '',
-  );
-}).toList();
+              // الشكل القديم: الكلمة فقط
+              return _ListeningOption(
+                word: optionData.toString(),
+                imagePath: '',
+              );
+            }).toList();
 
-// Correct answer will not always appear first
-options.shuffle();
+        // Correct answer will not always appear first
+        options.shuffle();
 
         // 1 → 01
         // 2 → 02
@@ -414,6 +434,9 @@ options.shuffle();
         _isPlaying = false;
       });
 
+      if (widget.isPracticeTogether && loadedExercises.isNotEmpty) {
+        _startQuestionTimer();
+      }
       // ==============================================================
       // Debug
       // ==============================================================
@@ -444,6 +467,65 @@ options.shuffle();
     }
   }
 
+  void _startQuestionTimer() {
+    if (!widget.isPracticeTogether || !mounted) {
+      return;
+    }
+
+    _questionTimer?.cancel();
+
+    _questionDeadline = DateTime.now().add(
+      const Duration(seconds: _questionDurationSeconds),
+    );
+
+    _questionTimeoutHandling = false;
+
+    setState(() {
+      _questionSecondsLeft = _questionDurationSeconds;
+    });
+
+    _questionTimer = Timer.periodic(const Duration(milliseconds: 250), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+
+      final deadline = _questionDeadline;
+
+      if (deadline == null) {
+        timer.cancel();
+        return;
+      }
+
+      final remainingMilliseconds = deadline
+          .difference(DateTime.now())
+          .inMilliseconds;
+
+      final int nextSeconds = remainingMilliseconds <= 0
+          ? 0
+          : (remainingMilliseconds + 999) ~/ 1000;
+
+      if (nextSeconds != _questionSecondsLeft) {
+        setState(() {
+          _questionSecondsLeft = nextSeconds;
+        });
+      }
+
+      if (remainingMilliseconds <= 0) {
+        timer.cancel();
+        _questionTimer = null;
+
+        _handleQuestionTimeout();
+      }
+    });
+  }
+
+  void _stopQuestionTimer() {
+    _questionTimer?.cancel();
+    _questionTimer = null;
+    _questionDeadline = null;
+  }
+
   // ───────────────────────────────────────────────────────────────────────────
   // Play
   //
@@ -461,29 +543,27 @@ options.shuffle();
       return;
     }
 
-   setState(() {
-  _isPlaying = true;
-});
+    setState(() {
+      _isPlaying = true;
+    });
 
-_pulseCtrl.repeat(reverse: true);
+    _pulseCtrl.repeat(reverse: true);
 
-try {
-  await _audioPlayer.play(
-    AssetSource(_exercise.audioPath),
-  );
+    try {
+      await _audioPlayer.play(AssetSource(_exercise.audioPath));
 
-  if (!mounted) {
-    return;
-  }
+      if (!mounted) {
+        return;
+      }
 
-  setState(() {
-    _playCount++;
-  });
+      setState(() {
+        _playCount++;
+      });
 
-  await _audioPlayer.onPlayerComplete.first;
-} catch (e) {
-  debugPrint('Audio error: $e');
-}
+      await _audioPlayer.onPlayerComplete.first;
+    } catch (e) {
+      debugPrint('Audio error: $e');
+    }
     if (!mounted) {
       return;
     }
@@ -509,6 +589,9 @@ try {
       return;
     }
 
+    if (widget.isPracticeTogether) {
+      _stopQuestionTimer();
+    }
     setState(() {
       _selectedAnswer = answer;
       _showFeedback = true;
@@ -558,7 +641,68 @@ try {
   // ───────────────────────────────────────────────────────────────────────────
   // Next
   // ───────────────────────────────────────────────────────────────────────────
-  Future<void> _handleNext() async {
+  Future<bool> _updatePracticeProgressForCurrentQuestion() async {
+    if (!widget.isPracticeTogether) {
+      return true;
+    }
+
+    try {
+      await _practiceService.updateProgress(
+        sessionId: widget.practiceSessionId!,
+        childId: widget.childId,
+        completedQuestions: _currentIndex + 1,
+      );
+
+      return true;
+    } catch (e) {
+      debugPrint(
+        'Practice Together listening progress '
+        'update failed: $e',
+      );
+
+      if (!mounted) return false;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'تعذر تحديث التحدي، حاول مرة أخرى',
+            textDirection: TextDirection.rtl,
+            style: TextStyle(fontFamily: 'Tajawal'),
+          ),
+        ),
+      );
+
+      return false;
+    }
+  }
+
+  Future<void> _completeCurrentQuestion({required bool timedOut}) async {
+    if (_questionAdvanceBusy) {
+      return;
+    }
+
+    if (!timedOut && !_showFeedback) {
+      return;
+    }
+
+    _questionAdvanceBusy = true;
+
+    final bool progressUpdated =
+        await _updatePracticeProgressForCurrentQuestion();
+
+    if (!progressUpdated) {
+      _questionAdvanceBusy = false;
+
+      if (timedOut && mounted) {
+        setState(() {
+          _selectedAnswer = null;
+          _showFeedback = true;
+        });
+      }
+
+      return;
+    }
+
     _answers.add({
       'selected': _selectedAnswer ?? '',
       'correct': _exercise.correctAnswer,
@@ -566,29 +710,36 @@ try {
       'instruction': _exercise.instruction,
     });
 
-    // يوجد سؤال آخر
+    // Another question exists
     if (_currentIndex < _exercises.length - 1) {
       setState(() {
         _currentIndex++;
+
         _selectedAnswer = null;
         _showFeedback = false;
+
         _playCount = 0;
         _isPlaying = false;
       });
 
+      _questionAdvanceBusy = false;
+
+      if (widget.isPracticeTogether) {
+        _startQuestionTimer();
+      }
+
       return;
     }
 
-    // =========================================================
-    // انتهى آخر سؤال
-    // =========================================================
+    // Final question
+    if (!widget.isPracticeTogether) {
+      await _saveListeningResult();
+    }
 
-    // حفظ نتيجة الاستماع
-    await _saveListeningResult();
+    _questionAdvanceBusy = false;
 
     if (!mounted) return;
 
-    // الانتقال لصفحة النتائج
     Navigator.pushNamed(
       context,
       '/child/exercise-listening-result',
@@ -598,12 +749,46 @@ try {
         'answers': List<Map<String, String>>.from(_answers),
         'letter': widget.letter,
         'childId': widget.childId,
-
-        // نمررها أيضًا لصفحة النتائج إذا احتجناها
         'passedListening': _score >= 6,
         'level': _currentLevelKey,
       },
     );
+  }
+
+  Future<void> _handleNext() async {
+    await _completeCurrentQuestion(timedOut: false);
+  }
+
+  Future<void> _handleQuestionTimeout() async {
+    if (!widget.isPracticeTogether ||
+        _questionTimeoutHandling ||
+        _questionAdvanceBusy ||
+        _showFeedback ||
+        !mounted) {
+      return;
+    }
+
+    _questionTimeoutHandling = true;
+
+    _stopQuestionTimer();
+
+    // Stop any word audio still playing.
+    await _audioPlayer.stop();
+
+    _pulseCtrl.stop();
+    _pulseCtrl.reset();
+
+    if (mounted) {
+      setState(() {
+        _isPlaying = false;
+        _selectedAnswer = null;
+      });
+    }
+
+    // No selected answer = no point.
+    await _completeCurrentQuestion(timedOut: true);
+
+    _questionTimeoutHandling = false;
   }
 
   // ───────────────────────────────────────────────────────────────────────────
@@ -736,8 +921,23 @@ try {
                             child: Column(
                               children: [
                                 // ─── Progress
-                                _buildProgressSection(),
-
+                                widget.isPracticeTogether
+                                    ? Padding(
+                                        padding: const EdgeInsets.fromLTRB(
+                                          8,
+                                          7,
+                                          8,
+                                          4,
+                                        ),
+                                        child: PracticeRaceProgress(
+                                          sessionId: widget.practiceSessionId!,
+                                          currentChildId: widget.childId,
+                                          secondsRemaining:
+                                              _questionSecondsLeft,
+                                          timerRunning: _isQuestionTimerRunning,
+                                        ),
+                                      )
+                                    : _buildProgressSection(),
                                 // ─── Main Exercise Area
                                 Expanded(
                                   child: Padding(
@@ -768,14 +968,20 @@ try {
                                           children: _exercise.options
                                               .map(
                                                 (option) => _AnswerTile(
-  text: option.word,
-  imagePath: option.imagePath,
-  selectedAnswer: _selectedAnswer,
-  correctAnswer: _exercise.correctAnswer,
-  showFeedback: _showFeedback,
-  enabled: _playCount > 0 && !_showFeedback,
-  onTap: () => _handleAnswer(option.word),
-),
+                                                  text: option.word,
+                                                  imagePath: option.imagePath,
+                                                  selectedAnswer:
+                                                      _selectedAnswer,
+                                                  correctAnswer:
+                                                      _exercise.correctAnswer,
+                                                  showFeedback: _showFeedback,
+                                                  enabled:
+                                                      _playCount > 0 &&
+                                                      !_showFeedback,
+                                                  onTap: () => _handleAnswer(
+                                                    option.word,
+                                                  ),
+                                                ),
                                               )
                                               .toList(),
                                         ),
@@ -1152,7 +1358,9 @@ try {
           ),
 
           ElevatedButton(
-            onPressed: _showFeedback ? _handleNext : null,
+            onPressed: _showFeedback && !_questionAdvanceBusy
+                ? _handleNext
+                : null,
             style: ElevatedButton.styleFrom(
               backgroundColor: _coral,
               disabledBackgroundColor: const Color(0xFFFFD1D1),
@@ -1248,7 +1456,7 @@ class _AnswerTile extends StatelessWidget {
     required this.showFeedback,
     required this.enabled,
     required this.onTap,
-     required this.imagePath,
+    required this.imagePath,
   });
 
   @override
@@ -1317,43 +1525,43 @@ class _AnswerTile extends StatelessWidget {
             ),
 
             Center(
-  child: Padding(
-    padding: const EdgeInsets.fromLTRB(10, 8, 10, 6),
-    child: Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Expanded(
-          child: Image.asset(
-            imagePath,
-            fit: BoxFit.contain,
-            errorBuilder: (context, error, stackTrace) {
-              return const Icon(
-                Icons.image_not_supported_outlined,
-                size: 35,
-                color: Color(0xFFBBBBBB),
-              );
-            },
-          ),
-        ),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(10, 8, 10, 6),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: Image.asset(
+                        imagePath,
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Icon(
+                            Icons.image_not_supported_outlined,
+                            size: 35,
+                            color: Color(0xFFBBBBBB),
+                          );
+                        },
+                      ),
+                    ),
 
-        const SizedBox(height: 5),
+                    const SizedBox(height: 5),
 
-        Text(
-          text,
-          textAlign: TextAlign.center,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            fontSize: text.length > 7 ? 13 : 17,
-            fontWeight: FontWeight.w700,
-            color: textColor,
-            fontFamily: 'Tajawal',
-          ),
-        ),
-      ],
-    ),
-  ),
-),
+                    Text(
+                      text,
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: text.length > 7 ? 13 : 17,
+                        fontWeight: FontWeight.w700,
+                        color: textColor,
+                        fontFamily: 'Tajawal',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
 
             if (showCorrect)
               const Positioned(
