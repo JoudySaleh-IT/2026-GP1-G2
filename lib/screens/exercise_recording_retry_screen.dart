@@ -226,11 +226,11 @@ class _ExerciseRecordingRetryScreenState
       final directory = await getTemporaryDirectory();
 
       final path =
-          '${directory.path}/retry_recording_${DateTime.now().millisecondsSinceEpoch}.m4a';
+          '${directory.path}/retry_recording_${DateTime.now().millisecondsSinceEpoch}.wav';
 
       await _recorder.start(
         const RecordConfig(
-          encoder: AudioEncoder.aacLc,
+          encoder: AudioEncoder.wav,
           sampleRate: 16000,
           numChannels: 1,
         ),

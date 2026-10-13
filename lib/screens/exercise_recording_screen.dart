@@ -296,11 +296,11 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
       final directory = await getTemporaryDirectory();
 
       final path =
-          '${directory.path}/recording_${DateTime.now().millisecondsSinceEpoch}.m4a';
+          '${directory.path}/recording_${DateTime.now().millisecondsSinceEpoch}.wav';
 
       await _recorder.start(
         const RecordConfig(
-          encoder: AudioEncoder.aacLc,
+          encoder: AudioEncoder.wav,
           sampleRate: 16000,
           numChannels: 1,
         ),
