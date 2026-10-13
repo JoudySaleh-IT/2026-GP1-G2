@@ -123,10 +123,11 @@ Future<void> _initializeFirebaseMessaging() async {
   _handleNotificationTap(message);
 });
 
-FirebaseMessaging.onMessage.listen((RemoteMessage message) {
- final type = message.data['type'];
-final receiverId = message.data['receiverId'];
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      final type = message.data['type'];
+      final receiverId = message.data['receiverId'];
 
+<<<<<<< HEAD
 final currentChildId = ChildSession.currentChildId;
 
 debugPrint('📩 FCM receiverId = [$receiverId]');
@@ -156,6 +157,32 @@ if (type == 'friend_request') {
     );
   }
 });
+=======
+      if (type == 'friend_request') {
+        NotificationService.showLiveNotification(
+          title: 'طلب صداقة جديد',
+          message: 'لديك طلب صداقة جديد 👋',
+          onTap: () {
+            navigatorKey.currentState?.pushNamed(
+              '/child/friend-requests',
+              arguments: {'childId': receiverId},
+            );
+          },
+        );
+      } else if (type == 'practice_invitation') {
+        NotificationService.showLiveNotification(
+          title: 'دعوة جديدة',
+          message: 'لديك دعوة جديدة للتدرب معًا 🎮',
+          onTap: () {
+            navigatorKey.currentState?.pushNamed(
+              '/child/notifications',
+              arguments: {'childId': receiverId},
+            );
+          },
+        );
+      }
+    });
+>>>>>>> 7c2317537d93ff2dfe6410030b8464ce8b7e926d
 
     // User opens app by tapping a notification
     // while the app was completely closed.
@@ -330,7 +357,8 @@ class MyApp extends StatelessWidget {
           return ExerciseListeningScreen(
             letter: args?['letter'] ?? 'ض',
             childId: args?['childId'] ?? '',
-            level: args?['level']?.toString() ?? 'beginner',
+            level: args?['level'] ?? 'beginner',
+            practiceSessionId: args?['practiceSessionId']?.toString(),
           );
         },
 

@@ -17,6 +17,7 @@ import '../data/pronunciation_repository.dart';
 // import '../models/pronunciation_exercise_data.dart';
 // import '../data/pronunciation_repository.dart';
 import '../services/practice_together_service.dart';
+import '../widgets/practice_race_progress.dart';
 
 // ---------------------------------------------------------------------------
 // Recording state
@@ -268,8 +269,8 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
       });
 
       NotificationService.showErrorSnackBar(
-  'تعذر تشغيل الصوت: ${_exercise.audioPath}',
-);
+        'تعذر تشغيل الصوت: ${_exercise.audioPath}',
+      );
     }
   }
 
@@ -286,9 +287,7 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
     if (!hasPermission) {
       if (!mounted) return;
 
-     NotificationService.showErrorSnackBar(
-  'نحتاج إذن الميكروفون لتسجيل صوتك',
-);
+      NotificationService.showErrorSnackBar('نحتاج إذن الميكروفون لتسجيل صوتك');
 
       return;
     }
@@ -297,11 +296,11 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
       final directory = await getTemporaryDirectory();
 
       final path =
-          '${directory.path}/recording_${DateTime.now().millisecondsSinceEpoch}.m4a';
+          '${directory.path}/recording_${DateTime.now().millisecondsSinceEpoch}.wav';
 
       await _recorder.start(
         const RecordConfig(
-          encoder: AudioEncoder.aacLc,
+          encoder: AudioEncoder.wav,
           sampleRate: 16000,
           numChannels: 1,
         ),
@@ -604,8 +603,8 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
         if (!mounted) return;
 
         NotificationService.showErrorSnackBar(
-  'تعذر تحديث التحدي، حاول مرة أخرى',
-);
+          'تعذر تحديث التحدي، حاول مرة أخرى',
+        );
 
         return;
       }
@@ -1054,7 +1053,12 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
   Widget _buildCard() {
     return Column(
       children: [
-        _buildCardHeader(),
+        widget.isPracticeTogether
+            ? PracticeRaceProgress(
+                sessionId: widget.practiceSessionId!,
+                currentChildId: widget.childId,
+              )
+            : _buildCardHeader(),
 
         const SizedBox(height: 12),
 
