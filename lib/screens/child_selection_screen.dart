@@ -2,7 +2,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../services/ChildSession.dart';
+import '../services/childSession.dart';
 import '../services/notification_service.dart';
 import 'style_constants.dart'; 
 import '../utils/arabic_numbers.dart';
@@ -160,7 +160,11 @@ class ChildSelectionScreen extends StatelessWidget {
 
     if (!context.mounted) return;
 
-    ChildSession.currentChildId = childId;
+ChildSession.currentChildId = childId;
+ChildSession.currentParentId = FirebaseAuth.instance.currentUser?.uid;
+
+print('👶 SELECTED CHILD = [$childId]');
+print('👨 PARENT SESSION = [${ChildSession.currentParentId}]');
 
     Navigator.pushNamed(
       context,

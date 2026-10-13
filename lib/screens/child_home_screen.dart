@@ -3,7 +3,7 @@ import '../utils/arabic_numbers.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '/services/ChildSession.dart';
+import '/services/childSession.dart';
 import 'style_constants.dart';
 import '../services/notification_service.dart';
 import '../services/friend_service.dart';
@@ -27,8 +27,13 @@ const _mockChild = (
 class ChildHomeScreen extends StatelessWidget {
   final String childId;
 
-  const ChildHomeScreen({super.key, required this.childId});
-
+ChildHomeScreen({
+  super.key,
+  required this.childId,
+}) {
+print('🏠 CHILD HOME CREATED = [$childId]');
+  ChildSession.currentChildId = childId;
+  print('🏠 SESSION SET = [${ChildSession.currentChildId}]');}
 
   // ─── Friend Request Test Dialog ────────────────────────────────────────────
   Future<void> _showFriendRequestTestDialog(BuildContext context) async {
@@ -387,8 +392,10 @@ class _ChildHeader extends StatelessWidget {
   });
 
   void _showLogoutDialog(BuildContext context) {
-    showDialog(context: context, builder: (_) => const _ParentPasswordDialog());
-  }
+showDialog(
+  context: context,
+  builder: (_) => const ParentPasswordDialog(),
+);  }
 
   void _showChildLogoutConfirmation(
     BuildContext context,
@@ -531,6 +538,10 @@ class _ChildHeader extends StatelessWidget {
                 size: 26,
               ),
               onPressed: () {
+  print('🔔 BELL OPENED');
+  print('🏠 HOME childId = [$childId]');
+  print('👶 SESSION childId = [${ChildSession.currentChildId}]');
+
   Navigator.push(
     context,
     MaterialPageRoute(
@@ -597,15 +608,22 @@ class _ChildHeader extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 // Parent Password Dialog
 // ─────────────────────────────────────────────────────────────────────────────
-class _ParentPasswordDialog extends StatefulWidget {
-  const _ParentPasswordDialog();
+class ParentPasswordDialog extends StatefulWidget {
+  final String? targetChildId;
+  final String? notificationType;
+
+  const ParentPasswordDialog({
+    super.key,
+    this.targetChildId,
+    this.notificationType,
+  });
 
   @override
-  State<_ParentPasswordDialog> createState() => _ParentPasswordDialogState();
+  State<ParentPasswordDialog> createState() =>
+      _ParentPasswordDialogState();
 }
 
-class _ParentPasswordDialogState extends State<_ParentPasswordDialog> {
-  final _passwordController = TextEditingController();
+class _ParentPasswordDialogState extends State<ParentPasswordDialog> {  final _passwordController = TextEditingController();
 
   bool _obscurePassword = true;
   bool _hasError = false;

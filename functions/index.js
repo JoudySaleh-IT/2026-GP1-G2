@@ -45,6 +45,17 @@ exports.sendPushNotification = onCall(async (request) => {
   }
 
   try {
+const childDoc = await admin
+    .firestore()
+    .collection("children")
+    .doc(receiverId)
+    .get();
+
+let childName = "طفلك";
+
+if (childDoc.exists) {
+  childName = childDoc.data().name || "طفلك";
+}
     const tokenDoc = await admin
         .firestore()
         .collection("child_fcm_tokens")
@@ -73,14 +84,14 @@ exports.sendPushNotification = onCall(async (request) => {
       token: token,
 
       notification: {
-        title: type === "practice_invitation"
-          ? "دعوة تدريب جديدة 🎮"
-          : "طلب صداقة جديد 💜",
+  title: type === "practice_invitation"
+    ? `دعوة تدريب جديدة لـ ${childName} 🎮`
+    : `طلب صداقة جديد لـ ${childName} 💜`,
 
-        body: type === "practice_invitation"
-          ? "لديك دعوة جديدة للتدرّب مع صديقك في فصيح"
-          : "لديك طلب صداقة جديد في فصيح",
-      },
+  body: type === "practice_invitation"
+    ? `${childName} لديه دعوة جديدة للتدرّب مع صديق في فصيح`
+    : `${childName} لديه طلب صداقة جديد في فصيح`,
+},
 
       data: {
         type: type,
@@ -101,6 +112,160 @@ exports.sendPushNotification = onCall(async (request) => {
 
     return {
       success: true,
+    };
+  } catch (error) {
+    logger.error("Push notification error", error);
+
+    throw new HttpsError(
+        "internal",
+        "Failed to send push notification.",
+    );
+  }
+});
+exports.sendPushNotification = onCall(async (request) => {
+  if (!request.auth) {
+    throw new HttpsError(
+        "unauthenticated",
+        "User must be authenticated.",
+    );
+  }
+
+  const receiverId = request.data.receiverId;
+  const type = request.data.type;
+  const referenceId = request.data.referenceId || "";
+  const senderId = request.data.senderId || "";
+
+  if (!receiverId || !type) {
+    throw new HttpsError(
+        "invalid-argument",
+        "receiverId and type are required.",
+    );
+  }
+
+  const supportedTypes = [
+    "friend_request",
+    "practice_invitation",
+  ];
+
+  if (!supportedTypes.includes(type)) {
+    throw new HttpsError(
+        "invalid-argument",
+        "Unsupported notification type.",
+    );
+  }
+
+  try {
+    const db = admin.firestore();
+
+    // 1. Get receiver child information
+    const childDoc = await db
+        .collection("children")
+        .doc(receiverId)
+        .get();
+
+    let childName = "طفلك";
+    let parentId = null;
+
+    if (childDoc.exists) {
+      const childData = childDoc.data();
+
+      childName =
+          childData.nickname ||
+          childData.firstName ||
+          childData.name ||
+          "طفلك";
+
+      parentId = childData.parentId || null;
+    }
+
+    // 2. Collect all tokens that should receive this notification
+    const tokens = new Set();
+
+    // Keep the old child token as a fallback
+    const childTokenDoc = await db
+        .collection("child_fcm_tokens")
+        .doc(receiverId)
+        .get();
+
+    if (childTokenDoc.exists) {
+      const childToken = childTokenDoc.data().token;
+
+      if (childToken) {
+        tokens.add(childToken);
+      }
+    }
+
+    // Add every device registered for this child's family
+    if (parentId) {
+      const familyDevices = await db
+          .collection("parent_fcm_tokens")
+          .doc(parentId)
+          .collection("devices")
+          .get();
+
+      familyDevices.docs.forEach((doc) => {
+        const token = doc.data().token;
+
+        if (token) {
+          tokens.add(token);
+        }
+      });
+    }
+
+    if (tokens.size === 0) {
+      logger.warn("No FCM tokens found", {
+        receiverId,
+        parentId,
+      });
+
+      return {
+        success: false,
+        reason: "NO_TOKEN",
+      };
+    }
+
+    // 3. Build notification
+    const title = type === "practice_invitation"
+      ? `دعوة تدريب جديدة لـ ${childName} 🎮`
+      : `طلب صداقة جديد لـ ${childName} 💜`;
+
+    const body = type === "practice_invitation"
+      ? `${childName} لديه دعوة جديدة للتدرّب مع صديق في فصيح`
+      : `${childName} لديه طلب صداقة جديد في فصيح`;
+
+    // 4. Send to all unique registered devices
+    const response = await admin.messaging().sendEachForMulticast({
+      tokens: Array.from(tokens),
+
+      notification: {
+        title: title,
+        body: body,
+      },
+
+      data: {
+        type: String(type),
+        referenceId: String(referenceId),
+        senderId: String(senderId),
+        receiverId: String(receiverId),
+      },
+
+      android: {
+        priority: "high",
+      },
+    });
+
+    logger.info("Push notifications sent", {
+      receiverId,
+      parentId,
+      totalTokens: tokens.size,
+      successCount: response.successCount,
+      failureCount: response.failureCount,
+    });
+
+    return {
+      success: response.successCount > 0,
+      successCount: response.successCount,
+      failureCount: response.failureCount,
     };
   } catch (error) {
     logger.error("Push notification error", error);

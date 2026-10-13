@@ -34,6 +34,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'screens/friend_requests_screen.dart';
 import 'screens/notifications_screen.dart';
 
+
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -46,6 +47,55 @@ void main() async {
 
   // Initialize notifications separately.
   _initializeFirebaseMessaging();
+}
+
+void _handleNotificationTap(RemoteMessage message) {
+  final type = message.data['type'];
+  final receiverId = message.data['receiverId'];
+
+  if (receiverId == null || receiverId.isEmpty) return;
+
+  final currentChildId = ChildSession.currentChildId;
+debugPrint('🔔 TAP receiverId = [$receiverId]');
+debugPrint('👶 CURRENT childId = [$currentChildId]');
+debugPrint('🔔 type = [$type]');
+debugPrint('✅ SAME CHILD = ${currentChildId == receiverId}');
+  // The notification belongs to the child who is currently active.
+  if (currentChildId == receiverId) {
+    if (type == 'friend_request') {
+      navigatorKey.currentState?.pushNamed(
+        '/child/friend-requests',
+        arguments: {'childId': receiverId},
+      );
+    } else if (type == 'practice_invitation') {
+      navigatorKey.currentState?.pushNamed(
+        '/child/notifications',
+        arguments: {'childId': receiverId},
+      );
+    }
+
+    return;
+  }
+
+  // IMPORTANT:
+  // Do not open another child's account directly.
+  // Switching children must go through the parent verification flow.
+  debugPrint(
+    '🔐 Notification belongs to another child. '
+    'Current: $currentChildId | Receiver: $receiverId',
+  );
+  final context = navigatorKey.currentContext;
+
+if (context == null) return;
+
+showDialog(
+  context: context,
+  barrierDismissible: false,
+  builder: (_) => ParentPasswordDialog(
+    targetChildId: receiverId,
+    notificationType: type,
+  ),
+);
 }
 
 Future<void> _initializeFirebaseMessaging() async {
@@ -69,39 +119,31 @@ Future<void> _initializeFirebaseMessaging() async {
     }
 
     // User taps notification while app was in background.
-    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      final type = message.data['type'];
-      final receiverId = message.data['receiverId'];
-
-      if (type == 'friend_request') {
-        navigatorKey.currentState?.pushNamed(
-          '/child/friend-requests',
-          arguments: {'childId': receiverId},
-        );
-      } else if (type == 'practice_invitation') {
-        navigatorKey.currentState?.pushNamed(
-          '/child/notifications',
-          arguments: {'childId': receiverId},
-        );
-      }
-    });
+   FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+  _handleNotificationTap(message);
+});
 
 FirebaseMessaging.onMessage.listen((RemoteMessage message) {
  final type = message.data['type'];
 final receiverId = message.data['receiverId'];
+
+final currentChildId = ChildSession.currentChildId;
+
+debugPrint('📩 FCM receiverId = [$receiverId]');
+debugPrint('👶 Active childId = [$currentChildId]');
+
+if (receiverId != currentChildId) {
+  debugPrint('🔕 Notification ignored: belongs to another child');
+  return;
+}
 
 if (type == 'friend_request') {
   NotificationService.showLiveNotification(
     title: 'طلب صداقة جديد',
     message: 'لديك طلب صداقة جديد 👋',
     onTap: () {
-      navigatorKey.currentState?.pushNamed(
-        '/child/friend-requests',
-        arguments: {
-          'childId': receiverId,
-        },
-      );
-    },
+  _handleNotificationTap(message);
+},
   );
 
   } else if (type == 'practice_invitation') {
@@ -109,11 +151,8 @@ if (type == 'friend_request') {
       title: 'دعوة جديدة',
       message: 'لديك دعوة جديدة للتدرب معًا 🎮',
       onTap: () {
-        navigatorKey.currentState?.pushNamed(
-          '/child/notifications',
-          arguments: {'childId': receiverId},
-        );
-      },
+  _handleNotificationTap(message);
+},
     );
   }
 });
@@ -123,24 +162,11 @@ if (type == 'friend_request') {
     final RemoteMessage? initialMessage = await FirebaseMessaging.instance
         .getInitialMessage();
 
-    if (initialMessage != null) {
-      final type = initialMessage.data['type'];
-      final receiverId = initialMessage.data['receiverId'];
-
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (type == 'friend_request') {
-          navigatorKey.currentState?.pushNamed(
-            '/child/friend-requests',
-            arguments: {'childId': receiverId},
-          );
-        } else if (type == 'practice_invitation') {
-          navigatorKey.currentState?.pushNamed(
-            '/child/notifications',
-            arguments: {'childId': receiverId},
-          );
-        }
-      });
-    }
+   /* if (initialMessage != null) {
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    _handleNotificationTap(initialMessage);
+  });
+}*/
   } catch (e) {
     // Notifications failing should NOT stop the app.
     debugPrint('⚠️ Firebase Messaging initialization failed: $e');
