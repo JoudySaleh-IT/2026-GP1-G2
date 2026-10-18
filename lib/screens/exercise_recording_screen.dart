@@ -131,6 +131,18 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
 
   Timer? _recordingTimer;
 
+  static const int _questionDurationSeconds = 60;
+
+  Timer? _questionTimer;
+  DateTime? _questionDeadline;
+
+  int _questionSecondsLeft = _questionDurationSeconds;
+
+  bool _questionAdvanceBusy = false;
+  bool _questionTimeoutHandling = false;
+
+  bool get _isQuestionTimerRunning => _questionTimer?.isActive ?? false;
+
   late final AnimationController _spinController;
 
   // -------------------------------------------------------------------------
@@ -174,6 +186,10 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
         _isLoading = false;
         _loadError = null;
       });
+
+      if (widget.isPracticeTogether && exercises.isNotEmpty) {
+        _startQuestionTimer();
+      }
     } catch (e) {
       debugPrint('Error loading pronunciation exercises: $e');
 
@@ -193,6 +209,7 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
   @override
   void dispose() {
     _recordingTimer?.cancel();
+    _questionTimer?.cancel();
     _spinController.dispose();
     _audioPlayer.dispose();
     _recorder.dispose();
@@ -214,6 +231,64 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
     return (_currentExercise + 1) / _exercises.length;
   }
 
+  void _startQuestionTimer() {
+    if (!widget.isPracticeTogether || !mounted) {
+      return;
+    }
+
+    _questionTimer?.cancel();
+
+    _questionDeadline = DateTime.now().add(
+      const Duration(seconds: _questionDurationSeconds),
+    );
+
+    _questionTimeoutHandling = false;
+
+    setState(() {
+      _questionSecondsLeft = _questionDurationSeconds;
+    });
+
+    _questionTimer = Timer.periodic(const Duration(milliseconds: 250), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+
+      final deadline = _questionDeadline;
+
+      if (deadline == null) {
+        timer.cancel();
+        return;
+      }
+
+      final remainingMilliseconds = deadline
+          .difference(DateTime.now())
+          .inMilliseconds;
+
+      final int nextSeconds = remainingMilliseconds <= 0
+          ? 0
+          : (remainingMilliseconds + 999) ~/ 1000;
+
+      if (nextSeconds != _questionSecondsLeft) {
+        setState(() {
+          _questionSecondsLeft = nextSeconds;
+        });
+      }
+
+      if (remainingMilliseconds <= 0) {
+        timer.cancel();
+        _questionTimer = null;
+
+        _handleQuestionTimeout();
+      }
+    });
+  }
+
+  void _stopQuestionTimer() {
+    _questionTimer?.cancel();
+    _questionTimer = null;
+    _questionDeadline = null;
+  }
   // -------------------------------------------------------------------------
   // Play example audio
   // -------------------------------------------------------------------------
@@ -353,7 +428,9 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
 
         return;
       }
-
+      if (widget.isPracticeTogether) {
+        _stopQuestionTimer();
+      }
       // نحفظ معلومات الكلمة الحالية قبل أن ينتقل الطفل للكلمة التالية.
       final int exerciseIndex = _currentExercise;
       final String targetWord = _exercise.targetWord;
@@ -581,38 +658,50 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
   // Next exercise
   // -------------------------------------------------------------------------
 
-  Future<void> _handleNext() async {
-    if (_recordingState != RecordingState.recorded) {
+  Future<bool> _updatePracticeProgressForCurrentQuestion() async {
+    if (!widget.isPracticeTogether) {
+      return true;
+    }
+
+    try {
+      await _practiceService.updateProgress(
+        sessionId: widget.practiceSessionId!,
+        childId: widget.childId,
+        completedQuestions: _currentExercise + 1,
+      );
+
+      return true;
+    } catch (e) {
+      debugPrint('Practice Together progress update failed: $e');
+
+      if (!mounted) return false;
+
+      NotificationService.showErrorSnackBar('تعذر تحديث التحدي، حاول مرة أخرى');
+
+      return false;
+    }
+  }
+
+  Future<void> _completeCurrentQuestion({required bool timedOut}) async {
+    if (_questionAdvanceBusy) {
       return;
     }
 
-    // Practice Together:
-    if (widget.isPracticeTogether) {
-      try {
-        await _practiceService.updateProgress(
-          sessionId: widget.practiceSessionId!,
-          childId: widget.childId,
-
-          // _currentExercise is zero-based:
-          // question 0 completed = progress 1
-          completedQuestions: _currentExercise + 1,
-        );
-      } catch (e) {
-        debugPrint('Practice Together progress update failed: $e');
-
-        if (!mounted) return;
-
-        NotificationService.showErrorSnackBar(
-          'تعذر تحديث التحدي، حاول مرة أخرى',
-        );
-
-        return;
-      }
+    if (!timedOut && _recordingState != RecordingState.recorded) {
+      return;
     }
-    // ---------------------------------------------------------
-    // يوجد تمرين آخر
-    // ---------------------------------------------------------
 
+    _questionAdvanceBusy = true;
+
+    final bool progressUpdated =
+        await _updatePracticeProgressForCurrentQuestion();
+
+    if (!progressUpdated) {
+      _questionAdvanceBusy = false;
+      return;
+    }
+
+    // Another question exists
     if (_currentExercise < _exercises.length - 1) {
       setState(() {
         _currentExercise++;
@@ -631,10 +720,17 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
         _isExampleAudioPlaying = false;
       });
 
+      _questionAdvanceBusy = false;
+
+      if (widget.isPracticeTogether) {
+        _startQuestionTimer();
+      }
+
       return;
-    } // ---------------------------------------------------------
-    // آخر كلمة
-    // ---------------------------------------------------------
+    }
+
+    // Final question
+    _questionAdvanceBusy = false;
 
     if (_pendingEvaluations > 0) {
       setState(() {
@@ -644,8 +740,69 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
       return;
     }
 
-    // كل النتائج جاهزة
     _navigateToResults();
+  }
+
+  Future<void> _handleNext() async {
+    await _completeCurrentQuestion(timedOut: false);
+  }
+
+  Future<void> _handleQuestionTimeout() async {
+    if (!widget.isPracticeTogether ||
+        _questionTimeoutHandling ||
+        _questionAdvanceBusy ||
+        !mounted) {
+      return;
+    }
+
+    // A recording has already been submitted.
+    // AI processing time must not count.
+    if (_recordingState == RecordingState.recorded) {
+      return;
+    }
+
+    _questionTimeoutHandling = true;
+
+    _stopQuestionTimer();
+
+    // Stop example audio if it is still playing.
+    await _audioPlayer.stop();
+
+    // If the child is currently recording,
+    // stop and discard that unfinished recording.
+    if (_recordingState == RecordingState.recording) {
+      try {
+        await _recorder.stop();
+      } catch (e) {
+        debugPrint('Timeout recording stop error: $e');
+      }
+    }
+
+    _recordingTimer?.cancel();
+
+    if (!mounted) {
+      _questionTimeoutHandling = false;
+      return;
+    }
+
+    setState(() {
+      _isExampleAudioPlaying = false;
+
+      _recordingState = RecordingState.idle;
+
+      _recordedFilePath = null;
+
+      // Timeout = zero pronunciation score.
+      _exerciseScores[_currentExercise] = 0;
+
+      _exerciseInvalidFlags[_currentExercise] = true;
+
+      _exerciseInvalidReasons[_currentExercise] = 'انتهى الوقت';
+    });
+
+    await _completeCurrentQuestion(timedOut: true);
+
+    _questionTimeoutHandling = false;
   }
 
   void _navigateToResults() {
@@ -1057,6 +1214,8 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
             ? PracticeRaceProgress(
                 sessionId: widget.practiceSessionId!,
                 currentChildId: widget.childId,
+                secondsRemaining: _questionSecondsLeft,
+                timerRunning: _isQuestionTimerRunning,
               )
             : _buildCardHeader(),
 
@@ -1769,37 +1928,28 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
 
     return SizedBox(
       width: double.infinity,
-
       child: ElevatedButton(
-        onPressed: _recordingState == RecordingState.recorded
+        onPressed:
+            _recordingState == RecordingState.recorded && !_questionAdvanceBusy
             ? _handleNext
             : null,
 
         style: ElevatedButton.styleFrom(
           backgroundColor: _red,
-
           disabledBackgroundColor: const Color(0xFFE1DDE3),
-
           foregroundColor: Colors.white,
-
           disabledForegroundColor: Colors.white,
-
           elevation: 0,
-
           shape: const StadiumBorder(),
-
           padding: const EdgeInsets.symmetric(vertical: 13),
         ),
 
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
-
           mainAxisSize: MainAxisSize.min,
-
           children: [
             Text(
               isLast ? 'إنهاء' : 'التالي',
-
               style: const TextStyle(
                 fontFamily: 'Tajawal',
                 fontSize: 14,
@@ -1811,7 +1961,6 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
 
             Icon(
               isLast ? Icons.check_rounded : Icons.arrow_forward_rounded,
-
               size: 18,
             ),
           ],
