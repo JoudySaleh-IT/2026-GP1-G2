@@ -162,6 +162,8 @@ class FriendService {
 
     final friendshipRef = _db.collection('friendships').doc(pairId);
   
+String? acceptedSenderId;
+String? acceptedReceiverId;
 
     await _db.runTransaction((transaction) async {
       final requestSnapshot = await transaction.get(requestRef);
@@ -179,7 +181,8 @@ class FriendService {
       if (senderId == null || receiverId == null) {
         throw Exception('INVALID_FRIEND_REQUEST');
       }
-
+acceptedSenderId = senderId;
+acceptedReceiverId = receiverId;
       // Only the child who received the request can accept it.
       if (receiverId != currentChildId) {
         throw Exception('NOT_REQUEST_RECEIVER');
@@ -200,7 +203,90 @@ class FriendService {
 
       // Remove the pending request after acceptance.
       transaction.delete(requestRef);
+      });
+
+  // ---------------------------------------------------------------
+  // Notify the parent after the friendship is successfully created.
+  // ---------------------------------------------------------------
+  // ---------------------------------------------------------------
+// Notify BOTH parents after the friendship is successfully created.
+// ---------------------------------------------------------------
+final friendChildIds = <String>[
+  if (acceptedSenderId != null) acceptedSenderId!,
+  if (acceptedReceiverId != null) acceptedReceiverId!,
+];
+
+for (final childId in friendChildIds) {
+  try {
+    final childSnapshot = await _db
+        .collection('children')
+        .doc(childId)
+        .get();
+
+    if (!childSnapshot.exists || childSnapshot.data() == null) {
+      print('⚠️ Child not found for parent notification: $childId');
+      continue;
+    }
+
+    final childData = childSnapshot.data()!;
+
+    final String parentId =
+        childData['parentId']?.toString().trim() ?? '';
+
+    if (parentId.isEmpty) {
+      print('⚠️ Parent ID missing for child: $childId');
+      continue;
+    }
+
+    final notificationExpiresAt = Timestamp.fromDate(
+      DateTime.now().add(const Duration(days: 30)),
+    );
+
+    // Create the in-app notification for this child's parent.
+    await _db.collection('parent_notifications').add({
+      'parentId': parentId,
+      'childId': childId,
+      'type': 'new_friend',
+      'isRead': false,
+      'createdAt': FieldValue.serverTimestamp(),
+      'expiresAt': notificationExpiresAt,
     });
+
+    print(
+      '✅ Parent new-friend notification created '
+      'for child: $childId',
+    );
+
+    // Send external push notification to this child's parent.
+    try {
+      final callable = FirebaseFunctions.instanceFor(
+        region: 'us-central1',
+      ).httpsCallable('sendParentPushNotification');
+
+      final result = await callable.call({
+        'parentId': parentId,
+        'childId': childId,
+        'type': 'new_friend',
+      });
+
+      print(
+        '🔔 PARENT PUSH RESULT for $childId: ${result.data}',
+      );
+    } catch (e) {
+      // The friendship and in-app notification already succeeded.
+      print(
+        '❌ Failed to send parent push for $childId: $e',
+      );
+    }
+  } catch (e) {
+    // One parent's notification failing must not affect
+    // the friendship or the other parent's notification.
+    print(
+      '❌ Failed to create parent notification '
+      'for child $childId: $e',
+    );
+  }
+}
   }
 
   Future<void> declineFriendRequest({
@@ -256,6 +342,7 @@ class FriendService {
     final String pairId = _buildPairId(currentChildId, friendId);
 
     final friendshipRef = _db.collection('friendships').doc(pairId);
+    
 
     final friendshipSnapshot = await friendshipRef.get();
 
@@ -265,4 +352,4 @@ class FriendService {
 
     await friendshipRef.delete();
   }
-}
+  }

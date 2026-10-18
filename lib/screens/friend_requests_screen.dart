@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/friend_service.dart';
 import 'style_constants.dart';
 import '../services/notification_service.dart';
+import 'friends_screen.dart';
 
 class FriendRequestsScreen extends StatefulWidget {
   final String childId;
@@ -69,8 +70,17 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
 
       if (!mounted) return;
 
-      _showAppSnackBar('أصبحتم أصدقاء الآن! 🎉');
-    } catch (e) {
+_showAppSnackBar('أصبحتم أصدقاء الآن! 🎉');
+
+debugPrint('🚀 BEFORE POP');
+Navigator.pop(context);
+debugPrint('🚀 AFTER POP');
+Navigator.pushReplacement(
+  context,
+  MaterialPageRoute(
+    builder: (_) => FriendsScreen(childId: widget.childId),
+  ),
+);    } catch (e) {
       if (!mounted) return;
 
       _showAppSnackBar(

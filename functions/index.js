@@ -277,6 +277,154 @@ exports.sendPushNotification = onCall(async (request) => {
   }
 });
 
+exports.sendParentPushNotification = onCall(async (request) => {
+  if (!request.auth) {
+    throw new HttpsError(
+        "unauthenticated",
+        "User must be authenticated.",
+    );
+  }
+
+  const parentId = request.data.parentId;
+  const childId = request.data.childId;
+  const type = request.data.type;
+
+  if (!parentId || !childId || !type) {
+    throw new HttpsError(
+        "invalid-argument",
+        "parentId, childId and type are required.",
+    );
+  }
+
+  if (type !== "new_friend") {
+    throw new HttpsError(
+        "invalid-argument",
+        "Unsupported parent notification type.",
+    );
+  }
+
+  try {
+    const db = admin.firestore();
+
+    // 1. Verify that this child really belongs to this parent.
+    const childDoc = await db
+        .collection("children")
+        .doc(childId)
+        .get();
+
+    if (!childDoc.exists) {
+      throw new HttpsError(
+          "not-found",
+          "Child not found.",
+      );
+    }
+
+    const childData = childDoc.data();
+
+    if (childData.parentId !== parentId) {
+      throw new HttpsError(
+          "permission-denied",
+          "Child does not belong to this parent.",
+      );
+    }
+
+    const childName =
+        childData.nickname ||
+        childData.firstName ||
+        childData.name ||
+        "طفلك";
+
+    const gender =
+        String(childData.gender || "").toLowerCase();
+
+    // 2. Get all devices registered for this parent.
+    const devicesSnapshot = await db
+        .collection("parent_fcm_tokens")
+        .doc(parentId)
+        .collection("devices")
+        .get();
+
+    const tokens = new Set();
+
+    // IMPORTANT:
+    // Parent notifications are sent ONLY to devices
+    // explicitly marked as being in parent mode.
+    devicesSnapshot.docs.forEach((doc) => {
+      const deviceData = doc.data();
+
+      if (
+        deviceData.activeMode === "parent" &&
+        deviceData.token
+      ) {
+        tokens.add(deviceData.token);
+      }
+    });
+
+    if (tokens.size === 0) {
+      logger.info("No parent-mode devices available", {
+        parentId,
+        childId,
+      });
+
+      return {
+        success: false,
+        reason: "NO_PARENT_MODE_DEVICE",
+      };
+    }
+
+    // 3. Build parent notification.
+    const action =
+        gender === "girl" ? "أضافت" : "أضاف";
+
+    const title = "صديق جديد في فصيح 🌟";
+    const body = `${childName} ${action} صديقًا جديدًا`;
+
+    // 4. Send ONLY to parent-mode devices.
+    const response = await admin.messaging().sendEachForMulticast({
+      tokens: Array.from(tokens),
+
+      notification: {
+        title: title,
+        body: body,
+      },
+
+      data: {
+        type: "parent_new_friend",
+        parentId: String(parentId),
+        childId: String(childId),
+      },
+
+      android: {
+        priority: "high",
+      },
+    });
+
+    logger.info("Parent push notification sent", {
+      parentId,
+      childId,
+      totalTokens: tokens.size,
+      successCount: response.successCount,
+      failureCount: response.failureCount,
+    });
+
+    return {
+      success: response.successCount > 0,
+      successCount: response.successCount,
+      failureCount: response.failureCount,
+    };
+  } catch (error) {
+    logger.error("Parent push notification error", error);
+
+    if (error instanceof HttpsError) {
+      throw error;
+    }
+
+    throw new HttpsError(
+        "internal",
+        "Failed to send parent push notification.",
+    );
+  }
+});
 exports.cleanupOldNotifications = onSchedule(
     {
       schedule: "every day 00:00",

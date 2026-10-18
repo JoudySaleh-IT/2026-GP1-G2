@@ -33,6 +33,7 @@ import 'services/notification_service.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'screens/friend_requests_screen.dart';
 import 'screens/notifications_screen.dart';
+import 'screens/parent_notifications_screen.dart';
 
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -51,6 +52,19 @@ void main() async {
 
 void _handleNotificationTap(RemoteMessage message) {
   final type = message.data['type'];
+
+  // Parent notification
+  if (type == 'parent_new_friend') {
+    debugPrint('👨‍👩‍👧 Parent notification tapped');
+
+    navigatorKey.currentState?.pushNamed(
+      '/parent/notifications',
+    );
+
+    return;
+  }
+
+  // Child notification
   final receiverId = message.data['receiverId'];
 
   if (receiverId == null || receiverId.isEmpty) return;
@@ -123,11 +137,23 @@ Future<void> _initializeFirebaseMessaging() async {
   _handleNotificationTap(message);
 });
 
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      final type = message.data['type'];
-      final receiverId = message.data['receiverId'];
+FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+ final type = message.data['type'];
+ // Parent notification while the app is open
+if (type == 'parent_new_friend') {
+  NotificationService.showLiveNotification(
+    title: message.notification?.title ?? 'صديق جديد في فصيح 🌟',
+    message:
+        message.notification?.body ?? 'تمت إضافة صديق جديد لأحد أطفالك',
+    onTap: () {
+      _handleNotificationTap(message);
+    },
+  );
 
-<<<<<<< HEAD
+  return;
+}
+final receiverId = message.data['receiverId'];
+
 final currentChildId = ChildSession.currentChildId;
 
 debugPrint('📩 FCM receiverId = [$receiverId]');
@@ -157,32 +183,6 @@ if (type == 'friend_request') {
     );
   }
 });
-=======
-      if (type == 'friend_request') {
-        NotificationService.showLiveNotification(
-          title: 'طلب صداقة جديد',
-          message: 'لديك طلب صداقة جديد 👋',
-          onTap: () {
-            navigatorKey.currentState?.pushNamed(
-              '/child/friend-requests',
-              arguments: {'childId': receiverId},
-            );
-          },
-        );
-      } else if (type == 'practice_invitation') {
-        NotificationService.showLiveNotification(
-          title: 'دعوة جديدة',
-          message: 'لديك دعوة جديدة للتدرب معًا 🎮',
-          onTap: () {
-            navigatorKey.currentState?.pushNamed(
-              '/child/notifications',
-              arguments: {'childId': receiverId},
-            );
-          },
-        );
-      }
-    });
->>>>>>> 7c2317537d93ff2dfe6410030b8464ce8b7e926d
 
     // User opens app by tapping a notification
     // while the app was completely closed.
@@ -247,6 +247,8 @@ class MyApp extends StatelessWidget {
         '/parent/forgot-password': (context) => const ForgotPasswordScreen(),
         '/parent/dashboard': (context) => const ParentDashboardScreen(),
         '/parent/settings': (context) => const ParentSettingsScreen(),
+        '/parent/notifications': (context) =>
+    const ParentNotificationsScreen(),
         '/parent/select-child': (context) => const ChildSelectionScreen(),
         '/parent/create-child': (context) => const CreateChildProfileScreen(),
 

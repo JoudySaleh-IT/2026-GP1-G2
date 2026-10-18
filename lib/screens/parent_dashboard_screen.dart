@@ -5,12 +5,14 @@ import '../services/ChildSession.dart';
 import '../services/notification_service.dart';
 import 'style_constants.dart';
 import '../utils/arabic_numbers.dart';
+import '../services/fcm_service.dart';
 
 class ParentDashboardScreen extends StatelessWidget {
   const ParentDashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    FcmService().saveTokenForParent();
     final String? userId = FirebaseAuth.instance.currentUser?.uid;
 
     return Directionality(
@@ -125,18 +127,132 @@ class ParentDashboardScreen extends StatelessWidget {
             ),
           ),
           Row(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.settings_outlined, color: Colors.white),
-                onPressed: () =>
-                    Navigator.pushNamed(context, '/parent/settings'),
+  children: [
+    // Notifications
+StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+  stream: FirebaseFirestore.instance
+      .collection('parent_notifications')
+      .where('parentId', isEqualTo: userId)
+      .where('isRead', isEqualTo: false)
+      .snapshots(),
+  builder: (context, snapshot) {
+    final unreadCount = snapshot.data?.docs.length ?? 0;
+
+    return SizedBox(
+      width: 48,
+      height: 48,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Center(
+            child: IconButton(
+              icon: const Icon(
+                Icons.notifications_rounded,
+                color: Colors.white,
+                size: 26,
               ),
-              IconButton(
-                icon: const Icon(Icons.logout_rounded, color: Colors.white),
-                onPressed: () => _handleLogout(context),
+              onPressed: () {
+                Navigator.pushNamed(
+                  context,
+                  '/parent/notifications',
+                );
+              },
+            ),
+          ),
+
+          if (unreadCount > 0)
+            Positioned(
+              top: 4,
+              right: 4,
+              child: Container(
+                constraints: const BoxConstraints(
+                  minWidth: 18,
+                  minHeight: 18,
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 5,
+                  vertical: 2,
+                ),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFF6969),
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Text(
+                    unreadCount > 9 ? '9+' : '$unreadCount',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  },
+),
+
+    // Menu
+    PopupMenuButton<String>(
+      icon: const Icon(
+        Icons.menu_rounded,
+        color: Colors.white,
+      ),
+      color: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+      ),
+      onSelected: (value) {
+        if (value == 'settings') {
+          Navigator.pushNamed(context, '/parent/settings');
+        } else if (value == 'logout') {
+          _handleLogout(context);
+        }
+      },
+      itemBuilder: (context) => [
+        const PopupMenuItem<String>(
+          value: 'settings',
+          child: Row(
+            children: [
+              Icon(
+                Icons.settings_outlined,
+                color: Color(0xFF511281),
+              ),
+              SizedBox(width: 10),
+              Text(
+                'الإعدادات',
+                style: TextStyle(fontFamily: 'Tajawal'),
               ),
             ],
           ),
+        ),
+        const PopupMenuItem<String>(
+          value: 'logout',
+          child: Row(
+            children: [
+              Icon(
+                Icons.logout_rounded,
+                color: Color(0xFFFF6969),
+              ),
+              SizedBox(width: 10),
+              Text(
+                'تسجيل الخروج',
+                style: TextStyle(
+                  color: Color(0xFFFF6969),
+                  fontFamily: 'Tajawal',
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  ],
+),
         ],
       ),
     );
