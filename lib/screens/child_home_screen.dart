@@ -498,7 +498,76 @@ showDialog(
       _showLogoutDialog(context);
     }
   }
+Future<int> _getValidUnreadCount(
+  List<QueryDocumentSnapshot<Map<String, dynamic>>> docs,
+) async {
+  final now = DateTime.now();
+  int count = 0;
 
+  for (final doc in docs) {
+    final data = doc.data();
+
+    final createdAt = data['createdAt'];
+
+    if (createdAt is! Timestamp) {
+      continue;
+    }
+
+    if (now.difference(createdAt.toDate()) >=
+        const Duration(hours: 48)) {
+      continue;
+    }
+
+    final type = data['type']?.toString() ?? '';
+
+    if (type == 'friend_request') {
+      count++;
+      continue;
+    }
+
+    if (type == 'practice_invitation') {
+      final sessionId = data['referenceId']?.toString() ?? '';
+
+      if (sessionId.isEmpty) {
+        continue;
+      }
+
+      final sessionSnapshot = await FirebaseFirestore.instance
+          .collection('practice_sessions')
+          .doc(sessionId)
+          .get();
+
+      if (!sessionSnapshot.exists ||
+          sessionSnapshot.data() == null) {
+        continue;
+      }
+
+      final sessionData = sessionSnapshot.data()!;
+
+      if (sessionData['status'] != 'pending') {
+        continue;
+      }
+
+      final sessionCreatedAt = sessionData['createdAt'];
+
+      if (sessionCreatedAt is! Timestamp) {
+        continue;
+      }
+
+      final invitationAge = now.difference(
+        sessionCreatedAt.toDate(),
+      );
+
+      if (invitationAge >= const Duration(minutes: 30)) {
+        continue;
+      }
+
+      count++;
+    }
+  }
+
+  return count;
+}
   @override
   Widget build(BuildContext context) {
     return FaseehStyle.buildLargeHeader(
@@ -521,10 +590,15 @@ showDialog(
       .where('receiverId', isEqualTo: childId)
       .where('isRead', isEqualTo: false)
       .snapshots(),
-  builder: (context, snapshot) {
-    final unreadCount = snapshot.data?.docs.length ?? 0;
+builder: (context, snapshot) {
+  final docs = snapshot.data?.docs ?? [];
 
-    return SizedBox(
+  return FutureBuilder<int>(
+    future: _getValidUnreadCount(docs),
+    builder: (context, countSnapshot) {
+      final unreadCount = countSnapshot.data ?? 0;
+
+      return SizedBox(
       width: 48,
       height: 48,
       child: Stack(
@@ -583,10 +657,12 @@ showDialog(
                 ),
               ),
             ),
-        ],
+              ],
       ),
     );
-  },
+    },
+  );
+},
 ),
         SizedBox(
           width: 48,

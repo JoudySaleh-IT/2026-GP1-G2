@@ -1036,6 +1036,8 @@ class _FriendProfileCardState extends State<_FriendProfileCard> {
         .timeout(const Duration(seconds: 8));
 
     if (!snapshot.exists) {
+        print('❌ MISSING PUBLIC PROFILE = ${widget.friendId}');
+
       return null;
     }
 
@@ -1051,21 +1053,9 @@ class _FriendProfileCardState extends State<_FriendProfileCard> {
           return const _FriendLoadingCard();
         }
 
-        if (snapshot.hasError || snapshot.data == null) {
-          return Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.90),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: const Text(
-              'تعذّر تحميل بيانات الصديق',
-              textAlign: TextAlign.right,
-              style: TextStyle(fontFamily: 'Tajawal', color: Colors.grey),
-            ),
-          );
-        }
+       if (snapshot.hasError || snapshot.data == null) {
+  return const SizedBox.shrink();
+}
 
         final profile = snapshot.data!;
 
