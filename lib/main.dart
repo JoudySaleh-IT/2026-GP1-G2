@@ -53,17 +53,35 @@ void main() async {
 void _handleNotificationTap(RemoteMessage message) {
   final type = message.data['type'];
 
-  // Parent notification
-  if (type == 'parent_new_friend') {
-    debugPrint('👨‍👩‍👧 Parent notification tapped');
+ // Parent notification
+if (type == 'parent_new_friend') {
+  debugPrint('👨‍👩‍👧 Parent notification tapped');
 
+  final currentChildId = ChildSession.currentChildId;
+
+  // Already in parent mode
+  if (currentChildId == null) {
     navigatorKey.currentState?.pushNamed(
       '/parent/notifications',
     );
-
     return;
   }
 
+  // Currently in child mode → parent verification required
+  final context = navigatorKey.currentContext;
+
+  if (context == null) return;
+
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (_) => const ParentPasswordDialog(
+      openParentNotifications: true,
+    ),
+  );
+
+  return;
+}
   // Child notification
   final receiverId = message.data['receiverId'];
 

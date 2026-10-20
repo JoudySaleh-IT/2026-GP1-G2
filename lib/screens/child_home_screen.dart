@@ -32,7 +32,6 @@ ChildHomeScreen({
   required this.childId,
 }) {
 print('🏠 CHILD HOME CREATED = [$childId]');
-  ChildSession.currentChildId = childId;
   print('🏠 SESSION SET = [${ChildSession.currentChildId}]');}
 
   // ─── Friend Request Test Dialog ────────────────────────────────────────────
@@ -687,11 +686,13 @@ builder: (context, snapshot) {
 class ParentPasswordDialog extends StatefulWidget {
   final String? targetChildId;
   final String? notificationType;
+  final bool openParentNotifications;
 
   const ParentPasswordDialog({
     super.key,
     this.targetChildId,
     this.notificationType,
+    this.openParentNotifications=false,
   });
 
   @override
@@ -746,6 +747,16 @@ class _ParentPasswordDialogState extends State<ParentPasswordDialog> {  final _p
         password: _passwordController.text,
       );
 
+      ChildSession.currentChildId = null;
+ChildSession.currentParentId =
+    FirebaseAuth.instance.currentUser?.uid;
+
+await FcmService().saveTokenForParent();
+
+print('👨‍👩‍👧 SWITCHED TO PARENT MODE');
+print('👶 CHILD SESSION = ${ChildSession.currentChildId}');
+print('👨 PARENT ID = ${ChildSession.currentParentId}');
+
       if (mounted) {
         navigator.pop();
       }
@@ -756,9 +767,14 @@ class _ParentPasswordDialogState extends State<ParentPasswordDialog> {  final _p
 
       if (mounted) {
         Navigator.of(
-          context,
-          rootNavigator: true,
-        ).pushNamedAndRemoveUntil('/parent/dashboard', (route) => false);
+  context,
+  rootNavigator: true,
+).pushNamedAndRemoveUntil(
+  widget.openParentNotifications
+      ? '/parent/notifications'
+      : '/parent/dashboard',
+  (route) => false,
+);
       }
     } on FirebaseAuthException catch (e) {
       setState(() {

@@ -11,117 +11,7 @@ setGlobalOptions({
   region: "us-central1",
 });
 
-exports.sendPushNotification = onCall(async (request) => {
-  // لازم المستخدم يكون مسجل دخول
-  if (!request.auth) {
-    throw new HttpsError(
-        "unauthenticated",
-        "User must be authenticated.",
-    );
-  }
 
-  const receiverId = request.data.receiverId;
-  const type = request.data.type;
-  const referenceId = request.data.referenceId || "";
-  const senderId = request.data.senderId || "";
-
-  if (!receiverId || !type) {
-    throw new HttpsError(
-        "invalid-argument",
-        "receiverId and type are required.",
-    );
-  }
-//We support 2 types of notifications which are friend request and practice invitation
-  const supportedTypes = [
-    "friend_request",
-    "practice_invitation",
-  ];
-
-  if (!supportedTypes.includes(type)) {
-    throw new HttpsError(
-      "invalid-argument",
-      "Unsupported notification type.",
-    );
-  }
-
-  try {
-const childDoc = await admin
-    .firestore()
-    .collection("children")
-    .doc(receiverId)
-    .get();
-
-let childName = "طفلك";
-
-if (childDoc.exists) {
-  childName = childDoc.data().name || "طفلك";
-}
-    const tokenDoc = await admin
-        .firestore()
-        .collection("child_fcm_tokens")
-        .doc(receiverId)
-        .get();
-
-    if (!tokenDoc.exists) {
-      logger.warn("No FCM token found", {receiverId});
-
-      return {
-        success: false,
-        reason: "NO_TOKEN",
-      };
-    }
-
-    const token = tokenDoc.data().token;
-
-    if (!token) {
-      return {
-        success: false,
-        reason: "EMPTY_TOKEN",
-      };
-    }
-
-    await admin.messaging().send({
-      token: token,
-
-      notification: {
-  title: type === "practice_invitation"
-    ? `دعوة تدريب جديدة لـ ${childName} 🎮`
-    : `طلب صداقة جديد لـ ${childName} 💜`,
-
-  body: type === "practice_invitation"
-    ? `${childName} لديه دعوة جديدة للتدرّب مع صديق في فصيح`
-    : `${childName} لديه طلب صداقة جديد في فصيح`,
-},
-
-      data: {
-        type: type,
-        referenceId: String(referenceId),
-        senderId: String(senderId),
-        receiverId: String(receiverId),
-      },
-
-      android: {
-        priority: "high",
-      },
-    });
-
-    logger.info("Push notification sent", {
-      receiverId,
-      type,
-    });
-
-    return {
-      success: true,
-    };
-  } catch (error) {
-    logger.error("Push notification error", error);
-
-    throw new HttpsError(
-        "internal",
-        "Failed to send push notification.",
-    );
-  }
-});
 exports.sendPushNotification = onCall(async (request) => {
   if (!request.auth) {
     throw new HttpsError(
@@ -182,18 +72,7 @@ exports.sendPushNotification = onCall(async (request) => {
     const tokens = new Set();
 
     // Keep the old child token as a fallback
-    const childTokenDoc = await db
-        .collection("child_fcm_tokens")
-        .doc(receiverId)
-        .get();
-
-    if (childTokenDoc.exists) {
-      const childToken = childTokenDoc.data().token;
-
-      if (childToken) {
-        tokens.add(childToken);
-      }
-    }
+    
 
     // Add every device registered for this child's family
     if (parentId) {
@@ -203,13 +82,17 @@ exports.sendPushNotification = onCall(async (request) => {
           .collection("devices")
           .get();
 
-      familyDevices.docs.forEach((doc) => {
-        const token = doc.data().token;
+     familyDevices.docs.forEach((doc) => {
+  const deviceData = doc.data();
 
-        if (token) {
-          tokens.add(token);
-        }
-      });
+  if (
+    deviceData.activeMode === "child" &&
+    deviceData.activeChildId === receiverId &&
+    deviceData.token
+  ) {
+    tokens.add(deviceData.token);
+  }
+});
     }
 
     if (tokens.size === 0) {
