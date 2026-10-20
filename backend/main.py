@@ -158,8 +158,41 @@ async def process_audio(
                 "message": "No speech detected."
             }
 
-        # Use the same audio preparation used during fine-tuning.
-        y_final = y
+        # -------------------------------------------------
+        # Audio preprocessing for ASR
+        # -------------------------------------------------
+
+        # 1. Remove very low-frequency noise
+        b, a = signal.butter(
+            4,
+            80,
+            'hp',
+            fs=sr
+        )
+
+        y_hp = signal.filtfilt(
+            b,
+            a,
+            y
+        )
+
+        # 2. Remove leading and trailing silence
+        y_trimmed, _ = librosa.effects.trim(
+            y_hp,
+            top_db=35
+        )
+
+        # 3. Normalize audio level
+        # If trimming leaves an unusually short signal,
+        # use the full filtered audio instead.
+        if len(y_trimmed) < (sr * 0.2):
+            y_final = librosa.util.normalize(
+                y_hp
+            )
+        else:
+            y_final = librosa.util.normalize(
+                y_trimmed
+            )
 
         sf.write(
             temp_clean,
