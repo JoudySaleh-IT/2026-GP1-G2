@@ -42,7 +42,16 @@ class FcmService {
 }
 
   Future<void> saveTokenForChild(String childId) async {
-    if (childId.isEmpty) return;
+  if (childId.isEmpty) return;
+
+  // Do not switch this device back to child mode
+  // if the child session is no longer active.
+  if (ChildSession.currentChildId != childId) {
+    print('🔕 SKIPPED saveTokenForChild');
+    print('🔕 requested childId = $childId');
+    print('🔕 current session = ${ChildSession.currentChildId}');
+    return;
+  }
 
     final String? token = await _messaging.getToken();
 
