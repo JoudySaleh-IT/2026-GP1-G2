@@ -131,7 +131,7 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
 
   Timer? _recordingTimer;
 
-  static const int _questionDurationSeconds = 10;
+  static const int _questionDurationSeconds = 60;
 
   Timer? _questionTimer;
   DateTime? _questionDeadline;

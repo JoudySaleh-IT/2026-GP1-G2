@@ -80,7 +80,7 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
   final AudioPlayer _audioPlayer = AudioPlayer();
   final PracticeTogetherService _practiceService = PracticeTogetherService();
 
-  static const int _questionDurationSeconds = 10;
+  static const int _questionDurationSeconds = 60;
 
   Timer? _questionTimer;
   DateTime? _questionDeadline;
