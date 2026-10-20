@@ -208,8 +208,8 @@ class PracticeTogetherService {
     final notificationRef = _db.collection('notifications').doc();
 
     final notificationExpiresAt = Timestamp.fromDate(
-  DateTime.now().add(const Duration(hours: 48)),
-);
+      DateTime.now().add(const Duration(hours: 48)),
+    );
 
     await _db.runTransaction((transaction) async {
       // Verify friendship first.
@@ -347,17 +347,15 @@ class PracticeTogetherService {
       }
       final Timestamp? createdAt = data['createdAt'] as Timestamp?;
 
-if (createdAt == null) {
-  throw Exception('MISSING_INVITATION_TIME');
-}
+      if (createdAt == null) {
+        throw Exception('MISSING_INVITATION_TIME');
+      }
 
-final elapsed = DateTime.now().difference(
-  createdAt.toDate(),
-);
+      final elapsed = DateTime.now().difference(createdAt.toDate());
 
-if (elapsed >= const Duration(minutes: 30)) {
-  throw Exception('INVITATION_EXPIRED');
-}
+      if (elapsed >= const Duration(minutes: 30)) {
+        throw Exception('INVITATION_EXPIRED');
+      }
 
       transaction.update(sessionRef, {
         'status': 'accepted',
@@ -720,6 +718,225 @@ if (elapsed >= const Duration(minutes: 30)) {
       }
 
       transaction.update(sessionRef, {progressKey: completedQuestions});
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Submit one child's final competition statistics
+  // ---------------------------------------------------------------------------
+
+  Future<void> submitFinalStats({
+    required String sessionId,
+    required String childId,
+    required int correctCount,
+    required int responseTimeMs,
+    required int timedOutCount,
+    required int averageScore,
+  }) async {
+    final user = _auth.currentUser;
+
+    if (user == null) {
+      throw Exception('NOT_AUTHENTICATED');
+    }
+
+    if (correctCount < 0 || correctCount > 8) {
+      throw Exception('INVALID_CORRECT_COUNT');
+    }
+
+    // 8 questions × maximum 60 seconds each.
+    if (responseTimeMs < 0 || responseTimeMs > 480000) {
+      throw Exception('INVALID_RESPONSE_TIME');
+    }
+
+    if (timedOutCount < 0 || timedOutCount > 8) {
+      throw Exception('INVALID_TIMEOUT_COUNT');
+    }
+
+    if (averageScore < 0 || averageScore > 100) {
+      throw Exception('INVALID_AVERAGE_SCORE');
+    }
+
+    final sessionRef = _db.collection('practice_sessions').doc(sessionId);
+
+    await _db.runTransaction((transaction) async {
+      final snapshot = await transaction.get(sessionRef);
+
+      if (!snapshot.exists || snapshot.data() == null) {
+        throw Exception('SESSION_NOT_FOUND');
+      }
+
+      final data = snapshot.data()!;
+
+      final String senderId = data['senderId']?.toString() ?? '';
+
+      final String receiverId = data['receiverId']?.toString() ?? '';
+
+      if (childId != senderId && childId != receiverId) {
+        throw Exception('NOT_SESSION_MEMBER');
+      }
+
+      final bool isSender = childId == senderId;
+
+      final String progressKey = isSender
+          ? 'senderProgress'
+          : 'receiverProgress';
+
+      final String finishedKey = isSender
+          ? 'senderFinished'
+          : 'receiverFinished';
+
+      final String correctKey = isSender
+          ? 'senderCorrectCount'
+          : 'receiverCorrectCount';
+
+      final String timeKey = isSender
+          ? 'senderResponseTimeMs'
+          : 'receiverResponseTimeMs';
+
+      final String timeoutKey = isSender
+          ? 'senderTimedOutCount'
+          : 'receiverTimedOutCount';
+
+      final String averageKey = isSender
+          ? 'senderAverageScore'
+          : 'receiverAverageScore';
+
+      // A completed session means this child's submission
+      // was already accepted earlier.
+      if (data['status'] == 'completed') {
+        if (data[finishedKey] == true) {
+          return;
+        }
+
+        throw Exception('SESSION_ALREADY_COMPLETED');
+      }
+
+      if (data['status'] != 'active') {
+        throw Exception('SESSION_NOT_ACTIVE');
+      }
+
+      final int progress = (data[progressKey] as num?)?.toInt() ?? 0;
+
+      // Final statistics can only be submitted
+      // after all 8 questions are completed.
+      if (progress != 8) {
+        throw Exception('EXERCISE_NOT_FINISHED');
+      }
+
+      // Makes repeated callbacks safe.
+      if (data[finishedKey] == true) {
+        return;
+      }
+
+      transaction.update(sessionRef, {
+        finishedKey: true,
+        correctKey: correctCount,
+        timeKey: responseTimeMs,
+        timeoutKey: timedOutCount,
+        averageKey: averageScore,
+      });
+    });
+
+    // The first finisher will simply get false here.
+    // The second finisher will resolve the competition.
+    await resolveSessionIfReady(sessionId: sessionId, childId: childId);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Resolve winner once both children have submitted their statistics
+  // ---------------------------------------------------------------------------
+
+  Future<bool> resolveSessionIfReady({
+    required String sessionId,
+    required String childId,
+  }) async {
+    final user = _auth.currentUser;
+
+    if (user == null) {
+      throw Exception('NOT_AUTHENTICATED');
+    }
+
+    final sessionRef = _db.collection('practice_sessions').doc(sessionId);
+
+    return _db.runTransaction<bool>((transaction) async {
+      final snapshot = await transaction.get(sessionRef);
+
+      if (!snapshot.exists || snapshot.data() == null) {
+        throw Exception('SESSION_NOT_FOUND');
+      }
+
+      final data = snapshot.data()!;
+
+      final String senderId = data['senderId']?.toString() ?? '';
+
+      final String receiverId = data['receiverId']?.toString() ?? '';
+
+      if (childId != senderId && childId != receiverId) {
+        throw Exception('NOT_SESSION_MEMBER');
+      }
+
+      // Another device may already have resolved it.
+      if (data['status'] == 'completed') {
+        return true;
+      }
+
+      if (data['status'] != 'active') {
+        return false;
+      }
+
+      final bool senderFinished = data['senderFinished'] == true;
+
+      final bool receiverFinished = data['receiverFinished'] == true;
+
+      if (!senderFinished || !receiverFinished) {
+        return false;
+      }
+
+      final int senderCorrect =
+          (data['senderCorrectCount'] as num?)?.toInt() ?? 0;
+
+      final int receiverCorrect =
+          (data['receiverCorrectCount'] as num?)?.toInt() ?? 0;
+
+      final int senderTime =
+          (data['senderResponseTimeMs'] as num?)?.toInt() ?? 0;
+
+      final int receiverTime =
+          (data['receiverResponseTimeMs'] as num?)?.toInt() ?? 0;
+
+      String result;
+      String? winnerId;
+
+      // Primary factor: correctness.
+      if (senderCorrect > receiverCorrect) {
+        result = 'sender_won';
+        winnerId = senderId;
+      } else if (receiverCorrect > senderCorrect) {
+        result = 'receiver_won';
+        winnerId = receiverId;
+      }
+      // Tie in correctness → lower response time wins.
+      else if (senderTime < receiverTime) {
+        result = 'sender_won';
+        winnerId = senderId;
+      } else if (receiverTime < senderTime) {
+        result = 'receiver_won';
+        winnerId = receiverId;
+      }
+      // Same correctness + same time.
+      else {
+        result = 'tie';
+        winnerId = null;
+      }
+
+      transaction.update(sessionRef, {
+        'status': 'completed',
+        'result': result,
+        'winnerId': winnerId,
+        'completedAt': FieldValue.serverTimestamp(),
+      });
+
+      return true;
     });
   }
 

@@ -34,7 +34,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'screens/friend_requests_screen.dart';
 import 'screens/notifications_screen.dart';
 import 'screens/parent_notifications_screen.dart';
-
+import 'screens/practice_together_result_screen.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 void main() async {
@@ -57,9 +57,7 @@ void _handleNotificationTap(RemoteMessage message) {
   if (type == 'parent_new_friend') {
     debugPrint('👨‍👩‍👧 Parent notification tapped');
 
-    navigatorKey.currentState?.pushNamed(
-      '/parent/notifications',
-    );
+    navigatorKey.currentState?.pushNamed('/parent/notifications');
 
     return;
   }
@@ -70,10 +68,10 @@ void _handleNotificationTap(RemoteMessage message) {
   if (receiverId == null || receiverId.isEmpty) return;
 
   final currentChildId = ChildSession.currentChildId;
-debugPrint('🔔 TAP receiverId = [$receiverId]');
-debugPrint('👶 CURRENT childId = [$currentChildId]');
-debugPrint('🔔 type = [$type]');
-debugPrint('✅ SAME CHILD = ${currentChildId == receiverId}');
+  debugPrint('🔔 TAP receiverId = [$receiverId]');
+  debugPrint('👶 CURRENT childId = [$currentChildId]');
+  debugPrint('🔔 type = [$type]');
+  debugPrint('✅ SAME CHILD = ${currentChildId == receiverId}');
   // The notification belongs to the child who is currently active.
   if (currentChildId == receiverId) {
     if (type == 'friend_request') {
@@ -100,16 +98,14 @@ debugPrint('✅ SAME CHILD = ${currentChildId == receiverId}');
   );
   final context = navigatorKey.currentContext;
 
-if (context == null) return;
+  if (context == null) return;
 
-showDialog(
-  context: context,
-  barrierDismissible: false,
-  builder: (_) => ParentPasswordDialog(
-    targetChildId: receiverId,
-    notificationType: type,
-  ),
-);
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (_) =>
+        ParentPasswordDialog(targetChildId: receiverId, notificationType: type),
+  );
 }
 
 Future<void> _initializeFirebaseMessaging() async {
@@ -133,63 +129,62 @@ Future<void> _initializeFirebaseMessaging() async {
     }
 
     // User taps notification while app was in background.
-   FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-  _handleNotificationTap(message);
-});
-
-FirebaseMessaging.onMessage.listen((RemoteMessage message) {
- final type = message.data['type'];
- // Parent notification while the app is open
-if (type == 'parent_new_friend') {
-  NotificationService.showLiveNotification(
-    title: message.notification?.title ?? 'صديق جديد في فصيح 🌟',
-    message:
-        message.notification?.body ?? 'تمت إضافة صديق جديد لأحد أطفالك',
-    onTap: () {
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
       _handleNotificationTap(message);
-    },
-  );
+    });
 
-  return;
-}
-final receiverId = message.data['receiverId'];
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      final type = message.data['type'];
+      // Parent notification while the app is open
+      if (type == 'parent_new_friend') {
+        NotificationService.showLiveNotification(
+          title: message.notification?.title ?? 'صديق جديد في فصيح 🌟',
+          message:
+              message.notification?.body ?? 'تمت إضافة صديق جديد لأحد أطفالك',
+          onTap: () {
+            _handleNotificationTap(message);
+          },
+        );
 
-final currentChildId = ChildSession.currentChildId;
+        return;
+      }
+      final receiverId = message.data['receiverId'];
 
-debugPrint('📩 FCM receiverId = [$receiverId]');
-debugPrint('👶 Active childId = [$currentChildId]');
+      final currentChildId = ChildSession.currentChildId;
 
-if (receiverId != currentChildId) {
-  debugPrint('🔕 Notification ignored: belongs to another child');
-  return;
-}
+      debugPrint('📩 FCM receiverId = [$receiverId]');
+      debugPrint('👶 Active childId = [$currentChildId]');
 
-if (type == 'friend_request') {
-  NotificationService.showLiveNotification(
-    title: 'طلب صداقة جديد',
-    message: 'لديك طلب صداقة جديد 👋',
-    onTap: () {
-  _handleNotificationTap(message);
-},
-  );
+      if (receiverId != currentChildId) {
+        debugPrint('🔕 Notification ignored: belongs to another child');
+        return;
+      }
 
-  } else if (type == 'practice_invitation') {
-    NotificationService.showLiveNotification(
-      title: 'دعوة جديدة',
-      message: 'لديك دعوة جديدة للتدرب معًا 🎮',
-      onTap: () {
-  _handleNotificationTap(message);
-},
-    );
-  }
-});
+      if (type == 'friend_request') {
+        NotificationService.showLiveNotification(
+          title: 'طلب صداقة جديد',
+          message: 'لديك طلب صداقة جديد 👋',
+          onTap: () {
+            _handleNotificationTap(message);
+          },
+        );
+      } else if (type == 'practice_invitation') {
+        NotificationService.showLiveNotification(
+          title: 'دعوة جديدة',
+          message: 'لديك دعوة جديدة للتدرب معًا 🎮',
+          onTap: () {
+            _handleNotificationTap(message);
+          },
+        );
+      }
+    });
 
     // User opens app by tapping a notification
     // while the app was completely closed.
     final RemoteMessage? initialMessage = await FirebaseMessaging.instance
         .getInitialMessage();
 
-   /* if (initialMessage != null) {
+    /* if (initialMessage != null) {
   WidgetsBinding.instance.addPostFrameCallback((_) {
     _handleNotificationTap(initialMessage);
   });
@@ -247,8 +242,7 @@ class MyApp extends StatelessWidget {
         '/parent/forgot-password': (context) => const ForgotPasswordScreen(),
         '/parent/dashboard': (context) => const ParentDashboardScreen(),
         '/parent/settings': (context) => const ParentSettingsScreen(),
-        '/parent/notifications': (context) =>
-    const ParentNotificationsScreen(),
+        '/parent/notifications': (context) => const ParentNotificationsScreen(),
         '/parent/select-child': (context) => const ChildSelectionScreen(),
         '/parent/create-child': (context) => const CreateChildProfileScreen(),
 
@@ -410,6 +404,15 @@ class MyApp extends StatelessWidget {
           final args = ModalRoute.of(context)!.settings.arguments;
           final String? id = args is String ? args : (args as Map?)?['childId'];
           return LeaderboardScreen(childId: id ?? '');
+        },
+
+        '/child/practice-together-result': (context) {
+          final args = ModalRoute.of(context)!.settings.arguments as Map?;
+
+          return PracticeTogetherResultScreen(
+            sessionId: args?['sessionId']?.toString() ?? '',
+            childId: args?['childId']?.toString() ?? '',
+          );
         },
 
         '/child/exercise-listening-result': (context) =>

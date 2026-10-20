@@ -131,12 +131,18 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
 
   Timer? _recordingTimer;
 
-  static const int _questionDurationSeconds = 60;
+  static const int _questionDurationSeconds = 10;
 
   Timer? _questionTimer;
   DateTime? _questionDeadline;
 
   int _questionSecondsLeft = _questionDurationSeconds;
+
+  // Practice Together result timing
+  int _totalResponseTimeMs = 0;
+  DateTime? _currentQuestionStartedAt;
+  bool _currentQuestionTimeCaptured = false;
+  int _timedOutCount = 0;
 
   bool _questionAdvanceBusy = false;
   bool _questionTimeoutHandling = false;
@@ -238,7 +244,13 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
 
     _questionTimer?.cancel();
 
-    _questionDeadline = DateTime.now().add(
+    final now = DateTime.now();
+
+    // Start measuring this question's response time.
+    _currentQuestionStartedAt = now;
+    _currentQuestionTimeCaptured = false;
+
+    _questionDeadline = now.add(
       const Duration(seconds: _questionDurationSeconds),
     );
 
@@ -289,6 +301,46 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
     _questionTimer = null;
     _questionDeadline = null;
   }
+
+  void _captureCurrentQuestionTime({required bool timedOut}) {
+    if (!widget.isPracticeTogether || _currentQuestionTimeCaptured) {
+      return;
+    }
+
+    final int maximumMilliseconds = _questionDurationSeconds * 1000;
+
+    int elapsedMilliseconds;
+
+    if (timedOut) {
+      elapsedMilliseconds = maximumMilliseconds;
+      _timedOutCount++;
+    } else {
+      final startedAt = _currentQuestionStartedAt;
+
+      if (startedAt == null) {
+        return;
+      }
+
+      elapsedMilliseconds = DateTime.now()
+          .difference(startedAt)
+          .inMilliseconds
+          .clamp(0, maximumMilliseconds)
+          .toInt();
+    }
+
+    _totalResponseTimeMs += elapsedMilliseconds;
+
+    _currentQuestionTimeCaptured = true;
+
+    debugPrint(
+      '🏁 PRACTICE SPEAKING TIME → '
+      'question=${_currentExercise + 1}, '
+      'elapsed=${elapsedMilliseconds}ms, '
+      'total=${_totalResponseTimeMs}ms, '
+      'timeouts=$_timedOutCount',
+    );
+  }
+
   // -------------------------------------------------------------------------
   // Play example audio
   // -------------------------------------------------------------------------
@@ -414,6 +466,10 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
   // -------------------------------------------------------------------------
 
   Future<void> _stopRecording() async {
+    if (widget.isPracticeTogether &&
+        (_questionTimeoutHandling || _questionAdvanceBusy)) {
+      return;
+    }
     try {
       final path = await _recorder.stop();
 
@@ -429,6 +485,8 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
         return;
       }
       if (widget.isPracticeTogether) {
+        _captureCurrentQuestionTime(timedOut: false);
+
         _stopQuestionTimer();
       }
       // نحفظ معلومات الكلمة الحالية قبل أن ينتقل الطفل للكلمة التالية.
@@ -519,10 +577,10 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
       // الطفل ضغط "إنهاء" وكان ينتظر آخر النتائج.
       // بمجرد اكتمالها نفتح صفحة النتائج تلقائيًا.
       if (mounted && _isCalculatingFinalScore && _pendingEvaluations == 0) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
+        WidgetsBinding.instance.addPostFrameCallback((_) async {
           if (!mounted) return;
 
-          _navigateToResults();
+          await _navigateToResults();
         });
       }
     }
@@ -740,7 +798,7 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
       return;
     }
 
-    _navigateToResults();
+    await _navigateToResults();
   }
 
   Future<void> _handleNext() async {
@@ -762,6 +820,8 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
     }
 
     _questionTimeoutHandling = true;
+
+    _captureCurrentQuestionTime(timedOut: true);
 
     _stopQuestionTimer();
 
@@ -805,36 +865,116 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
     _questionTimeoutHandling = false;
   }
 
-  void _navigateToResults() {
+  Future<void> _navigateToResults() async {
     if (_resultsNavigationStarted || !mounted) {
       return;
     }
 
-    // ما نفتح النتائج إلا بعد اكتمال كل التحليلات.
+    // Do not submit or navigate until every pronunciation
+    // evaluation has finished.
     if (_pendingEvaluations > 0) {
       return;
     }
 
     _resultsNavigationStarted = true;
 
-    final scores = _exerciseScores.map((score) => score ?? 0).toList();
+    final List<int> scores = _exerciseScores
+        .map((score) => score ?? 0)
+        .toList();
 
-    final avgScore = scores.isEmpty
+    final int avgScore = scores.isEmpty
         ? 0
         : (scores.reduce((a, b) => a + b) / scores.length).round();
+
+    final int correctCount = List.generate(scores.length, (index) => index)
+        .where((index) {
+          final int score = scores[index];
+
+          final bool isInvalid = _exerciseInvalidFlags[index];
+
+          // Competitive Speaking correctness:
+          // valid pronunciation + score >= 80%.
+          return !isInvalid && score >= 80;
+        })
+        .length;
+
+    if (widget.isPracticeTogether) {
+      try {
+        await _practiceService.submitFinalStats(
+          sessionId: widget.practiceSessionId!,
+          childId: widget.childId,
+
+          correctCount: correctCount,
+          responseTimeMs: _totalResponseTimeMs,
+          timedOutCount: _timedOutCount,
+
+          // Display/stat value only.
+          // It does not decide the winner.
+          averageScore: avgScore,
+        );
+
+        debugPrint(
+          '🏁 PRACTICE SPEAKING FINAL → '
+          'correct=$correctCount/${scores.length}, '
+          'average=$avgScore%, '
+          'time=${_totalResponseTimeMs}ms, '
+          'timeouts=$_timedOutCount',
+        );
+      } catch (e) {
+        debugPrint(
+          'Practice Together speaking final '
+          'submission failed: $e',
+        );
+
+        // Allow another Finish attempt if submission failed.
+        _resultsNavigationStarted = false;
+
+        if (!mounted) return;
+
+        if (_isCalculatingFinalScore) {
+          setState(() {
+            _isCalculatingFinalScore = false;
+          });
+        }
+
+        NotificationService.showErrorSnackBar(
+          'تعذر حفظ نتيجة التحدي، حاول مرة أخرى',
+        );
+
+        return;
+      }
+    }
+
+    if (widget.isPracticeTogether) {
+      if (!mounted) return;
+
+      Navigator.pushReplacementNamed(
+        context,
+        '/child/practice-together-result',
+        arguments: {
+          'sessionId': widget.practiceSessionId!,
+          'childId': widget.childId,
+        },
+      );
+
+      return;
+    }
 
     final questionsData = List.generate(
       _exercises.length,
       (i) => {
         'questionText': _exercises[i].displayWord,
+
         'targetWord': _exercises[i].targetWord,
 
         'score': scores[i],
 
         'isInvalid': _exerciseInvalidFlags[i],
+
         'invalidReason': _exerciseInvalidReasons[i],
 
         'audioPath': _exercises[i].audioPath,
+
         'imagePath': _exercises[i].imagePath,
       },
     );

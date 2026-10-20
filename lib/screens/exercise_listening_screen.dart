@@ -80,12 +80,18 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
   final AudioPlayer _audioPlayer = AudioPlayer();
   final PracticeTogetherService _practiceService = PracticeTogetherService();
 
-  static const int _questionDurationSeconds = 60;
+  static const int _questionDurationSeconds = 10;
 
   Timer? _questionTimer;
   DateTime? _questionDeadline;
 
   int _questionSecondsLeft = _questionDurationSeconds;
+
+  // Practice Together result timing
+  int _totalResponseTimeMs = 0;
+  DateTime? _currentQuestionStartedAt;
+  bool _currentQuestionTimeCaptured = false;
+  int _timedOutCount = 0;
 
   bool _questionAdvanceBusy = false;
   bool _questionTimeoutHandling = false;
@@ -474,7 +480,13 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
 
     _questionTimer?.cancel();
 
-    _questionDeadline = DateTime.now().add(
+    final now = DateTime.now();
+
+    // Start measuring this question's response time.
+    _currentQuestionStartedAt = now;
+    _currentQuestionTimeCaptured = false;
+
+    _questionDeadline = now.add(
       const Duration(seconds: _questionDurationSeconds),
     );
 
@@ -524,6 +536,47 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
     _questionTimer?.cancel();
     _questionTimer = null;
     _questionDeadline = null;
+  }
+
+  void _captureCurrentQuestionTime({required bool timedOut}) {
+    if (!widget.isPracticeTogether || _currentQuestionTimeCaptured) {
+      return;
+    }
+
+    final int maximumMilliseconds = _questionDurationSeconds * 1000;
+
+    int elapsedMilliseconds;
+
+    if (timedOut) {
+      // A timeout consumes the full allowed question time.
+      elapsedMilliseconds = maximumMilliseconds;
+      _timedOutCount++;
+    } else {
+      final startedAt = _currentQuestionStartedAt;
+
+      if (startedAt == null) {
+        return;
+      }
+
+      elapsedMilliseconds = DateTime.now()
+          .difference(startedAt)
+          .inMilliseconds
+          .clamp(0, maximumMilliseconds)
+          .toInt();
+    }
+
+    _totalResponseTimeMs += elapsedMilliseconds;
+
+    // Prevent this same question from being counted twice.
+    _currentQuestionTimeCaptured = true;
+
+    debugPrint(
+      '🏁 PRACTICE LISTENING TIME → '
+      'question=${_currentIndex + 1}, '
+      'elapsed=${elapsedMilliseconds}ms, '
+      'total=${_totalResponseTimeMs}ms, '
+      'timeouts=$_timedOutCount',
+    );
   }
 
   // ───────────────────────────────────────────────────────────────────────────
@@ -585,11 +638,16 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
     // Cannot answer:
     // - before listening
     // - after already answering
-    if (_playCount == 0 || _showFeedback) {
+    if (_playCount == 0 ||
+        _showFeedback ||
+        _questionTimeoutHandling ||
+        _questionAdvanceBusy) {
       return;
     }
 
     if (widget.isPracticeTogether) {
+      _captureCurrentQuestionTime(timedOut: false);
+
       _stopQuestionTimer();
     }
     setState(() {
@@ -731,14 +789,75 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
       return;
     }
 
+    // ---------------------------------------------------------
     // Final question
-    if (!widget.isPracticeTogether) {
+    // ---------------------------------------------------------
+
+    if (widget.isPracticeTogether) {
+      try {
+        await _practiceService.submitFinalStats(
+          sessionId: widget.practiceSessionId!,
+          childId: widget.childId,
+
+          // Listening correctness is simply the number
+          // of correct answers.
+          correctCount: _score,
+
+          responseTimeMs: _totalResponseTimeMs,
+          timedOutCount: _timedOutCount,
+
+          // Not used for Listening.
+          averageScore: 0,
+        );
+
+        debugPrint(
+          '🏁 PRACTICE LISTENING FINAL → '
+          'correct=$_score/${_exercises.length}, '
+          'time=${_totalResponseTimeMs}ms, '
+          'timeouts=$_timedOutCount',
+        );
+      } catch (e) {
+        debugPrint(
+          'Practice Together listening final '
+          'submission failed: $e',
+        );
+
+        _questionAdvanceBusy = false;
+
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'تعذر حفظ نتيجة التحدي، حاول مرة أخرى',
+              textDirection: TextDirection.rtl,
+              style: TextStyle(fontFamily: 'Tajawal'),
+            ),
+          ),
+        );
+
+        return;
+      }
+    } else {
       await _saveListeningResult();
     }
 
     _questionAdvanceBusy = false;
 
     if (!mounted) return;
+
+    if (widget.isPracticeTogether) {
+      Navigator.pushReplacementNamed(
+        context,
+        '/child/practice-together-result',
+        arguments: {
+          'sessionId': widget.practiceSessionId!,
+          'childId': widget.childId,
+        },
+      );
+
+      return;
+    }
 
     Navigator.pushNamed(
       context,
@@ -769,6 +888,8 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
     }
 
     _questionTimeoutHandling = true;
+
+    _captureCurrentQuestionTime(timedOut: true);
 
     _stopQuestionTimer();
 
