@@ -88,6 +88,17 @@ void _handleNotificationTap(RemoteMessage message) {
   debugPrint('👶 CURRENT childId = [$currentChildId]');
   debugPrint('🔔 type = [$type]');
   debugPrint('✅ SAME CHILD = ${currentChildId == receiverId}');
+  // The device is already in Parent Mode.
+// Do not ask for the parent's password again.
+if (currentChildId == null) {
+  debugPrint('👨‍👩‍👧 Already in Parent Mode → opening child selection');
+
+  navigatorKey.currentState?.pushNamed(
+    '/parent/select-child',
+  );
+
+  return;
+}
   // The notification belongs to the child who is currently active.
   if (currentChildId == receiverId) {
     if (type == 'friend_request') {
@@ -104,7 +115,19 @@ void _handleNotificationTap(RemoteMessage message) {
 
     return;
   }
+// The device is already in Parent Mode.
+// No parent password verification is needed again.
+if (currentChildId == null) {
+  debugPrint(
+    '👨‍👩‍👧 Already in Parent Mode. Opening child selection.',
+  );
 
+  navigatorKey.currentState?.pushNamed(
+    '/parent/select-child',
+  );
+
+  return;
+}
   // IMPORTANT:
   // Do not open another child's account directly.
   // Switching children must go through the parent verification flow.

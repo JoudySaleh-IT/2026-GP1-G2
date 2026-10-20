@@ -767,21 +767,18 @@ final notifications = allNotifications.where((notification) {
                         child: IgnorePointer(child: _NotificationsBackground()),
                       ),
 
-                      ListView.separated(
-                        padding: const EdgeInsets.fromLTRB(18, 18, 18, 30),
-                        itemCount: notifications.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 11),
-                        itemBuilder: (context, index) {
-  final notification = notifications[index];
+                      ListView.builder(
+  padding: const EdgeInsets.fromLTRB(18, 18, 18, 30),
+  itemCount: notifications.length,
+  itemBuilder: (context, index) {
+    final notification = notifications[index];
 
-  return _buildNotificationItem(
-    context,
-    notification,
-  );
-},
-
-  
-                      ),
+    return _buildNotificationItem(
+      context,
+      notification,
+    );
+  },
+),
                     ],
                   );
                 },
@@ -860,7 +857,8 @@ class _NotificationCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(23),
         onTap: onTap,
         child: Container(
-          padding: const EdgeInsets.all(14),
+  margin: const EdgeInsets.only(bottom: 11),
+  padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: isRead
                 ? Colors.white.withValues(alpha: 0.94)

@@ -766,16 +766,23 @@ print('👨 PARENT ID = ${ChildSession.currentParentId}');
       );
 
       if (mounted) {
-        Navigator.of(
-  context,
-  rootNavigator: true,
-).pushNamedAndRemoveUntil(
-  widget.openParentNotifications
-      ? '/parent/notifications'
-      : '/parent/dashboard',
-  (route) => false,
-);
-      }
+  final rootNavigator = Navigator.of(
+    context,
+    rootNavigator: true,
+  );
+
+  // Clear the child navigation stack and enter Parent Dashboard.
+  rootNavigator.pushNamedAndRemoveUntil(
+    '/parent/dashboard',
+    (route) => false,
+  );
+
+  // If the parent came from a parent notification,
+  // open Parent Notifications on top of the dashboard.
+  if (widget.openParentNotifications) {
+    rootNavigator.pushNamed('/parent/notifications');
+  }
+}
     } on FirebaseAuthException catch (e) {
       setState(() {
         _loading = false;
