@@ -53,31 +53,29 @@ void main() async {
 void _handleNotificationTap(RemoteMessage message) {
   final type = message.data['type'];
 
-  // Parent notification
-  if (type == 'parent_new_friend') {
-    debugPrint('👨‍👩‍👧 Parent notification tapped');
+  // Parent notification while the app is open
+if (type == 'parent_new_friend') {
+  final currentChildId = ChildSession.currentChildId;
 
-    final currentChildId = ChildSession.currentChildId;
-
-    // Already in parent mode
-    if (currentChildId == null) {
-      navigatorKey.currentState?.pushNamed('/parent/notifications');
-      return;
-    }
-
-    // Currently in child mode → parent verification required
-    final context = navigatorKey.currentContext;
-
-    if (context == null) return;
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const ParentPasswordDialog(openParentNotifications: true),
+  // Parent notifications must never appear inside a child profile.
+  if (currentChildId != null) {
+    debugPrint(
+      '🔕 Parent live notification ignored: device is in Child Mode',
     );
-
     return;
   }
+
+  NotificationService.showLiveNotification(
+    title: message.notification?.title ?? 'صديق جديد في فصيح 🌟',
+    message:
+        message.notification?.body ?? 'تمت إضافة صديق جديد لأحد أطفالك',
+    onTap: () {
+      _handleNotificationTap(message);
+    },
+  );
+
+  return;
+}
   // Child notification
   final receiverId = message.data['receiverId'];
 
