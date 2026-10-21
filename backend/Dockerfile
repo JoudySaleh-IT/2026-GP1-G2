@@ -17,7 +17,7 @@ RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/wh
 # 6. تثبيت باقي المكتبات المطلوبة
 RUN pip install --no-cache-dir -r requirements.txt
 
-# 7. نسخ كل ملفات المشروع (بما في ذلك مجلد final_faseeh_model)
+# 7. نسخ كل ملفات المشروع (بما في ذلك مجلد speech_model)
 COPY . .
 
 # --- ملاحظة هامة ---

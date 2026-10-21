@@ -112,7 +112,7 @@ if not firebase_admin._apps:
     })
 
 # 2. تحميل موديل "فصيح" المخصص (Fine-tuned Model)
-MODEL_PATH = "./final_faseeh_model"
+MODEL_PATH = "./speech_model"
 
 print("Loading Custom Faseeh AI Model for Kids...")
 processor = Wav2Vec2Processor.from_pretrained(MODEL_PATH)

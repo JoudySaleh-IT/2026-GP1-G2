@@ -17,3 +17,8 @@ backend/serviceAccountKey.json # لخصوصية بياناتك
 venv/                          # لعدم رفع البيئة الافتراضية (تثقل الرفع جداً)
 __pycache__/                   # ملفات مؤقتة لا داعي لها
 .DS_Store                      # ملفات نظام الماك
+# Old model - not used in production
+final_faseeh_model/
+
+# Local service account credentials
+serviceAccountKey.json
