@@ -721,6 +721,105 @@ class PracticeTogetherService {
     });
   }
 
+  Future<void> leaveActiveSession({
+    required String sessionId,
+    required String childId,
+  }) async {
+    final user = _auth.currentUser;
+
+    if (user == null) {
+      throw Exception('NOT_AUTHENTICATED');
+    }
+
+    final sessionRef = _db.collection('practice_sessions').doc(sessionId);
+
+    await _db.runTransaction((transaction) async {
+      final snapshot = await transaction.get(sessionRef);
+
+      if (!snapshot.exists || snapshot.data() == null) {
+        throw Exception('SESSION_NOT_FOUND');
+      }
+
+      final data = snapshot.data()!;
+
+      final String senderId = data['senderId']?.toString() ?? '';
+
+      final String receiverId = data['receiverId']?.toString() ?? '';
+
+      if (childId != senderId && childId != receiverId) {
+        throw Exception('NOT_SESSION_MEMBER');
+      }
+
+      // Someone else already ended it.
+      if (data['status'] == 'cancelled') {
+        return;
+      }
+
+      // Competition already finished normally.
+      if (data['status'] == 'completed') {
+        return;
+      }
+
+      if (data['status'] != 'active') {
+        throw Exception('SESSION_NOT_ACTIVE');
+      }
+
+      transaction.update(sessionRef, {
+        'status': 'cancelled',
+        'cancelReason': 'player_left',
+        'cancelledBy': childId,
+        'cancelledAt': FieldValue.serverTimestamp(),
+      });
+    });
+  }
+
+  Future<void> cancelActiveSessionForInactivity({
+    required String sessionId,
+    required String childId,
+  }) async {
+    final user = _auth.currentUser;
+
+    if (user == null) {
+      throw Exception('NOT_AUTHENTICATED');
+    }
+
+    final sessionRef = _db.collection('practice_sessions').doc(sessionId);
+
+    await _db.runTransaction((transaction) async {
+      final snapshot = await transaction.get(sessionRef);
+
+      if (!snapshot.exists || snapshot.data() == null) {
+        throw Exception('SESSION_NOT_FOUND');
+      }
+
+      final data = snapshot.data()!;
+
+      final String senderId = data['senderId']?.toString() ?? '';
+
+      final String receiverId = data['receiverId']?.toString() ?? '';
+
+      if (childId != senderId && childId != receiverId) {
+        throw Exception('NOT_SESSION_MEMBER');
+      }
+
+      // Session already ended elsewhere.
+      if (data['status'] == 'cancelled' || data['status'] == 'completed') {
+        return;
+      }
+
+      if (data['status'] != 'active') {
+        throw Exception('SESSION_NOT_ACTIVE');
+      }
+
+      transaction.update(sessionRef, {
+        'status': 'cancelled',
+        'cancelReason': 'inactivity',
+        'cancelledBy': childId,
+        'cancelledAt': FieldValue.serverTimestamp(),
+      });
+    });
+  }
+
   // ---------------------------------------------------------------------------
   // Submit one child's final competition statistics
   // ---------------------------------------------------------------------------

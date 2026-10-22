@@ -438,6 +438,8 @@ class _PracticeTogetherResultScreenState
             padding: const EdgeInsets.fromLTRB(18, 18, 18, 28),
             child: Column(
               children: [
+                _buildResultHero(isTie: isTie, currentWon: currentWon),
+                const SizedBox(height: 16),
                 _buildPodium(
                   senderId: senderId,
                   receiverId: receiverId,
@@ -511,6 +513,126 @@ class _PracticeTogetherResultScreenState
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildResultHero({required bool isTie, required bool currentWon}) {
+    String title;
+    String message;
+    Color cardColor;
+
+    if (isTie) {
+      title = 'تعادل رائع! 🤝';
+      message = 'أبدعتما! كانت النتيجة متقاربة جدًا';
+      cardColor = const Color(0xFFF7F0FF);
+    } else if (currentWon) {
+      title = 'أحسنت يا بطل! 🌟';
+      message = 'فزت بالتحدي، استمر بهذا الأداء الرائع!';
+      cardColor = const Color(0xFFFFF1C9);
+    } else {
+      title = 'أداء جميل! 💪';
+      message = 'هذه المرة فاز صديقك، والمحاولة القادمة لك!';
+      cardColor = const Color(0xFFE6F4EA);
+    }
+
+    return Container(
+      width: double.infinity,
+      constraints: const BoxConstraints(minHeight: 145),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: _purple.withOpacity(0.08)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x09000000),
+            blurRadius: 8,
+            offset: Offset(0, 3),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(28),
+        child: Stack(
+          children: [
+            Positioned(
+              right: -35,
+              top: -45,
+              child: Container(
+                width: 130,
+                height: 130,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFDCC9F5).withOpacity(0.28),
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+
+            Positioned(
+              left: -30,
+              bottom: -55,
+              child: Container(
+                width: 145,
+                height: 105,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFD9E2).withOpacity(0.40),
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+
+            Padding(
+              padding: const EdgeInsets.all(18),
+              child: Row(
+                children: [
+                  // For fastest implementation,
+                  // use the same bunny code from ChildHomeScreen.
+                  const SizedBox(width: 92, height: 110, child: _ResultBunny()),
+
+                  const SizedBox(width: 14),
+
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          title,
+                          style: const TextStyle(
+                            fontFamily: 'Tajawal',
+                            fontSize: 19,
+                            fontWeight: FontWeight.w800,
+                            color: _purple,
+                          ),
+                        ),
+
+                        const SizedBox(height: 6),
+
+                        Text(
+                          message,
+                          style: const TextStyle(
+                            fontFamily: 'Tajawal',
+                            fontSize: 12,
+                            height: 1.5,
+                            color: Color(0xFF666666),
+                          ),
+                        ),
+
+                        const SizedBox(height: 8),
+
+                        const Icon(
+                          Icons.auto_awesome_rounded,
+                          color: Color(0xFFF3B82F),
+                          size: 18,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -721,7 +843,7 @@ class _PracticeTogetherResultScreenState
           ),
 
           _SummaryRow(
-            label: 'انتهى الوقت',
+            label: 'أسئلة انتهى وقتها',
             myValue: '$myTimeouts',
             friendValue: '$friendTimeouts',
           ),
@@ -1199,6 +1321,272 @@ class _SummaryRow extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _ResultBunny extends StatelessWidget {
+  const _ResultBunny();
+
+  @override
+  Widget build(BuildContext context) {
+    const Color normalFace = Color(0xFFFFDCE7);
+    const Color normalBody = Color(0xFF8B55B3);
+    const Color innerEar = Color(0xFFFFA1B7);
+    const Color details = Color(0xFF4D3855);
+
+    const Color faceColor = normalFace;
+    const Color bodyColor = normalBody;
+
+    return Stack(
+      alignment: Alignment.center,
+      clipBehavior: Clip.none,
+      children: [
+        // =========================================================
+        // Bubble
+        // =========================================================
+        Positioned(
+          top: 3,
+          right: 1,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.88),
+              borderRadius: BorderRadius.circular(13),
+            ),
+            child: const Text(
+              'هيا!',
+              style: TextStyle(
+                color: Color(0xFF8B55B3),
+                fontSize: 9,
+                fontWeight: FontWeight.w700,
+                fontFamily: 'Tajawal',
+              ),
+            ),
+          ),
+        ),
+
+        // =========================================================
+        // Happy decorative lines
+        // =========================================================
+        Positioned(
+          top: 38,
+          right: 3,
+          child: Transform.rotate(
+            angle: -0.35,
+            child: Container(
+              width: 4,
+              height: 12,
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFD36A),
+                borderRadius: BorderRadius.circular(5),
+              ),
+            ),
+          ),
+        ),
+
+        Positioned(
+          top: 47,
+          right: 0,
+          child: Transform.rotate(
+            angle: 0.60,
+            child: Container(
+              width: 4,
+              height: 11,
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFD36A),
+                borderRadius: BorderRadius.circular(5),
+              ),
+            ),
+          ),
+        ),
+
+        // =========================================================
+        // Right ear
+        // =========================================================
+        Positioned(
+          top: 19,
+          right: 28,
+          child: Container(
+            width: 20,
+            height: 43,
+            decoration: BoxDecoration(
+              color: faceColor,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Center(
+              child: Container(
+                width: 7,
+                height: 27,
+                decoration: BoxDecoration(
+                  color: innerEar.withOpacity(0.55),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ),
+        ),
+
+        // =========================================================
+        // Left ear - tilted
+        // =========================================================
+        Positioned(
+          top: 24,
+          left: 21,
+          child: Transform.rotate(
+            angle: -0.38,
+            child: Container(
+              width: 20,
+              height: 43,
+              decoration: BoxDecoration(
+                color: faceColor,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Center(
+                child: Container(
+                  width: 7,
+                  height: 27,
+                  decoration: BoxDecoration(
+                    color: innerEar.withOpacity(0.55),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+
+        // =========================================================
+        // Body
+        // =========================================================
+        Positioned(
+          bottom: 1,
+          child: Container(
+            width: 50,
+            height: 34,
+            decoration: BoxDecoration(
+              color: bodyColor,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(27),
+                topRight: Radius.circular(27),
+                bottomLeft: Radius.circular(13),
+                bottomRight: Radius.circular(13),
+              ),
+            ),
+          ),
+        ),
+
+        // =========================================================
+        // Head
+        // =========================================================
+        Positioned(
+          top: 53,
+          child: Container(
+            width: 66,
+            height: 61,
+            decoration: BoxDecoration(
+              color: faceColor,
+              borderRadius: BorderRadius.circular(31),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Stack(
+              children: [
+                // Eyes
+                Positioned(
+                  top: 22,
+                  right: 15,
+                  child: Container(
+                    width: 6,
+                    height: 7,
+                    decoration: BoxDecoration(
+                      color: details,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: 22,
+                  left: 15,
+                  child: Container(
+                    width: 6,
+                    height: 7,
+                    decoration: BoxDecoration(
+                      color: details,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+
+                // Cheeks
+                Positioned(
+                  top: 35,
+                  right: 7,
+                  child: Container(
+                    width: 9,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFF96AC).withOpacity(0.50),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+
+                Positioned(
+                  top: 35,
+                  left: 7,
+                  child: Container(
+                    width: 9,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFF96AC).withOpacity(0.50),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+
+                // Nose
+                Positioned(
+                  top: 30,
+                  left: 29,
+                  child: Container(
+                    width: 7,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFF7890),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+
+                // Smile
+                Positioned(
+                  top: 37,
+                  left: 23,
+                  child: Container(
+                    width: 19,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(color: details, width: 1.5),
+                      ),
+                      borderRadius: const BorderRadius.only(
+                        bottomLeft: Radius.circular(10),
+                        bottomRight: Radius.circular(10),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

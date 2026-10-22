@@ -72,6 +72,20 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
   final AudioRecorder _recorder = AudioRecorder();
   final PracticeTogetherService _practiceService = PracticeTogetherService();
 
+  StreamSubscription? _practiceSessionSubscription;
+
+  bool _practiceExitHandled = false;
+  bool _leaveDialogOpen = false;
+
+  Timer? _inactivityWarningTimer;
+  Timer? _inactivityCancelTimer;
+
+  bool _inactivityWarningOpen = false;
+
+  static const Duration _inactivityWarningAfter = Duration(seconds: 45);
+
+  static const Duration _inactivityGracePeriod = Duration(seconds: 15);
+
   String? _recordedFilePath;
 
   // -------------------------------------------------------------------------
@@ -165,6 +179,10 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
     )..repeat();
 
     _loadExercises();
+
+    if (widget.isPracticeTogether) {
+      _watchPracticeCancellation();
+    }
   }
 
   // -------------------------------------------------------------------------
@@ -195,6 +213,7 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
 
       if (widget.isPracticeTogether && exercises.isNotEmpty) {
         _startQuestionTimer();
+        _resetInactivityTimer();
       }
     } catch (e) {
       debugPrint('Error loading pronunciation exercises: $e');
@@ -214,13 +233,434 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
 
   @override
   void dispose() {
+    _practiceSessionSubscription?.cancel();
+
+    _inactivityWarningTimer?.cancel();
+    _inactivityCancelTimer?.cancel();
+
     _recordingTimer?.cancel();
     _questionTimer?.cancel();
+
     _spinController.dispose();
     _audioPlayer.dispose();
     _recorder.dispose();
 
     super.dispose();
+  }
+
+  void _watchPracticeCancellation() {
+    _practiceSessionSubscription = _practiceService
+        .watchSession(sessionId: widget.practiceSessionId!)
+        .listen((snapshot) {
+          final data = snapshot.data();
+
+          if (data == null || _practiceExitHandled) {
+            return;
+          }
+
+          if (data['status'] != 'cancelled') {
+            return;
+          }
+
+          final String reason = data['cancelReason']?.toString() ?? '';
+
+          if (reason != 'player_left' && reason != 'inactivity') {
+            return;
+          }
+
+          _practiceExitHandled = true;
+
+          final String cancelledBy = data['cancelledBy']?.toString() ?? '';
+
+          String message;
+
+          if (reason == 'inactivity') {
+            message = cancelledBy == widget.childId
+                ? 'تم إنهاء التحدي بسبب عدم التفاعل'
+                : 'تم إنهاء التحدي لأن صديقك لم يتفاعل';
+          } else {
+            message = cancelledBy == widget.childId
+                ? 'تم إنهاء التحدي لأنك غادرت الجلسة'
+                : 'تم إنهاء التحدي لأن صديقك غادر الجلسة';
+          }
+
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              '/child/home',
+              (route) => false,
+              arguments: {'childId': widget.childId},
+            );
+
+            NotificationService.showErrorSnackBar(message);
+          });
+        });
+  }
+
+  Future<bool> _showLeaveCompetitionDialog() async {
+    if (_leaveDialogOpen) {
+      return false;
+    }
+
+    _leaveDialogOpen = true;
+
+    final bool? result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return Directionality(
+          textDirection: TextDirection.rtl,
+          child: AlertDialog(
+            backgroundColor: const Color(0xFFFFFBF4),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(28),
+            ),
+            contentPadding: const EdgeInsets.fromLTRB(22, 22, 22, 12),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('🐰', style: TextStyle(fontSize: 50)),
+
+                const SizedBox(height: 10),
+
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF4EAFB),
+                    borderRadius: BorderRadius.circular(22),
+                  ),
+                  child: const Text(
+                    'لحظة! لا تروح',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontFamily: 'Tajawal',
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF511281),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                const Text(
+                  'إذا خرجت الآن، سينتهي التحدي لك ولصديقك.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'Tajawal',
+                    fontSize: 14,
+                    height: 1.6,
+                    color: Color(0xFF666666),
+                  ),
+                ),
+
+                const SizedBox(height: 6),
+
+                const Text(
+                  'هل تريد الخروج؟',
+                  style: TextStyle(
+                    fontFamily: 'Tajawal',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF511281),
+                  ),
+                ),
+              ],
+            ),
+            actionsAlignment: MainAxisAlignment.center,
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(dialogContext, true);
+                },
+                child: const Text(
+                  'الخروج من التحدي',
+                  style: TextStyle(
+                    fontFamily: 'Tajawal',
+                    color: Color(0xFFFF6969),
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(dialogContext, false);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF511281),
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: const StadiumBorder(),
+                ),
+                child: const Text(
+                  'أكمل التحدي',
+                  style: TextStyle(
+                    fontFamily: 'Tajawal',
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    _leaveDialogOpen = false;
+
+    return result == true;
+  }
+
+  Future<void> _handlePracticeBack() async {
+    // Preserve the original normal Speaking navigation.
+    if (!widget.isPracticeTogether) {
+      Navigator.pushNamed(
+        context,
+        '/child/letter-levels',
+        arguments: {
+          'letter': widget.letter,
+          'childId': widget.childId,
+          'startingLevel': widget.level,
+        },
+      );
+
+      return;
+    }
+
+    final bool shouldLeave = await _showLeaveCompetitionDialog();
+
+    if (!shouldLeave || !mounted || _practiceExitHandled) {
+      return;
+    }
+
+    _practiceExitHandled = true;
+
+    try {
+      await _practiceService.leaveActiveSession(
+        sessionId: widget.practiceSessionId!,
+        childId: widget.childId,
+      );
+    } catch (e) {
+      _practiceExitHandled = false;
+
+      if (!mounted) return;
+
+      NotificationService.showErrorSnackBar(
+        'تعذّر إنهاء التحدي، حاول مرة أخرى',
+      );
+
+      return;
+    }
+
+    if (!mounted) return;
+
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      '/child/home',
+      (route) => false,
+      arguments: {'childId': widget.childId},
+    );
+
+    NotificationService.showErrorSnackBar('تم إنهاء التحدي لأنك غادرت الجلسة');
+  }
+
+  void _resetInactivityTimer() {
+    if (!widget.isPracticeTogether || _practiceExitHandled || !mounted) {
+      return;
+    }
+
+    _inactivityWarningTimer?.cancel();
+    _inactivityCancelTimer?.cancel();
+
+    _inactivityWarningTimer = Timer(_inactivityWarningAfter, () {
+      if (!mounted || _practiceExitHandled || _inactivityWarningOpen) {
+        return;
+      }
+
+      _showInactivityWarning();
+    });
+  }
+
+  Future<void> _showInactivityWarning() async {
+    if (!mounted || _practiceExitHandled || _inactivityWarningOpen) {
+      return;
+    }
+
+    _inactivityWarningOpen = true;
+
+    // If the child still does nothing for another 15 seconds,
+    // the entire competition ends.
+    _inactivityCancelTimer = Timer(_inactivityGracePeriod, () async {
+      if (!mounted || _practiceExitHandled || !_inactivityWarningOpen) {
+        return;
+      }
+
+      await _cancelForInactivity();
+    });
+
+    final bool? stillHere = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return Directionality(
+          textDirection: TextDirection.rtl,
+          child: AlertDialog(
+            backgroundColor: const Color(0xFFFFFBF4),
+
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(28),
+            ),
+
+            contentPadding: const EdgeInsets.fromLTRB(22, 22, 22, 14),
+
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('🐰', style: TextStyle(fontSize: 52)),
+
+                const SizedBox(height: 10),
+
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF4EAFB),
+                    borderRadius: BorderRadius.circular(22),
+                  ),
+                  child: const Text(
+                    'هل ما زلت هنا؟',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontFamily: 'Tajawal',
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF511281),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                const Text(
+                  'لم نلاحظ أي تفاعل منذ فترة.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'Tajawal',
+                    fontSize: 14,
+                    color: Color(0xFF666666),
+                  ),
+                ),
+
+                const SizedBox(height: 5),
+
+                const Text(
+                  'اضغط «أنا هنا!» لمواصلة التحدي.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'Tajawal',
+                    fontSize: 13,
+                    height: 1.5,
+                    color: Color(0xFF777777),
+                  ),
+                ),
+
+                const SizedBox(height: 18),
+
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(dialogContext, true);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF511281),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: const StadiumBorder(),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    child: const Text(
+                      'أنا هنا!',
+                      style: TextStyle(
+                        fontFamily: 'Tajawal',
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    // The cancellation may already have happened
+    // while the dialog was open.
+    if (_practiceExitHandled) {
+      return;
+    }
+
+    _inactivityWarningOpen = false;
+
+    if (stillHere == true) {
+      _inactivityCancelTimer?.cancel();
+
+      // IMPORTANT:
+      // Only restart inactivity monitoring.
+      // Do NOT restart the question timer.
+      _resetInactivityTimer();
+    }
+  }
+
+  Future<void> _cancelForInactivity() async {
+    if (_practiceExitHandled || !widget.isPracticeTogether) {
+      return;
+    }
+
+    _practiceExitHandled = true;
+
+    _inactivityWarningTimer?.cancel();
+    _inactivityCancelTimer?.cancel();
+
+    try {
+      await _practiceService.cancelActiveSessionForInactivity(
+        sessionId: widget.practiceSessionId!,
+        childId: widget.childId,
+      );
+    } catch (e) {
+      _practiceExitHandled = false;
+
+      if (!mounted) return;
+
+      _inactivityWarningOpen = false;
+
+      NotificationService.showErrorSnackBar(
+        'تعذّر إنهاء التحدي، حاول مرة أخرى',
+      );
+
+      return;
+    }
+
+    if (!mounted) return;
+
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      '/child/home',
+      (route) => false,
+      arguments: {'childId': widget.childId},
+    );
+
+    NotificationService.showErrorSnackBar('تم إنهاء التحدي بسبب عدم التفاعل');
   }
 
   // -------------------------------------------------------------------------
@@ -350,6 +790,10 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
       return;
     }
 
+    if (widget.isPracticeTogether) {
+      _resetInactivityTimer();
+    }
+
     try {
       debugPrint('AUDIO PATH FROM JSON: ${_exercise.audioPath}');
 
@@ -407,6 +851,10 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
   Future<void> _startRecording() async {
     if (_isExampleAudioPlaying || !_hasListenedToExample) {
       return;
+    }
+
+    if (widget.isPracticeTogether) {
+      _resetInactivityTimer();
     }
 
     final hasPermission = await _recorder.hasPermission();
@@ -484,6 +932,11 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
 
         return;
       }
+
+      if (widget.isPracticeTogether) {
+        _resetInactivityTimer();
+      }
+
       if (widget.isPracticeTogether) {
         _captureCurrentQuestionTime(timedOut: false);
 
@@ -802,6 +1255,10 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
   }
 
   Future<void> _handleNext() async {
+    if (widget.isPracticeTogether) {
+      _resetInactivityTimer();
+    }
+
     await _completeCurrentQuestion(timedOut: false);
   }
 
@@ -809,6 +1266,7 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
     if (!widget.isPracticeTogether ||
         _questionTimeoutHandling ||
         _questionAdvanceBusy ||
+        _inactivityWarningOpen ||
         !mounted) {
       return;
     }
@@ -1002,28 +1460,38 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: TextDirection.rtl,
+    return PopScope(
+      canPop: !widget.isPracticeTogether,
 
-      child: Scaffold(
-        backgroundColor: _bgYellow,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop && widget.isPracticeTogether) {
+          _handlePracticeBack();
+        }
+      },
 
-        body: Column(
-          children: [
-            _buildHeader(),
+      child: Directionality(
+        textDirection: TextDirection.rtl,
 
-            Expanded(
-              child: Stack(
-                children: [
-                  const Positioned.fill(
-                    child: IgnorePointer(child: _PronunciationBackground()),
-                  ),
+        child: Scaffold(
+          backgroundColor: _bgYellow,
 
-                  _buildBody(),
-                ],
+          body: Column(
+            children: [
+              _buildHeader(),
+
+              Expanded(
+                child: Stack(
+                  children: [
+                    const Positioned.fill(
+                      child: IgnorePointer(child: _PronunciationBackground()),
+                    ),
+
+                    _buildBody(),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -1295,15 +1763,7 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
           IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
 
-            onPressed: () => Navigator.pushNamed(
-              context,
-              '/child/letter-levels',
-              arguments: {
-                'letter': widget.letter,
-                'childId': widget.childId,
-                'startingLevel': widget.level,
-              },
-            ),
+            onPressed: _handlePracticeBack,
           ),
 
           const SizedBox(width: 8),

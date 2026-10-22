@@ -7,6 +7,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'style_constants.dart';
 import '../services/practice_together_service.dart';
 import '../widgets/practice_race_progress.dart';
+import '../services/notification_service.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Exercise Model
@@ -80,6 +81,21 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
   final AudioPlayer _audioPlayer = AudioPlayer();
   final PracticeTogetherService _practiceService = PracticeTogetherService();
 
+  StreamSubscription? _practiceSessionSubscription;
+
+  bool _practiceExitHandled = false;
+  bool _leaveDialogOpen = false;
+
+  // Practice Together inactivity monitoring
+  Timer? _inactivityWarningTimer;
+  Timer? _inactivityCancelTimer;
+
+  bool _inactivityWarningOpen = false;
+
+  static const Duration _inactivityWarningAfter = Duration(seconds: 45);
+
+  static const Duration _inactivityGracePeriod = Duration(seconds: 15);
+
   static const int _questionDurationSeconds = 60;
 
   Timer? _questionTimer;
@@ -145,15 +161,427 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
     ).animate(CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut));
 
     _loadExercises();
+
+    if (widget.isPracticeTogether) {
+      _watchPracticeCancellation();
+    }
   }
 
   @override
   void dispose() {
+    _practiceSessionSubscription?.cancel();
+    _inactivityWarningTimer?.cancel();
+    _inactivityCancelTimer?.cancel();
     _questionTimer?.cancel();
     _pulseCtrl.dispose();
     _audioPlayer.dispose();
 
     super.dispose();
+  }
+
+  void _watchPracticeCancellation() {
+    _practiceSessionSubscription = _practiceService
+        .watchSession(sessionId: widget.practiceSessionId!)
+        .listen((snapshot) {
+          final data = snapshot.data();
+
+          if (data == null || _practiceExitHandled) {
+            return;
+          }
+
+          if (data['status'] != 'cancelled') {
+            return;
+          }
+
+          final String reason = data['cancelReason']?.toString() ?? '';
+
+          if (reason != 'player_left' && reason != 'inactivity') {
+            return;
+          }
+
+          _practiceExitHandled = true;
+
+          final String cancelledBy = data['cancelledBy']?.toString() ?? '';
+
+          String message;
+
+          if (reason == 'inactivity') {
+            message = cancelledBy == widget.childId
+                ? 'تم إنهاء التحدي بسبب عدم التفاعل'
+                : 'تم إنهاء التحدي لأن صديقك لم يتفاعل';
+          } else {
+            message = cancelledBy == widget.childId
+                ? 'تم إنهاء التحدي لأنك غادرت الجلسة'
+                : 'تم إنهاء التحدي لأن صديقك غادر الجلسة';
+          }
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              '/child/home',
+              (route) => false,
+              arguments: {'childId': widget.childId},
+            );
+
+            NotificationService.showErrorSnackBar(message);
+          });
+        });
+  }
+
+  Future<bool> _showLeaveCompetitionDialog() async {
+    if (_leaveDialogOpen) {
+      return false;
+    }
+
+    _leaveDialogOpen = true;
+
+    final bool? result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return Directionality(
+          textDirection: TextDirection.rtl,
+          child: AlertDialog(
+            backgroundColor: const Color(0xFFFFFBF4),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(28),
+            ),
+            contentPadding: const EdgeInsets.fromLTRB(22, 22, 22, 12),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('🐰', style: TextStyle(fontSize: 50)),
+
+                const SizedBox(height: 10),
+
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF4EAFB),
+                    borderRadius: BorderRadius.circular(22),
+                  ),
+                  child: const Text(
+                    'لحظة! لا تروح',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontFamily: 'Tajawal',
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF511281),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                const Text(
+                  'إذا خرجت الآن، سينتهي التحدي لك ولصديقك.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'Tajawal',
+                    fontSize: 14,
+                    height: 1.6,
+                    color: Color(0xFF666666),
+                  ),
+                ),
+
+                const SizedBox(height: 6),
+
+                const Text(
+                  'هل تريد الخروج؟',
+                  style: TextStyle(
+                    fontFamily: 'Tajawal',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF511281),
+                  ),
+                ),
+              ],
+            ),
+            actionsAlignment: MainAxisAlignment.center,
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(dialogContext, true);
+                },
+                child: const Text(
+                  'الخروج من التحدي',
+                  style: TextStyle(
+                    fontFamily: 'Tajawal',
+                    color: Color(0xFFFF6969),
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(dialogContext, false);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF511281),
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: const StadiumBorder(),
+                ),
+                child: const Text(
+                  'أكمل التحدي',
+                  style: TextStyle(
+                    fontFamily: 'Tajawal',
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    _leaveDialogOpen = false;
+
+    return result == true;
+  }
+
+  Future<void> _handlePracticeBack() async {
+    // Normal Listening exercise stays exactly as before.
+    if (!widget.isPracticeTogether) {
+      Navigator.pop(context);
+      return;
+    }
+
+    final bool shouldLeave = await _showLeaveCompetitionDialog();
+
+    if (!shouldLeave || !mounted || _practiceExitHandled) {
+      return;
+    }
+
+    _practiceExitHandled = true;
+
+    try {
+      await _practiceService.leaveActiveSession(
+        sessionId: widget.practiceSessionId!,
+        childId: widget.childId,
+      );
+    } catch (e) {
+      _practiceExitHandled = false;
+
+      if (!mounted) return;
+
+      NotificationService.showErrorSnackBar(
+        'تعذّر إنهاء التحدي، حاول مرة أخرى',
+      );
+
+      return;
+    }
+
+    if (!mounted) return;
+
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      '/child/home',
+      (route) => false,
+      arguments: {'childId': widget.childId},
+    );
+
+    NotificationService.showErrorSnackBar('تم إنهاء التحدي لأنك غادرت الجلسة');
+  }
+
+  void _resetInactivityTimer() {
+    if (!widget.isPracticeTogether || _practiceExitHandled || !mounted) {
+      return;
+    }
+
+    _inactivityWarningTimer?.cancel();
+    _inactivityCancelTimer?.cancel();
+
+    _inactivityWarningTimer = Timer(_inactivityWarningAfter, () {
+      if (!mounted || _practiceExitHandled || _inactivityWarningOpen) {
+        return;
+      }
+
+      _showInactivityWarning();
+    });
+  }
+
+  Future<void> _showInactivityWarning() async {
+    if (!mounted || _practiceExitHandled || _inactivityWarningOpen) {
+      return;
+    }
+
+    _inactivityWarningOpen = true;
+
+    // If the child still does nothing for another 15 seconds,
+    // the entire competition ends.
+    _inactivityCancelTimer = Timer(_inactivityGracePeriod, () async {
+      if (!mounted || _practiceExitHandled || !_inactivityWarningOpen) {
+        return;
+      }
+
+      await _cancelForInactivity();
+    });
+
+    final bool? stillHere = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return Directionality(
+          textDirection: TextDirection.rtl,
+          child: AlertDialog(
+            backgroundColor: const Color(0xFFFFFBF4),
+
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(28),
+            ),
+
+            contentPadding: const EdgeInsets.fromLTRB(22, 22, 22, 14),
+
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('🐰', style: TextStyle(fontSize: 52)),
+
+                const SizedBox(height: 10),
+
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF4EAFB),
+                    borderRadius: BorderRadius.circular(22),
+                  ),
+                  child: const Text(
+                    'هل ما زلت هنا؟',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontFamily: 'Tajawal',
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF511281),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                const Text(
+                  'لم نلاحظ أي تفاعل منذ فترة.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'Tajawal',
+                    fontSize: 14,
+                    color: Color(0xFF666666),
+                  ),
+                ),
+
+                const SizedBox(height: 5),
+
+                const Text(
+                  'اضغط «أنا هنا!» لمواصلة التحدي.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'Tajawal',
+                    fontSize: 13,
+                    height: 1.5,
+                    color: Color(0xFF777777),
+                  ),
+                ),
+
+                const SizedBox(height: 18),
+
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(dialogContext, true);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF511281),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: const StadiumBorder(),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    child: const Text(
+                      'أنا هنا!',
+                      style: TextStyle(
+                        fontFamily: 'Tajawal',
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    // The cancellation may already have happened
+    // while the dialog was open.
+    if (_practiceExitHandled) {
+      return;
+    }
+
+    _inactivityWarningOpen = false;
+
+    if (stillHere == true) {
+      _inactivityCancelTimer?.cancel();
+
+      // IMPORTANT:
+      // Only restart inactivity monitoring.
+      // Do NOT restart the question timer.
+      _resetInactivityTimer();
+    }
+  }
+
+  Future<void> _cancelForInactivity() async {
+    if (_practiceExitHandled || !widget.isPracticeTogether) {
+      return;
+    }
+
+    _practiceExitHandled = true;
+
+    _inactivityWarningTimer?.cancel();
+    _inactivityCancelTimer?.cancel();
+
+    try {
+      await _practiceService.cancelActiveSessionForInactivity(
+        sessionId: widget.practiceSessionId!,
+        childId: widget.childId,
+      );
+    } catch (e) {
+      _practiceExitHandled = false;
+
+      if (!mounted) return;
+
+      _inactivityWarningOpen = false;
+
+      NotificationService.showErrorSnackBar(
+        'تعذّر إنهاء التحدي، حاول مرة أخرى',
+      );
+
+      return;
+    }
+
+    if (!mounted) return;
+
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      '/child/home',
+      (route) => false,
+      arguments: {'childId': widget.childId},
+    );
+
+    NotificationService.showErrorSnackBar('تم إنهاء التحدي بسبب عدم التفاعل');
   }
 
   Widget _buildTargetImage(bool isTablet) {
@@ -442,6 +870,7 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
 
       if (widget.isPracticeTogether && loadedExercises.isNotEmpty) {
         _startQuestionTimer();
+        _resetInactivityTimer();
       }
       // ==============================================================
       // Debug
@@ -596,6 +1025,10 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
       return;
     }
 
+    if (widget.isPracticeTogether) {
+      _resetInactivityTimer();
+    }
+
     setState(() {
       _isPlaying = true;
     });
@@ -646,6 +1079,8 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
     }
 
     if (widget.isPracticeTogether) {
+      _resetInactivityTimer();
+
       _captureCurrentQuestionTime(timedOut: false);
 
       _stopQuestionTimer();
@@ -875,6 +1310,10 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
   }
 
   Future<void> _handleNext() async {
+    if (widget.isPracticeTogether) {
+      _resetInactivityTimer();
+    }
+
     await _completeCurrentQuestion(timedOut: false);
   }
 
@@ -883,6 +1322,7 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
         _questionTimeoutHandling ||
         _questionAdvanceBusy ||
         _showFeedback ||
+        _inactivityWarningOpen ||
         !mounted) {
       return;
     }
@@ -912,6 +1352,18 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
     _questionTimeoutHandling = false;
   }
 
+  Widget _withPracticeExitGuard(Widget child) {
+    return PopScope(
+      canPop: !widget.isPracticeTogether,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop && widget.isPracticeTogether) {
+          _handlePracticeBack();
+        }
+      },
+      child: child,
+    );
+  }
+
   // ───────────────────────────────────────────────────────────────────────────
   // Build
   // ───────────────────────────────────────────────────────────────────────────
@@ -922,17 +1374,21 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
     // ================================================================
 
     if (_isLoadingExercises) {
-      return Directionality(
-        textDirection: TextDirection.rtl,
-        child: Scaffold(
-          backgroundColor: _cream,
-          body: Column(
-            children: [
-              _buildHeader(),
-              const Expanded(
-                child: Center(child: CircularProgressIndicator(color: _purple)),
-              ),
-            ],
+      return _withPracticeExitGuard(
+        Directionality(
+          textDirection: TextDirection.rtl,
+          child: Scaffold(
+            backgroundColor: _cream,
+            body: Column(
+              children: [
+                _buildHeader(),
+                const Expanded(
+                  child: Center(
+                    child: CircularProgressIndicator(color: _purple),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       );
@@ -943,41 +1399,43 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
     // ================================================================
 
     if (_exerciseLoadError != null || _exercises.isEmpty) {
-      return Directionality(
-        textDirection: TextDirection.rtl,
-        child: Scaffold(
-          backgroundColor: _cream,
-          body: Column(
-            children: [
-              _buildHeader(),
-              Expanded(
-                child: Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.error_outline_rounded,
-                          color: _coral,
-                          size: 40,
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          _exerciseLoadError ?? 'لا توجد تمارين لهذا المستوى',
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: Color(0xFF555555),
-                            fontFamily: 'Tajawal',
+      return _withPracticeExitGuard(
+        Directionality(
+          textDirection: TextDirection.rtl,
+          child: Scaffold(
+            backgroundColor: _cream,
+            body: Column(
+              children: [
+                _buildHeader(),
+                Expanded(
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.error_outline_rounded,
+                            color: _coral,
+                            size: 40,
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 12),
+                          Text(
+                            _exerciseLoadError ?? 'لا توجد تمارين لهذا المستوى',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Color(0xFF555555),
+                              fontFamily: 'Tajawal',
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       );
@@ -989,143 +1447,147 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
 
     final bool isTablet = screenWidth > 600;
 
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: Scaffold(
-        backgroundColor: _cream,
-        body: Column(
-          children: [
-            // ================================================================
-            // HEADER
-            // ================================================================
-            _buildHeader(),
+    return _withPracticeExitGuard(
+      Directionality(
+        textDirection: TextDirection.rtl,
+        child: Scaffold(
+          backgroundColor: _cream,
+          body: Column(
+            children: [
+              // ================================================================
+              // HEADER
+              // ================================================================
+              _buildHeader(),
 
-            // ================================================================
-            // CONTENT
-            // ================================================================
-            Expanded(
-              child: Stack(
-                children: [
-                  // ─── Pastel Background
-                  const Positioned.fill(
-                    child: IgnorePointer(child: _ListeningBackground()),
-                  ),
+              // ================================================================
+              // CONTENT
+              // ================================================================
+              Expanded(
+                child: Stack(
+                  children: [
+                    // ─── Pastel Background
+                    const Positioned.fill(
+                      child: IgnorePointer(child: _ListeningBackground()),
+                    ),
 
-                  Center(
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        maxWidth: 650,
-                        maxHeight: isTablet
-                            ? screenHeight * 0.92
-                            : double.infinity,
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(15, 8, 15, 10),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.88),
-                            borderRadius: BorderRadius.circular(26),
-                            border: Border.all(
-                              color: _purple.withOpacity(0.09),
-                              width: 1.4,
-                            ),
-                            boxShadow: const [
-                              BoxShadow(
-                                color: Color(0x0D000000),
-                                blurRadius: 9,
-                                offset: Offset(0, 3),
+                    Center(
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxWidth: 650,
+                          maxHeight: isTablet
+                              ? screenHeight * 0.92
+                              : double.infinity,
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(15, 8, 15, 10),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.88),
+                              borderRadius: BorderRadius.circular(26),
+                              border: Border.all(
+                                color: _purple.withOpacity(0.09),
+                                width: 1.4,
                               ),
-                            ],
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(26),
-                            child: Column(
-                              children: [
-                                // ─── Progress
-                                widget.isPracticeTogether
-                                    ? Padding(
-                                        padding: const EdgeInsets.fromLTRB(
-                                          8,
-                                          7,
-                                          8,
-                                          4,
-                                        ),
-                                        child: PracticeRaceProgress(
-                                          sessionId: widget.practiceSessionId!,
-                                          currentChildId: widget.childId,
-                                          secondsRemaining:
-                                              _questionSecondsLeft,
-                                          timerRunning: _isQuestionTimerRunning,
-                                        ),
-                                      )
-                                    : _buildProgressSection(),
-                                // ─── Main Exercise Area
-                                Expanded(
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 14,
-                                    ),
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceEvenly,
-                                      children: [
-                                        _buildInstructionBox(isTablet),
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Color(0x0D000000),
+                                  blurRadius: 9,
+                                  offset: Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(26),
+                              child: Column(
+                                children: [
+                                  // ─── Progress
+                                  widget.isPracticeTogether
+                                      ? Padding(
+                                          padding: const EdgeInsets.fromLTRB(
+                                            8,
+                                            7,
+                                            8,
+                                            4,
+                                          ),
+                                          child: PracticeRaceProgress(
+                                            sessionId:
+                                                widget.practiceSessionId!,
+                                            currentChildId: widget.childId,
+                                            secondsRemaining:
+                                                _questionSecondsLeft,
+                                            timerRunning:
+                                                _isQuestionTimerRunning,
+                                          ),
+                                        )
+                                      : _buildProgressSection(),
+                                  // ─── Main Exercise Area
+                                  Expanded(
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 14,
+                                      ),
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceEvenly,
+                                        children: [
+                                          _buildInstructionBox(isTablet),
 
-                                        _buildTargetImage(isTablet),
+                                          _buildTargetImage(isTablet),
 
-                                        _buildAudioPlayer(isTablet),
+                                          _buildAudioPlayer(isTablet),
 
-                                        GridView.count(
-                                          padding: EdgeInsets.zero,
-                                          shrinkWrap: true,
-                                          physics:
-                                              const NeverScrollableScrollPhysics(),
-                                          crossAxisCount: 2,
-                                          crossAxisSpacing: 10,
-                                          mainAxisSpacing: 10,
-                                          childAspectRatio: isTablet
-                                              ? 3.0
-                                              : 1.6,
-                                          children: _exercise.options
-                                              .map(
-                                                (option) => _AnswerTile(
-                                                  text: option.word,
-                                                  imagePath: option.imagePath,
-                                                  selectedAnswer:
-                                                      _selectedAnswer,
-                                                  correctAnswer:
-                                                      _exercise.correctAnswer,
-                                                  showFeedback: _showFeedback,
-                                                  enabled:
-                                                      _playCount > 0 &&
-                                                      !_showFeedback,
-                                                  onTap: () => _handleAnswer(
-                                                    option.word,
+                                          GridView.count(
+                                            padding: EdgeInsets.zero,
+                                            shrinkWrap: true,
+                                            physics:
+                                                const NeverScrollableScrollPhysics(),
+                                            crossAxisCount: 2,
+                                            crossAxisSpacing: 10,
+                                            mainAxisSpacing: 10,
+                                            childAspectRatio: isTablet
+                                                ? 3.0
+                                                : 1.6,
+                                            children: _exercise.options
+                                                .map(
+                                                  (option) => _AnswerTile(
+                                                    text: option.word,
+                                                    imagePath: option.imagePath,
+                                                    selectedAnswer:
+                                                        _selectedAnswer,
+                                                    correctAnswer:
+                                                        _exercise.correctAnswer,
+                                                    showFeedback: _showFeedback,
+                                                    enabled:
+                                                        _playCount > 0 &&
+                                                        !_showFeedback,
+                                                    onTap: () => _handleAnswer(
+                                                      option.word,
+                                                    ),
                                                   ),
-                                                ),
-                                              )
-                                              .toList(),
-                                        ),
+                                                )
+                                                .toList(),
+                                          ),
 
-                                        _buildFeedbackNoticeArea(isTablet),
-                                      ],
+                                          _buildFeedbackNoticeArea(isTablet),
+                                        ],
+                                      ),
                                     ),
                                   ),
-                                ),
 
-                                // ─── Footer
-                                _buildFooter(),
-                              ],
+                                  // ─── Footer
+                                  _buildFooter(),
+                                ],
+                              ),
                             ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -1522,7 +1984,7 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
         children: [
           IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () => Navigator.pop(context),
+            onPressed: _handlePracticeBack,
           ),
 
           const SizedBox(width: 8),
