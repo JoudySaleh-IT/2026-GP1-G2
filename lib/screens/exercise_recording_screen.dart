@@ -1691,61 +1691,73 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
       );
     }
 
-    // ---------------------------------------------------------
-    // Normal final analysis
-    // ---------------------------------------------------------
+// ---------------------------------------------------------
+// Normal final analysis
+// ---------------------------------------------------------
 
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-
-          children: [
-            AnimatedBuilder(
-              animation: _spinController,
-
-              builder: (_, __) {
-                return Transform.rotate(
-                  angle: _spinController.value * 2 * pi,
-
-                  child: const Icon(Icons.sync_rounded, size: 64, color: _red),
-                );
-              },
-            ),
-
-            const SizedBox(height: 18),
-
-            const Text(
-              'جاري تحليل نتائجك...',
-              textAlign: TextAlign.center,
-
-              style: TextStyle(
-                fontFamily: 'Tajawal',
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: _deepPurple,
-              ),
-            ),
-
-            const SizedBox(height: 7),
-
-            const Text(
-              'لحظات قليلة ونجهز لك النتيجة',
-              textAlign: TextAlign.center,
-
-              style: TextStyle(
-                fontFamily: 'Tajawal',
-                fontSize: 12,
-                color: Color(0xFF777777),
-              ),
-            ),
-          ],
+return Center(
+  child: Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 28),
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+       SizedBox(
+  width: 145,
+  height: 165,
+  child: Center(
+    child: Transform.scale(
+      scale: 1.25,
+      child: SizedBox(
+        width: 105,
+        height: 132,
+        child: _ResultBunny(
+          bubbleText: 'لحظة!',
         ),
       ),
-    );
-  }
+    ),
+  ),
+),
+
+        const SizedBox(height: 22),
+
+        const SizedBox(
+          width: 38,
+          height: 38,
+          child: CircularProgressIndicator(
+            color: _red,
+            strokeWidth: 4,
+          ),
+        ),
+
+        const SizedBox(height: 20),
+
+        const Text(
+          'جاري إعداد نتيجتك يا بطل...',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: _deepPurple,
+            fontSize: 20,
+            fontWeight: FontWeight.w800,
+            fontFamily: 'Tajawal',
+          ),
+        ),
+
+        const SizedBox(height: 7),
+
+        const Text(
+          'لحظات قليلة ونجهز لك نتيجتك',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: Color(0xFF777777),
+            fontSize: 13,
+            fontFamily: 'Tajawal',
+          ),
+        ),
+      ],
+    ),
+  ),
+);
+}
   // -------------------------------------------------------------------------
   // Header
   // -------------------------------------------------------------------------
@@ -2907,7 +2919,260 @@ class _CutePronunciationCharacter extends StatelessWidget {
     );
   }
 }
+class _ResultBunny extends StatelessWidget {
+  final String bubbleText;
 
+  const _ResultBunny({
+    this.bubbleText = 'لحظة!',
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    const faceColor = Color(0xFFFFDCE7);
+    const bodyColor = Color(0xFF8B55B3);
+    const innerEarColor = Color(0xFFFFA1B7);
+    const detailsColor = Color(0xFF4D3855);
+
+    return Stack(
+      alignment: Alignment.center,
+      clipBehavior: Clip.none,
+      children: [
+        Positioned(
+          top: 4,
+          right: 0,
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 9,
+              vertical: 6,
+            ),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.88),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Text(
+              bubbleText,
+              style: const TextStyle(
+                color: Color(0xFF8B55B3),
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                fontFamily: 'Tajawal',
+              ),
+            ),
+          ),
+        ),
+
+        Positioned(
+          top: 36,
+          right: 5,
+          child: Transform.rotate(
+            angle: -0.35,
+            child: Container(
+              width: 4,
+              height: 13,
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFD36A),
+                borderRadius: BorderRadius.circular(5),
+              ),
+            ),
+          ),
+        ),
+
+        Positioned(
+          top: 45,
+          right: 0,
+          child: Transform.rotate(
+            angle: 0.65,
+            child: Container(
+              width: 4,
+              height: 12,
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFD36A),
+                borderRadius: BorderRadius.circular(5),
+              ),
+            ),
+          ),
+        ),
+
+        Positioned(
+          top: 16,
+          right: 27,
+          child: Transform.rotate(
+            angle: 0.10,
+            child: Container(
+              width: 20,
+              height: 44,
+              decoration: BoxDecoration(
+                color: faceColor,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Center(
+                child: Container(
+                  width: 7,
+                  height: 27,
+                  decoration: BoxDecoration(
+                    color: innerEarColor.withOpacity(0.55),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+
+        Positioned(
+          top: 22,
+          left: 20,
+          child: Transform.rotate(
+            angle: -0.42,
+            child: Container(
+              width: 20,
+              height: 44,
+              decoration: BoxDecoration(
+                color: faceColor,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Center(
+                child: Container(
+                  width: 7,
+                  height: 27,
+                  decoration: BoxDecoration(
+                    color: innerEarColor.withOpacity(0.55),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+
+        Positioned(
+          bottom: 0,
+          child: Container(
+            width: 50,
+            height: 34,
+            decoration: const BoxDecoration(
+              color: bodyColor,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(27),
+                topRight: Radius.circular(27),
+                bottomLeft: Radius.circular(13),
+                bottomRight: Radius.circular(13),
+              ),
+            ),
+          ),
+        ),
+
+        Positioned(
+          top: 50,
+          child: Container(
+            width: 65,
+            height: 61,
+            decoration: BoxDecoration(
+              color: faceColor,
+              borderRadius: BorderRadius.circular(31),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Stack(
+              children: [
+                Positioned(
+                  top: 22,
+                  right: 15,
+                  child: Container(
+                    width: 6,
+                    height: 7,
+                    decoration: const BoxDecoration(
+                      color: detailsColor,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+
+                Positioned(
+                  top: 22,
+                  left: 15,
+                  child: Container(
+                    width: 6,
+                    height: 7,
+                    decoration: const BoxDecoration(
+                      color: detailsColor,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+
+                Positioned(
+                  top: 35,
+                  right: 7,
+                  child: Container(
+                    width: 9,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFF96AC).withOpacity(0.50),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+
+                Positioned(
+                  top: 35,
+                  left: 7,
+                  child: Container(
+                    width: 9,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFF96AC).withOpacity(0.50),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+
+                Positioned(
+                  top: 30,
+                  left: 29,
+                  child: Container(
+                    width: 7,
+                    height: 5,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFFF7890),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+
+                Positioned(
+                  top: 37,
+                  left: 23,
+                  child: Container(
+                    width: 19,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(
+                          color: detailsColor,
+                          width: 1.5,
+                        ),
+                      ),
+                      borderRadius: BorderRadius.only(
+                        bottomLeft: Radius.circular(10),
+                        bottomRight: Radius.circular(10),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
 // ---------------------------------------------------------------------------
 // Spinner
 // ---------------------------------------------------------------------------

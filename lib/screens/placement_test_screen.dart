@@ -320,25 +320,68 @@ Future<void> _startPreprocessing(
   }
 }
 Widget _buildFinalCalculatingScreen() {
-  return const Center(
-    child: Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        CircularProgressIndicator(
-          color: _purple,
-          strokeWidth: 4,
-        ),
-        SizedBox(height: 24),
-        Text(
-          'جاري إعداد نتيجتك يا بطل... 🚀',
-          style: TextStyle(
-            color: _purple,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            fontFamily: 'Tajawal',
+  return Center(
+    child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 28),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Faseh Bunny
+          SizedBox(
+  width: 145,
+  height: 165,
+  child: Center(
+    child: Transform.scale(
+      scale: 1.25,
+      child: const SizedBox(
+        width: 105,
+        height: 132,
+        child: _PlacementBunny(
+  bubbleText: 'لحظة!',
+),
+      ),
+    ),
+  ),
+),
+
+          const SizedBox(height: 22),
+
+          // Loading indicator
+          const SizedBox(
+            width: 38,
+            height: 38,
+            child: CircularProgressIndicator(
+              color: _coral,
+              strokeWidth: 4,
+            ),
           ),
-        ),
-      ],
+
+          const SizedBox(height: 20),
+
+          const Text(
+            'جاري إعداد نتيجتك يا بطل...',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: _purple,
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+              fontFamily: 'Tajawal',
+            ),
+          ),
+
+          const SizedBox(height: 7),
+
+          const Text(
+            'لحظات قليلة ونجهز لك نتيجتك',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Color(0xFF777777),
+              fontSize: 13,
+              fontFamily: 'Tajawal',
+            ),
+          ),
+        ],
+      ),
     ),
   );
 }
@@ -374,52 +417,54 @@ Widget _buildFinalCalculatingScreen() {
       },
     );
   }
-
-  @override
-  Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: Scaffold(
-        backgroundColor: _bgColor,
-        body: _isLoading
-    ? const Center(
-        child: CircularProgressIndicator(
-          color: _purple,
-        ),
-      )
-    : _isCalculatingFinalScore
-        ? _buildFinalCalculatingScreen()
-        : _placementWords.isEmpty
-            ? const Center(
-                child: Text(
-                  'لا توجد كلمات في قاعدة البيانات',
-                  style: TextStyle(fontFamily: 'Tajawal', fontSize: 18),
-                ),
-              )
-            : Column(
-                children: [
-                  _buildHeader(),
-
-                  Expanded(
-                    child: Stack(
-                      children: [
-                        const Positioned.fill(
-                          child: IgnorePointer(child: _PlacementBackground()),
+@override
+Widget build(BuildContext context) {
+  return Directionality(
+    textDirection: TextDirection.rtl,
+    child: Scaffold(
+      backgroundColor: _bgColor,
+      body: _isLoading
+          ? const Center(
+              child: CircularProgressIndicator(
+                color: _purple,
+              ),
+            )
+          : _isCalculatingFinalScore
+              ? _buildFinalCalculatingScreen()
+              : _placementWords.isEmpty
+                  ? const Center(
+                      child: Text(
+                        'لا توجد كلمات في قاعدة البيانات',
+                        style: TextStyle(
+                          fontFamily: 'Tajawal',
+                          fontSize: 18,
                         ),
-
-                        SingleChildScrollView(
-                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 30),
-                          child: _buildCard(),
+                      ),
+                    )
+                  : Column(
+                      children: [
+                        _buildHeader(),
+                        Expanded(
+                          child: Stack(
+                            children: [
+                              const Positioned.fill(
+                                child: IgnorePointer(
+                                  child: _PlacementBackground(),
+                                ),
+                              ),
+                              SingleChildScrollView(
+                                padding:
+                                    const EdgeInsets.fromLTRB(16, 16, 16, 30),
+                                child: _buildCard(),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
-                  ),
-                ],
-              ),
-      ),
-    );
-  }
-
+    ),
+  );
+}
   Widget _buildHeader() {
     return FaseehStyle.buildLargeHeader(
       context: context,
@@ -1202,7 +1247,11 @@ class _GuideStep extends StatelessWidget {
 // =============================================================================
 
 class _PlacementBunny extends StatelessWidget {
-  const _PlacementBunny();
+  final String bubbleText;
+
+  const _PlacementBunny({
+    this.bubbleText = 'هيا!',
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1227,8 +1276,8 @@ class _PlacementBunny extends StatelessWidget {
               color: Colors.white.withOpacity(0.88),
               borderRadius: BorderRadius.circular(14),
             ),
-            child: const Text(
-              'هيا!',
+            child: Text(
+  bubbleText,
               style: TextStyle(
                 color: Color(0xFF8B55B3),
                 fontSize: 10,
