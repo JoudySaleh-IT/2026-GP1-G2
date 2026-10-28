@@ -27,6 +27,8 @@ dependencies:
   http: ^1.6.0
   qr_flutter: ^4.1.0
   mobile_scanner: ^7.4.0
+  pdf: ^3.12.0
+  printing: ^5.14.3
 
 dev_dependencies:
   flutter_test:
@@ -49,6 +51,7 @@ flutter:
 
   assets:
     - assets/images/
+    - assets/images/certificates/
     - assets/images/articulation/
     - assets/images/kha_exercise_images/
     - assets/images/word_bank/

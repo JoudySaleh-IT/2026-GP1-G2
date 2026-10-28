@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import '../services/certificate_service.dart';
 import 'exercise_recording_retry_screen.dart';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -139,7 +139,23 @@ Future<void> _savePronunciationProgress() async {
         canAdvance,
   });
 
+// -------------------------------------------------------------
+// Check if the child has completed the entire Faseh journey
+// -------------------------------------------------------------
+if (canAdvance && _level.toLowerCase() == 'advanced') {
+  final certificateService = CertificateService();
 
+  final bool journeyCompleted =
+      await certificateService.isJourneyCompleted(_childId);
+
+  if (journeyCompleted) {
+    await certificateService.issueCertificate(_childId);
+
+    debugPrint(
+      '🎓 Journey completed - completion certificate issued',
+    );
+  }
+}
 
   debugPrint(
     'Pronunciation result → '

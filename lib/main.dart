@@ -35,6 +35,7 @@ import 'screens/friend_requests_screen.dart';
 import 'screens/notifications_screen.dart';
 import 'screens/parent_notifications_screen.dart';
 import 'screens/practice_together_result_screen.dart';
+import 'screens/certificate_screen.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 void main() async {
@@ -342,6 +343,16 @@ class MyApp extends StatelessWidget {
           final String? id = args is String ? args : (args as Map?)?['childId'];
           return ExercisesScreen(childId: id ?? '');
         },
+        '/child/certificate': (context) {
+  final args = ModalRoute.of(context)!.settings.arguments;
+
+  final String? id =
+      args is String ? args : (args as Map?)?['childId'];
+
+  return CertificateScreen(
+    childId: id ?? '',
+  );
+},
 
         '/child/letter-levels': (context) {
           final args = ModalRoute.of(context)!.settings.arguments as Map?;

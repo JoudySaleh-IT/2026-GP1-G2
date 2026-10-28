@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
+import '../services/certificate_service.dart';
 import '../utils/arabic_numbers.dart';
 import '../services/notification_service.dart';
 // ─────────────────────────────────────────────────────────────────────────────
@@ -62,7 +62,59 @@ class _LetterLevelsScreenState extends State<LetterLevelsScreen> {
 
     _loadProgress();
   }
+Future<void> _completeGhainForTesting() async {
+  final childRef = FirebaseFirestore.instance
+      .collection('children')
+      .doc(widget.childId);
 
+  await childRef.update({
+    // Intermediate
+    'exerciseProgress.غ.intermediate.listeningPassed': true,
+    'exerciseProgress.غ.intermediate.listeningScore': 8,
+    'exerciseProgress.غ.intermediate.pronunciationPassed': true,
+    'exerciseProgress.غ.intermediate.pronunciationScore': 90,
+    'exerciseProgress.غ.intermediate.pronunciationCorrectCount': 7,
+
+    // Advanced
+    'exerciseProgress.غ.advanced.listeningPassed': true,
+    'exerciseProgress.غ.advanced.listeningScore': 8,
+    'exerciseProgress.غ.advanced.pronunciationPassed': true,
+    'exerciseProgress.غ.advanced.pronunciationScore': 90,
+    'exerciseProgress.غ.advanced.pronunciationCorrectCount': 7,
+  });
+
+  await _loadProgress();
+
+  debugPrint('✅ غ completed for testing');
+}
+Future<void> _completeRemainingLettersForTesting() async {
+  final childRef = FirebaseFirestore.instance
+      .collection('children')
+      .doc(widget.childId);
+
+  const remainingLetters = ['خ', 'س', 'ص', 'ض', 'ق'];
+  const levels = ['beginner', 'intermediate', 'advanced'];
+
+  final Map<String, dynamic> updates = {};
+
+  for (final letter in remainingLetters) {
+    for (final level in levels) {
+      updates['exerciseProgress.$letter.$level.listeningPassed'] = true;
+      updates['exerciseProgress.$letter.$level.listeningScore'] = 8;
+      updates['exerciseProgress.$letter.$level.pronunciationPassed'] = true;
+      updates['exerciseProgress.$letter.$level.pronunciationScore'] = 90;
+      updates[
+        'exerciseProgress.$letter.$level.pronunciationCorrectCount'
+      ] = 7;
+    }
+  }
+
+  await childRef.update(updates);
+
+  debugPrint('✅ Remaining letters completed for certificate testing');
+
+  await _loadProgress();
+}
   // ───────────────────────────────────────────────────────────────────────────
   // Normalize child level
   // ───────────────────────────────────────────────────────────────────────────
@@ -367,7 +419,48 @@ if (rawExerciseProgress is Map) {
                         ),
 
                         const SizedBox(height: 14),
+if (widget.letter == 'غ') ...[
+  ElevatedButton(
+    onPressed: () async {
+      await _completeGhainForTesting();
+    },
+    style: ElevatedButton.styleFrom(
+      backgroundColor: const Color(0xFF511281),
+      foregroundColor: Colors.white,
+    ),
+    child: const Text(
+      'إكمال حرف غ للاختبار',
+      style: TextStyle(fontFamily: 'Tajawal'),
+    ),
+  ),
+  const SizedBox(height: 14),
+],
+ElevatedButton(
+  onPressed: () async {
+    await _completeRemainingLettersForTesting();
 
+    final certificateService = CertificateService();
+
+    final bool completed =
+        await certificateService.isJourneyCompleted(widget.childId);
+
+    debugPrint('Journey completed? $completed');
+
+    if (completed) {
+      await certificateService.issueCertificate(widget.childId);
+
+      debugPrint('🎓 Test certificate issued');
+    }
+  },
+  style: ElevatedButton.styleFrom(
+    backgroundColor: const Color(0xFFFF6969),
+    foregroundColor: Colors.white,
+  ),
+  child: const Text(
+    'إكمال كل الحروف للاختبار',
+    style: TextStyle(fontFamily: 'Tajawal'),
+  ),
+),
                         // =====================================================
                         // Listening + Pronunciation
                         // =====================================================

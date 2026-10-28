@@ -477,7 +477,7 @@ if (letterCompleted) {
               color: const Color(0xFF76BE91).withOpacity(0.20),
             ),
           ),
-          child: const Column(
+          child:  Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               SizedBox(
@@ -512,6 +512,38 @@ if (letterCompleted) {
                   color: Color(0xFF6F6F6F),
                 ),
               ),
+              const SizedBox(height: 20),
+
+ElevatedButton.icon(
+  onPressed: () {
+    Navigator.pushNamed(
+      context,
+      '/child/certificate',
+      arguments: {
+        'childId': widget.childId,
+      },
+    );
+  },
+  icon: const Icon(Icons.workspace_premium_rounded),
+  label: const Text(
+    'عرض شهادتي',
+    style: TextStyle(
+      fontFamily: 'Tajawal',
+      fontWeight: FontWeight.w700,
+    ),
+  ),
+  style: ElevatedButton.styleFrom(
+    backgroundColor: const Color(0xFF511281),
+    foregroundColor: Colors.white,
+    padding: const EdgeInsets.symmetric(
+      horizontal: 24,
+      vertical: 13,
+    ),
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(18),
+    ),
+  ),
+),
             ],
           ),
         ),
