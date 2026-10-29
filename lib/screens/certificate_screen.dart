@@ -10,6 +10,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
 import '../utils/arabic_numbers.dart';
+import 'style_constants.dart';
 
 class CertificateScreen extends StatefulWidget {
   final String childId;
@@ -26,6 +27,135 @@ class CertificateScreen extends StatefulWidget {
 class _CertificateScreenState extends State<CertificateScreen> {
   // Used to capture ONLY the certificate as an image
   final GlobalKey _certificateKey = GlobalKey();
+
+
+  bool _isPreview(BuildContext context) {
+    final args = ModalRoute.of(context)?.settings.arguments;
+    return args is Map && args['previewCertificate'] == true;
+  }
+
+  int _calculateAge(DateTime dob, DateTime now) {
+    int age = now.year - dob.year;
+
+    final bool birthdayNotReached =
+        now.month < dob.month ||
+        (now.month == dob.month && now.day < dob.day);
+
+    if (birthdayNotReached) {
+      age--;
+    }
+
+    return age;
+  }
+
+  Future<Map<String, dynamic>?> _loadCertificateData(
+    BuildContext context,
+  ) async {
+    final bool preview = _isPreview(context);
+
+    // ================================================================
+    // PREVIEW MODE
+    // Does NOT issue a certificate and does NOT write to Firestore.
+    // It only uses the child's current data to build a visual preview.
+    // ================================================================
+    if (preview) {
+      final childDoc = await FirebaseFirestore.instance
+          .collection('children')
+          .doc(widget.childId)
+          .get();
+
+      if (!childDoc.exists || childDoc.data() == null) {
+        return {
+          'fullNameAtIssue': 'بطل فصيح',
+          'completedLetters': ['ق', 'خ', 'غ', 'ص', 'س', 'ض'],
+          'templateType': 'young',
+          'completionDate': Timestamp.now(),
+        };
+      }
+
+      final childData = childDoc.data()!;
+
+      final String firstName =
+          childData['firstName']?.toString().trim() ?? '';
+
+      final String lastName =
+          childData['lastName']?.toString().trim() ?? '';
+
+      final String fullName =
+          '$firstName $lastName'.trim().isEmpty
+              ? 'بطل فصيح'
+              : '$firstName $lastName'.trim();
+
+      final List<String> requiredLetters = [];
+
+      final dynamic rawScores = childData['letterScores'];
+
+      if (rawScores is Map) {
+        for (final entry in rawScores.entries) {
+          final dynamic value = entry.value;
+
+          if (value is num && value < 80) {
+            requiredLetters.add(
+              entry.key.toString(),
+            );
+          }
+        }
+      }
+
+      if (requiredLetters.isEmpty) {
+        requiredLetters.addAll(
+          ['ق', 'خ', 'غ', 'ص', 'س', 'ض'],
+        );
+      }
+
+      String templateType = 'young';
+
+    final dynamic dobValue = childData['dob'];
+
+if (dobValue is Timestamp) {
+  final int age = _calculateAge(
+    dobValue.toDate(),
+    DateTime.now(),
+  );
+
+  debugPrint('🎓 CERT PREVIEW AGE = $age');
+  debugPrint(
+    '🎓 CERT TEMPLATE = ${age <= 8 ? 'young' : 'older'}',
+  );
+  debugPrint(
+    '🎓 CERT DOB = ${dobValue.toDate()}',
+  );
+
+  templateType =
+      age <= 8 ? 'young' : 'older';
+}
+
+      return {
+        'fullNameAtIssue': fullName,
+        'completedLetters': requiredLetters,
+        'templateType': templateType,
+        'completionDate': Timestamp.now(),
+      };
+    }
+
+    // ================================================================
+    // REAL MODE
+    // Reads the certificate that was actually issued.
+    // ================================================================
+    final certificateDoc = await FirebaseFirestore.instance
+        .collection('children')
+        .doc(widget.childId)
+        .collection('certificates')
+        .doc('completion')
+        .get();
+
+    if (!certificateDoc.exists ||
+        certificateDoc.data() == null) {
+      return null;
+    }
+
+    return certificateDoc.data()!;
+  }
 
   // ==========================================================================
   // Format completion date
@@ -167,325 +297,465 @@ class _CertificateScreenState extends State<CertificateScreen> {
       child: Scaffold(
         backgroundColor: const Color(0xFFFCF9EA),
 
-        appBar: AppBar(
-          backgroundColor: const Color(0xFF511281),
-          foregroundColor: Colors.white,
-          title: const Text(
-            'شهادتي',
-            style: TextStyle(
-              fontFamily: 'Tajawal',
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ),
-
-        body: FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-          future: FirebaseFirestore.instance
-              .collection('children')
-              .doc(widget.childId)
-              .collection('certificates')
-              .doc('completion')
-              .get(),
-
-          builder: (context, snapshot) {
-            // =================================================================
-            // Loading
-            // =================================================================
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(
-                child: CircularProgressIndicator(
-                  color: Color(0xFF511281),
-                ),
-              );
-            }
-
-            // =================================================================
-            // Error
-            // =================================================================
-            if (snapshot.hasError) {
-              return const Center(
-                child: Text(
-                  'تعذر تحميل الشهادة',
-                  style: TextStyle(
-                    fontFamily: 'Tajawal',
-                    fontSize: 16,
-                  ),
-                ),
-              );
-            }
-
-            // =================================================================
-            // Certificate not issued yet
-            // =================================================================
-            if (!snapshot.hasData || !snapshot.data!.exists) {
-              return const Center(
-                child: Text(
-                  'لم يتم إصدار الشهادة بعد',
-                  style: TextStyle(
-                    fontFamily: 'Tajawal',
-                    fontSize: 16,
-                  ),
-                ),
-              );
-            }
-
-            // =================================================================
-            // Certificate Data
-            // =================================================================
-            final data = snapshot.data!.data()!;
-
-            final String fullName =
-                data['fullNameAtIssue']?.toString() ?? '';
-
-            final String templateType =
-                data['templateType']?.toString() ?? 'young';
-
-            final List<String> completedLetters = List<String>.from(
-              data['completedLetters'] ?? [],
-            );
-
-            final Timestamp? completionDate =
-                data['completionDate'] as Timestamp?;
-
-            final String dateText = completionDate == null
-                ? ''
-                : _formatDate(completionDate);
-
-            final bool isYoung = templateType == 'young';
-
-            final String templatePath = isYoung
-                ? 'assets/images/certificates/certificate_young.png'
-                : 'assets/images/certificates/certificate_older.png';
-
-            // =================================================================
-            // Certificate + buttons
-            // =================================================================
-            return SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 24,
-              ),
-
-              child: Column(
-                children: [
-                  // ===========================================================
-                  // ONLY THIS PART WILL BE CAPTURED IN THE PDF
-                  // ===========================================================
-                  RepaintBoundary(
-                    key: _certificateKey,
-
-                    child: AspectRatio(
-                      aspectRatio: 2048 / 1448,
-
-                      child: LayoutBuilder(
-                        builder: (context, constraints) {
-                          final width = constraints.maxWidth;
-                          final height = constraints.maxHeight;
-
-                          return Stack(
-                            children: [
-                              // ===============================================
-                              // Certificate Background
-                              // ===============================================
-                              Positioned.fill(
-                                child: Image.asset(
-                                  templatePath,
-                                  fit: BoxFit.contain,
-                                ),
-                              ),
-
-                              // ===============================================
-                              // Child Name
-                              // ===============================================
-                              Positioned(
-                                left: isYoung
-                                    ? width * 0.378
-                                    : width * 0.255,
-
-                                right: isYoung
-                                    ? width * 0.195
-                                    : width * 0.255,
-
-                                top: isYoung
-                                    ? height * 0.426
-                                    : height * 0.310,
-
-                                height: isYoung
-                                    ? height * 0.103
-                                    : height * 0.095,
-
-                                child: Center(
-                                  child: FittedBox(
-                                    fit: BoxFit.scaleDown,
-
-                                    child: Text(
-                                      fullName,
-                                      textAlign: TextAlign.center,
-                                      textDirection: TextDirection.rtl,
-
-                                      style: TextStyle(
-                                        fontFamily: 'Tajawal',
-                                        fontSize: width * 0.030,
-                                        fontWeight: FontWeight.w700,
-                                        color: const Color(0xFF511281),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-
-                              // ===============================================
-                              // Completed Letters
-                              // ===============================================
-                              Positioned(
-                                left: width * 0.27,
-                                right: width * 0.12,
-
-                                top: isYoung
-                                    ? height * 0.61
-                                    : height * 0.565,
-
-                                height: height * 0.12,
-
-                                child: Center(
-                                  child: _DynamicLetters(
-                                    letters: completedLetters,
-                                    isYoung: isYoung,
-                                  ),
-                                ),
-                              ),
-
-                              // ===============================================
-                              // Completion Date
-                              // ===============================================
-                              Positioned(
-                                left: isYoung
-                                    ? width * 0.494
-                                    : width * 0.700,
-
-                                top: isYoung
-                                    ? height * 0.814
-                                    : height * 0.812,
-
-                                width: isYoung
-                                    ? width * 0.194
-                                    : width * 0.205,
-
-                                height: isYoung
-                                    ? height * 0.058
-                                    : height * 0.055,
-
-                                child: Center(
-                                  child: FittedBox(
-                                    fit: BoxFit.scaleDown,
-
-                                    child: Text(
-                                      dateText,
-                                      textAlign: TextAlign.center,
-                                      textDirection: TextDirection.rtl,
-
-                                      style: TextStyle(
-                                        fontFamily: 'Tajawal',
-                                        fontSize: isYoung
-                                            ? width * 0.018
-                                            : width * 0.016,
-                                        fontWeight: FontWeight.w700,
-                                        color: const Color(0xFF7656A3),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          );
-                        },
-                      ),
+        body: Column(
+          children: [
+            // ================================================================
+            // Unified Faseh Header
+            // ================================================================
+            FaseehStyle.buildLargeHeader(
+              context: context,
+              title: 'شهادتي',
+              subtitle: 'احتفل بإنجازك في فصيح',
+              leading: SizedBox(
+                width: 48,
+                height: 48,
+                child: Center(
+                  child: IconButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    icon: const Icon(
+                      Icons.arrow_back_rounded,
+                      color: Colors.white,
+                      size: 28,
                     ),
                   ),
-
-                  const SizedBox(height: 24),
-
-                  // ===========================================================
-                  // PDF Actions
-                  // ===========================================================
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: _saveCertificatePdf,
-
-                          icon: const Icon(
-                            Icons.download_rounded,
-                          ),
-
-                          label: const Text(
-                            'حفظ PDF',
-                            style: TextStyle(
-                              fontFamily: 'Tajawal',
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF511281),
-                            foregroundColor: Colors.white,
-
-                            padding: const EdgeInsets.symmetric(
-                              vertical: 13,
-                            ),
-
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(width: 12),
-
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: _shareCertificatePdf,
-
-                          icon: const Icon(
-                            Icons.share_rounded,
-                          ),
-
-                          label: const Text(
-                            'مشاركة',
-                            style: TextStyle(
-                              fontFamily: 'Tajawal',
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: const Color(0xFF511281),
-
-                            side: const BorderSide(
-                              color: Color(0xFF511281),
-                              width: 1.5,
-                            ),
-
-                            padding: const EdgeInsets.symmetric(
-                              vertical: 13,
-                            ),
-
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 20),
-                ],
+                ),
               ),
-            );
-          },
+              trailingActions: const [
+                SizedBox(
+                  width: 48,
+                  height: 48,
+                ),
+              ],
+            ),
+
+            // ================================================================
+            // Certificate Area
+            // ================================================================
+            Expanded(
+              child: FutureBuilder<Map<String, dynamic>?>(
+                future: _loadCertificateData(context),
+
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState ==
+                      ConnectionState.waiting) {
+                    return const Center(
+                      child: CircularProgressIndicator(
+                        color: Color(0xFF511281),
+                      ),
+                    );
+                  }
+
+                  if (snapshot.hasError) {
+                    return const Center(
+                      child: Text(
+                        'تعذر تحميل الشهادة',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontFamily: 'Tajawal',
+                          fontSize: 16,
+                          color: Color(0xFF555555),
+                        ),
+                      ),
+                    );
+                  }
+
+                  final data = snapshot.data;
+
+                  if (data == null) {
+                    return const Center(
+                      child: Text(
+                        'لم يتم إصدار الشهادة بعد',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontFamily: 'Tajawal',
+                          fontSize: 16,
+                          color: Color(0xFF555555),
+                        ),
+                      ),
+                    );
+                  }
+
+                  final String fullName =
+                      data['fullNameAtIssue']
+                              ?.toString() ??
+                          '';
+
+                  final String templateType =
+                      data['templateType']
+                              ?.toString() ??
+                          'young';
+
+                  final List<String> completedLetters =
+                      List<String>.from(
+                    data['completedLetters'] ?? [],
+                  );
+
+                  final Timestamp? completionDate =
+                      data['completionDate']
+                          as Timestamp?;
+
+                  final String dateText =
+                      completionDate == null
+                          ? ''
+                          : _formatDate(
+                              completionDate,
+                            );
+
+                  final bool isYoung =
+                      templateType == 'young';
+
+                  final String templatePath =
+                      isYoung
+                          ? 'assets/images/certificates/certificate_young.png'
+                          : 'assets/images/certificates/certificate_older.png';
+
+                  return LayoutBuilder(
+                    builder:
+                        (context, viewport) {
+                      return SingleChildScrollView(
+                        padding:
+                            const EdgeInsets
+                                .fromLTRB(
+                          14,
+                          20,
+                          14,
+                          24,
+                        ),
+
+                        child: ConstrainedBox(
+                          constraints:
+                              BoxConstraints(
+                            minHeight:
+                                viewport
+                                    .maxHeight -
+                                44,
+                          ),
+
+                          child: Align(
+  alignment: const Alignment(0, -0.28),
+  child: Column(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+                              // =================================================
+                              // Certificate itself
+                              // =================================================
+                              RepaintBoundary(
+                                key:
+                                    _certificateKey,
+
+                                child:
+                                    AspectRatio(
+                                  aspectRatio:
+                                      2048 /
+                                          1448,
+
+                                  child:
+                                      LayoutBuilder(
+                                    builder:
+                                        (
+                                      context,
+                                      constraints,
+                                    ) {
+                                      final width =
+                                          constraints
+                                              .maxWidth;
+
+                                      final height =
+                                          constraints
+                                              .maxHeight;
+
+                                      return Stack(
+                                        children: [
+                                          Positioned
+                                              .fill(
+                                            child:
+                                                Image.asset(
+                                              templatePath,
+                                              fit: BoxFit
+                                                  .contain,
+                                            ),
+                                          ),
+
+                                          // =====================================
+                                          // Child Name
+                                          // =====================================
+                                          Positioned(
+                                            left: isYoung
+                                                ? width *
+                                                    0.378
+                                                : width *
+                                                    0.255,
+                                            right: isYoung
+                                                ? width *
+                                                    0.195
+                                                : width *
+                                                    0.255,
+                                            top: isYoung
+                                                ? height *
+                                                    0.426
+                                                : height *
+                                                    0.310,
+                                            height: isYoung
+                                                ? height *
+                                                    0.103
+                                                : height *
+                                                    0.095,
+                                            child:
+                                                Center(
+                                              child:
+                                                  FittedBox(
+                                                fit: BoxFit
+                                                    .scaleDown,
+                                                child:
+                                                    Text(
+                                                  fullName,
+                                                  textAlign:
+                                                      TextAlign.center,
+                                                  textDirection:
+                                                      TextDirection.rtl,
+                                                  style:
+                                                      TextStyle(
+                                                    fontFamily:
+                                                        'Tajawal',
+                                                    fontSize:
+                                                        width * 0.030,
+                                                    fontWeight:
+                                                        FontWeight.w700,
+                                                    color:
+                                                        const Color(
+                                                      0xFF511281,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+
+                                          // =====================================
+                                          // Completed Letters
+                                          // =====================================
+                                          Positioned(
+                                            left:
+                                                width *
+                                                    0.27,
+                                            right:
+                                                width *
+                                                    0.12,
+                                            top: isYoung
+                                                ? height *
+                                                    0.61
+                                                : height *
+                                                    0.565,
+                                            height:
+                                                height *
+                                                    0.12,
+                                            child:
+                                                Center(
+                                              child:
+                                                  _DynamicLetters(
+                                                letters:
+                                                    completedLetters,
+                                                isYoung:
+                                                    isYoung,
+                                              ),
+                                            ),
+                                          ),
+
+                                          // =====================================
+                                          // Completion Date
+                                          // =====================================
+                                          Positioned(
+                                            left: isYoung
+                                                ? width *
+                                                    0.494
+                                                : width *
+                                                    0.700,
+                                            top: isYoung
+                                                ? height *
+                                                    0.814
+                                                : height *
+                                                    0.812,
+                                            width: isYoung
+                                                ? width *
+                                                    0.194
+                                                : width *
+                                                    0.205,
+                                            height: isYoung
+                                                ? height *
+                                                    0.058
+                                                : height *
+                                                    0.055,
+                                            child:
+                                                Center(
+                                              child:
+                                                  FittedBox(
+                                                fit: BoxFit
+                                                    .scaleDown,
+                                                child:
+                                                    Text(
+                                                  dateText,
+                                                  textAlign:
+                                                      TextAlign.center,
+                                                  textDirection:
+                                                      TextDirection.rtl,
+                                                  style:
+                                                      TextStyle(
+                                                    fontFamily:
+                                                        'Tajawal',
+                                                    fontSize:
+                                                        isYoung
+                                                            ? width * 0.018
+                                                            : width * 0.016,
+                                                    fontWeight:
+                                                        FontWeight.w700,
+                                                    color:
+                                                        const Color(
+                                                      0xFF7656A3,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ),
+
+                              const SizedBox(
+                                height: 24,
+                              ),
+
+                              // =================================================
+                              // PDF Actions
+                              // =================================================
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child:
+                                        ElevatedButton
+                                            .icon(
+                                      onPressed:
+                                          _saveCertificatePdf,
+                                      icon:
+                                          const Icon(
+                                        Icons
+                                            .download_rounded,
+                                      ),
+                                      label:
+                                          const Text(
+                                        'حفظ PDF',
+                                        style:
+                                            TextStyle(
+                                          fontFamily:
+                                              'Tajawal',
+                                          fontWeight:
+                                              FontWeight.w700,
+                                        ),
+                                      ),
+                                      style:
+                                          ElevatedButton
+                                              .styleFrom(
+                                        backgroundColor:
+                                            const Color(
+                                          0xFF511281,
+                                        ),
+                                        foregroundColor:
+                                            Colors.white,
+                                        padding:
+                                            const EdgeInsets
+                                                .symmetric(
+                                          vertical:
+                                              13,
+                                        ),
+                                        shape:
+                                            RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius
+                                                  .circular(
+                                            16,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+
+                                  const SizedBox(
+                                    width: 12,
+                                  ),
+
+                                  Expanded(
+                                    child:
+                                        OutlinedButton
+                                            .icon(
+                                      onPressed:
+                                          _shareCertificatePdf,
+                                      icon:
+                                          const Icon(
+                                        Icons
+                                            .share_rounded,
+                                      ),
+                                      label:
+                                          const Text(
+                                        'مشاركة',
+                                        style:
+                                            TextStyle(
+                                          fontFamily:
+                                              'Tajawal',
+                                          fontWeight:
+                                              FontWeight.w700,
+                                        ),
+                                      ),
+                                      style:
+                                          OutlinedButton
+                                              .styleFrom(
+                                        foregroundColor:
+                                            const Color(
+                                          0xFF511281,
+                                        ),
+                                        side:
+                                            const BorderSide(
+                                          color:
+                                              Color(
+                                            0xFF511281,
+                                          ),
+                                          width:
+                                              1.5,
+                                        ),
+                                        padding:
+                                            const EdgeInsets
+                                                .symmetric(
+                                          vertical:
+                                              13,
+                                        ),
+                                        shape:
+                                            RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius
+                                                  .circular(
+                                            16,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );

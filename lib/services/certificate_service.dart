@@ -65,7 +65,7 @@ class CertificateService {
 
     return true;
   }
-Future<void> issueCertificate(String childId) async {
+Future<bool> issueCertificate(String childId) async {
   // 1. نتأكد أولًا أن رحلة الطفل انتهت فعلًا
   final bool completed = await isJourneyCompleted(childId);
 
@@ -126,10 +126,10 @@ Future<void> issueCertificate(String childId) async {
   // 8. ما نصدرها مرتين
   final existingCertificate = await certificateRef.get();
 
-  if (existingCertificate.exists) {
-    debugPrint('Certificate already exists for child: $childId');
-    return;
-  }
+if (existingCertificate.exists) {
+  debugPrint('Certificate already exists for child: $childId');
+  return false;
+}
 
   // 9. إنشاء سجل الشهادة
   await certificateRef.set({
@@ -142,5 +142,6 @@ Future<void> issueCertificate(String childId) async {
   });
 
   debugPrint('✅ Certificate issued for $fullName');
+  return true;
 }
 }

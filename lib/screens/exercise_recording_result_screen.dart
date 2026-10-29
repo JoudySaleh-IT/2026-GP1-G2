@@ -42,6 +42,8 @@ class _ExerciseRecordingResultScreenState
   return -1;
 }
   bool _initialized = false;
+  bool _previewCelebration = false;
+bool _previewShown = false;
 
   String _childId = '';
   String _letter = '';
@@ -63,6 +65,8 @@ class _ExerciseRecordingResultScreenState
     _childId = args['childId']?.toString() ?? '';
     _letter = args['letter']?.toString() ?? '';
     _level = args['level']?.toString() ?? '';
+    _previewCelebration =
+    args['previewCelebration'] == true;
 
     final List receivedQuestions =
         args['questions'] ?? _defaultQuestions;
@@ -78,8 +82,41 @@ class _ExerciseRecordingResultScreenState
       q['retryUsed'] = q['retryUsed'] == true;
     }
 
-    _initialized = true;
-  }
+_initialized = true;
+
+if (_previewCelebration && !_previewShown) {
+  _previewShown = true;
+
+  WidgetsBinding.instance.addPostFrameCallback((_) async {
+    if (!mounted) return;
+
+    final bool? viewCertificate =
+        await _showJourneyCelebrationDialog();
+
+    if (!mounted) return;
+
+ if (viewCertificate == true) {
+  Navigator.pushNamed(
+    context,
+    '/child/certificate',
+    arguments: {
+      'childId': _childId,
+
+      // إذا جينا من معاينة الاحتفال،
+      // نفتح الشهادة أيضًا كمعاينة.
+      'previewCertificate': _previewCelebration,
+    },
+  );
+} else {
+  Navigator.pushNamedAndRemoveUntil(
+    context,
+    '/child/home',
+    (route) => false,
+    arguments: _childId,
+  );
+}
+  });
+}  }
 
   int _calculateAverageScore() {
     if (_questions.isEmpty) {
@@ -111,10 +148,10 @@ class _ExerciseRecordingResultScreenState
 
 
 
-Future<void> _savePronunciationProgress() async {
-  if (_childId.isEmpty || _letter.isEmpty || _level.isEmpty) {
-    return;
-  }
+Future<bool> _savePronunciationProgress() async {
+ if (_childId.isEmpty || _letter.isEmpty || _level.isEmpty) {
+  return false;
+}
 
   final int averageScore = _calculateAverageScore();
   final int correctCount = _countCorrectPronunciations();
@@ -149,11 +186,16 @@ if (canAdvance && _level.toLowerCase() == 'advanced') {
       await certificateService.isJourneyCompleted(_childId);
 
   if (journeyCompleted) {
-    await certificateService.issueCertificate(_childId);
+    final bool issuedNow =
+        await certificateService.issueCertificate(_childId);
 
-    debugPrint(
-      '🎓 Journey completed - completion certificate issued',
-    );
+    if (issuedNow) {
+      debugPrint(
+        '🎓 Journey completed - completion certificate issued',
+      );
+
+      return true;
+    }
   }
 }
 
@@ -164,6 +206,7 @@ if (canAdvance && _level.toLowerCase() == 'advanced') {
     'correct=$correctCount/${_questions.length}, '
     'canAdvance=$canAdvance',
   );
+return false;
 }
 
   String _resultMessage(int pct) {
@@ -313,6 +356,185 @@ if (!needsRetry || retryUsed) {
         result['invalidReason'];
   });
 }
+Future<bool?> _showJourneyCelebrationDialog() {
+  return showDialog<bool>(
+    context: context,
+    barrierDismissible: false,
+    builder: (dialogContext) {
+      return Directionality(
+        textDirection: TextDirection.rtl,
+        child: Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 26),
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(24, 26, 24, 22),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFFCF7),
+              borderRadius: BorderRadius.circular(30),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.10),
+                  blurRadius: 20,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+  width: 180,
+  height: 125,
+  child: Stack(
+    clipBehavior: Clip.none,
+    alignment: Alignment.center,
+    children: [
+      // Bunny
+      const Positioned(
+        left: 24,
+        top: 0,
+        child: SizedBox(
+          width: 105,
+          height: 105,
+          child: _CelebrationBunny(),
+        ),
+      ),
+
+      // Achievement badge
+      Positioned(
+        right: 12,
+        top: 18,
+        child: Container(
+          width: 54,
+          height: 54,
+          decoration: BoxDecoration(
+            color: const Color(0xFFFFE8A3),
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: const Color(0xFFF3C95B),
+              width: 2,
+            ),
+          ),
+          child: const Icon(
+            Icons.workspace_premium_rounded,
+            color: Color(0xFFE5A52F),
+            size: 31,
+          ),
+        ),
+      ),
+    ],
+  ),
+),
+
+                const SizedBox(height: 14),
+
+                const Text(
+                  'رائع! 🎉',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'Tajawal',
+                    fontSize: 24,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF511281),
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+
+                const Text(
+                  'أكملت رحلتك في فصيح!',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'Tajawal',
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF511281),
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+
+                const Text(
+                  'أنهيت جميع تمارينك بنجاح، وحصلت على شهادة فصيح.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'Tajawal',
+                    fontSize: 14,
+                    height: 1.6,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF777777),
+                  ),
+                ),
+
+                const SizedBox(height: 22),
+
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(dialogContext, true);
+                    },
+                    icon: const Icon(
+                      Icons.workspace_premium_rounded,
+                      size: 20,
+                    ),
+                    label: const Text(
+                      'شاهد شهادتك',
+                      style: TextStyle(
+                        fontFamily: 'Tajawal',
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFFF6969),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: const StadiumBorder(),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 14,
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 10),
+
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: () {
+                      Navigator.pop(dialogContext, false);
+                    },
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF511281),
+                      side: const BorderSide(
+                        color: Color(0xFF511281),
+                        width: 1.3,
+                      ),
+                      shape: const StadiumBorder(),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 13,
+                      ),
+                    ),
+                    child: const Text(
+                      'العودة للرئيسية',
+                      style: TextStyle(
+                        fontFamily: 'Tajawal',
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    },
+  );
+}
   @override
   Widget build(BuildContext context) {
     final int score = _calculateAverageScore();
@@ -411,16 +633,45 @@ final bool hasPendingRetry =
                             width: double.infinity,
 
                             child: ElevatedButton.icon(
-  onPressed: () async {
+onPressed: () async {
   if (hasPendingRetry) {
     await _retryQuestion(nextRetryIndex);
     return;
   }
 
-  await _savePronunciationProgress();
+  final bool certificateIssuedNow =
+      await _savePronunciationProgress();
 
   if (!mounted) return;
 
+  // 🎉 الشهادة صدرت الآن لأول مرة
+  if (certificateIssuedNow) {
+    final bool? viewCertificate =
+        await _showJourneyCelebrationDialog();
+
+    if (!mounted) return;
+
+    if (viewCertificate == true) {
+      Navigator.pushNamed(
+        context,
+        '/child/certificate',
+        arguments: {
+          'childId': _childId,
+        },
+      );
+    } else {
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        '/child/home',
+        (r) => false,
+        arguments: _childId,
+      );
+    }
+
+    return;
+  }
+
+  // الحالة الطبيعية
   Navigator.pushNamedAndRemoveUntil(
     context,
     '/child/home',
@@ -428,6 +679,10 @@ final bool hasPendingRetry =
     arguments: _childId,
   );
 },
+
+
+
+
 
 icon: Icon(
   hasPendingRetry
@@ -1770,6 +2025,207 @@ class _SimpleCuteBunny extends StatelessWidget {
                       borderRadius: BorderRadius.only(
                         bottomLeft: Radius.circular(10),
 
+                        bottomRight: Radius.circular(10),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+class _CelebrationBunny extends StatelessWidget {
+  const _CelebrationBunny();
+
+  @override
+  Widget build(BuildContext context) {
+    const Color faceColor = Color(0xFFFFDCE7);
+    const Color bodyColor = Color(0xFF8B55B3);
+    const Color darkColor = Color(0xFF4D3855);
+
+    return Stack(
+      alignment: Alignment.center,
+      clipBehavior: Clip.none,
+      children: [
+        // Right ear
+        Positioned(
+          top: 0,
+          right: 23,
+          child: Transform.rotate(
+            angle: 0.12,
+            child: Container(
+              width: 20,
+              height: 42,
+              decoration: BoxDecoration(
+                color: faceColor,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Center(
+                child: Container(
+                  width: 7,
+                  height: 27,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFA1B7).withOpacity(0.55),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+
+        // Left ear
+        Positioned(
+          top: 0,
+          left: 23,
+          child: Transform.rotate(
+            angle: -0.12,
+            child: Container(
+              width: 20,
+              height: 42,
+              decoration: BoxDecoration(
+                color: faceColor,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Center(
+                child: Container(
+                  width: 7,
+                  height: 27,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFA1B7).withOpacity(0.55),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+
+        // Body — closer to head
+        Positioned(
+          top: 68,
+          child: Container(
+            width: 52,
+            height: 37,
+            decoration: const BoxDecoration(
+              color: bodyColor,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(26),
+                topRight: Radius.circular(26),
+                bottomLeft: Radius.circular(14),
+                bottomRight: Radius.circular(14),
+              ),
+            ),
+          ),
+        ),
+
+        // Head
+        Positioned(
+          top: 28,
+          child: Container(
+            width: 68,
+            height: 64,
+            decoration: BoxDecoration(
+              color: faceColor,
+              borderRadius: BorderRadius.circular(32),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Stack(
+              children: [
+                // Eyes
+                Positioned(
+                  top: 23,
+                  right: 17,
+                  child: Container(
+                    width: 7,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      color: darkColor,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+
+                Positioned(
+                  top: 23,
+                  left: 17,
+                  child: Container(
+                    width: 7,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      color: darkColor,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+
+                // Cheeks
+                Positioned(
+                  top: 39,
+                  right: 7,
+                  child: Container(
+                    width: 11,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFF96AC).withOpacity(0.50),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+
+                Positioned(
+                  top: 39,
+                  left: 7,
+                  child: Container(
+                    width: 11,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFF96AC).withOpacity(0.50),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+
+                // Nose
+                Positioned(
+                  top: 33,
+                  left: 30,
+                  child: Container(
+                    width: 8,
+                    height: 6,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFFF7890),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+
+                // Smile
+                Positioned(
+                  top: 40,
+                  left: 25,
+                  child: Container(
+                    width: 18,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(
+                          color: darkColor,
+                          width: 1.5,
+                        ),
+                      ),
+                      borderRadius: BorderRadius.only(
+                        bottomLeft: Radius.circular(10),
                         bottomRight: Radius.circular(10),
                       ),
                     ),

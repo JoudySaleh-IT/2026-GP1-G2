@@ -68,24 +68,33 @@ Future<void> _completeGhainForTesting() async {
       .doc(widget.childId);
 
   await childRef.update({
-    // Intermediate
+    // Beginner - completed
+    'exerciseProgress.غ.beginner.listeningPassed': true,
+    'exerciseProgress.غ.beginner.listeningScore': 8,
+    'exerciseProgress.غ.beginner.pronunciationPassed': true,
+    'exerciseProgress.غ.beginner.pronunciationScore': 90,
+    'exerciseProgress.غ.beginner.pronunciationCorrectCount': 7,
+
+    // Intermediate - completed
     'exerciseProgress.غ.intermediate.listeningPassed': true,
     'exerciseProgress.غ.intermediate.listeningScore': 8,
     'exerciseProgress.غ.intermediate.pronunciationPassed': true,
     'exerciseProgress.غ.intermediate.pronunciationScore': 90,
     'exerciseProgress.غ.intermediate.pronunciationCorrectCount': 7,
 
-    // Advanced
+    // Advanced - listening completed, speaking still remaining
     'exerciseProgress.غ.advanced.listeningPassed': true,
     'exerciseProgress.غ.advanced.listeningScore': 8,
-    'exerciseProgress.غ.advanced.pronunciationPassed': true,
-    'exerciseProgress.غ.advanced.pronunciationScore': 90,
-    'exerciseProgress.غ.advanced.pronunciationCorrectCount': 7,
+    'exerciseProgress.غ.advanced.pronunciationPassed': false,
+    'exerciseProgress.غ.advanced.pronunciationScore': 0,
+    'exerciseProgress.غ.advanced.pronunciationCorrectCount': 0,
   });
 
   await _loadProgress();
 
-  debugPrint('✅ غ completed for testing');
+  debugPrint(
+    '✅ غ prepared for final Advanced Speaking test',
+  );
 }
 Future<void> _completeRemainingLettersForTesting() async {
   final childRef = FirebaseFirestore.instance
@@ -419,48 +428,86 @@ if (rawExerciseProgress is Map) {
                         ),
 
                         const SizedBox(height: 14),
-if (widget.letter == 'غ') ...[
-  ElevatedButton(
-    onPressed: () async {
-      await _completeGhainForTesting();
-    },
-    style: ElevatedButton.styleFrom(
-      backgroundColor: const Color(0xFF511281),
-      foregroundColor: Colors.white,
-    ),
-    child: const Text(
-      'إكمال حرف غ للاختبار',
-      style: TextStyle(fontFamily: 'Tajawal'),
-    ),
-  ),
-  const SizedBox(height: 14),
-],
-ElevatedButton(
-  onPressed: () async {
-    await _completeRemainingLettersForTesting();
 
-    final certificateService = CertificateService();
+                        const SizedBox(height: 14),
 
-    final bool completed =
-        await certificateService.isJourneyCompleted(widget.childId);
+                        // =====================================================
+                        // Preview the REAL celebration popup
+                        // =====================================================
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.pushNamed(
+                              context,
+                              '/child/exercise/recording-result',
+                              arguments: {
+                                'childId': widget.childId,
+                                'letter': widget.letter,
+                                'level': 'advanced',
+                                'previewCelebration': true,
+                                'questions': [
+                                  {
+                                    'questionText': '١',
+                                    'score': 90,
+                                    'isInvalid': false,
+                                  },
+                                  {
+                                    'questionText': '٢',
+                                    'score': 92,
+                                    'isInvalid': false,
+                                  },
+                                  {
+                                    'questionText': '٣',
+                                    'score': 94,
+                                    'isInvalid': false,
+                                  },
+                                  {
+                                    'questionText': '٤',
+                                    'score': 91,
+                                    'isInvalid': false,
+                                  },
+                                  {
+                                    'questionText': '٥',
+                                    'score': 93,
+                                    'isInvalid': false,
+                                  },
+                                  {
+                                    'questionText': '٦',
+                                    'score': 90,
+                                    'isInvalid': false,
+                                  },
+                                  {
+                                    'questionText': '٧',
+                                    'score': 95,
+                                    'isInvalid': false,
+                                  },
+                                  {
+                                    'questionText': '٨',
+                                    'score': 92,
+                                    'isInvalid': false,
+                                  },
+                                ],
+                              },
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFE5A52F),
+                            foregroundColor: Colors.white,
+                          ),
+                          icon: const Icon(
+                            Icons.visibility_rounded,
+                            size: 19,
+                          ),
+                          label: const Text(
+                            'معاينة الاحتفال الحقيقي',
+                            style: TextStyle(
+                              fontFamily: 'Tajawal',
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
 
-    debugPrint('Journey completed? $completed');
+                        const SizedBox(height: 14),
 
-    if (completed) {
-      await certificateService.issueCertificate(widget.childId);
-
-      debugPrint('🎓 Test certificate issued');
-    }
-  },
-  style: ElevatedButton.styleFrom(
-    backgroundColor: const Color(0xFFFF6969),
-    foregroundColor: Colors.white,
-  ),
-  child: const Text(
-    'إكمال كل الحروف للاختبار',
-    style: TextStyle(fontFamily: 'Tajawal'),
-  ),
-),
                         // =====================================================
                         // Listening + Pronunciation
                         // =====================================================

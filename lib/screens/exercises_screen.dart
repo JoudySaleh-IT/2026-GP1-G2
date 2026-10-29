@@ -37,6 +37,7 @@ class _ExercisesScreenState extends State<ExercisesScreen> {
   List<_LetterData> _filteredLetters = [];
   bool _isLoading = true;
   bool _hasCompletedPlacement = false;
+  bool _hasCertificate = false;
 
   static const Color _purple = Color(0xFF511281);
   static const Color _coral = Color(0xFFFF6969);
@@ -56,6 +57,13 @@ class _ExercisesScreenState extends State<ExercisesScreen> {
       final doc = await FirebaseFirestore.instance
           .collection('children')
           .doc(widget.childId)
+          .get();
+
+      final certificateDoc = await FirebaseFirestore.instance
+          .collection('children')
+          .doc(widget.childId)
+          .collection('certificates')
+          .doc('completion')
           .get();
 
       if (doc.exists && doc.data() != null) {
@@ -102,12 +110,14 @@ if (letterCompleted) {
 
         setState(() {
           _filteredLetters = loaded;
+          _hasCertificate = certificateDoc.exists;
           _isLoading = false;
         });
       } else {
         if (!mounted) return;
 
         setState(() {
+          _hasCertificate = false;
           _isLoading = false;
         });
       }
@@ -480,14 +490,11 @@ if (letterCompleted) {
           child:  Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              SizedBox(
-                width: 95,
-                height: 110,
-                child: _LearningExerciseBunny(
-                  faceColor: Color(0xFFDDF4E4),
-                  accentColor: Color(0xFF65B98B),
-                ),
-              ),
+              const SizedBox(
+  width: 95,
+  height: 110,
+  child: _LearningExerciseBunny(),
+),
 
               SizedBox(height: 14),
 
@@ -512,38 +519,42 @@ if (letterCompleted) {
                   color: Color(0xFF6F6F6F),
                 ),
               ),
-              const SizedBox(height: 20),
+              if (_hasCertificate) ...[
+                const SizedBox(height: 20),
 
-ElevatedButton.icon(
-  onPressed: () {
-    Navigator.pushNamed(
-      context,
-      '/child/certificate',
-      arguments: {
-        'childId': widget.childId,
-      },
-    );
-  },
-  icon: const Icon(Icons.workspace_premium_rounded),
-  label: const Text(
-    'عرض شهادتي',
-    style: TextStyle(
-      fontFamily: 'Tajawal',
-      fontWeight: FontWeight.w700,
-    ),
-  ),
-  style: ElevatedButton.styleFrom(
-    backgroundColor: const Color(0xFF511281),
-    foregroundColor: Colors.white,
-    padding: const EdgeInsets.symmetric(
-      horizontal: 24,
-      vertical: 13,
-    ),
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(18),
-    ),
-  ),
-),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.pushNamed(
+                      context,
+                      '/child/certificate',
+                      arguments: {
+                        'childId': widget.childId,
+                      },
+                    );
+                  },
+                  icon: const Icon(
+                    Icons.workspace_premium_rounded,
+                  ),
+                  label: const Text(
+                    'عرض شهادتي',
+                    style: TextStyle(
+                      fontFamily: 'Tajawal',
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF511281),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 13,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
         ),
@@ -1365,43 +1376,7 @@ class _LearningExerciseBunny extends StatelessWidget {
           ),
         ),
 
-        // =========================================================
-        // كتاب صغير يسار
-        // =========================================================
-        Positioned(
-          left: 2,
-          bottom: 8,
-          child: Transform.rotate(
-            angle: -0.20,
-            child: Container(
-              width: 20,
-              height: 14,
-              decoration: BoxDecoration(
-                color: const Color(0xFFDDF2E3),
-                borderRadius: BorderRadius.circular(5),
-              ),
-            ),
-          ),
-        ),
-
-        // =========================================================
-        // كتاب صغير يمين
-        // =========================================================
-        Positioned(
-          right: 2,
-          bottom: 8,
-          child: Transform.rotate(
-            angle: 0.20,
-            child: Container(
-              width: 20,
-              height: 14,
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFE7EC),
-                borderRadius: BorderRadius.circular(5),
-              ),
-            ),
-          ),
-        ),
+    
       ],
     );
   }
