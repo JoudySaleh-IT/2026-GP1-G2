@@ -37,6 +37,14 @@ class ExerciseListeningResultScreen extends StatelessWidget {
     final int score = args['score'] as int;
     final int total = args['total'] as int;
 
+    final int pointsAwarded =
+        (args['pointsAwarded'] as num?)?.toInt() ?? (score * 50);
+
+    final int totalPoints =
+        (args['totalPoints'] as num?)?.toInt() ?? pointsAwarded;
+
+    final int streak = (args['streak'] as num?)?.toInt() ?? 0;
+
     final List<Map<String, String>> answers = List<Map<String, String>>.from(
       args['answers'] as List,
     );
@@ -73,7 +81,11 @@ class ExerciseListeningResultScreen extends StatelessWidget {
                         const SizedBox(height: 12),
 
                         // ─── Points
-                        _PointsCard(score: score),
+                        _PointsCard(
+                          pointsAwarded: pointsAwarded,
+                          totalPoints: totalPoints,
+                          streak: streak,
+                        ),
 
                         const SizedBox(height: 14),
 
@@ -96,10 +108,10 @@ class ExerciseListeningResultScreen extends StatelessWidget {
                               '/child/letter-levels',
                               (route) => false,
                               arguments: {
-  'letter': args['letter'],
-  'childId': args['childId'],
-  'startingLevel': args['level'] ?? 'beginner',
-},
+                                'letter': args['letter'],
+                                'childId': args['childId'],
+                                'startingLevel': args['level'] ?? 'beginner',
+                              },
                             ),
                             icon: Icon(
                               score >= 6
@@ -350,11 +362,15 @@ class _ResultHeroCard extends StatelessWidget {
 // كل إجابة صحيحة = 50 نقطة
 // ─────────────────────────────────────────────────────────────────────────────
 class _PointsCard extends StatelessWidget {
-  final int score;
+  final int pointsAwarded;
+  final int totalPoints;
+  final int streak;
 
-  const _PointsCard({required this.score});
-
-  int get _earnedPoints => score * 50;
+  const _PointsCard({
+    required this.pointsAwarded,
+    required this.totalPoints,
+    required this.streak,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -384,26 +400,69 @@ class _PointsCard extends StatelessWidget {
 
           const SizedBox(width: 11),
 
-          const Text(
-            'حصلت على',
-            style: TextStyle(
-              fontSize: 12,
-              color: Color(0xFF666666),
-              fontFamily: 'Tajawal',
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'حصلت على',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFF666666),
+                    fontFamily: 'Tajawal',
+                  ),
+                ),
+
+                const SizedBox(height: 2),
+
+                Text(
+                  '+$pointsAwarded نقطة',
+                  style: const TextStyle(
+                    fontSize: 17,
+                    color: Color(0xFF511281),
+                    fontWeight: FontWeight.w700,
+                    fontFamily: 'Tajawal',
+                  ),
+                ),
+
+                const SizedBox(height: 2),
+
+                Text(
+                  'مجموع نقاطك: $totalPoints',
+                  style: const TextStyle(
+                    fontSize: 10.5,
+                    color: Color(0xFF777777),
+                    fontFamily: 'Tajawal',
+                  ),
+                ),
+              ],
             ),
           ),
 
-          const SizedBox(width: 5),
-
-          Text(
-            '+$_earnedPoints نقطة',
-            style: const TextStyle(
-              fontSize: 17,
-              color: Color(0xFF511281),
-              fontWeight: FontWeight.w700,
-              fontFamily: 'Tajawal',
+          if (streak > 0)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.75),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('🔥', style: TextStyle(fontSize: 16)),
+                  const SizedBox(width: 4),
+                  Text(
+                    '$streak يوم',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: Color(0xFF511281),
+                      fontWeight: FontWeight.w700,
+                      fontFamily: 'Tajawal',
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
         ],
       ),
     );

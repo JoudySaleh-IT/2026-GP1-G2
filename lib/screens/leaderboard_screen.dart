@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
+import '../services/leaderboard_service.dart';
 import '../services/auth_service.dart';
 import 'style_constants.dart';
 import '../utils/arabic_numbers.dart';
@@ -12,132 +12,43 @@ import '../widgets/child_bottom_nav.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 enum _LeaderboardFilter { friends, community }
 
-enum _PlayerRelation { friend, family }
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Player Model
 // ─────────────────────────────────────────────────────────────────────────────
 class _Player {
+  final String childId;
   final int rank;
   final String name;
+  final String avatar;
   final int points;
   final int streak;
-
-  // UI only
-  final IconData avatarIcon;
-  final Color avatarColor;
-
-  // Used only for the local mock filter
-  final _PlayerRelation relation;
+  final String ageGroup;
+  final bool isCurrent;
 
   const _Player({
+    required this.childId,
     required this.rank,
     required this.name,
+    required this.avatar,
     required this.points,
     required this.streak,
-    required this.avatarIcon,
-    required this.avatarColor,
-    required this.relation,
+    required this.ageGroup,
+    required this.isCurrent,
   });
-}
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Mock Leaderboard Data
-// نفس البيانات الأساسية
-// أفراد العائلة سيظهرون داخل تبويب الأصدقاء مع علامة منزل
-// ─────────────────────────────────────────────────────────────────────────────
-const List<_Player> _topPlayers = [
-  _Player(
-    rank: 1,
-    name: 'ليلى',
-    points: 2850,
-    streak: 25,
-    avatarIcon: Icons.face_3_rounded,
-    avatarColor: Color(0xFFFF9FB2),
-    relation: _PlayerRelation.family,
-  ),
-  _Player(
-    rank: 2,
-    name: 'عمر',
-    points: 2640,
-    streak: 18,
-    avatarIcon: Icons.face_6_rounded,
-    avatarColor: Color(0xFF7DB7E8),
-    relation: _PlayerRelation.friend,
-  ),
-  _Player(
-    rank: 3,
-    name: 'زينب',
-    points: 2420,
-    streak: 22,
-    avatarIcon: Icons.face_4_rounded,
-    avatarColor: Color(0xFFF3B35E),
-    relation: _PlayerRelation.family,
-  ),
-  _Player(
-    rank: 4,
-    name: 'يوسف',
-    points: 2180,
-    streak: 15,
-    avatarIcon: Icons.face_rounded,
-    avatarColor: Color(0xFF9B78D0),
-    relation: _PlayerRelation.friend,
-  ),
-  _Player(
-    rank: 5,
-    name: 'عائشة',
-    points: 2050,
-    streak: 12,
-    avatarIcon: Icons.face_3_rounded,
-    avatarColor: Color(0xFF6BC8AD),
-    relation: _PlayerRelation.friend,
-  ),
-  _Player(
-    rank: 6,
-    name: 'حسن',
-    points: 1980,
-    streak: 20,
-    avatarIcon: Icons.face_6_rounded,
-    avatarColor: Color(0xFFFF8D8D),
-    relation: _PlayerRelation.family,
-  ),
-  _Player(
-    rank: 7,
-    name: 'مريم',
-    points: 1820,
-    streak: 9,
-    avatarIcon: Icons.face_4_rounded,
-    avatarColor: Color(0xFFE18EC8),
-    relation: _PlayerRelation.friend,
-  ),
-  _Player(
-    rank: 8,
-    name: 'علي',
-    points: 1750,
-    streak: 14,
-    avatarIcon: Icons.face_rounded,
-    avatarColor: Color(0xFF78C9DF),
-    relation: _PlayerRelation.friend,
-  ),
-  _Player(
-    rank: 9,
-    name: 'نورا',
-    points: 1650,
-    streak: 11,
-    avatarIcon: Icons.face_3_rounded,
-    avatarColor: Color(0xFFA5D38E),
-    relation: _PlayerRelation.family,
-  ),
-  _Player(
-    rank: 10,
-    name: 'خالد',
-    points: 1580,
-    streak: 16,
-    avatarIcon: Icons.face_6_rounded,
-    avatarColor: Color(0xFFF0A46B),
-    relation: _PlayerRelation.friend,
-  ),
-];
+  _Player copyWithRank(int newRank) {
+    return _Player(
+      childId: childId,
+      rank: newRank,
+      name: name,
+      avatar: avatar,
+      points: points,
+      streak: streak,
+      ageGroup: ageGroup,
+      isCurrent: isCurrent,
+    );
+  }
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Leaderboard Screen
@@ -161,25 +72,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
 
   _LeaderboardFilter _selectedFilter = _LeaderboardFilter.friends;
 
-  // ───────────────────────────────────────────────────────────────────────────
-  // Filtered Mock List
-  // الأصدقاء + أفراد العائلة يظهرون في نفس التبويب
-  // ───────────────────────────────────────────────────────────────────────────
-  List<_Player> get _visiblePlayers {
-    switch (_selectedFilter) {
-      case _LeaderboardFilter.friends:
-        return _topPlayers
-            .where(
-              (player) =>
-                  player.relation == _PlayerRelation.friend ||
-                  player.relation == _PlayerRelation.family,
-            )
-            .toList();
-
-      case _LeaderboardFilter.community:
-        return _topPlayers;
-    }
-  }
+  final LeaderboardService _leaderboardService = LeaderboardService();
 
   String get _sectionTitle {
     switch (_selectedFilter) {
@@ -197,8 +90,88 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
         return 'نافس أصدقاءك وتقدّم بينهم';
 
       case _LeaderboardFilter.community:
-        return 'شاهد ترتيبك بين جميع المتعلمين';
+        return 'شاهد ترتيبك بين أبطال فصيح من فئتك العمرية';
     }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    _ensureLeaderboardProfile();
+  }
+
+  Future<void> _ensureLeaderboardProfile() async {
+    try {
+      await _leaderboardService.ensureLeaderboardProfile(
+        childId: widget.childId,
+      );
+    } catch (e) {
+      debugPrint('Leaderboard profile sync failed: $e');
+    }
+  }
+
+  _Player _playerFromDocument(DocumentSnapshot<Map<String, dynamic>> document) {
+    final data = document.data() ?? {};
+
+    final String rawName = (data['name'] ?? '').toString().trim();
+
+    return _Player(
+      childId: document.id,
+      rank: 0,
+      name: rawName.isNotEmpty ? rawName : 'بطل فصيح',
+      avatar: (data['avatar'] ?? '🌟').toString(),
+      points: (data['points'] as num?)?.toInt() ?? 0,
+      streak: (data['streak'] as num?)?.toInt() ?? 0,
+      ageGroup: (data['ageGroup'] ?? '').toString(),
+      isCurrent: document.id == widget.childId,
+    );
+  }
+
+  List<_Player> _rankPlayers(List<_Player> players) {
+    final sorted = List<_Player>.from(players);
+
+    sorted.sort((a, b) {
+      final pointsComparison = b.points.compareTo(a.points);
+
+      if (pointsComparison != 0) {
+        return pointsComparison;
+      }
+
+      final streakComparison = b.streak.compareTo(a.streak);
+
+      if (streakComparison != 0) {
+        return streakComparison;
+      }
+
+      // Deterministic display order only.
+      // This does NOT break the ranking tie.
+      return a.name.compareTo(b.name);
+    });
+
+    final ranked = <_Player>[];
+
+    for (int i = 0; i < sorted.length; i++) {
+      final player = sorted[i];
+
+      int rank = i + 1;
+
+      if (i > 0) {
+        final previous = sorted[i - 1];
+
+        final bool exactTie =
+            player.points == previous.points &&
+            player.streak == previous.streak;
+
+        if (exactTie) {
+          rank = ranked.last.rank;
+        }
+      }
+
+      ranked.add(player.copyWithRank(rank));
+    }
+
+    return ranked;
   }
 
   @override
@@ -274,51 +247,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                         // CURRENT CHILD
                         // Firestore logic unchanged
                         // ====================================================
-                        StreamBuilder<DocumentSnapshot>(
-                          stream: FirebaseFirestore.instance
-                              .collection('children')
-                              .doc(widget.childId)
-                              .snapshots(),
-                          builder: (context, snapshot) {
-                            if (snapshot.hasError) {
-                              return const Text('خطأ في التحميل');
-                            }
-
-                            if (!snapshot.hasData || !snapshot.data!.exists) {
-                              return const Padding(
-                                padding: EdgeInsets.all(30),
-                                child: CircularProgressIndicator(
-                                  color: _purple,
-                                ),
-                              );
-                            }
-
-                            final data =
-                                snapshot.data!.data() as Map<String, dynamic>;
-
-                            final String name = data['name'] ?? 'لاعب';
-
-                            final int points = data['points'] ?? 0;
-
-                            final int streak = data['streak'] ?? 0;
-
-                            final int rank = data['rank'] ?? 12;
-
-                            return _buildCurrentUserCard(
-                              name: name,
-                              points: points,
-                              streak: streak,
-                              rank: rank,
-                            );
-                          },
-                        ),
-
-                        const SizedBox(height: 18),
-
-                        // ====================================================
-                        // LEADERBOARD
-                        // ====================================================
-                        _buildTopPlayersCard(),
+                        _buildRealtimeLeaderboard(),
 
                         const SizedBox(height: 20),
                       ],
@@ -339,6 +268,182 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
           childId: widget.childId,
         ),
       ),
+    );
+  }
+
+  Widget _buildRealtimeLeaderboard() {
+    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+      stream: FirebaseFirestore.instance
+          .collection('leaderboard_profiles')
+          .snapshots(),
+      builder: (context, leaderboardSnapshot) {
+        if (leaderboardSnapshot.hasError) {
+          return const Padding(
+            padding: EdgeInsets.all(30),
+            child: Text(
+              'تعذّر تحميل لوحة المتصدرين',
+              style: TextStyle(fontFamily: 'Tajawal', color: Color(0xFF777777)),
+            ),
+          );
+        }
+
+        if (!leaderboardSnapshot.hasData) {
+          return const Padding(
+            padding: EdgeInsets.all(30),
+            child: CircularProgressIndicator(color: _purple),
+          );
+        }
+
+        final allPlayers = leaderboardSnapshot.data!.docs
+            .map(_playerFromDocument)
+            .toList();
+
+        final currentMatches = allPlayers.where(
+          (player) => player.childId == widget.childId,
+        );
+
+        if (currentMatches.isEmpty) {
+          return const Padding(
+            padding: EdgeInsets.all(30),
+            child: Text(
+              'تعذر العثور على ملف المتصدرين',
+              style: TextStyle(fontFamily: 'Tajawal', color: Color(0xFF777777)),
+            ),
+          );
+        }
+
+        final currentPlayer = currentMatches.first;
+
+        // =====================================================
+        // COMMUNITY
+        // Same age group only
+        // =====================================================
+        if (_selectedFilter == _LeaderboardFilter.community) {
+          final communityPlayers = allPlayers
+              .where((player) => player.ageGroup == currentPlayer.ageGroup)
+              .toList();
+
+          return _buildRankedLeaderboard(communityPlayers);
+        }
+
+        // =====================================================
+        // FRIENDS
+        // Query friendships where current child is childA.
+        // =====================================================
+        return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+          stream: FirebaseFirestore.instance
+              .collection('friendships')
+              .where('childA', isEqualTo: widget.childId)
+              .snapshots(),
+          builder: (context, childASnapshot) {
+            if (childASnapshot.hasError) {
+              return const Padding(
+                padding: EdgeInsets.all(30),
+                child: Text(
+                  'تعذّر تحميل الأصدقاء',
+                  style: TextStyle(fontFamily: 'Tajawal'),
+                ),
+              );
+            }
+
+            if (!childASnapshot.hasData) {
+              return const Padding(
+                padding: EdgeInsets.all(30),
+                child: CircularProgressIndicator(color: _purple),
+              );
+            }
+
+            // ===============================================
+            // Current child could also be childB.
+            // ===============================================
+            return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+              stream: FirebaseFirestore.instance
+                  .collection('friendships')
+                  .where('childB', isEqualTo: widget.childId)
+                  .snapshots(),
+              builder: (context, childBSnapshot) {
+                if (childBSnapshot.hasError) {
+                  return const Padding(
+                    padding: EdgeInsets.all(30),
+                    child: Text(
+                      'تعذّر تحميل الأصدقاء',
+                      style: TextStyle(fontFamily: 'Tajawal'),
+                    ),
+                  );
+                }
+
+                if (!childBSnapshot.hasData) {
+                  return const Padding(
+                    padding: EdgeInsets.all(30),
+                    child: CircularProgressIndicator(color: _purple),
+                  );
+                }
+
+                final friendIds = <String>{widget.childId};
+
+                for (final document in childASnapshot.data!.docs) {
+                  final data = document.data();
+
+                  final friendId = (data['childB'] ?? '').toString();
+
+                  if (friendId.isNotEmpty) {
+                    friendIds.add(friendId);
+                  }
+                }
+
+                for (final document in childBSnapshot.data!.docs) {
+                  final data = document.data();
+
+                  final friendId = (data['childA'] ?? '').toString();
+
+                  if (friendId.isNotEmpty) {
+                    friendIds.add(friendId);
+                  }
+                }
+
+                final friendsPlayers = allPlayers
+                    .where((player) => friendIds.contains(player.childId))
+                    .toList();
+
+                return _buildRankedLeaderboard(friendsPlayers);
+              },
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildRankedLeaderboard(List<_Player> candidates) {
+    final rankedPlayers = _rankPlayers(candidates);
+
+    final currentPlayers = rankedPlayers.where((player) => player.isCurrent);
+
+    if (currentPlayers.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.all(30),
+        child: Text(
+          'تعذر العثور على ترتيبك',
+          style: TextStyle(fontFamily: 'Tajawal', color: Color(0xFF777777)),
+        ),
+      );
+    }
+
+    final currentPlayer = currentPlayers.first;
+
+    return Column(
+      children: [
+        _buildCurrentUserCard(
+          name: currentPlayer.name,
+          points: currentPlayer.points,
+          streak: currentPlayer.streak,
+          rank: currentPlayer.rank,
+        ),
+
+        const SizedBox(height: 18),
+
+        _buildTopPlayersCard(rankedPlayers),
+      ],
     );
   }
 
@@ -620,9 +725,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
   // ───────────────────────────────────────────────────────────────────────────
   // TOP PLAYERS CARD
   // ───────────────────────────────────────────────────────────────────────────
-  Widget _buildTopPlayersCard() {
-    final players = _visiblePlayers;
-
+  Widget _buildTopPlayersCard(List<_Player> players) {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -694,11 +797,11 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
   Widget _buildPlayerRow(_Player player) {
     final bool isTop3 = player.rank <= 3;
 
-    final bool isFamily = player.relation == _PlayerRelation.family;
-
     Color backgroundColor;
 
-    if (player.rank == 1) {
+    if (player.isCurrent) {
+      backgroundColor = const Color(0xFFF4EBFC);
+    } else if (player.rank == 1) {
       backgroundColor = const Color(0xFFFFF9E8);
     } else if (player.rank == 2) {
       backgroundColor = const Color(0xFFF2F8FF);
@@ -714,69 +817,37 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
         color: backgroundColor,
         borderRadius: BorderRadius.circular(17),
         border: Border.all(
-          color: isTop3
+          color: player.isCurrent
+              ? _purple.withOpacity(0.35)
+              : isTop3
               ? _buildRankColor(player.rank).withOpacity(0.24)
               : _purple.withOpacity(0.08),
-          width: 1.4,
+          width: player.isCurrent ? 1.8 : 1.4,
         ),
       ),
       child: Row(
         children: [
-          // ─── Rank
+          // Rank
           _buildRankBadge(player.rank),
 
           const SizedBox(width: 10),
 
-          // ─── Avatar
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Container(
-                width: 43,
-                height: 43,
-                decoration: BoxDecoration(
-                  color: player.avatarColor.withOpacity(0.16),
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: player.avatarColor.withOpacity(0.20),
-                  ),
-                ),
-                child: Icon(
-                  player.avatarIcon,
-                  color: player.avatarColor,
-                  size: 25,
-                ),
-              ),
-
-              // =============================================================
-              // Family small marker
-              // يظهر فقط داخل تبويب الأصدقاء
-              // =============================================================
-              if (isFamily && _selectedFilter == _LeaderboardFilter.friends)
-                Positioned(
-                  left: -3,
-                  bottom: -3,
-                  child: Container(
-                    width: 20,
-                    height: 20,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE5F3E9),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 1.5),
-                    ),
-                    child: const Icon(
-                      Icons.home_rounded,
-                      size: 12,
-                      color: Color(0xFF70A884),
-                    ),
-                  ),
-                ),
-            ],
+          // Real child avatar
+          Container(
+            width: 43,
+            height: 43,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: _purple.withOpacity(0.08),
+              shape: BoxShape.circle,
+              border: Border.all(color: _purple.withOpacity(0.10)),
+            ),
+            child: Text(player.avatar, style: const TextStyle(fontSize: 25)),
           ),
 
           const SizedBox(width: 10),
 
-          // ─── Name + family badge
+          // Name
           Expanded(
             child: Row(
               children: [
@@ -784,49 +855,37 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                   child: Text(
                     player.name,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
-                      color: Color(0xFF222222),
-                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF222222),
+                      fontWeight: player.isCurrent
+                          ? FontWeight.w800
+                          : FontWeight.w600,
                       fontFamily: 'Tajawal',
                     ),
                   ),
                 ),
 
-                if (isFamily &&
-                    _selectedFilter == _LeaderboardFilter.friends) ...[
+                if (player.isCurrent) ...[
                   const SizedBox(width: 6),
 
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 7,
-                      vertical: 4,
+                      vertical: 3,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFEAF5ED),
+                      color: _purple.withOpacity(0.10),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.home_rounded,
-                          size: 11,
-                          color: Color(0xFF70A884),
-                        ),
-
-                        SizedBox(width: 3),
-
-                        Text(
-                          'العائلة',
-                          style: TextStyle(
-                            fontSize: 8,
-                            color: Color(0xFF66997A),
-                            fontWeight: FontWeight.w600,
-                            fontFamily: 'Tajawal',
-                          ),
-                        ),
-                      ],
+                    child: const Text(
+                      'أنت',
+                      style: TextStyle(
+                        fontSize: 9,
+                        color: _purple,
+                        fontWeight: FontWeight.w700,
+                        fontFamily: 'Tajawal',
+                      ),
                     ),
                   ),
                 ],
@@ -834,7 +893,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
             ),
           ),
 
-          // ─── Points
+          // Points
           SizedBox(
             width: 73,
             child: Column(
@@ -843,9 +902,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Icon(Icons.star_rounded, size: 14, color: _gold),
-
                     const SizedBox(width: 3),
-
                     Text(
                       toArabicDigits(player.points),
                       style: const TextStyle(
@@ -857,7 +914,6 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                     ),
                   ],
                 ),
-
                 const Text(
                   'النقاط',
                   style: TextStyle(
@@ -870,7 +926,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
             ),
           ),
 
-          // ─── Streak
+          // Streak
           SizedBox(
             width: 68,
             child: Column(
@@ -883,9 +939,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                       size: 14,
                       color: _coral,
                     ),
-
                     const SizedBox(width: 3),
-
                     Text(
                       toArabicDigits(player.streak),
                       style: const TextStyle(
@@ -897,7 +951,6 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                     ),
                   ],
                 ),
-
                 const Text(
                   'يوم',
                   style: TextStyle(

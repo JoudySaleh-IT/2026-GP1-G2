@@ -6,6 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'style_constants.dart';
 import '../services/practice_together_service.dart';
+import '../services/motivation_service.dart';
 import '../widgets/practice_race_progress.dart';
 import '../services/notification_service.dart';
 
@@ -80,6 +81,10 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
 
   final AudioPlayer _audioPlayer = AudioPlayer();
   final PracticeTogetherService _practiceService = PracticeTogetherService();
+
+  final MotivationService _motivationService = MotivationService();
+
+  String? _motivationAttemptId;
 
   StreamSubscription? _practiceSessionSubscription;
 
@@ -159,6 +164,10 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
       begin: 1.0,
       end: 1.1,
     ).animate(CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut));
+
+    if (!widget.isPracticeTogether) {
+      _motivationAttemptId = _motivationService.createAttemptId(widget.childId);
+    }
 
     _loadExercises();
 
@@ -1131,6 +1140,41 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
     );
   }
 
+  Future<MotivationAwardResult?> _awardListeningMotivation() async {
+    // Practice Together will be handled separately later.
+    if (widget.isPracticeTogether) {
+      return null;
+    }
+
+    final String? attemptId = _motivationAttemptId;
+
+    if (attemptId == null || attemptId.isEmpty) {
+      throw Exception('MISSING_MOTIVATION_ATTEMPT_ID');
+    }
+
+    if (_currentLevelKey == null) {
+      throw Exception('MISSING_LISTENING_LEVEL');
+    }
+
+    final result = await _motivationService.recordListeningCompletion(
+      childId: widget.childId,
+      attemptId: attemptId,
+      letter: widget.letter,
+      level: _currentLevelKey!,
+      correctCount: _score,
+    );
+
+    debugPrint(
+      '⭐ LISTENING MOTIVATION → '
+      'awarded=${result.awarded}, '
+      'earned=${result.pointsAwarded}, '
+      'total=${result.totalPoints}, '
+      'streak=${result.streak}',
+    );
+
+    return result;
+  }
+
   // ───────────────────────────────────────────────────────────────────────────
   // Next
   // ───────────────────────────────────────────────────────────────────────────
@@ -1228,6 +1272,8 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
     // Final question
     // ---------------------------------------------------------
 
+    MotivationAwardResult? motivationResult;
+
     if (widget.isPracticeTogether) {
       try {
         await _practiceService.submitFinalStats(
@@ -1274,7 +1320,36 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
         return;
       }
     } else {
-      await _saveListeningResult();
+      try {
+        // Existing learning progress.
+        await _saveListeningResult();
+
+        // New motivation system.
+        motivationResult = await _awardListeningMotivation();
+      } catch (e) {
+        debugPrint('Listening completion failed: $e');
+
+        _questionAdvanceBusy = false;
+
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'تعذر حفظ النقاط، حاول مرة أخرى',
+              textDirection: TextDirection.rtl,
+              style: TextStyle(fontFamily: 'Tajawal'),
+            ),
+          ),
+        );
+
+        // Stay on the final question.
+        // The child can press Finish again.
+        //
+        // Because the same attemptId is reused,
+        // MotivationService cannot double-award points.
+        return;
+      }
     }
 
     _questionAdvanceBusy = false;
@@ -1305,6 +1380,11 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
         'childId': widget.childId,
         'passedListening': _score >= 6,
         'level': _currentLevelKey,
+
+        // Motivation
+        'pointsAwarded': motivationResult?.pointsAwarded,
+        'totalPoints': motivationResult?.totalPoints,
+        'streak': motivationResult?.streak,
       },
     );
   }

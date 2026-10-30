@@ -17,6 +17,7 @@ import '../data/pronunciation_repository.dart';
 // import '../models/pronunciation_exercise_data.dart';
 // import '../data/pronunciation_repository.dart';
 import '../services/practice_together_service.dart';
+import '../services/motivation_service.dart';
 import '../widgets/practice_race_progress.dart';
 
 // ---------------------------------------------------------------------------
@@ -71,6 +72,10 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
   final AudioPlayer _audioPlayer = AudioPlayer();
   final AudioRecorder _recorder = AudioRecorder();
   final PracticeTogetherService _practiceService = PracticeTogetherService();
+
+  final MotivationService _motivationService = MotivationService();
+
+  String? _motivationAttemptId;
 
   StreamSubscription? _practiceSessionSubscription;
 
@@ -178,11 +183,11 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
       duration: const Duration(seconds: 1),
     )..repeat();
 
-    _loadExercises();
-
-    if (widget.isPracticeTogether) {
-      _watchPracticeCancellation();
+    if (!widget.isPracticeTogether) {
+      _motivationAttemptId = _motivationService.createAttemptId(widget.childId);
     }
+
+    _loadExercises();
   }
 
   // -------------------------------------------------------------------------
@@ -1450,6 +1455,7 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
         'childId': widget.childId,
         'letter': widget.letter,
         'level': widget.level,
+        'motivationAttemptId': _motivationAttemptId,
       },
     );
   }
@@ -1691,73 +1697,68 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
       );
     }
 
-// ---------------------------------------------------------
-// Normal final analysis
-// ---------------------------------------------------------
+    // ---------------------------------------------------------
+    // Normal final analysis
+    // ---------------------------------------------------------
 
-return Center(
-  child: Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 28),
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-       SizedBox(
-  width: 145,
-  height: 165,
-  child: Center(
-    child: Transform.scale(
-      scale: 1.25,
-      child: SizedBox(
-        width: 105,
-        height: 132,
-        child: _ResultBunny(
-          bubbleText: 'لحظة!',
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 28),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: 145,
+              height: 165,
+              child: Center(
+                child: Transform.scale(
+                  scale: 1.25,
+                  child: SizedBox(
+                    width: 105,
+                    height: 132,
+                    child: _ResultBunny(bubbleText: 'لحظة!'),
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 22),
+
+            const SizedBox(
+              width: 38,
+              height: 38,
+              child: CircularProgressIndicator(color: _red, strokeWidth: 4),
+            ),
+
+            const SizedBox(height: 20),
+
+            const Text(
+              'جاري إعداد نتيجتك يا بطل...',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: _deepPurple,
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                fontFamily: 'Tajawal',
+              ),
+            ),
+
+            const SizedBox(height: 7),
+
+            const Text(
+              'لحظات قليلة ونجهز لك نتيجتك',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Color(0xFF777777),
+                fontSize: 13,
+                fontFamily: 'Tajawal',
+              ),
+            ),
+          ],
         ),
       ),
-    ),
-  ),
-),
-
-        const SizedBox(height: 22),
-
-        const SizedBox(
-          width: 38,
-          height: 38,
-          child: CircularProgressIndicator(
-            color: _red,
-            strokeWidth: 4,
-          ),
-        ),
-
-        const SizedBox(height: 20),
-
-        const Text(
-          'جاري إعداد نتيجتك يا بطل...',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: _deepPurple,
-            fontSize: 20,
-            fontWeight: FontWeight.w800,
-            fontFamily: 'Tajawal',
-          ),
-        ),
-
-        const SizedBox(height: 7),
-
-        const Text(
-          'لحظات قليلة ونجهز لك نتيجتك',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: Color(0xFF777777),
-            fontSize: 13,
-            fontFamily: 'Tajawal',
-          ),
-        ),
-      ],
-    ),
-  ),
-);
-}
+    );
+  }
   // -------------------------------------------------------------------------
   // Header
   // -------------------------------------------------------------------------
@@ -2919,12 +2920,11 @@ class _CutePronunciationCharacter extends StatelessWidget {
     );
   }
 }
+
 class _ResultBunny extends StatelessWidget {
   final String bubbleText;
 
-  const _ResultBunny({
-    this.bubbleText = 'لحظة!',
-  });
+  const _ResultBunny({this.bubbleText = 'لحظة!'});
 
   @override
   Widget build(BuildContext context) {
@@ -2941,10 +2941,7 @@ class _ResultBunny extends StatelessWidget {
           top: 4,
           right: 0,
           child: Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 9,
-              vertical: 6,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.88),
               borderRadius: BorderRadius.circular(14),
@@ -3153,10 +3150,7 @@ class _ResultBunny extends StatelessWidget {
                     height: 8,
                     decoration: const BoxDecoration(
                       border: Border(
-                        bottom: BorderSide(
-                          color: detailsColor,
-                          width: 1.5,
-                        ),
+                        bottom: BorderSide(color: detailsColor, width: 1.5),
                       ),
                       borderRadius: BorderRadius.only(
                         bottomLeft: Radius.circular(10),

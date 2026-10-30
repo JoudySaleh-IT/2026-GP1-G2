@@ -4,6 +4,7 @@ import 'exercise_recording_retry_screen.dart';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/notification_service.dart';
+import '../services/motivation_service.dart';
 // ---------------------------------------------------------------------------
 // Screen
 // ---------------------------------------------------------------------------
@@ -18,36 +19,44 @@ class ExerciseRecordingResultScreen extends StatefulWidget {
 
 class _ExerciseRecordingResultScreenState
     extends State<ExerciseRecordingResultScreen> {
-      int _getNextRetryIndex() {
-  for (int i = 0; i < _questions.length; i++) {
-    final question = _questions[i];
+  int _getNextRetryIndex() {
+    for (int i = 0; i < _questions.length; i++) {
+      final question = _questions[i];
 
-    final int score =
-        (question['score'] as num?)?.round() ?? 0;
+      final int score = (question['score'] as num?)?.round() ?? 0;
 
-    final bool isInvalid =
-        question['isInvalid'] == true;
+      final bool isInvalid = question['isInvalid'] == true;
 
-    final bool retryUsed =
-        question['retryUsed'] == true;
+      final bool retryUsed = question['retryUsed'] == true;
 
-    final bool needsRetry =
-        isInvalid || score < 80;
+      final bool needsRetry = isInvalid || score < 80;
 
-    if (needsRetry && !retryUsed) {
-      return i;
+      if (needsRetry && !retryUsed) {
+        return i;
+      }
     }
+
+    return -1;
   }
 
-  return -1;
-}
   bool _initialized = false;
   bool _previewCelebration = false;
-bool _previewShown = false;
+  bool _previewShown = false;
 
   String _childId = '';
   String _letter = '';
   String _level = '';
+
+  String _motivationAttemptId = '';
+
+  final MotivationService _motivationService = MotivationService();
+
+  bool _motivationSaving = false;
+  bool _motivationFinalized = false;
+
+  MotivationAwardResult? _motivationResult;
+
+  bool _certificateIssuedNow = false;
 
   List<Map<String, dynamic>> _questions = [];
 
@@ -59,22 +68,20 @@ bool _previewShown = false;
       return;
     }
 
-    final args =
-        ModalRoute.of(context)?.settings.arguments as Map? ?? {};
+    final args = ModalRoute.of(context)?.settings.arguments as Map? ?? {};
 
     _childId = args['childId']?.toString() ?? '';
     _letter = args['letter']?.toString() ?? '';
     _level = args['level']?.toString() ?? '';
-    _previewCelebration =
-    args['previewCelebration'] == true;
 
-    final List receivedQuestions =
-        args['questions'] ?? _defaultQuestions;
+    _motivationAttemptId = args['motivationAttemptId']?.toString() ?? '';
+
+    _previewCelebration = args['previewCelebration'] == true;
+
+    final List receivedQuestions = args['questions'] ?? _defaultQuestions;
 
     _questions = receivedQuestions
-        .map(
-          (q) => Map<String, dynamic>.from(q as Map),
-        )
+        .map((q) => Map<String, dynamic>.from(q as Map))
         .toList();
 
     // Ensure every question has a retry state.
@@ -82,41 +89,49 @@ bool _previewShown = false;
       q['retryUsed'] = q['retryUsed'] == true;
     }
 
-_initialized = true;
+    _initialized = true;
 
-if (_previewCelebration && !_previewShown) {
-  _previewShown = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
 
-  WidgetsBinding.instance.addPostFrameCallback((_) async {
-    if (!mounted) return;
+      if (!_previewCelebration && _getNextRetryIndex() == -1) {
+        _finalizeSpeakingMotivation();
+      }
+    });
 
-    final bool? viewCertificate =
-        await _showJourneyCelebrationDialog();
+    if (_previewCelebration && !_previewShown) {
+      _previewShown = true;
 
-    if (!mounted) return;
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (!mounted) return;
 
- if (viewCertificate == true) {
-  Navigator.pushNamed(
-    context,
-    '/child/certificate',
-    arguments: {
-      'childId': _childId,
+        final bool? viewCertificate = await _showJourneyCelebrationDialog();
 
-      // إذا جينا من معاينة الاحتفال،
-      // نفتح الشهادة أيضًا كمعاينة.
-      'previewCertificate': _previewCelebration,
-    },
-  );
-} else {
-  Navigator.pushNamedAndRemoveUntil(
-    context,
-    '/child/home',
-    (route) => false,
-    arguments: _childId,
-  );
-}
-  });
-}  }
+        if (!mounted) return;
+
+        if (viewCertificate == true) {
+          Navigator.pushNamed(
+            context,
+            '/child/certificate',
+            arguments: {
+              'childId': _childId,
+
+              // إذا جينا من معاينة الاحتفال،
+              // نفتح الشهادة أيضًا كمعاينة.
+              'previewCertificate': _previewCelebration,
+            },
+          );
+        } else {
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            '/child/home',
+            (route) => false,
+            arguments: _childId,
+          );
+        }
+      });
+    }
+  }
 
   int _calculateAverageScore() {
     if (_questions.isEmpty) {
@@ -125,89 +140,156 @@ if (_previewCelebration && !_previewShown) {
 
     final int totalScore = _questions.fold<int>(
       0,
-      (sum, q) =>
-          sum + ((q['score'] as num?)?.round() ?? 0),
+      (sum, q) => sum + ((q['score'] as num?)?.round() ?? 0),
     );
 
     return (totalScore / _questions.length).round();
   }
 
   int _countCorrectPronunciations() {
-  return _questions.where((q) {
-    final int wordScore =
-        (q['score'] as num?)?.round() ?? 0;
+    return _questions.where((q) {
+      final int wordScore = (q['score'] as num?)?.round() ?? 0;
 
-    final bool isInvalid =
-        q['isInvalid'] == true;
+      final bool isInvalid = q['isInvalid'] == true;
 
-    // الكلمة تعتبر صحيحة إذا كانت صالحة
-    // ودرجتها 80% أو أكثر
-    return !isInvalid && wordScore >= 80;
-  }).length;
-}
+      // الكلمة تعتبر صحيحة إذا كانت صالحة
+      // ودرجتها 80% أو أكثر
+      return !isInvalid && wordScore >= 80;
+    }).length;
+  }
 
+  Future<bool> _savePronunciationProgress() async {
+    if (_childId.isEmpty || _letter.isEmpty || _level.isEmpty) {
+      return false;
+    }
 
+    final int averageScore = _calculateAverageScore();
+    final int correctCount = _countCorrectPronunciations();
 
-Future<bool> _savePronunciationProgress() async {
- if (_childId.isEmpty || _letter.isEmpty || _level.isEmpty) {
-  return false;
-}
+    // شرطان للانتقال:
+    // 1. على الأقل 6 من 8 كلمات صحيحة
+    // 2. المتوسط النهائي 80% أو أكثر
+    final bool canAdvance = correctCount >= 6 && averageScore >= 80;
 
-  final int averageScore = _calculateAverageScore();
-  final int correctCount = _countCorrectPronunciations();
+    final childRef = FirebaseFirestore.instance
+        .collection('children')
+        .doc(_childId);
 
-  // شرطان للانتقال:
-  // 1. على الأقل 6 من 8 كلمات صحيحة
-  // 2. المتوسط النهائي 80% أو أكثر
-  final bool canAdvance =
-      correctCount >= 6 && averageScore >= 80;
+    // نحفظ نتيجة النطق للمستوى الحالي
+    await childRef.update({
+      'exerciseProgress.$_letter.$_level.pronunciationScore': averageScore,
+      'exerciseProgress.$_letter.$_level.pronunciationCorrectCount':
+          correctCount,
+      'exerciseProgress.$_letter.$_level.pronunciationPassed': canAdvance,
+    });
 
-  final childRef = FirebaseFirestore.instance
-      .collection('children')
-      .doc(_childId);
+    // -------------------------------------------------------------
+    // Check if the child has completed the entire Faseh journey
+    // -------------------------------------------------------------
+    if (canAdvance && _level.toLowerCase() == 'advanced') {
+      final certificateService = CertificateService();
 
-  // نحفظ نتيجة النطق للمستوى الحالي
-  await childRef.update({
-    'exerciseProgress.$_letter.$_level.pronunciationScore':
-        averageScore,
-    'exerciseProgress.$_letter.$_level.pronunciationCorrectCount':
-        correctCount,
-    'exerciseProgress.$_letter.$_level.pronunciationPassed':
-        canAdvance,
-  });
-
-// -------------------------------------------------------------
-// Check if the child has completed the entire Faseh journey
-// -------------------------------------------------------------
-if (canAdvance && _level.toLowerCase() == 'advanced') {
-  final certificateService = CertificateService();
-
-  final bool journeyCompleted =
-      await certificateService.isJourneyCompleted(_childId);
-
-  if (journeyCompleted) {
-    final bool issuedNow =
-        await certificateService.issueCertificate(_childId);
-
-    if (issuedNow) {
-      debugPrint(
-        '🎓 Journey completed - completion certificate issued',
+      final bool journeyCompleted = await certificateService.isJourneyCompleted(
+        _childId,
       );
 
+      if (journeyCompleted) {
+        final bool issuedNow = await certificateService.issueCertificate(
+          _childId,
+        );
+
+        if (issuedNow) {
+          debugPrint('🎓 Journey completed - completion certificate issued');
+
+          return true;
+        }
+      }
+    }
+
+    debugPrint(
+      'Pronunciation result → '
+      'level=$_level, '
+      'average=$averageScore, '
+      'correct=$correctCount/${_questions.length}, '
+      'canAdvance=$canAdvance',
+    );
+    return false;
+  }
+
+  Future<bool> _finalizeSpeakingMotivation() async {
+    if (_motivationFinalized) {
       return true;
     }
-  }
-}
 
-  debugPrint(
-    'Pronunciation result → '
-    'level=$_level, '
-    'average=$averageScore, '
-    'correct=$correctCount/${_questions.length}, '
-    'canAdvance=$canAdvance',
-  );
-return false;
-}
+    if (_motivationSaving) {
+      return false;
+    }
+
+    if (_motivationAttemptId.isEmpty) {
+      debugPrint('Missing Speaking motivation attempt ID');
+
+      return false;
+    }
+
+    _motivationSaving = true;
+
+    if (mounted) {
+      setState(() {});
+    }
+
+    try {
+      final int averageScore = _calculateAverageScore();
+
+      final int correctCount = _countCorrectPronunciations();
+
+      // Save learning/progression and preserve
+      // whether this completion issued the certificate.
+      final bool certificateIssuedNow = await _savePronunciationProgress();
+
+      _certificateIssuedNow = _certificateIssuedNow || certificateIssuedNow;
+
+      // Then save motivation.
+      final result = await _motivationService.recordSpeakingCompletion(
+        childId: _childId,
+        attemptId: _motivationAttemptId,
+        letter: _letter,
+        level: _level,
+        averageScore: averageScore,
+        correctCount: correctCount,
+      );
+
+      debugPrint(
+        '⭐ SPEAKING MOTIVATION → '
+        'awarded=${result.awarded}, '
+        'average=$averageScore, '
+        'earned=${result.pointsAwarded}, '
+        'total=${result.totalPoints}, '
+        'streak=${result.streak}',
+      );
+
+      _motivationResult = result;
+      _motivationFinalized = true;
+      _motivationSaving = false;
+
+      if (mounted) {
+        setState(() {});
+      }
+
+      return true;
+    } catch (e) {
+      debugPrint('Speaking motivation failed: $e');
+
+      _motivationSaving = false;
+
+      if (mounted) {
+        setState(() {});
+
+        NotificationService.showErrorSnackBar('تعذر حفظ النقاط، حاول مرة أخرى');
+      }
+
+      return false;
+    }
+  }
 
   String _resultMessage(int pct) {
     if (pct == 100) {
@@ -293,262 +375,253 @@ return false;
   // -------------------------------------------------------------------------
   // Build
   // -------------------------------------------------------------------------
-Future<void> _retryQuestion(int index) async {
-  if (index < 0 || index >= _questions.length) {
-    return;
+  Future<void> _retryQuestion(int index) async {
+    if (index < 0 || index >= _questions.length) {
+      return;
+    }
+
+    final question = _questions[index];
+
+    final int score = (question['score'] as num?)?.round() ?? 0;
+
+    final bool isInvalid = question['isInvalid'] == true;
+
+    final bool retryUsed = question['retryUsed'] == true;
+
+    final bool needsRetry = isInvalid || score < 80;
+
+    // الإعادة مسموحة مرة واحدة فقط
+    // لأي كلمة Invalid أو درجتها أقل من 80.
+    if (!needsRetry || retryUsed) {
+      return;
+    }
+
+    final result = await Navigator.push<Map<String, dynamic>>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ExerciseRecordingRetryScreen(
+          childId: _childId,
+          letter: _letter,
+          level: _level,
+          questionText: question['questionText']?.toString() ?? '',
+          targetWord: question['targetWord']?.toString() ?? '',
+          imagePath: question['imagePath']?.toString() ?? '',
+          audioPath: question['audioPath']?.toString() ?? '',
+        ),
+      ),
+    );
+
+    if (!mounted || result == null) {
+      return;
+    }
+
+    setState(() {
+      // This retry is now permanently consumed.
+      question['retryUsed'] = true;
+
+      question['score'] = (result['score'] as num?)?.round() ?? 0;
+
+      question['isInvalid'] = result['isInvalid'] == true;
+
+      question['invalidReason'] = result['invalidReason'];
+    });
+
+    // If this was the final required retry,
+    // the Speaking attempt now has its final score.
+    if (_getNextRetryIndex() == -1) {
+      await _finalizeSpeakingMotivation();
+    }
   }
 
-  final question = _questions[index];
+  Future<bool?> _showJourneyCelebrationDialog() {
+    return showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return Directionality(
+          textDirection: TextDirection.rtl,
+          child: Dialog(
+            backgroundColor: Colors.transparent,
+            insetPadding: const EdgeInsets.symmetric(horizontal: 26),
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(24, 26, 24, 22),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFFCF7),
+                borderRadius: BorderRadius.circular(30),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.10),
+                    blurRadius: 20,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    width: 180,
+                    height: 125,
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      alignment: Alignment.center,
+                      children: [
+                        // Bunny
+                        const Positioned(
+                          left: 24,
+                          top: 0,
+                          child: SizedBox(
+                            width: 105,
+                            height: 105,
+                            child: _CelebrationBunny(),
+                          ),
+                        ),
 
-  final int score =
-    (question['score'] as num?)?.round() ?? 0;
+                        // Achievement badge
+                        Positioned(
+                          right: 12,
+                          top: 18,
+                          child: Container(
+                            width: 54,
+                            height: 54,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFFE8A3),
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: const Color(0xFFF3C95B),
+                                width: 2,
+                              ),
+                            ),
+                            child: const Icon(
+                              Icons.workspace_premium_rounded,
+                              color: Color(0xFFE5A52F),
+                              size: 31,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
 
-final bool isInvalid =
-    question['isInvalid'] == true;
+                  const SizedBox(height: 14),
 
-final bool retryUsed =
-    question['retryUsed'] == true;
+                  const Text(
+                    'رائع! 🎉',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontFamily: 'Tajawal',
+                      fontSize: 24,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF511281),
+                    ),
+                  ),
 
-final bool needsRetry =
-    isInvalid || score < 80;
+                  const SizedBox(height: 8),
 
-// الإعادة مسموحة مرة واحدة فقط
-// لأي كلمة Invalid أو درجتها أقل من 80.
-if (!needsRetry || retryUsed) {
-  return;
-}
+                  const Text(
+                    'أكملت رحلتك في فصيح!',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontFamily: 'Tajawal',
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF511281),
+                    ),
+                  ),
 
-  final result =
-      await Navigator.push<Map<String, dynamic>>(
-    context,
-    MaterialPageRoute(
-      builder: (_) => ExerciseRecordingRetryScreen(
-        childId: _childId,
-        letter: _letter,
-        level: _level,
-        questionText:
-            question['questionText']?.toString() ?? '',
-        targetWord:
-            question['targetWord']?.toString() ?? '',
-        imagePath:
-            question['imagePath']?.toString() ?? '',
-        audioPath:
-            question['audioPath']?.toString() ?? '',
-      ),
-    ),
-  );
+                  const SizedBox(height: 8),
 
-  if (!mounted || result == null) {
-    return;
+                  const Text(
+                    'أنهيت جميع تمارينك بنجاح، وحصلت على شهادة فصيح.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontFamily: 'Tajawal',
+                      fontSize: 14,
+                      height: 1.6,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF777777),
+                    ),
+                  ),
+
+                  const SizedBox(height: 22),
+
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(dialogContext, true);
+                      },
+                      icon: const Icon(
+                        Icons.workspace_premium_rounded,
+                        size: 20,
+                      ),
+                      label: const Text(
+                        'شاهد شهادتك',
+                        style: TextStyle(
+                          fontFamily: 'Tajawal',
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFF6969),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: const StadiumBorder(),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      onPressed: () {
+                        Navigator.pop(dialogContext, false);
+                      },
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF511281),
+                        side: const BorderSide(
+                          color: Color(0xFF511281),
+                          width: 1.3,
+                        ),
+                        shape: const StadiumBorder(),
+                        padding: const EdgeInsets.symmetric(vertical: 13),
+                      ),
+                      child: const Text(
+                        'العودة للرئيسية',
+                        style: TextStyle(
+                          fontFamily: 'Tajawal',
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
-  setState(() {
-    // This retry is now permanently consumed.
-    question['retryUsed'] = true;
-
-    question['score'] =
-        (result['score'] as num?)?.round() ?? 0;
-
-    question['isInvalid'] =
-        result['isInvalid'] == true;
-
-    question['invalidReason'] =
-        result['invalidReason'];
-  });
-}
-Future<bool?> _showJourneyCelebrationDialog() {
-  return showDialog<bool>(
-    context: context,
-    barrierDismissible: false,
-    builder: (dialogContext) {
-      return Directionality(
-        textDirection: TextDirection.rtl,
-        child: Dialog(
-          backgroundColor: Colors.transparent,
-          insetPadding: const EdgeInsets.symmetric(horizontal: 26),
-          child: Container(
-            padding: const EdgeInsets.fromLTRB(24, 26, 24, 22),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFFCF7),
-              borderRadius: BorderRadius.circular(30),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.10),
-                  blurRadius: 20,
-                  offset: const Offset(0, 6),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SizedBox(
-  width: 180,
-  height: 125,
-  child: Stack(
-    clipBehavior: Clip.none,
-    alignment: Alignment.center,
-    children: [
-      // Bunny
-      const Positioned(
-        left: 24,
-        top: 0,
-        child: SizedBox(
-          width: 105,
-          height: 105,
-          child: _CelebrationBunny(),
-        ),
-      ),
-
-      // Achievement badge
-      Positioned(
-        right: 12,
-        top: 18,
-        child: Container(
-          width: 54,
-          height: 54,
-          decoration: BoxDecoration(
-            color: const Color(0xFFFFE8A3),
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: const Color(0xFFF3C95B),
-              width: 2,
-            ),
-          ),
-          child: const Icon(
-            Icons.workspace_premium_rounded,
-            color: Color(0xFFE5A52F),
-            size: 31,
-          ),
-        ),
-      ),
-    ],
-  ),
-),
-
-                const SizedBox(height: 14),
-
-                const Text(
-                  'رائع! 🎉',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontFamily: 'Tajawal',
-                    fontSize: 24,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF511281),
-                  ),
-                ),
-
-                const SizedBox(height: 8),
-
-                const Text(
-                  'أكملت رحلتك في فصيح!',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontFamily: 'Tajawal',
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF511281),
-                  ),
-                ),
-
-                const SizedBox(height: 8),
-
-                const Text(
-                  'أنهيت جميع تمارينك بنجاح، وحصلت على شهادة فصيح.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontFamily: 'Tajawal',
-                    fontSize: 14,
-                    height: 1.6,
-                    fontWeight: FontWeight.w500,
-                    color: Color(0xFF777777),
-                  ),
-                ),
-
-                const SizedBox(height: 22),
-
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.pop(dialogContext, true);
-                    },
-                    icon: const Icon(
-                      Icons.workspace_premium_rounded,
-                      size: 20,
-                    ),
-                    label: const Text(
-                      'شاهد شهادتك',
-                      style: TextStyle(
-                        fontFamily: 'Tajawal',
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFF6969),
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: const StadiumBorder(),
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 14,
-                      ),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 10),
-
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton(
-                    onPressed: () {
-                      Navigator.pop(dialogContext, false);
-                    },
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFF511281),
-                      side: const BorderSide(
-                        color: Color(0xFF511281),
-                        width: 1.3,
-                      ),
-                      shape: const StadiumBorder(),
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 13,
-                      ),
-                    ),
-                    child: const Text(
-                      'العودة للرئيسية',
-                      style: TextStyle(
-                        fontFamily: 'Tajawal',
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    },
-  );
-}
   @override
   Widget build(BuildContext context) {
     final int score = _calculateAverageScore();
 
-const int total = 100;
+    const int total = 100;
 
-final int pct = ((score / total) * 100).round();
+    final int pct = ((score / total) * 100).round();
 
     // نفس حساب النقاط
     final int pts = score * 10;
     final int nextRetryIndex = _getNextRetryIndex();
 
-final bool hasPendingRetry =
-    nextRetryIndex != -1;
+    final bool hasPendingRetry = nextRetryIndex != -1;
 
     // نفس حساب النجوم
     final int stars = pct >= 90
@@ -558,363 +631,405 @@ final bool hasPendingRetry =
         : 1;
 
     return Directionality(
-  textDirection: TextDirection.rtl,
-  child: PopScope(
-    canPop: !hasPendingRetry,
+      textDirection: TextDirection.rtl,
+      child: PopScope(
+        canPop: !hasPendingRetry,
 
-    onPopInvokedWithResult: (didPop, result) {
-      if (!didPop && hasPendingRetry) {
-        NotificationService.showSuccessSnackBar(
-  'أكمل محاولاتك لنحسب نتيجتك',
-);
-      }
-    },
-
-    child: Scaffold(
-        backgroundColor: const Color(0xFFFCF9EA),
-
-        body: Column(
-          children: [
-            // ===============================================================
-            // Header
-            // ===============================================================
-            const _RecordingResultHeader(),
-
-            Expanded(
-              child: Stack(
-                children: [
-                  // خلفية مثل نتائج الاستماع
-                  const Positioned.fill(
-                    child: IgnorePointer(child: _ResultBackground()),
-                  ),
-
-                  ScrollConfiguration(
-                    behavior: ScrollConfiguration.of(
-                      context,
-                    ).copyWith(overscroll: false),
-
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-
-                      child: Column(
-                        children: [
-                          // =================================================
-                          // Big Result Card
-                          // =================================================
-                          _ResultHeroCard(
-                            pct: pct,
-                            stars: stars,
-                            resultMessage: _resultMessage(pct),
-                            resultColor: _resultColor(pct),
-                            resultBackground: _resultBackground(pct),
-                          ),
-
-                          const SizedBox(height: 12),
-
-                          // =================================================
-                          // Points
-                          // =================================================
-                          _PointsCard(points: pts),
-
-                          const SizedBox(height: 18),
-
-                          // =================================================
-                          // Pronunciation details
-                          // =================================================
-                          _buildDetailsCard(_questions),
-
-                          const SizedBox(height: 18),
-
-                          // =================================================
-                          // Home
-                          // نفس functionality
-                          // =================================================
-                          SizedBox(
-                            width: double.infinity,
-
-                            child: ElevatedButton.icon(
-onPressed: () async {
-  if (hasPendingRetry) {
-    await _retryQuestion(nextRetryIndex);
-    return;
-  }
-
-  final bool certificateIssuedNow =
-      await _savePronunciationProgress();
-
-  if (!mounted) return;
-
-  // 🎉 الشهادة صدرت الآن لأول مرة
-  if (certificateIssuedNow) {
-    final bool? viewCertificate =
-        await _showJourneyCelebrationDialog();
-
-    if (!mounted) return;
-
-    if (viewCertificate == true) {
-      Navigator.pushNamed(
-        context,
-        '/child/certificate',
-        arguments: {
-          'childId': _childId,
+        onPopInvokedWithResult: (didPop, result) {
+          if (!didPop && hasPendingRetry) {
+            NotificationService.showSuccessSnackBar(
+              'أكمل محاولاتك لنحسب نتيجتك',
+            );
+          }
         },
-      );
-    } else {
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        '/child/home',
-        (r) => false,
-        arguments: _childId,
-      );
-    }
 
-    return;
-  }
+        child: Scaffold(
+          backgroundColor: const Color(0xFFFCF9EA),
 
-  // الحالة الطبيعية
-  Navigator.pushNamedAndRemoveUntil(
-    context,
-    '/child/home',
-    (r) => false,
-    arguments: _childId,
-  );
-},
+          body: Column(
+            children: [
+              // ===============================================================
+              // Header
+              // ===============================================================
+              const _RecordingResultHeader(),
 
+              Expanded(
+                child: Stack(
+                  children: [
+                    // خلفية مثل نتائج الاستماع
+                    const Positioned.fill(
+                      child: IgnorePointer(child: _ResultBackground()),
+                    ),
 
+                    ScrollConfiguration(
+                      behavior: ScrollConfiguration.of(
+                        context,
+                      ).copyWith(overscroll: false),
 
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
 
+                        child: Column(
+                          children: [
+                            // =================================================
+                            // Big Result Card
+                            // =================================================
+                            _ResultHeroCard(
+                              pct: pct,
+                              stars: stars,
+                              resultMessage: _resultMessage(pct),
+                              resultColor: _resultColor(pct),
+                              resultBackground: _resultBackground(pct),
+                            ),
 
-icon: Icon(
-  hasPendingRetry
-      ? Icons.refresh_rounded
-      : Icons.home_rounded,
-  size: 18,
-),
+                            const SizedBox(height: 12),
 
-label: Text(
-  hasPendingRetry
-      ? 'أكمل المحاولات'
-      : 'العودة للرئيسية',
-  style: const TextStyle(
-    fontFamily: 'Tajawal',
-    fontWeight: FontWeight.w600,
-  ),
-),
+                            // =================================================
+                            // Points
+                            // =================================================
+                            _PointsCard(points: pts),
 
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFFFF6969),
+                            const SizedBox(height: 18),
 
-                                foregroundColor: Colors.white,
+                            // =================================================
+                            // Pronunciation details
+                            // =================================================
+                            _buildDetailsCard(_questions),
 
-                                elevation: 0,
+                            const SizedBox(height: 18),
 
-                                shape: const StadiumBorder(),
+                            // =================================================
+                            // Home
+                            // نفس functionality
+                            // =================================================
+                            SizedBox(
+                              width: double.infinity,
 
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 14,
+                              child: ElevatedButton.icon(
+                                onPressed: () async {
+                                  if (hasPendingRetry) {
+                                    await _retryQuestion(nextRetryIndex);
+                                    return;
+                                  }
+
+                                  final bool motivationSaved =
+                                      await _finalizeSpeakingMotivation();
+
+                                  if (!motivationSaved || !mounted) {
+                                    return;
+                                  }
+
+                                  // 🎉 Certificate was issued during
+                                  // _finalizeSpeakingMotivation().
+                                  if (_certificateIssuedNow) {
+                                    final bool? viewCertificate =
+                                        await _showJourneyCelebrationDialog();
+
+                                    if (!mounted) return;
+
+                                    if (viewCertificate == true) {
+                                      Navigator.pushNamed(
+                                        context,
+                                        '/child/certificate',
+                                        arguments: {'childId': _childId},
+                                      );
+                                    } else {
+                                      Navigator.pushNamedAndRemoveUntil(
+                                        context,
+                                        '/child/home',
+                                        (r) => false,
+                                        arguments: _childId,
+                                      );
+                                    }
+
+                                    return;
+                                  }
+
+                                  // Normal case
+                                  Navigator.pushNamedAndRemoveUntil(
+                                    context,
+                                    '/child/home',
+                                    (r) => false,
+                                    arguments: _childId,
+                                  );
+                                },
+
+                                icon: Icon(
+                                  hasPendingRetry
+                                      ? Icons.refresh_rounded
+                                      : Icons.home_rounded,
+                                  size: 18,
+                                ),
+
+                                label: Text(
+                                  hasPendingRetry
+                                      ? 'أكمل المحاولات'
+                                      : 'العودة للرئيسية',
+                                  style: const TextStyle(
+                                    fontFamily: 'Tajawal',
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFFFF6969),
+
+                                  foregroundColor: Colors.white,
+
+                                  elevation: 0,
+
+                                  shape: const StadiumBorder(),
+
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 14,
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-if (hasPendingRetry) ...[
-  const SizedBox(height: 10),
+                            if (hasPendingRetry) ...[
+                              const SizedBox(height: 10),
 
-  SizedBox(
-    width: double.infinity,
-    child: OutlinedButton.icon(
-      onPressed: () {
-  showDialog(
-    context: context,
-    barrierDismissible: false,
-    builder: (dialogContext) {
-      return Directionality(
-        textDirection: TextDirection.rtl,
-        child: Dialog(
-          backgroundColor: Colors.transparent,
-          insetPadding: const EdgeInsets.symmetric(horizontal: 28),
+                              SizedBox(
+                                width: double.infinity,
+                                child: OutlinedButton.icon(
+                                  onPressed: () {
+                                    showDialog(
+                                      context: context,
+                                      barrierDismissible: false,
+                                      builder: (dialogContext) {
+                                        return Directionality(
+                                          textDirection: TextDirection.rtl,
+                                          child: Dialog(
+                                            backgroundColor: Colors.transparent,
+                                            insetPadding:
+                                                const EdgeInsets.symmetric(
+                                                  horizontal: 28,
+                                                ),
 
-          child: Container(
-            padding: const EdgeInsets.fromLTRB(22, 24, 22, 20),
+                                            child: Container(
+                                              padding:
+                                                  const EdgeInsets.fromLTRB(
+                                                    22,
+                                                    24,
+                                                    22,
+                                                    20,
+                                                  ),
 
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFFCF7),
-              borderRadius: BorderRadius.circular(30),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.10),
-                  blurRadius: 18,
-                  offset: const Offset(0, 6),
-                ),
-              ],
-            ),
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFFFFFCF7),
+                                                borderRadius:
+                                                    BorderRadius.circular(30),
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: Colors.black
+                                                        .withOpacity(0.10),
+                                                    blurRadius: 18,
+                                                    offset: const Offset(0, 6),
+                                                  ),
+                                                ],
+                                              ),
 
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Sad Bunny
-                const SizedBox(
-                  width: 105,
-                  height: 125,
-                  child: _SadCuteBunny(),
-                ),
+                                              child: Column(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  // Sad Bunny
+                                                  const SizedBox(
+                                                    width: 105,
+                                                    height: 125,
+                                                    child: _SadCuteBunny(),
+                                                  ),
 
-                const SizedBox(height: 12),
+                                                  const SizedBox(height: 12),
 
-                // Title
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF4EAFB),
-                    borderRadius: BorderRadius.circular(22),
-                  ),
-                  child: const Text(
-                    'لحظة! لا تروح',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontFamily: 'Tajawal',
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF511281),
-                    ),
-                  ),
-                ),
+                                                  // Title
+                                                  Container(
+                                                    padding:
+                                                        const EdgeInsets.symmetric(
+                                                          horizontal: 20,
+                                                          vertical: 8,
+                                                        ),
+                                                    decoration: BoxDecoration(
+                                                      color: const Color(
+                                                        0xFFF4EAFB,
+                                                      ),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            22,
+                                                          ),
+                                                    ),
+                                                    child: const Text(
+                                                      'لحظة! لا تروح',
+                                                      textAlign:
+                                                          TextAlign.center,
+                                                      style: TextStyle(
+                                                        fontFamily: 'Tajawal',
+                                                        fontSize: 20,
+                                                        fontWeight:
+                                                            FontWeight.w800,
+                                                        color: Color(
+                                                          0xFF511281,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
 
-                const SizedBox(height: 14),
+                                                  const SizedBox(height: 14),
 
-                // Warning
-                const Text(
-                  'إذا رجعت للتمارين الآن،\nبتبدأ تمرين النطق من جديد.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontFamily: 'Tajawal',
-                    fontSize: 13,
-                    height: 1.6,
-                    fontWeight: FontWeight.w500,
-                    color: Color(0xFF777777),
-                  ),
-                ),
+                                                  // Warning
+                                                  const Text(
+                                                    'إذا رجعت للتمارين الآن،\nبتبدأ تمرين النطق من جديد.',
+                                                    textAlign: TextAlign.center,
+                                                    style: TextStyle(
+                                                      fontFamily: 'Tajawal',
+                                                      fontSize: 13,
+                                                      height: 1.6,
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                      color: Color(0xFF777777),
+                                                    ),
+                                                  ),
 
-                const SizedBox(height: 22),
+                                                  const SizedBox(height: 22),
 
-                // Continue retries
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(dialogContext);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFF6969),
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: const StadiumBorder(),
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 14,
+                                                  // Continue retries
+                                                  SizedBox(
+                                                    width: double.infinity,
+                                                    child: ElevatedButton(
+                                                      onPressed: () {
+                                                        Navigator.pop(
+                                                          dialogContext,
+                                                        );
+                                                      },
+                                                      style: ElevatedButton.styleFrom(
+                                                        backgroundColor:
+                                                            const Color(
+                                                              0xFFFF6969,
+                                                            ),
+                                                        foregroundColor:
+                                                            Colors.white,
+                                                        elevation: 0,
+                                                        shape:
+                                                            const StadiumBorder(),
+                                                        padding:
+                                                            const EdgeInsets.symmetric(
+                                                              vertical: 14,
+                                                            ),
+                                                      ),
+                                                      child: const Text(
+                                                        'أكمل المحاولات',
+                                                        style: TextStyle(
+                                                          fontFamily: 'Tajawal',
+                                                          fontSize: 14,
+                                                          fontWeight:
+                                                              FontWeight.w700,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
+
+                                                  const SizedBox(height: 9),
+
+                                                  // Leave exercise
+                                                  SizedBox(
+                                                    width: double.infinity,
+                                                    child: OutlinedButton(
+                                                      onPressed: () {
+                                                        Navigator.pop(
+                                                          dialogContext,
+                                                        );
+
+                                                        // العودة بدون حفظ محاولة النطق الحالية
+                                                        Navigator.pushNamedAndRemoveUntil(
+                                                          context,
+                                                          '/child/letter-levels',
+                                                          (route) =>
+                                                              route
+                                                                  .settings
+                                                                  .name ==
+                                                              '/child/exercises',
+                                                          arguments: {
+                                                            'letter': _letter,
+                                                            'childId': _childId,
+                                                            'startingLevel':
+                                                                _level,
+                                                          },
+                                                        );
+                                                      },
+                                                      style: OutlinedButton.styleFrom(
+                                                        foregroundColor:
+                                                            const Color(
+                                                              0xFF511281,
+                                                            ),
+                                                        side: const BorderSide(
+                                                          color: Color(
+                                                            0xFF511281,
+                                                          ),
+                                                          width: 1.3,
+                                                        ),
+                                                        shape:
+                                                            const StadiumBorder(),
+                                                        padding:
+                                                            const EdgeInsets.symmetric(
+                                                              vertical: 13,
+                                                            ),
+                                                      ),
+                                                      child: const Text(
+                                                        'العودة للتمارين',
+                                                        style: TextStyle(
+                                                          fontFamily: 'Tajawal',
+                                                          fontSize: 14,
+                                                          fontWeight:
+                                                              FontWeight.w700,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    );
+                                  },
+                                  icon: const Icon(
+                                    Icons.arrow_back_rounded,
+                                    size: 18,
+                                  ),
+                                  label: const Text(
+                                    'العودة للتمارين',
+                                    style: TextStyle(
+                                      fontFamily: 'Tajawal',
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: const Color(0xFF511281),
+                                    side: const BorderSide(
+                                      color: Color(0xFF511281),
+                                      width: 1.3,
+                                    ),
+                                    shape: const StadiumBorder(),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 14,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
                       ),
                     ),
-                    child: const Text(
-                      'أكمل المحاولات',
-                      style: TextStyle(
-                        fontFamily: 'Tajawal',
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
+                  ],
                 ),
-
-                const SizedBox(height: 9),
-
-                // Leave exercise
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton(
-                    onPressed: () {
-                      Navigator.pop(dialogContext);
-
-                      // العودة بدون حفظ محاولة النطق الحالية
-                      Navigator.pushNamedAndRemoveUntil(
-                        context,
-                        '/child/letter-levels',
-                        (route) =>
-                            route.settings.name == '/child/exercises',
-                        arguments: {
-  'letter': _letter,
-  'childId': _childId,
-  'startingLevel': _level,
-},
-                      );
-                    },
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFF511281),
-                      side: const BorderSide(
-                        color: Color(0xFF511281),
-                        width: 1.3,
-                      ),
-                      shape: const StadiumBorder(),
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 13,
-                      ),
-                    ),
-                    child: const Text(
-                      'العودة للتمارين',
-                      style: TextStyle(
-                        fontFamily: 'Tajawal',
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
-      );
-    },
-  );
-},
-      icon: const Icon(
-        Icons.arrow_back_rounded,
-        size: 18,
       ),
-      label: const Text(
-        'العودة للتمارين',
-        style: TextStyle(
-          fontFamily: 'Tajawal',
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-      style: OutlinedButton.styleFrom(
-        foregroundColor: const Color(0xFF511281),
-        side: const BorderSide(
-          color: Color(0xFF511281),
-          width: 1.3,
-        ),
-        shape: const StadiumBorder(),
-        padding: const EdgeInsets.symmetric(
-          vertical: 14,
-        ),
-      ),
-    ),
-  ),
-],
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-              ),
-      ),
-    ),
-  );
-}
+    );
+  }
 
   // -------------------------------------------------------------------------
   // Details Card
@@ -1037,39 +1152,34 @@ if (hasPendingRetry) ...[
 
               final Map q = entry.value as Map;
 
-              final String qTxt =
-    q['questionText']?.toString() ?? '';
+              final String qTxt = q['questionText']?.toString() ?? '';
 
-final int qScr =
-    (q['score'] as num?)?.round() ?? 0;
+              final int qScr = (q['score'] as num?)?.round() ?? 0;
 
-final bool isInvalid =
-    q['isInvalid'] == true;
+              final bool isInvalid = q['isInvalid'] == true;
 
-final bool retryUsed =
-    q['retryUsed'] == true;
+              final bool retryUsed = q['retryUsed'] == true;
 
-// النطق الصحيح/الضعيف يظل يعتمد على منطقكم الحالي.
-// Invalid حالة منفصلة تمامًا.
-final bool good =
-    !isInvalid && qScr >= 80;
+              // النطق الصحيح/الضعيف يظل يعتمد على منطقكم الحالي.
+              // Invalid حالة منفصلة تمامًا.
+              final bool good = !isInvalid && qScr >= 80;
 
               return Padding(
                 padding: const EdgeInsets.only(bottom: 10),
 
                 child: _PronunciationResultTile(
-  number: idx + 1,
-  text: qTxt,
-  score: qScr,
-  good: good,
-  isInvalid: isInvalid,
-  retryUsed: retryUsed,
-  scoreColor: _scoreColor(qScr),
-  scoreBackground: _scoreBg(qScr),
-  onRetry: !good && !retryUsed
-    ? () => _retryQuestion(idx)
-    : null,
-),
+                  number: idx + 1,
+                  text: qTxt,
+                  score: qScr,
+                  good: good,
+                  isInvalid: isInvalid,
+                  retryUsed: retryUsed,
+                  scoreColor: _scoreColor(qScr),
+                  scoreBackground: _scoreBg(qScr),
+                  onRetry: !good && !retryUsed
+                      ? () => _retryQuestion(idx)
+                      : null,
+                ),
               );
             }),
         ],
@@ -1499,19 +1609,14 @@ class _PronunciationResultTile extends StatelessWidget {
     return Container(
       width: double.infinity,
 
-      padding: const EdgeInsets.symmetric(
-        horizontal: 12,
-        vertical: 11,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
 
       decoration: BoxDecoration(
         color: cardColor,
         borderRadius: BorderRadius.circular(18),
 
         border: isInvalid
-            ? Border.all(
-                color: invalidRed.withOpacity(0.20),
-              )
+            ? Border.all(color: invalidRed.withOpacity(0.20))
             : null,
       ),
 
@@ -1546,8 +1651,7 @@ class _PronunciationResultTile extends StatelessWidget {
           // Word + status
           Expanded(
             child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
 
               children: [
                 Text(
@@ -1583,10 +1687,7 @@ class _PronunciationResultTile extends StatelessWidget {
             ElevatedButton.icon(
               onPressed: onRetry,
 
-              icon: const Icon(
-                Icons.refresh_rounded,
-                size: 15,
-              ),
+              icon: const Icon(Icons.refresh_rounded, size: 15),
 
               label: const Text(
                 'إعادة',
@@ -1611,14 +1712,10 @@ class _PronunciationResultTile extends StatelessWidget {
                 ),
               ),
             )
-
           // Retry was already used but still invalid
           else if (isInvalid && retryUsed)
             Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 9,
-                vertical: 7,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
 
               decoration: BoxDecoration(
                 color: const Color(0xFFFFDFE4),
@@ -1636,7 +1733,6 @@ class _PronunciationResultTile extends StatelessWidget {
                 ),
               ),
             )
-
           // Valid pronunciation attempt
           else
             Container(
@@ -2038,6 +2134,7 @@ class _SimpleCuteBunny extends StatelessWidget {
     );
   }
 }
+
 class _CelebrationBunny extends StatelessWidget {
   const _CelebrationBunny();
 
@@ -2219,10 +2316,7 @@ class _CelebrationBunny extends StatelessWidget {
                     height: 8,
                     decoration: const BoxDecoration(
                       border: Border(
-                        bottom: BorderSide(
-                          color: darkColor,
-                          width: 1.5,
-                        ),
+                        bottom: BorderSide(color: darkColor, width: 1.5),
                       ),
                       borderRadius: BorderRadius.only(
                         bottomLeft: Radius.circular(10),
@@ -2484,10 +2578,7 @@ class _SadCuteBunny extends StatelessWidget {
                     height: 8,
                     decoration: const BoxDecoration(
                       border: Border(
-                        top: BorderSide(
-                          color: darkColor,
-                          width: 1.5,
-                        ),
+                        top: BorderSide(color: darkColor, width: 1.5),
                       ),
                       borderRadius: BorderRadius.only(
                         topLeft: Radius.circular(10),

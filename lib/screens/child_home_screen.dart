@@ -27,12 +27,10 @@ const _mockChild = (
 class ChildHomeScreen extends StatelessWidget {
   final String childId;
 
-ChildHomeScreen({
-  super.key,
-  required this.childId,
-}) {
-print('🏠 CHILD HOME CREATED = [$childId]');
-  print('🏠 SESSION SET = [${ChildSession.currentChildId}]');}
+  ChildHomeScreen({super.key, required this.childId}) {
+    print('🏠 CHILD HOME CREATED = [$childId]');
+    print('🏠 SESSION SET = [${ChildSession.currentChildId}]');
+  }
 
   // ─── Friend Request Test Dialog ────────────────────────────────────────────
   Future<void> _showFriendRequestTestDialog(BuildContext context) async {
@@ -56,7 +54,6 @@ print('🏠 CHILD HOME CREATED = [$childId]');
             ),
             ElevatedButton(
               onPressed: () async {
-                
                 try {
                   print('🚨 HOME SEND BUTTON PRESSED');
                   print('🚨 enteredId: $enteredId');
@@ -72,8 +69,8 @@ print('🏠 CHILD HOME CREATED = [$childId]');
                   Navigator.pop(dialogContext);
 
                   NotificationService.showSuccessSnackBar(
-  'تم إرسال طلب الصداقة ✅',
-);
+                    'تم إرسال طلب الصداقة ✅',
+                  );
                 } on FirebaseException catch (e) {
                   print('Friend request test error: $e');
 
@@ -108,7 +105,7 @@ print('🏠 CHILD HOME CREATED = [$childId]');
                     message = 'تعذر العثور على ملف الطفل';
                   }
 
-                 NotificationService.showErrorSnackBar(message);
+                  NotificationService.showErrorSnackBar(message);
                 }
               },
               child: const Text('إرسال'),
@@ -146,47 +143,42 @@ print('🏠 CHILD HOME CREATED = [$childId]');
 
         final data = snapshot.data!.data() as Map<String, dynamic>;
         bool isLetterCompleted(String letter) {
-  final dynamic rawExerciseProgress = data['exerciseProgress'];
+          final dynamic rawExerciseProgress = data['exerciseProgress'];
 
-  if (rawExerciseProgress is! Map) {
-    return false;
-  }
+          if (rawExerciseProgress is! Map) {
+            return false;
+          }
 
-  final dynamic letterProgress = rawExerciseProgress[letter];
+          final dynamic letterProgress = rawExerciseProgress[letter];
 
-  if (letterProgress is! Map) {
-    return false;
-  }
+          if (letterProgress is! Map) {
+            return false;
+          }
 
-  final dynamic advancedProgress = letterProgress['advanced'];
+          final dynamic advancedProgress = letterProgress['advanced'];
 
-  if (advancedProgress is! Map) {
-    return false;
-  }
+          if (advancedProgress is! Map) {
+            return false;
+          }
 
-  return advancedProgress['listeningPassed'] == true &&
-      advancedProgress['pronunciationPassed'] == true;
-}
+          return advancedProgress['listeningPassed'] == true &&
+              advancedProgress['pronunciationPassed'] == true;
+        }
 
         final bool hasCompletedPlacement = data['placementDone'] ?? false;
-        final String firstName =
-    (data['firstName'] ?? '').toString().trim();
+        final String firstName = (data['firstName'] ?? '').toString().trim();
 
-final String nickname =
-    (data['nickname'] ?? '').toString().trim();
+        final String nickname = (data['nickname'] ?? '').toString().trim();
 
-final String legacyName =
-    (data['name'] ?? '').toString().trim();
+        final String legacyName = (data['name'] ?? '').toString().trim();
 
-final String displayName = nickname.isNotEmpty
-    ? nickname
-    : firstName.isNotEmpty
-        ? firstName
-        : legacyName.isNotEmpty
+        final String displayName = nickname.isNotEmpty
+            ? nickname
+            : firstName.isNotEmpty
+            ? firstName
+            : legacyName.isNotEmpty
             ? legacyName
             : 'بطل فصيح';
-
-       
 
         // ─── Dynamic Daily Goal Logic ────────────────────────────────────────
         int assignedLettersCount = 0;
@@ -194,14 +186,13 @@ final String displayName = nickname.isNotEmpty
         if (data['letterScores'] != null) {
           final Map<dynamic, dynamic> scores = data['letterScores'] as Map;
 
-        assignedLettersCount = scores.entries.where((entry) {
-  final num scoreValue =
-      entry.value is num ? entry.value : 0;
+          assignedLettersCount = scores.entries.where((entry) {
+            final num scoreValue = entry.value is num ? entry.value : 0;
 
-  final String letter = entry.key.toString();
+            final String letter = entry.key.toString();
 
-  return scoreValue < 80 && !isLetterCompleted(letter);
-}).length;
+            return scoreValue < 80 && !isLetterCompleted(letter);
+          }).length;
         } else if (data['assignedLetters'] != null) {
           assignedLettersCount = (data['assignedLetters'] as List).length;
         }
@@ -220,11 +211,11 @@ final String displayName = nickname.isNotEmpty
           for (final entry in scores.entries) {
             final num score = entry.value is num ? entry.value : 0;
 
-        final String letter = entry.key.toString();
+            final String letter = entry.key.toString();
 
-if (score < 80 && !isLetterCompleted(letter)) {
-  practiceLetters.add(letter);
-}
+            if (score < 80 && !isLetterCompleted(letter)) {
+              practiceLetters.add(letter);
+            }
           }
         } else if (data['assignedLetters'] != null) {
           practiceLetters.addAll(
@@ -235,23 +226,13 @@ if (score < 80 && !isLetterCompleted(letter)) {
         }
 
         // ─── Stats ───────────────────────────────────────────────────────────
-        final String displayStreak = toArabicDigits(
-          (data['streak'] != null && data['streak'] > 0)
-              ? data['streak']
-              : _mockChild.streak,
-        );
+        final int streak = (data['streak'] as num?)?.toInt() ?? 0;
 
-        final String displayPoints = toArabicDigits(
-          (data['points'] != null && data['points'] > 0)
-              ? data['points']
-              : _mockChild.points,
-        );
+        final int points = (data['points'] as num?)?.toInt() ?? 0;
 
-        final String displayRank = toArabicDigits(
-          (data['rank'] != null && data['rank'] > 0)
-              ? '#${data['rank']}'
-              : '#${_mockChild.rank}',
-        );
+        final String displayStreak = toArabicDigits(streak);
+
+        final String displayPoints = toArabicDigits(points);
 
         return Directionality(
           textDirection: TextDirection.rtl,
@@ -265,33 +246,33 @@ if (score < 80 && !isLetterCompleted(letter)) {
                 // لم يتم تغيير تصميمه أو وظيفته
                 // ============================================================
                 _ChildHeader(
-  name: displayName,
-  childId: childId,
-  avatar: data['avatar'] ?? '🦁',
-),
+                  name: displayName,
+                  childId: childId,
+                  avatar: data['avatar'] ?? '🦁',
+                ),
 
                 Expanded(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
                     child: Column(
                       children: [
-                       // ====================================================
-// PLACEMENT TEST BANNER
-// يظهر فقط إذا الطفل لم يأخذ الاختبار
-// ====================================================
-if (!hasCompletedPlacement) ...[
-_TestBanner(
-  onTap: ()  {
-      Navigator.pushNamed(
-        context,
-        '/child/placement-test',
-        arguments: childId,
-      );
-    },
-  ),
+                        // ====================================================
+                        // PLACEMENT TEST BANNER
+                        // يظهر فقط إذا الطفل لم يأخذ الاختبار
+                        // ====================================================
+                        if (!hasCompletedPlacement) ...[
+                          _TestBanner(
+                            onTap: () {
+                              Navigator.pushNamed(
+                                context,
+                                '/child/placement-test',
+                                arguments: childId,
+                              );
+                            },
+                          ),
 
-  const SizedBox(height: 18),
-],
+                          const SizedBox(height: 18),
+                        ],
 
                         // ====================================================
                         // STATS
@@ -326,13 +307,7 @@ _TestBanner(
 
                             // ── Rank
                             Expanded(
-                              child: _StatCard(
-                                icon: Icons.emoji_events_rounded,
-                                value: displayRank,
-                                label: 'الترتيب',
-                                iconColor: const Color(0xFF6F2DA8),
-                                cardColor: const Color(0xFFF8F1FF),
-                              ),
+                              child: _CommunityRankStatCard(childId: childId),
                             ),
                           ],
                         ),
@@ -381,20 +356,16 @@ class _ChildHeader extends StatelessWidget {
   final String childId;
   final String name;
   final String avatar;
-  
 
   const _ChildHeader({
     required this.childId,
     required this.name,
     required this.avatar,
-    
   });
 
   void _showLogoutDialog(BuildContext context) {
-showDialog(
-  context: context,
-  builder: (_) => const ParentPasswordDialog(),
-);  }
+    showDialog(context: context, builder: (_) => const ParentPasswordDialog());
+  }
 
   void _showChildLogoutConfirmation(
     BuildContext context,
@@ -497,76 +468,74 @@ showDialog(
       _showLogoutDialog(context);
     }
   }
-Future<int> _getValidUnreadCount(
-  List<QueryDocumentSnapshot<Map<String, dynamic>>> docs,
-) async {
-  final now = DateTime.now();
-  int count = 0;
 
-  for (final doc in docs) {
-    final data = doc.data();
+  Future<int> _getValidUnreadCount(
+    List<QueryDocumentSnapshot<Map<String, dynamic>>> docs,
+  ) async {
+    final now = DateTime.now();
+    int count = 0;
 
-    final createdAt = data['createdAt'];
+    for (final doc in docs) {
+      final data = doc.data();
 
-    if (createdAt is! Timestamp) {
-      continue;
+      final createdAt = data['createdAt'];
+
+      if (createdAt is! Timestamp) {
+        continue;
+      }
+
+      if (now.difference(createdAt.toDate()) >= const Duration(hours: 48)) {
+        continue;
+      }
+
+      final type = data['type']?.toString() ?? '';
+
+      if (type == 'friend_request') {
+        count++;
+        continue;
+      }
+
+      if (type == 'practice_invitation') {
+        final sessionId = data['referenceId']?.toString() ?? '';
+
+        if (sessionId.isEmpty) {
+          continue;
+        }
+
+        final sessionSnapshot = await FirebaseFirestore.instance
+            .collection('practice_sessions')
+            .doc(sessionId)
+            .get();
+
+        if (!sessionSnapshot.exists || sessionSnapshot.data() == null) {
+          continue;
+        }
+
+        final sessionData = sessionSnapshot.data()!;
+
+        if (sessionData['status'] != 'pending') {
+          continue;
+        }
+
+        final sessionCreatedAt = sessionData['createdAt'];
+
+        if (sessionCreatedAt is! Timestamp) {
+          continue;
+        }
+
+        final invitationAge = now.difference(sessionCreatedAt.toDate());
+
+        if (invitationAge >= const Duration(minutes: 30)) {
+          continue;
+        }
+
+        count++;
+      }
     }
 
-    if (now.difference(createdAt.toDate()) >=
-        const Duration(hours: 48)) {
-      continue;
-    }
-
-    final type = data['type']?.toString() ?? '';
-
-    if (type == 'friend_request') {
-      count++;
-      continue;
-    }
-
-    if (type == 'practice_invitation') {
-      final sessionId = data['referenceId']?.toString() ?? '';
-
-      if (sessionId.isEmpty) {
-        continue;
-      }
-
-      final sessionSnapshot = await FirebaseFirestore.instance
-          .collection('practice_sessions')
-          .doc(sessionId)
-          .get();
-
-      if (!sessionSnapshot.exists ||
-          sessionSnapshot.data() == null) {
-        continue;
-      }
-
-      final sessionData = sessionSnapshot.data()!;
-
-      if (sessionData['status'] != 'pending') {
-        continue;
-      }
-
-      final sessionCreatedAt = sessionData['createdAt'];
-
-      if (sessionCreatedAt is! Timestamp) {
-        continue;
-      }
-
-      final invitationAge = now.difference(
-        sessionCreatedAt.toDate(),
-      );
-
-      if (invitationAge >= const Duration(minutes: 30)) {
-        continue;
-      }
-
-      count++;
-    }
+    return count;
   }
 
-  return count;
-}
   @override
   Widget build(BuildContext context) {
     return FaseehStyle.buildLargeHeader(
@@ -584,85 +553,86 @@ Future<int> _getValidUnreadCount(
 
       trailingActions: [
         StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-  stream: FirebaseFirestore.instance
-      .collection('notifications')
-      .where('receiverId', isEqualTo: childId)
-      .where('isRead', isEqualTo: false)
-      .snapshots(),
-builder: (context, snapshot) {
-  final docs = snapshot.data?.docs ?? [];
+          stream: FirebaseFirestore.instance
+              .collection('notifications')
+              .where('receiverId', isEqualTo: childId)
+              .where('isRead', isEqualTo: false)
+              .snapshots(),
+          builder: (context, snapshot) {
+            final docs = snapshot.data?.docs ?? [];
 
-  return FutureBuilder<int>(
-    future: _getValidUnreadCount(docs),
-    builder: (context, countSnapshot) {
-      final unreadCount = countSnapshot.data ?? 0;
+            return FutureBuilder<int>(
+              future: _getValidUnreadCount(docs),
+              builder: (context, countSnapshot) {
+                final unreadCount = countSnapshot.data ?? 0;
 
-      return SizedBox(
-      width: 48,
-      height: 48,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Center(
-            child: IconButton(
-              icon: const Icon(
-                Icons.notifications_rounded,
-                color: Colors.white,
-                size: 26,
-              ),
-              onPressed: () {
-  print('🔔 BELL OPENED');
-  print('🏠 HOME childId = [$childId]');
-  print('👶 SESSION childId = [${ChildSession.currentChildId}]');
+                return SizedBox(
+                  width: 48,
+                  height: 48,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Center(
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.notifications_rounded,
+                            color: Colors.white,
+                            size: 26,
+                          ),
+                          onPressed: () {
+                            print('🔔 BELL OPENED');
+                            print('🏠 HOME childId = [$childId]');
+                            print(
+                              '👶 SESSION childId = [${ChildSession.currentChildId}]',
+                            );
 
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (_) => NotificationsScreen(
-        childId: childId,
-      ),
-    ),
-  );
-},
-            ),
-          ),
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    NotificationsScreen(childId: childId),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
 
-          if (unreadCount > 0)
-            Positioned(
-              top: 4,
-              right: 4,
-              child: Container(
-                constraints: const BoxConstraints(
-                  minWidth: 18,
-                  minHeight: 18,
-                ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 5,
-                  vertical: 2,
-                ),
-                decoration: const BoxDecoration(
-                  color: Color(0xFFFF6969),
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: Text(
-                    unreadCount > 9 ? '9+' : '$unreadCount',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                    ),
+                      if (unreadCount > 0)
+                        Positioned(
+                          top: 4,
+                          right: 4,
+                          child: Container(
+                            constraints: const BoxConstraints(
+                              minWidth: 18,
+                              minHeight: 18,
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 5,
+                              vertical: 2,
+                            ),
+                            decoration: const BoxDecoration(
+                              color: Color(0xFFFF6969),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Center(
+                              child: Text(
+                                unreadCount > 9 ? '9+' : '$unreadCount',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
-                ),
-              ),
-            ),
-              ],
-      ),
-    );
-    },
-  );
-},
-),
+                );
+              },
+            );
+          },
+        ),
         SizedBox(
           width: 48,
           height: 48,
@@ -692,15 +662,15 @@ class ParentPasswordDialog extends StatefulWidget {
     super.key,
     this.targetChildId,
     this.notificationType,
-    this.openParentNotifications=false,
+    this.openParentNotifications = false,
   });
 
   @override
-  State<ParentPasswordDialog> createState() =>
-      _ParentPasswordDialogState();
+  State<ParentPasswordDialog> createState() => _ParentPasswordDialogState();
 }
 
-class _ParentPasswordDialogState extends State<ParentPasswordDialog> {  final _passwordController = TextEditingController();
+class _ParentPasswordDialogState extends State<ParentPasswordDialog> {
+  final _passwordController = TextEditingController();
 
   bool _obscurePassword = true;
   bool _hasError = false;
@@ -748,14 +718,13 @@ class _ParentPasswordDialogState extends State<ParentPasswordDialog> {  final _p
       );
 
       ChildSession.currentChildId = null;
-ChildSession.currentParentId =
-    FirebaseAuth.instance.currentUser?.uid;
+      ChildSession.currentParentId = FirebaseAuth.instance.currentUser?.uid;
 
-await FcmService().saveTokenForParent();
+      await FcmService().saveTokenForParent();
 
-print('👨‍👩‍👧 SWITCHED TO PARENT MODE');
-print('👶 CHILD SESSION = ${ChildSession.currentChildId}');
-print('👨 PARENT ID = ${ChildSession.currentParentId}');
+      print('👨‍👩‍👧 SWITCHED TO PARENT MODE');
+      print('👶 CHILD SESSION = ${ChildSession.currentChildId}');
+      print('👨 PARENT ID = ${ChildSession.currentParentId}');
 
       if (mounted) {
         navigator.pop();
@@ -766,23 +735,20 @@ print('👨 PARENT ID = ${ChildSession.currentParentId}');
       );
 
       if (mounted) {
-  final rootNavigator = Navigator.of(
-    context,
-    rootNavigator: true,
-  );
+        final rootNavigator = Navigator.of(context, rootNavigator: true);
 
-  // Clear the child navigation stack and enter Parent Dashboard.
-  rootNavigator.pushNamedAndRemoveUntil(
-    '/parent/dashboard',
-    (route) => false,
-  );
+        // Clear the child navigation stack and enter Parent Dashboard.
+        rootNavigator.pushNamedAndRemoveUntil(
+          '/parent/dashboard',
+          (route) => false,
+        );
 
-  // If the parent came from a parent notification,
-  // open Parent Notifications on top of the dashboard.
-  if (widget.openParentNotifications) {
-    rootNavigator.pushNamed('/parent/notifications');
-  }
-}
+        // If the parent came from a parent notification,
+        // open Parent Notifications on top of the dashboard.
+        if (widget.openParentNotifications) {
+          rootNavigator.pushNamed('/parent/notifications');
+        }
+      }
     } on FirebaseAuthException catch (e) {
       setState(() {
         _loading = false;
@@ -943,9 +909,7 @@ print('👨 PARENT ID = ${ChildSession.currentParentId}');
 class _TestBanner extends StatefulWidget {
   final VoidCallback onTap;
 
-  const _TestBanner({
-    required this.onTap,
-  });
+  const _TestBanner({required this.onTap});
 
   @override
   State<_TestBanner> createState() => _TestBannerState();
@@ -968,12 +932,7 @@ class _TestBannerState extends State<_TestBanner>
     _scale = Tween<double>(
       begin: 1,
       end: 0.97,
-    ).animate(
-      CurvedAnimation(
-        parent: _ctrl,
-        curve: Curves.easeInOut,
-      ),
-    );
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
   }
 
   @override
@@ -991,10 +950,7 @@ class _TestBannerState extends State<_TestBanner>
     return AnimatedBuilder(
       animation: _scale,
       builder: (_, child) {
-        return Transform.scale(
-          scale: _scale.value,
-          child: child,
-        );
+        return Transform.scale(scale: _scale.value, child: child);
       },
       child: GestureDetector(
         onTapDown: (_) => _ctrl.forward(),
@@ -1239,7 +1195,7 @@ class _PlacementMiniStep extends StatelessWidget {
 // =============================================================================
 
 class _PlacementBannerBunny extends StatelessWidget {
- const _PlacementBannerBunny();
+  const _PlacementBannerBunny();
 
   @override
   Widget build(BuildContext context) {
@@ -1248,8 +1204,8 @@ class _PlacementBannerBunny extends StatelessWidget {
     const Color innerEar = Color(0xFFFFA1B7);
     const Color details = Color(0xFF4D3855);
 
- const Color faceColor = normalFace;
-const Color bodyColor = normalBody;
+    const Color faceColor = normalFace;
+    const Color bodyColor = normalBody;
 
     return Stack(
       alignment: Alignment.center,
@@ -1268,9 +1224,9 @@ const Color bodyColor = normalBody;
               borderRadius: BorderRadius.circular(13),
             ),
             child: const Text(
-  'هيا!',
-  style: TextStyle(
-    color: Color(0xFF8B55B3),
+              'هيا!',
+              style: TextStyle(
+                color: Color(0xFF8B55B3),
                 fontSize: 9,
                 fontWeight: FontWeight.w700,
                 fontFamily: 'Tajawal',
@@ -1282,37 +1238,37 @@ const Color bodyColor = normalBody;
         // =========================================================
         // Happy decorative lines
         // =========================================================
-          Positioned(
-            top: 38,
-            right: 3,
-            child: Transform.rotate(
-              angle: -0.35,
-              child: Container(
-                width: 4,
-                height: 12,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFD36A),
-                  borderRadius: BorderRadius.circular(5),
-                ),
+        Positioned(
+          top: 38,
+          right: 3,
+          child: Transform.rotate(
+            angle: -0.35,
+            child: Container(
+              width: 4,
+              height: 12,
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFD36A),
+                borderRadius: BorderRadius.circular(5),
               ),
             ),
           ),
+        ),
 
-          Positioned(
-            top: 47,
-            right: 0,
-            child: Transform.rotate(
-              angle: 0.60,
-              child: Container(
-                width: 4,
-                height: 11,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFD36A),
-                  borderRadius: BorderRadius.circular(5),
-                ),
+        Positioned(
+          top: 47,
+          right: 0,
+          child: Transform.rotate(
+            angle: 0.60,
+            child: Container(
+              width: 4,
+              height: 11,
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFD36A),
+                borderRadius: BorderRadius.circular(5),
               ),
             ),
           ),
+        ),
 
         // =========================================================
         // Right ear
@@ -1437,31 +1393,31 @@ const Color bodyColor = normalBody;
                 ),
 
                 // Cheeks
-                  Positioned(
-                    top: 35,
-                    right: 7,
-                    child: Container(
-                      width: 9,
-                      height: 5,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFF96AC).withOpacity(0.50),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
+                Positioned(
+                  top: 35,
+                  right: 7,
+                  child: Container(
+                    width: 9,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFF96AC).withOpacity(0.50),
+                      borderRadius: BorderRadius.circular(10),
                     ),
                   ),
+                ),
 
-                  Positioned(
-                    top: 35,
-                    left: 7,
-                    child: Container(
-                      width: 9,
-                      height: 5,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFF96AC).withOpacity(0.50),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
+                Positioned(
+                  top: 35,
+                  left: 7,
+                  child: Container(
+                    width: 9,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFF96AC).withOpacity(0.50),
+                      borderRadius: BorderRadius.circular(10),
                     ),
                   ),
+                ),
 
                 // Nose
                 Positioned(
@@ -1486,10 +1442,7 @@ const Color bodyColor = normalBody;
                     height: 8,
                     decoration: BoxDecoration(
                       border: Border(
-                        bottom: BorderSide(
-color: details,
-                          width: 1.5,
-                        ),
+                        bottom: BorderSide(color: details, width: 1.5),
                       ),
                       borderRadius: const BorderRadius.only(
                         bottomLeft: Radius.circular(10),
@@ -1502,12 +1455,10 @@ color: details,
             ),
           ),
         ),
-              ],
+      ],
     );
   }
 }
-
-       
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Stat Card
@@ -1600,6 +1551,124 @@ class _StatCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _CommunityRankStatCard extends StatelessWidget {
+  final String childId;
+
+  const _CommunityRankStatCard({required this.childId});
+
+  int? _calculateRank(
+    List<QueryDocumentSnapshot<Map<String, dynamic>>> documents,
+  ) {
+    final players = List<QueryDocumentSnapshot<Map<String, dynamic>>>.from(
+      documents,
+    );
+
+    players.sort((a, b) {
+      final aData = a.data();
+      final bData = b.data();
+
+      final int aPoints = (aData['points'] as num?)?.toInt() ?? 0;
+
+      final int bPoints = (bData['points'] as num?)?.toInt() ?? 0;
+
+      final int pointsComparison = bPoints.compareTo(aPoints);
+
+      if (pointsComparison != 0) {
+        return pointsComparison;
+      }
+
+      final int aStreak = (aData['streak'] as num?)?.toInt() ?? 0;
+
+      final int bStreak = (bData['streak'] as num?)?.toInt() ?? 0;
+
+      return bStreak.compareTo(aStreak);
+    });
+
+    int previousPoints = -1;
+    int previousStreak = -1;
+    int currentRank = 0;
+
+    for (int i = 0; i < players.length; i++) {
+      final document = players[i];
+      final data = document.data();
+
+      final int points = (data['points'] as num?)?.toInt() ?? 0;
+
+      final int streak = (data['streak'] as num?)?.toInt() ?? 0;
+
+      final bool newRank =
+          i == 0 || points != previousPoints || streak != previousStreak;
+
+      if (newRank) {
+        currentRank = i + 1;
+      }
+
+      if (document.id == childId) {
+        return currentRank;
+      }
+
+      previousPoints = points;
+      previousStreak = streak;
+    }
+
+    return null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final profileRef = FirebaseFirestore.instance
+        .collection('leaderboard_profiles')
+        .doc(childId);
+
+    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      stream: profileRef.snapshots(),
+      builder: (context, profileSnapshot) {
+        if (!profileSnapshot.hasData || !profileSnapshot.data!.exists) {
+          return _buildCard('—');
+        }
+
+        final profileData = profileSnapshot.data!.data();
+
+        final String ageGroup = (profileData?['ageGroup'] ?? '').toString();
+
+        if (ageGroup.isEmpty) {
+          return _buildCard('—');
+        }
+
+        return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+          stream: FirebaseFirestore.instance
+              .collection('leaderboard_profiles')
+              .where('ageGroup', isEqualTo: ageGroup)
+              .snapshots(),
+          builder: (context, leaderboardSnapshot) {
+            if (!leaderboardSnapshot.hasData) {
+              return _buildCard('—');
+            }
+
+            final int? rank = _calculateRank(leaderboardSnapshot.data!.docs);
+
+            final String rankText = rank == null
+                ? '—'
+                : '#${toArabicDigits(rank)}';
+
+            return _buildCard(rankText);
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildCard(String value) {
+    return _StatCard(
+      icon: Icons.emoji_events_rounded,
+      value: value,
+      label: 'الترتيب',
+      iconColor: const Color(0xFF6F2DA8),
+      cardColor: const Color(0xFFF8F1FF),
     );
   }
 }
