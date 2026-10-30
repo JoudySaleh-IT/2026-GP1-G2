@@ -40,7 +40,7 @@ class AuthService {
       } else if (e.code == 'invalid-email') {
         print("البريد الإلكتروني غير صالح.");
       }
-      rethrow; 
+      rethrow;
     } catch (e) {
       print("حدث خطأ غير متوقع أثناء التسجيل: $e");
       return null;
@@ -66,258 +66,252 @@ class AuthService {
 
   // ─── إضافة ملف طفل جديد (يدعم تعدد الأطفال) ───
   // ─── إضافة ملف طفل جديد (تحديث القيم الابتدائية) ───
-Future<bool> createChildProfile({
-  required String firstName,
-  required String lastName,
-  String? nickname,
-  required int age,
-  required DateTime dob,
-  required String gender,
-  required String avatar,
-}) async {
-  try {
-    final String? currentParentId = _auth.currentUser?.uid;
+  Future<bool> createChildProfile({
+    required String firstName,
+    required String lastName,
+    String? nickname,
+    required int age,
+    required DateTime dob,
+    required String gender,
+    required String avatar,
+  }) async {
+    try {
+      final String? currentParentId = _auth.currentUser?.uid;
 
-    if (currentParentId == null) {
-      return false;
-    }
-final String fullName = '$firstName $lastName'.trim();
-final String cleanNickname = nickname?.trim() ?? '';
-
-    const int maxAttempts = 10;
-
-    for (int attempt = 0; attempt < maxAttempts; attempt++) {
-      // Generate a candidate public Faseh ID.
-      final String fasehId =
-          await _fasehIdService.generateUniqueFasehId();
-
-      // Reserve the child document ID before writing anything.
-      final DocumentReference<Map<String, dynamic>> childRef =
-          _db.collection('children').doc();
-
-      final DocumentReference<Map<String, dynamic>> fasehIdRef =
-          _db.collection('faseh_ids').doc(fasehId);
-
-      final DocumentReference<Map<String, dynamic>> publicProfileRef =
-          _db.collection('child_public_profiles').doc(childRef.id);
-
-      try {
-        await _db.runTransaction((transaction) async {
-          // Final uniqueness check inside the transaction.
-          final fasehIdSnapshot =
-              await transaction.get(fasehIdRef);
-
-          if (fasehIdSnapshot.exists) {
-            throw Exception('FASEH_ID_COLLISION');
-          }
-
-          // 1. Private child document
-          transaction.set(childRef, {
-  'parentId': currentParentId,
-
-  // Child identity
-  'firstName': firstName.trim(),
-  'lastName': lastName.trim(),
-  'nickname': cleanNickname,
-
-  // Keep name temporarily for compatibility with existing screens
-  'name': fullName,
-
-  'dob': Timestamp.fromDate(dob),
-  'age': age,
-  'gender': gender,
-  'avatar': avatar,
-  'progress': 0,
-  'placementDone': false,
-  'fasehId': fasehId,
-  'createdAt': FieldValue.serverTimestamp(),
-});
-
-          // 2. Faseh ID lookup document
-          transaction.set(fasehIdRef, {
-            'childId': childRef.id,
-            'createdAt': FieldValue.serverTimestamp(),
-          });
-
-          // 3. Safe public profile
-          transaction.set(publicProfileRef, {
-  'fasehId': fasehId,
-
-  'firstName': firstName.trim(),
-  'lastName': lastName.trim(),
-
-  // Temporary compatibility field
-  'name': fullName,
-
-  'avatar': avatar,
-  'createdAt': FieldValue.serverTimestamp(),
-});
-        });
-
-        // Everything was created successfully.
-        return true;
-      } catch (e) {
-        if (e.toString().contains('FASEH_ID_COLLISION')) {
-          // Extremely unlikely, but generate another ID and retry.
-          continue;
-        }
-
-        rethrow;
+      if (currentParentId == null) {
+        return false;
       }
-    }
+      final String fullName = '$firstName $lastName'.trim();
+      final String cleanNickname = nickname?.trim() ?? '';
 
-    throw Exception('Failed to generate a unique Faseh ID.');
-  } catch (e) {
-    print("Error creating child: $e");
-    rethrow;
-  }
-}
+      const int maxAttempts = 10;
 
-// ─── إنشاء Faseh ID للأطفال الموجودين مسبقاً ───
-Future<String> ensureChildFasehIdentity(String childId) async {
-  try {
-    final String? currentParentId = _auth.currentUser?.uid;
+      for (int attempt = 0; attempt < maxAttempts; attempt++) {
+        // Generate a candidate public Faseh ID.
+        final String fasehId = await _fasehIdService.generateUniqueFasehId();
 
-    if (currentParentId == null) {
-      throw Exception('Parent is not authenticated.');
-    }
+        // Reserve the child document ID before writing anything.
+        final DocumentReference<Map<String, dynamic>> childRef = _db
+            .collection('children')
+            .doc();
 
-    final DocumentReference<Map<String, dynamic>> childRef =
-        _db.collection('children').doc(childId);
+        final DocumentReference<Map<String, dynamic>> fasehIdRef = _db
+            .collection('faseh_ids')
+            .doc(fasehId);
 
-    // Read the existing child first.
-    final childSnapshot = await childRef.get();
+        final DocumentReference<Map<String, dynamic>> publicProfileRef = _db
+            .collection('child_public_profiles')
+            .doc(childRef.id);
 
-    if (!childSnapshot.exists) {
-      throw Exception('Child does not exist.');
-    }
+        try {
+          await _db.runTransaction((transaction) async {
+            // Final uniqueness check inside the transaction.
+            final fasehIdSnapshot = await transaction.get(fasehIdRef);
 
-    final childData = childSnapshot.data()!;
+            if (fasehIdSnapshot.exists) {
+              throw Exception('FASEH_ID_COLLISION');
+            }
 
-    // Make sure this child belongs to the logged-in parent.
-    if (childData['parentId'] != currentParentId) {
-      throw Exception('You do not own this child profile.');
-    }
+            // 1. Private child document
+            transaction.set(childRef, {
+              'parentId': currentParentId,
 
-    // If the child already has a Faseh ID, do nothing.
-    final String? existingFasehId =
-        childData['fasehId'] as String?;
+              // Child identity
+              'firstName': firstName.trim(),
+              'lastName': lastName.trim(),
+              'nickname': cleanNickname,
 
-    if (existingFasehId != null &&
-        existingFasehId.trim().isNotEmpty) {
-      return existingFasehId;
-    }
+              // Keep name temporarily for compatibility with existing screens
+              'name': fullName,
 
-    const int maxAttempts = 10;
+              'dob': Timestamp.fromDate(dob),
+              'age': age,
+              'gender': gender,
+              'avatar': avatar,
+              'progress': 0,
+              'placementDone': false,
+              'fasehId': fasehId,
+              'createdAt': FieldValue.serverTimestamp(),
+            });
 
-    for (int attempt = 0; attempt < maxAttempts; attempt++) {
-      final String fasehId =
-          await _fasehIdService.generateUniqueFasehId();
+            // 2. Faseh ID lookup document
+            transaction.set(fasehIdRef, {
+              'childId': childRef.id,
+              'createdAt': FieldValue.serverTimestamp(),
+            });
 
-      final DocumentReference<Map<String, dynamic>> fasehIdRef =
-          _db.collection('faseh_ids').doc(fasehId);
+            // 3. Safe public profile
+            transaction.set(publicProfileRef, {
+              'fasehId': fasehId,
 
-      final DocumentReference<Map<String, dynamic>> publicProfileRef =
-          _db.collection('child_public_profiles').doc(childId);
+              'firstName': firstName.trim(),
+              'lastName': lastName.trim(),
 
-      try {
-        final String result =
-            await _db.runTransaction<String>((transaction) async {
-          // Re-read inside the transaction in case something changed.
-          final latestChildSnapshot =
-              await transaction.get(childRef);
+              // Temporary compatibility field
+              'name': fullName,
 
-          if (!latestChildSnapshot.exists) {
-            throw Exception('Child does not exist.');
-          }
-
-          final latestChildData =
-              latestChildSnapshot.data()!;
-
-          if (latestChildData['parentId'] != currentParentId) {
-            throw Exception(
-              'You do not own this child profile.',
-            );
-          }
-
-          // Another process may have already assigned one.
-          final String? currentFasehId =
-              latestChildData['fasehId'] as String?;
-
-          if (currentFasehId != null &&
-              currentFasehId.trim().isNotEmpty) {
-            return currentFasehId;
-          }
-
-          // Final uniqueness check.
-          final fasehIdSnapshot =
-              await transaction.get(fasehIdRef);
-
-          if (fasehIdSnapshot.exists) {
-            throw Exception('FASEH_ID_COLLISION');
-          }
-
-          final String childName =
-    (latestChildData['name'] ?? '').toString().trim();
-
-final String firstName =
-    (latestChildData['firstName'] ?? '').toString().trim();
-
-final String lastName =
-    (latestChildData['lastName'] ?? '').toString().trim();
-
-
-
-final String childAvatar =
-    (latestChildData['avatar'] ?? '').toString();
-
-          // 1. Add fasehId to the EXISTING private child document.
-          transaction.update(childRef, {
-            'fasehId': fasehId,
+              'avatar': avatar,
+              'createdAt': FieldValue.serverTimestamp(),
+            });
           });
 
-          // 2. Create lookup document.
-          transaction.set(fasehIdRef, {
-            'childId': childId,
-            'createdAt': FieldValue.serverTimestamp(),
-          });
+          // Everything was created successfully.
+          return true;
+        } catch (e) {
+          if (e.toString().contains('FASEH_ID_COLLISION')) {
+            // Extremely unlikely, but generate another ID and retry.
+            continue;
+          }
 
-          // 3. Create safe public profile.
-          transaction.set(publicProfileRef, {
-  'fasehId': fasehId,
-
-  // New identity fields
-  'firstName': firstName,
-  'lastName': lastName,
-
-  // Keep legacy/full name for compatibility
-  'name': childName,
-
-  'avatar': childAvatar,
-  'createdAt': FieldValue.serverTimestamp(),
-});
-
-          return fasehId;
-        });
-
-        return result;
-      } catch (e) {
-        if (e.toString().contains('FASEH_ID_COLLISION')) {
-          continue;
+          rethrow;
         }
-
-        rethrow;
       }
-    }
 
-    throw Exception(
-      'Failed to generate a unique Faseh ID.',
-    );
-  } catch (e) {
-    print('Error ensuring child Faseh identity: $e');
-    rethrow;
+      throw Exception('Failed to generate a unique Faseh ID.');
+    } catch (e) {
+      print("Error creating child: $e");
+      rethrow;
+    }
   }
-}
+
+  // ─── إنشاء Faseh ID للأطفال الموجودين مسبقاً ───
+  Future<String> ensureChildFasehIdentity(String childId) async {
+    try {
+      final String? currentParentId = _auth.currentUser?.uid;
+
+      if (currentParentId == null) {
+        throw Exception('Parent is not authenticated.');
+      }
+
+      final DocumentReference<Map<String, dynamic>> childRef = _db
+          .collection('children')
+          .doc(childId);
+
+      // Read the existing child first.
+      final childSnapshot = await childRef.get();
+
+      if (!childSnapshot.exists) {
+        throw Exception('Child does not exist.');
+      }
+
+      final childData = childSnapshot.data()!;
+
+      // Make sure this child belongs to the logged-in parent.
+      if (childData['parentId'] != currentParentId) {
+        throw Exception('You do not own this child profile.');
+      }
+
+      // If the child already has a Faseh ID, do nothing.
+      final String? existingFasehId = childData['fasehId'] as String?;
+
+      if (existingFasehId != null && existingFasehId.trim().isNotEmpty) {
+        return existingFasehId;
+      }
+
+      const int maxAttempts = 10;
+
+      for (int attempt = 0; attempt < maxAttempts; attempt++) {
+        final String fasehId = await _fasehIdService.generateUniqueFasehId();
+
+        final DocumentReference<Map<String, dynamic>> fasehIdRef = _db
+            .collection('faseh_ids')
+            .doc(fasehId);
+
+        final DocumentReference<Map<String, dynamic>> publicProfileRef = _db
+            .collection('child_public_profiles')
+            .doc(childId);
+
+        try {
+          final String result = await _db.runTransaction<String>((
+            transaction,
+          ) async {
+            // Re-read inside the transaction in case something changed.
+            final latestChildSnapshot = await transaction.get(childRef);
+
+            if (!latestChildSnapshot.exists) {
+              throw Exception('Child does not exist.');
+            }
+
+            final latestChildData = latestChildSnapshot.data()!;
+
+            if (latestChildData['parentId'] != currentParentId) {
+              throw Exception('You do not own this child profile.');
+            }
+
+            // Another process may have already assigned one.
+            final String? currentFasehId =
+                latestChildData['fasehId'] as String?;
+
+            if (currentFasehId != null && currentFasehId.trim().isNotEmpty) {
+              return currentFasehId;
+            }
+
+            // Final uniqueness check.
+            final fasehIdSnapshot = await transaction.get(fasehIdRef);
+
+            if (fasehIdSnapshot.exists) {
+              throw Exception('FASEH_ID_COLLISION');
+            }
+
+            final String childName = (latestChildData['name'] ?? '')
+                .toString()
+                .trim();
+
+            final String firstName = (latestChildData['firstName'] ?? '')
+                .toString()
+                .trim();
+
+            final String lastName = (latestChildData['lastName'] ?? '')
+                .toString()
+                .trim();
+
+            final String childAvatar = (latestChildData['avatar'] ?? '')
+                .toString();
+
+            // 1. Add fasehId to the EXISTING private child document.
+            transaction.update(childRef, {'fasehId': fasehId});
+
+            // 2. Create lookup document.
+            transaction.set(fasehIdRef, {
+              'childId': childId,
+              'createdAt': FieldValue.serverTimestamp(),
+            });
+
+            // 3. Create safe public profile.
+            transaction.set(publicProfileRef, {
+              'fasehId': fasehId,
+
+              // New identity fields
+              'firstName': firstName,
+              'lastName': lastName,
+
+              // Keep legacy/full name for compatibility
+              'name': childName,
+
+              'avatar': childAvatar,
+              'createdAt': FieldValue.serverTimestamp(),
+            });
+
+            return fasehId;
+          });
+
+          return result;
+        } catch (e) {
+          if (e.toString().contains('FASEH_ID_COLLISION')) {
+            continue;
+          }
+
+          rethrow;
+        }
+      }
+
+      throw Exception('Failed to generate a unique Faseh ID.');
+    } catch (e) {
+      print('Error ensuring child Faseh identity: $e');
+      rethrow;
+    }
+  }
+
   // ─── مزامنة عمر الطفل بناءً على تاريخ الميلاد ───
   Future<void> syncChildAge(String childId) async {
     try {
@@ -328,7 +322,8 @@ final String childAvatar =
       final dob = (data['dob'] as Timestamp).toDate();
       final now = DateTime.now();
       int age = now.year - dob.year;
-      if (now.month < dob.month || (now.month == dob.month && now.day < dob.day)) {
+      if (now.month < dob.month ||
+          (now.month == dob.month && now.day < dob.day)) {
         age--;
       }
 
@@ -342,7 +337,9 @@ final String childAvatar =
   Future<void> updateName(String newName) async {
     try {
       String parentId = _auth.currentUser!.uid;
-      await _db.collection('parents').doc(parentId).update({'fullName': newName});
+      await _db.collection('parents').doc(parentId).update({
+        'fullName': newName,
+      });
     } catch (e) {
       print("Error updating name: $e");
       rethrow;
@@ -376,146 +373,143 @@ final String childAvatar =
   User? get currentUser => _auth.currentUser;
 
   // ─── تحديث بيانات الطفل (تم حذف gradeLevel تماماً) ───
-Future<void> updateChildProfile({
-  required String childId,
-  required String firstName,
-  required String lastName,
-  String? nickname,
-  required int age,
-  required String avatar,
-  required DateTime dob,
-}) async {
-  try {
-    final String? currentParentId = _auth.currentUser?.uid;
+  Future<void> updateChildProfile({
+    required String childId,
+    required String firstName,
+    required String lastName,
+    String? nickname,
+    required int age,
+    required String avatar,
+    required DateTime dob,
+  }) async {
+    try {
+      final String? currentParentId = _auth.currentUser?.uid;
 
-    if (currentParentId == null) {
-      throw Exception('Parent is not authenticated.');
+      if (currentParentId == null) {
+        throw Exception('Parent is not authenticated.');
+      }
+      final String cleanFirstName = firstName.trim();
+      final String cleanLastName = lastName.trim();
+      final String cleanNickname = nickname?.trim() ?? '';
+
+      final String fullName = '$cleanFirstName $cleanLastName'.trim();
+
+      final childRef = _db.collection('children').doc(childId);
+
+      final publicProfileRef = _db
+          .collection('child_public_profiles')
+          .doc(childId);
+
+      await _db.runTransaction((transaction) async {
+        // ─── ALL READS FIRST ───
+
+        final childSnapshot = await transaction.get(childRef);
+
+        final publicProfileSnapshot = await transaction.get(publicProfileRef);
+
+        if (!childSnapshot.exists) {
+          throw Exception('Child does not exist.');
+        }
+
+        final childData = childSnapshot.data()!;
+
+        if (childData['parentId'] != currentParentId) {
+          throw Exception('You do not own this child profile.');
+        }
+
+        // ─── ALL WRITES AFTER READS ───
+
+        transaction.update(childRef, {
+          'firstName': cleanFirstName,
+          'lastName': cleanLastName,
+          'nickname': cleanNickname,
+
+          // Keep for compatibility with old screens
+          'name': fullName,
+
+          'age': age,
+          'dob': Timestamp.fromDate(dob),
+          'avatar': avatar,
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+
+        // Keep the safe public profile synchronized.
+        if (publicProfileSnapshot.exists) {
+          transaction.update(publicProfileRef, {
+            'firstName': cleanFirstName,
+            'lastName': cleanLastName,
+
+            // Keep for compatibility
+            'name': fullName,
+
+            'avatar': avatar,
+          });
+        }
+      });
+    } catch (e) {
+      print("Error updating child: $e");
+      throw Exception("فشل في تحديث بيانات الطفل");
     }
-  final String cleanFirstName = firstName.trim();
-final String cleanLastName = lastName.trim();
-final String cleanNickname = nickname?.trim() ?? '';
-
-final String fullName =
-    '$cleanFirstName $cleanLastName'.trim();
-
-    final childRef =
-        _db.collection('children').doc(childId);
-
-    final publicProfileRef =
-        _db.collection('child_public_profiles').doc(childId);
-
-    await _db.runTransaction((transaction) async {
-      // ─── ALL READS FIRST ───
-
-      final childSnapshot =
-          await transaction.get(childRef);
-
-      final publicProfileSnapshot =
-          await transaction.get(publicProfileRef);
-
-      if (!childSnapshot.exists) {
-        throw Exception('Child does not exist.');
-      }
-
-      final childData = childSnapshot.data()!;
-
-      if (childData['parentId'] != currentParentId) {
-        throw Exception(
-          'You do not own this child profile.',
-        );
-      }
-
-      // ─── ALL WRITES AFTER READS ───
-
-      transaction.update(childRef, {
-  'firstName': cleanFirstName,
-  'lastName': cleanLastName,
-  'nickname': cleanNickname,
-
-  // Keep for compatibility with old screens
-  'name': fullName,
-
-  'age': age,
-  'dob': Timestamp.fromDate(dob),
-  'avatar': avatar,
-  'updatedAt': FieldValue.serverTimestamp(),
-});
-
-      // Keep the safe public profile synchronized.
-      if (publicProfileSnapshot.exists) {
-  transaction.update(publicProfileRef, {
-    'firstName': cleanFirstName,
-    'lastName': cleanLastName,
-
-    // Keep for compatibility
-    'name': fullName,
-
-    'avatar': avatar,
-  });
-}
-    });
-  } catch (e) {
-    print("Error updating child: $e");
-    throw Exception("فشل في تحديث بيانات الطفل");
   }
-}
 
   // ─── حذف ملف الطفل ───
- Future<void> deleteChild(String childId) async {
-  try {
-    final String? currentParentId = _auth.currentUser?.uid;
+  Future<void> deleteChild(String childId) async {
+    try {
+      final String? currentParentId = _auth.currentUser?.uid;
 
-    if (currentParentId == null) {
-      throw Exception('Parent is not authenticated.');
+      if (currentParentId == null) {
+        throw Exception('Parent is not authenticated.');
+      }
+
+      final childRef = _db.collection('children').doc(childId);
+
+      final publicProfileRef = _db
+          .collection('child_public_profiles')
+          .doc(childId);
+
+      final leaderboardProfileRef = _db
+          .collection('leaderboard_profiles')
+          .doc(childId);
+
+      await _db.runTransaction((transaction) async {
+        // ─── READ FIRST ───
+        final childSnapshot = await transaction.get(childRef);
+
+        if (!childSnapshot.exists) {
+          throw Exception('Child does not exist.');
+        }
+
+        final childData = childSnapshot.data()!;
+
+        if (childData['parentId'] != currentParentId) {
+          throw Exception('You do not own this child profile.');
+        }
+
+        final String? fasehId = childData['fasehId'] as String?;
+
+        // ─── WRITES AFTER READ ───
+
+        // Remove public profile.
+        transaction.delete(publicProfileRef);
+
+        // Remove leaderboard profile.
+        transaction.delete(leaderboardProfileRef);
+
+        // Remove Faseh ID lookup if the child has one.
+        if (fasehId != null && fasehId.trim().isNotEmpty) {
+          final fasehIdRef = _db.collection('faseh_ids').doc(fasehId);
+
+          transaction.delete(fasehIdRef);
+        }
+
+        // Finally remove the private child document.
+        transaction.delete(childRef);
+      });
+    } catch (e) {
+      print('Error deleting child: $e');
+      rethrow;
     }
-
-    final childRef =
-        _db.collection('children').doc(childId);
-
-    final publicProfileRef =
-        _db.collection('child_public_profiles').doc(childId);
-
-    await _db.runTransaction((transaction) async {
-      // ─── READ FIRST ───
-      final childSnapshot =
-          await transaction.get(childRef);
-
-      if (!childSnapshot.exists) {
-        throw Exception('Child does not exist.');
-      }
-
-      final childData = childSnapshot.data()!;
-
-      if (childData['parentId'] != currentParentId) {
-        throw Exception(
-          'You do not own this child profile.',
-        );
-      }
-
-      final String? fasehId =
-          childData['fasehId'] as String?;
-
-      // ─── WRITES AFTER READ ───
-
-      // Remove public profile.
-      transaction.delete(publicProfileRef);
-
-      // Remove Faseh ID lookup if the child has one.
-      if (fasehId != null && fasehId.trim().isNotEmpty) {
-        final fasehIdRef =
-            _db.collection('faseh_ids').doc(fasehId);
-
-        transaction.delete(fasehIdRef);
-      }
-
-      // Finally remove the private child document.
-      transaction.delete(childRef);
-    });
-  } catch (e) {
-    print('Error deleting child: $e');
-    rethrow;
   }
-}
 
   // ─── جلب ID أول طفل (للتوافق) ───
   Future<String?> getFirstChildId() async {
