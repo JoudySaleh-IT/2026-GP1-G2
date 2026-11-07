@@ -1,24 +1,8 @@
-# Ignore the virtual environment
-venv/
-env/
-
-# Ignore the Google Cloud SDK folder
-y/
-
-# Ignore Python cache files
+.git
+.gitignore
 __pycache__/
 *.pyc
-
-# Ignore Mac system files
 .DS_Store
 
-backend/serviceAccountKey.json # لخصوصية بياناتك
-.git                           # لعدم رفع تاريخ التغييرات (حجمه كبير)
-venv/                          # لعدم رفع البيئة الافتراضية (تثقل الرفع جداً)
-__pycache__/                   # ملفات مؤقتة لا داعي لها
-.DS_Store                      # ملفات نظام الماك
-# Old model - not used in production
 final_faseeh_model/
-
-# Local service account credentials
-serviceAccountKey.json
+y/

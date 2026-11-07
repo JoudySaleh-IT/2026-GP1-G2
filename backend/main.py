@@ -282,56 +282,58 @@ async def process_audio(
 # Different-word validation temporarily disabled
 # to avoid rejecting valid pronunciations due to ASR errors.
 
+               # =================================================
+        # 3. Target-Aware Scoring Algorithm
         # =================================================
-        # 3. Targeted Scoring Algorithm
-        # =================================================
+
         final_score = 0.0
 
         normalized_letter = normalize_arabic_text(
             target_letter
         )
 
-        if normalized_letter in normalized_transcription:
-
-            mistakes = levenshtein_distance(
-                normalized_target,
-                normalized_transcription
-            )
-
-            total_letters = len(
-                normalized_target
-            )
-
-            accuracy = max(
-                0,
-                100 - (
-                    (mistakes / total_letters) * 100
-                )
-            )
-
-            final_score = accuracy
-
-        else:
-            final_score = 0.0
-
-        # =================================================
-        # DEBUG — Check ASR vs Rule-Based Scoring
-        # =================================================
-
-        debug_distance = levenshtein_distance(
+        # Calculate whole-word similarity from 0 to 100
+        distance = levenshtein_distance(
             normalized_target,
             normalized_transcription
         )
 
-        debug_max_length = max(
+        max_length = max(
             len(normalized_target),
             len(normalized_transcription)
         )
 
-        debug_similarity = (
-            1 - (debug_distance / debug_max_length)
-            if debug_max_length > 0
-            else 0.0
+        if max_length > 0:
+            word_similarity = max(
+                0.0,
+                (1 - (distance / max_length)) * 100
+            )
+        else:
+            word_similarity = 0.0
+
+        # -------------------------------------------------
+        # Target-letter gate
+        # -------------------------------------------------
+
+        if normalized_letter in normalized_transcription:
+            final_score = 80 + (
+                0.20 * word_similarity
+            )
+        else:
+            final_score = 0.0
+
+        # Keep score between 0 and 100
+        final_score = min(
+            100.0,
+            max(0.0, final_score)
+        )
+
+        # =================================================
+        # DEBUG — Target-Aware Scoring
+        # =================================================
+
+        target_detected = (
+            normalized_letter in normalized_transcription
         )
 
         print("\n========== FASEH DEBUG ==========")
@@ -339,20 +341,26 @@ async def process_audio(
         print("Target letter:", repr(target_letter))
         print("ASR transcription (raw):", repr(transcription))
         print("Normalized expected:", repr(normalized_target))
-        print("Normalized transcription:", repr(normalized_transcription))
         print(
-            "Target detected in RAW transcription:",
-            target_letter in transcription
+            "Normalized transcription:",
+            repr(normalized_transcription)
         )
         print(
-            "Target detected after normalization:",
-            normalize_arabic_text(target_letter)
-            in normalized_transcription
+            "Target detected:",
+            target_detected
         )
-        print("Edit distance:", debug_distance)
-        print("Similarity:", round(debug_similarity, 4))
-        print("Similarity (%):", round(debug_similarity * 100, 2))
-        print("Final score:", final_score)
+        print(
+            "Edit distance:",
+            distance
+        )
+        print(
+            "Word similarity (%):",
+            round(word_similarity, 2)
+        )
+        print(
+            "Final score:",
+            round(final_score, 2)
+        )
         print("=================================\n")
 
         # =================================================
