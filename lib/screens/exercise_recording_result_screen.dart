@@ -615,13 +615,17 @@ class _ExerciseRecordingResultScreenState
 
     const int total = 100;
 
-    final int pct = ((score / total) * 100).round();
+  final int pct = ((score / total) * 100).round();
 
-    // نفس حساب النقاط
-    final int pts = score * 10;
-    final int nextRetryIndex = _getNextRetryIndex();
+final int correctCount = _countCorrectPronunciations();
 
-    final bool hasPendingRetry = nextRetryIndex != -1;
+final bool canAdvance =
+    correctCount >= 6 && score >= 80;
+
+final int pts = score * 10;
+final int nextRetryIndex = _getNextRetryIndex();
+
+final bool hasPendingRetry = nextRetryIndex != -1;
 
     // نفس حساب النجوم
     final int stars = pct >= 90
@@ -746,30 +750,40 @@ class _ExerciseRecordingResultScreenState
                                   }
 
                                   // Normal case
-                                  Navigator.pushNamedAndRemoveUntil(
-                                    context,
-                                    '/child/home',
-                                    (r) => false,
-                                    arguments: _childId,
-                                  );
+                                  // Normal Speaking flow:
+// return to the letter levels screen just like Listening.
+Navigator.pushNamedAndRemoveUntil(
+  context,
+  '/child/letter-levels',
+  (route) => false,
+  arguments: {
+    'letter': _letter,
+    'childId': _childId,
+    'startingLevel': _level,
+  },
+);
                                 },
 
-                                icon: Icon(
-                                  hasPendingRetry
-                                      ? Icons.refresh_rounded
-                                      : Icons.home_rounded,
-                                  size: 18,
-                                ),
+                               icon: Icon(
+  hasPendingRetry
+      ? Icons.refresh_rounded
+      : canAdvance
+          ? Icons.arrow_forward_rounded
+          : Icons.replay_rounded,
+  size: 18,
+),
 
-                                label: Text(
-                                  hasPendingRetry
-                                      ? 'أكمل المحاولات'
-                                      : 'العودة للرئيسية',
-                                  style: const TextStyle(
-                                    fontFamily: 'Tajawal',
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
+label: Text(
+  hasPendingRetry
+      ? 'أكمل المحاولات'
+      : canAdvance
+          ? 'متابعة التمارين'
+          : 'إعادة تمارين النطق',
+  style: const TextStyle(
+    fontFamily: 'Tajawal',
+    fontWeight: FontWeight.w600,
+  ),
+),
 
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: const Color(0xFFFF6969),
