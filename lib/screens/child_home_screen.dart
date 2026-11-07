@@ -180,27 +180,65 @@ class ChildHomeScreen extends StatelessWidget {
             ? legacyName
             : 'بطل فصيح';
 
-        // ─── Dynamic Daily Goal Logic ────────────────────────────────────────
-        int assignedLettersCount = 0;
+       // ─── Dynamic Daily Goal Logic ────────────────────────────────────────
 
-        if (data['letterScores'] != null) {
-          final Map<dynamic, dynamic> scores = data['letterScores'] as Map;
+// عدد الحروف التي ما زال الطفل يحتاج إكمالها
+int assignedLettersCount = 0;
 
-          assignedLettersCount = scores.entries.where((entry) {
-            final num scoreValue = entry.value is num ? entry.value : 0;
+// عدد الحروف التي كانت مطلوبة من الطفل أصلًا بعد تحديد المستوى
+int requiredLettersCount = 0;
 
-            final String letter = entry.key.toString();
+if (data['letterScores'] != null) {
+  final Map<dynamic, dynamic> scores =
+      data['letterScores'] as Map;
 
-            return scoreValue < 80 && !isLetterCompleted(letter);
-          }).length;
-        } else if (data['assignedLetters'] != null) {
-          assignedLettersCount = (data['assignedLetters'] as List).length;
-        }
+  for (final entry in scores.entries) {
+    final num scoreValue =
+        entry.value is num ? entry.value : 0;
 
-        // هدف افتراضي = 3 إذا لم يتم تعيين حروف
-        final int dynamicTodayGoal = assignedLettersCount > 0
-            ? assignedLettersCount
-            : 3;
+    final String letter =
+        entry.key.toString();
+
+    // الحروف التي نتيجتها أقل من 80 هي الحروف المطلوبة من الطفل
+    if (scoreValue < 80) {
+      requiredLettersCount++;
+
+      // إذا لم يكمل Advanced بالكامل، ما زال الحرف متبقيًا
+      if (!isLetterCompleted(letter)) {
+        assignedLettersCount++;
+      }
+    }
+  }
+} else if (data['assignedLetters'] != null) {
+  final List assignedLetters =
+      data['assignedLetters'] as List;
+
+  assignedLettersCount = assignedLetters.length;
+  requiredLettersCount = assignedLetters.length;
+}
+
+// الطفل أنهى رحلته إذا:
+// 1) أخذ تحديد المستوى
+// 2) كان لديه حروف مطلوبة
+// 3) لم يعد هناك أي حرف متبقٍ
+final bool allTrainingCompleted =
+    hasCompletedPlacement &&
+    requiredLettersCount > 0 &&
+    assignedLettersCount == 0;
+// الطفل أخذ تحديد المستوى ولم يحتج أي حرف للتدريب من البداية
+final bool noTrainingNeeded =
+    hasCompletedPlacement &&
+    requiredLettersCount == 0;
+
+// إذا أنهى جميع حروفه، ما عاد عنده هدف تدريب متبقٍ
+final int dynamicTodayGoal =
+    !hasCompletedPlacement
+        ? 0
+        : allTrainingCompleted || noTrainingNeeded
+            ? 0
+            : assignedLettersCount > 0
+                ? assignedLettersCount
+                : 0;
 
         final int todayCompleted = data['todayExercises'] ?? 0;
         final List<String> practiceLetters = [];
@@ -317,14 +355,22 @@ class ChildHomeScreen extends StatelessWidget {
                         // ====================================================
                         // TODAY GOAL
                         // ====================================================
-                        _TodayGoalCard(
-                          done: todayCompleted,
-                          goal: dynamicTodayGoal,
-                        ),
+_TodayGoalCard(
+  done: todayCompleted,
+  goal: dynamicTodayGoal,
+  allCompleted: allTrainingCompleted,
+  hasCompletedPlacement: hasCompletedPlacement,
+  noTrainingNeeded: noTrainingNeeded,
+),
 
                         const SizedBox(height: 18),
 
-                        _PracticeLettersCard(letters: practiceLetters),
+_PracticeLettersCard(
+  letters: practiceLetters,
+  allCompleted: allTrainingCompleted,
+  hasCompletedPlacement: hasCompletedPlacement,
+  noTrainingNeeded: noTrainingNeeded,
+),
 
                         const SizedBox(height: 16),
                       ],
@@ -1679,18 +1725,42 @@ class _CommunityRankStatCard extends StatelessWidget {
 class _TodayGoalCard extends StatelessWidget {
   final int done;
   final int goal;
+  final bool allCompleted;
+  final bool hasCompletedPlacement;
+  final bool noTrainingNeeded;
 
-  const _TodayGoalCard({required this.done, required this.goal});
+ const _TodayGoalCard({
+  required this.done,
+  required this.goal,
+  required this.allCompleted,
+  required this.hasCompletedPlacement,
+  required this.noTrainingNeeded,
+});
 
   @override
   Widget build(BuildContext context) {
     final int safeGoal = goal <= 0 ? 1 : goal;
 
-    final int remaining = (goal - done) < 0 ? 0 : goal - done;
+    final int remaining =
+        allCompleted
+            ? 0
+            : (goal - done) < 0
+                ? 0
+                : goal - done;
 
-    final double progress = (done / safeGoal).clamp(0.0, 1.0).toDouble();
+  final double progress =
+    !hasCompletedPlacement
+        ? 0.0
+        : noTrainingNeeded
+            ? 1.0
+            : allCompleted
+                ? 1.0
+                : (done / safeGoal)
+                    .clamp(0.0, 1.0)
+                    .toDouble();
 
-    final bool completed = remaining == 0;
+    final bool completed =
+        allCompleted || remaining == 0;
 
     return Container(
       width: double.infinity,
@@ -1855,8 +1925,14 @@ class _TodayGoalCard extends StatelessWidget {
                           color: const Color(0xFFFF6969).withOpacity(0.10),
                           borderRadius: BorderRadius.circular(15),
                         ),
-                        child: Text(
-                          toArabicDigits('$done/$goal'),
+child: Text(
+  !hasCompletedPlacement
+      ? 'ابدأ'
+      : noTrainingNeeded
+          ? 'متقن'
+          : allCompleted
+              ? 'مكتمل'
+              : toArabicDigits('$done/$goal'),
                           style: const TextStyle(
                             fontSize: 13,
                             color: Color(0xFFFF6969),
@@ -1890,10 +1966,16 @@ class _TodayGoalCard extends StatelessWidget {
 
                   Padding(
                     padding: const EdgeInsets.only(left: 82),
-                    child: Text(
-                      completed
-                          ? 'أحسنت! حققت هدف اليوم'
-                          : 'باقي ${toArabicDigits(remaining)} تدريبات لتحقيق الهدف!',
+child: Text(
+  !hasCompletedPlacement
+      ? 'ابدأ تحديد المستوى أولًا لنحدد لك الحروف المناسبة'
+      : noTrainingNeeded
+          ?  'رائع! أتقنت جميع الحروف'
+          : allCompleted
+              ? 'أحسنت! أنهيت جميع تدريباتك'
+              : completed
+                  ? 'أحسنت! حققت هدف اليوم'
+                  : 'باقي ${toArabicDigits(remaining)} تدريبات لتحقيق الهدف!',
                       style: const TextStyle(
                         fontSize: 11.5,
                         color: Color(0xFF666666),
@@ -2163,8 +2245,16 @@ class _LetterBubble extends StatelessWidget {
 
 class _PracticeLettersCard extends StatelessWidget {
   final List<String> letters;
+  final bool allCompleted;
+  final bool hasCompletedPlacement;
+  final bool noTrainingNeeded;
 
-  const _PracticeLettersCard({required this.letters});
+  const _PracticeLettersCard({
+    required this.letters,
+    required this.allCompleted,
+    required this.hasCompletedPlacement,
+    required this.noTrainingNeeded,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -2269,10 +2359,14 @@ class _PracticeLettersCard extends StatelessWidget {
 
                   const SizedBox(height: 5),
 
-                  Text(
-                    displayLetters.isEmpty
-                        ? 'ابدأ تحديد المستوى لاكتشاف حروفك'
-                        : 'تدرّب على هذه الحروف لتحسّن نطقك',
+Text(
+  noTrainingNeeded
+      ? 'رائع! لا تحتاج إلى تدريبات إضافية'
+      : allCompleted
+          ? 'أحسنت! أتقنت جميع الحروف المطلوبة'
+          : !hasCompletedPlacement
+              ? 'ابدأ تحديد المستوى لاكتشاف حروفك'
+              : 'تدرّب على هذه الحروف لتحسّن نطقك',
                     style: const TextStyle(
                       fontSize: 11.5,
                       color: Color(0xFF777777),
@@ -2301,13 +2395,18 @@ class _PracticeLettersCard extends StatelessWidget {
                       ),
                     )
                   else
-                    const Center(
-                      child: Icon(
-                        Icons.mic_rounded,
-                        size: 45,
-                        color: Color(0xFFDCC9EB),
-                      ),
-                    ),
+                  
+Center(
+  child: Icon(
+    noTrainingNeeded || allCompleted
+        ? Icons.check_circle_rounded
+        : Icons.mic_rounded,
+    size: 45,
+    color: noTrainingNeeded || allCompleted
+        ? const Color(0xFF59B77B)
+        : const Color(0xFFDCC9EB),
+  ),
+),
 
                   const SizedBox(height: 17),
 
@@ -2321,8 +2420,13 @@ class _PracticeLettersCard extends StatelessWidget {
                         color: const Color(0xFF511281).withOpacity(0.06),
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: const Text(
-                        'كل تدريب يقربك من الإتقان',
+                  
+child: Text(
+  noTrainingNeeded
+      ? 'نتيجتك ممتازة في تحديد المستوى'
+      : allCompleted
+          ? 'رحلتك في التمارين مكتملة'
+          : 'كل تدريب يقربك من الإتقان',
                         style: TextStyle(
                           fontSize: 10.5,
                           color: Color(0xFF6F2DA8),
