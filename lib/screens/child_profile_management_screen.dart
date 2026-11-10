@@ -5,6 +5,7 @@ import '../services/notification_service.dart';
 import 'edit_child_profile_screen.dart';
 import 'style_constants.dart';
 import '../utils/arabic_numbers.dart';
+import '../widgets/child_store_avatar.dart';
 
 // ─── Mock Data ────────────────────────────────────────────────────────────────
 class _WeekDay {
@@ -95,9 +96,7 @@ class _ChildProfileManagementScreenState
                     'تم حذف ملف الطفل الشخصي بنجاح!',
                   );
                 } catch (e) {
-                  NotificationService.showErrorSnackBar(
-  'فشل الحذف',
-);
+                  NotificationService.showErrorSnackBar('فشل الحذف');
                 }
               },
               style: ElevatedButton.styleFrom(
@@ -154,34 +153,32 @@ class _ChildProfileManagementScreenState
             ? snapshot.data!.data() as Map<String, dynamic>
             : {'name': 'تحميل...', 'avatar': '👤', 'age': 0};
 
-        
-final String firstName =
-    (realData['firstName'] ?? '').toString().trim();
+        final String firstName = (realData['firstName'] ?? '')
+            .toString()
+            .trim();
 
-final String lastName =
-    (realData['lastName'] ?? '').toString().trim();
+        final String lastName = (realData['lastName'] ?? '').toString().trim();
 
-final String nickname =
-    (realData['nickname'] ?? '').toString().trim();
+        final String nickname = (realData['nickname'] ?? '').toString().trim();
 
-final String legacyName =
-    (realData['name'] ?? '').toString().trim();
+        final String legacyName = (realData['name'] ?? '').toString().trim();
 
-final String fullName = [
-  firstName,
-  lastName,
-].where((part) => part.isNotEmpty).join(' ');
+        final String fullName = [
+          firstName,
+          lastName,
+        ].where((part) => part.isNotEmpty).join(' ');
 
-final String displayName = nickname.isNotEmpty
-    ? nickname
-    : firstName.isNotEmpty
-        ? firstName
-        : legacyName.isNotEmpty
+        final String displayName = nickname.isNotEmpty
+            ? nickname
+            : firstName.isNotEmpty
+            ? firstName
+            : legacyName.isNotEmpty
             ? legacyName
             : 'بدون اسم';
 
-final String secondaryName =
-    fullName.isNotEmpty ? fullName : legacyName;
+        final String secondaryName = fullName.isNotEmpty
+            ? fullName
+            : legacyName;
 
         return Directionality(
           textDirection: TextDirection.rtl,
@@ -190,14 +187,13 @@ final String secondaryName =
             body: Column(
               children: [
                 _ProfileHeader(
-  childId: widget.childId,
-  onDelete: _confirmDelete,
-  name: displayName,
-  fullName: secondaryName,
-  avatar: realData['avatar'] ?? '🦁',
-  age: realData['age'] ?? 0,
-
-),
+                  childId: widget.childId,
+                  onDelete: _confirmDelete,
+                  name: displayName,
+                  fullName: secondaryName,
+                  avatar: realData['avatar'] ?? '🦁',
+                  age: realData['age'] ?? 0,
+                ),
                 Expanded(
                   child: Scrollbar(
                     controller: _scrollController,
@@ -355,7 +351,7 @@ class _LetterListTile extends StatelessWidget {
                       ),
                     ),
                     Text(
-  '${toArabicDigits('$completed/$total')} تمارين',
+                      '${toArabicDigits('$completed/$total')} تمارين',
                       style: const TextStyle(fontSize: 11, color: Colors.grey),
                     ),
                   ],
@@ -386,7 +382,6 @@ class _ProfileHeader extends StatelessWidget {
   final String fullName;
   final String avatar;
   final int age;
-  
 
   const _ProfileHeader({
     this.childId,
@@ -395,16 +390,15 @@ class _ProfileHeader extends StatelessWidget {
     required this.fullName,
     required this.avatar,
     required this.age,
-    
   });
 
+  String formatAge(int age) {
+    final arabicAge = toArabicDigits(age);
 
-String formatAge(int age) {
-  final arabicAge = toArabicDigits(age);
+    // فصيح يستهدف عمر 5–13
+    return age >= 11 ? '$arabicAge سنة' : '$arabicAge سنوات';
+  }
 
-  // فصيح يستهدف عمر 5–13
-  return age >= 11 ? '$arabicAge سنة' : '$arabicAge سنوات';
-}
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -422,11 +416,17 @@ String formatAge(int age) {
           ),
           const SizedBox(width: 8),
           // Avatar – larger to fit the bigger header
-          Text(
-            avatar,
-            style: const TextStyle(fontSize: 32), // increased from 28
-          ),
-          const SizedBox(width: 12),
+          // Child avatar from Firebase
+          if (childId != null && childId!.isNotEmpty)
+            ChildStoreAvatar(
+              childId: childId!,
+              fallbackAvatar: avatar,
+              size: 56,
+            )
+          else
+            Text(avatar, style: const TextStyle(fontSize: 32)),
+
+          const SizedBox(width: 12), const SizedBox(width: 12),
           // Text column – bigger fonts (18 / 14) to match _EditHeader
           Expanded(
             child: Column(
@@ -443,23 +443,22 @@ String formatAge(int age) {
                   ),
                 ),
                 if (fullName.isNotEmpty && fullName != name)
-  Text(
-    fullName,
-    style: const TextStyle(
-      color: Colors.white70,
-      fontSize: 12,
-      fontFamily: 'Tajawal',
-    ),
-  ),
+                  Text(
+                    fullName,
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 12,
+                      fontFamily: 'Tajawal',
+                    ),
+                  ),
                 Text(
-  formatAge(age),
-  style: const TextStyle(
-    color: Colors.white70,
-    fontSize: 13,
-    fontFamily: 'Tajawal',
-  ),
-),
-                  
+                  formatAge(age),
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 13,
+                    fontFamily: 'Tajawal',
+                  ),
+                ),
               ],
             ),
           ),

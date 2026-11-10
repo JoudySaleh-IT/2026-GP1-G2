@@ -5,6 +5,7 @@ import 'friend_requests_screen.dart';
 import 'style_constants.dart';
 import 'practice_lobby_screen.dart';
 import '../services/notification_service.dart';
+import '../widgets/child_store_avatar.dart';
 
 class NotificationsScreen extends StatelessWidget {
   final String childId;
@@ -15,14 +16,15 @@ class NotificationsScreen extends StatelessWidget {
   static const Color _coral = Color(0xFFFF6969);
   static const Color _background = Color(0xFFFCF9EA);
 
-Stream<DocumentSnapshot<Map<String, dynamic>>> _watchPracticeSession(
-  String sessionId,
-) {
-  return FirebaseFirestore.instance
-      .collection('practice_sessions')
-      .doc(sessionId)
-      .snapshots();
-}
+  Stream<DocumentSnapshot<Map<String, dynamic>>> _watchPracticeSession(
+    String sessionId,
+  ) {
+    return FirebaseFirestore.instance
+        .collection('practice_sessions')
+        .doc(sessionId)
+        .snapshots();
+  }
+
   Future<Map<String, dynamic>?> _getSenderProfile(String senderId) async {
     final snapshot = await FirebaseFirestore.instance
         .collection('child_public_profiles')
@@ -34,17 +36,17 @@ Stream<DocumentSnapshot<Map<String, dynamic>>> _watchPracticeSession(
     return snapshot.data();
   }
 
- void _showMessage(
-  BuildContext context,
-  String message, {
-  bool isError = false,
-}) {
-  if (isError) {
-    NotificationService.showErrorSnackBar(message);
-  } else {
-    NotificationService.showSuccessSnackBar(message);
+  void _showMessage(
+    BuildContext context,
+    String message, {
+    bool isError = false,
+  }) {
+    if (isError) {
+      NotificationService.showErrorSnackBar(message);
+    } else {
+      NotificationService.showSuccessSnackBar(message);
+    }
   }
-}
 
   Future<void> _declinePracticeInvitation(
     BuildContext context,
@@ -64,8 +66,6 @@ Stream<DocumentSnapshot<Map<String, dynamic>>> _watchPracticeSession(
         sessionId: sessionId,
         childId: childId,
       );
-
-    
 
       if (!context.mounted) return;
 
@@ -333,7 +333,6 @@ Stream<DocumentSnapshot<Map<String, dynamic>>> _watchPracticeSession(
                                       );
 
                                   // Session is now in the lobby,
-                                  
 
                                   if (!dialogContext.mounted) {
                                     return;
@@ -489,148 +488,146 @@ Stream<DocumentSnapshot<Map<String, dynamic>>> _watchPracticeSession(
     return '${createdAt.day} ${months[createdAt.month - 1]} ${createdAt.year}';
   }
 
-Widget _buildNotificationItem(
-  BuildContext context,
-  QueryDocumentSnapshot<Map<String, dynamic>> notification,
-) {
-  final data = notification.data();
+  Widget _buildNotificationItem(
+    BuildContext context,
+    QueryDocumentSnapshot<Map<String, dynamic>> notification,
+  ) {
+    final data = notification.data();
 
-  final senderId = data['senderId']?.toString() ?? '';
-  final type = data['type']?.toString() ?? '';
-  final referenceId = data['referenceId']?.toString() ?? '';
-  final isRead = data['isRead'] == true;
-  final createdAt = data['createdAt'] as Timestamp?;
-  final timeText = _formatNotificationTime(createdAt);
+    final senderId = data['senderId']?.toString() ?? '';
+    final type = data['type']?.toString() ?? '';
+    final referenceId = data['referenceId']?.toString() ?? '';
+    final isRead = data['isRead'] == true;
+    final createdAt = data['createdAt'] as Timestamp?;
+    final timeText = _formatNotificationTime(createdAt);
 
-  // Practice Together invitation:
-  // show it only while its session is still pending.
-  if (type == 'practice_invitation' && referenceId.isNotEmpty) {
-    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-      stream: FirebaseFirestore.instance
-          .collection('practice_sessions')
-          .doc(referenceId)
-          .snapshots(),
-      builder: (context, sessionSnapshot) {
-        if (sessionSnapshot.connectionState == ConnectionState.waiting) {
+    // Practice Together invitation:
+    // show it only while its session is still pending.
+    if (type == 'practice_invitation' && referenceId.isNotEmpty) {
+      return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+        stream: FirebaseFirestore.instance
+            .collection('practice_sessions')
+            .doc(referenceId)
+            .snapshots(),
+        builder: (context, sessionSnapshot) {
+          if (sessionSnapshot.connectionState == ConnectionState.waiting) {
+            return const _NotificationLoadingCard();
+          }
+
+          final sessionData = sessionSnapshot.data?.data();
+
+          // Session no longer exists or invitation is no longer pending.
+          if (sessionData == null || sessionData['status'] != 'pending') {
+            return const SizedBox.shrink();
+          }
+
+          final Timestamp? sessionCreatedAt =
+              sessionData['createdAt'] as Timestamp?;
+
+          // Hide invitations that are 30 minutes old or more.
+          if (sessionCreatedAt == null) {
+            return const SizedBox.shrink();
+          }
+
+          final invitationAge = DateTime.now().difference(
+            sessionCreatedAt.toDate(),
+          );
+
+          if (invitationAge >= const Duration(minutes: 30)) {
+            return const SizedBox.shrink();
+          }
+          return _buildNotificationCardWithProfile(
+            context,
+            notification,
+            senderId,
+            type,
+            isRead,
+            timeText,
+          );
+        },
+      );
+    }
+
+    // Other notification types.
+    return _buildNotificationCardWithProfile(
+      context,
+      notification,
+      senderId,
+      type,
+      isRead,
+      timeText,
+    );
+  }
+
+  Widget _buildNotificationCardWithProfile(
+    BuildContext context,
+    QueryDocumentSnapshot<Map<String, dynamic>> notification,
+    String senderId,
+    String type,
+    bool isRead,
+    String timeText,
+  ) {
+    return FutureBuilder<Map<String, dynamic>?>(
+      future: _getSenderProfile(senderId),
+      builder: (context, profileSnapshot) {
+        if (profileSnapshot.connectionState == ConnectionState.waiting) {
           return const _NotificationLoadingCard();
         }
 
-     final sessionData = sessionSnapshot.data?.data();
+        final profile = profileSnapshot.data;
 
-// Session no longer exists or invitation is no longer pending.
-if (sessionData == null || sessionData['status'] != 'pending') {
-  return const SizedBox.shrink();
-}
+        final String firstName = (profile?['firstName'] ?? '')
+            .toString()
+            .trim();
 
-final Timestamp? sessionCreatedAt =
-    sessionData['createdAt'] as Timestamp?;
+        final String lastName = (profile?['lastName'] ?? '').toString().trim();
 
-// Hide invitations that are 30 minutes old or more.
-if (sessionCreatedAt == null) {
-  return const SizedBox.shrink();
-}
+        final String legacyName = (profile?['name'] ?? '').toString().trim();
 
-final invitationAge = DateTime.now().difference(
-  sessionCreatedAt.toDate(),
-);
+        final String fullName = [
+          firstName,
+          lastName,
+        ].where((part) => part.isNotEmpty).join(' ');
 
-if (invitationAge >= const Duration(minutes: 30)) {
-  return const SizedBox.shrink();
-}
-        return _buildNotificationCardWithProfile(
-          context,
-          notification,
-          senderId,
-          type,
-          isRead,
-          timeText,
+        final String displayName = fullName.isNotEmpty
+            ? fullName
+            : legacyName.isNotEmpty
+            ? legacyName
+            : 'صديقك';
+
+        final avatar = profile?['avatar']?.toString() ?? '🌟';
+
+        final String? avatarId = profile?['equippedAvatarId']?.toString();
+
+        final String? backgroundId = profile?['equippedBackgroundId']
+            ?.toString();
+
+        return _NotificationCard(
+          name: displayName,
+          avatar: avatar,
+          avatarId: avatarId,
+          backgroundId: backgroundId,
+          type: type,
+          isRead: isRead,
+          timeText: timeText,
+
+          onTap: type == 'practice_invitation'
+              ? null
+              : () {
+                  _openNotification(context, notification);
+                },
+
+          onAccept: type == 'practice_invitation'
+              ? () => _acceptPracticeInvitation(context, notification)
+              : null,
+
+          onDecline: type == 'practice_invitation'
+              ? () => _declinePracticeInvitation(context, notification)
+              : null,
         );
       },
     );
   }
-
-  // Other notification types.
-  return _buildNotificationCardWithProfile(
-    context,
-    notification,
-    senderId,
-    type,
-    isRead,
-    timeText,
-  );
-}
-Widget _buildNotificationCardWithProfile(
-  BuildContext context,
-  QueryDocumentSnapshot<Map<String, dynamic>> notification,
-  String senderId,
-  String type,
-  bool isRead,
-  String timeText,
-) {
-  return FutureBuilder<Map<String, dynamic>?>(
-    future: _getSenderProfile(senderId),
-    builder: (context, profileSnapshot) {
-      if (profileSnapshot.connectionState == ConnectionState.waiting) {
-        return const _NotificationLoadingCard();
-      }
-
-      final profile = profileSnapshot.data;
-
-      final String firstName =
-          (profile?['firstName'] ?? '').toString().trim();
-
-      final String lastName =
-          (profile?['lastName'] ?? '').toString().trim();
-
-      final String legacyName =
-          (profile?['name'] ?? '').toString().trim();
-
-      final String fullName = [
-        firstName,
-        lastName,
-      ].where((part) => part.isNotEmpty).join(' ');
-
-      final String displayName = fullName.isNotEmpty
-          ? fullName
-          : legacyName.isNotEmpty
-              ? legacyName
-              : 'صديقك';
-
-      final avatar = profile?['avatar']?.toString() ?? '🌟';
-
-      return _NotificationCard(
-        name: displayName,
-        avatar: avatar,
-        type: type,
-        isRead: isRead,
-        timeText: timeText,
-
-        onTap: type == 'practice_invitation'
-            ? null
-            : () {
-                _openNotification(
-                  context,
-                  notification,
-                );
-              },
-
-        onAccept: type == 'practice_invitation'
-            ? () => _acceptPracticeInvitation(
-                  context,
-                  notification,
-                )
-            : null,
-
-        onDecline: type == 'practice_invitation'
-            ? () => _declinePracticeInvitation(
-                  context,
-                  notification,
-                )
-            : null,
-      );
-    },
-  );
-}
 
   @override
   Widget build(BuildContext context) {
@@ -718,24 +715,24 @@ Widget _buildNotificationCardWithProfile(
 
                   final allNotifications = snapshot.data?.docs.toList() ?? [];
 
-                 final fortyEightHoursAgo = DateTime.now().subtract(
-  const Duration(hours: 48),
-);
+                  final fortyEightHoursAgo = DateTime.now().subtract(
+                    const Duration(hours: 48),
+                  );
 
-final notifications = allNotifications.where((notification) {
-  final data = notification.data();
+                  final notifications = allNotifications.where((notification) {
+                    final data = notification.data();
 
-  final Timestamp? createdAt =
-      data['createdAt'] as Timestamp?;
+                    final Timestamp? createdAt =
+                        data['createdAt'] as Timestamp?;
 
-  // If the notification has no creation time, do not show it.
-  if (createdAt == null) {
-    return false;
-  }
+                    // If the notification has no creation time, do not show it.
+                    if (createdAt == null) {
+                      return false;
+                    }
 
-  // Show notifications from the last 48 hours only.
-  return createdAt.toDate().isAfter(fortyEightHoursAgo);
-}).toList();
+                    // Show notifications from the last 48 hours only.
+                    return createdAt.toDate().isAfter(fortyEightHoursAgo);
+                  }).toList();
 
                   // Newest first
                   notifications.sort((a, b) {
@@ -768,17 +765,14 @@ final notifications = allNotifications.where((notification) {
                       ),
 
                       ListView.builder(
-  padding: const EdgeInsets.fromLTRB(18, 18, 18, 30),
-  itemCount: notifications.length,
-  itemBuilder: (context, index) {
-    final notification = notifications[index];
+                        padding: const EdgeInsets.fromLTRB(18, 18, 18, 30),
+                        itemCount: notifications.length,
+                        itemBuilder: (context, index) {
+                          final notification = notifications[index];
 
-    return _buildNotificationItem(
-      context,
-      notification,
-    );
-  },
-),
+                          return _buildNotificationItem(context, notification);
+                        },
+                      ),
                     ],
                   );
                 },
@@ -799,6 +793,8 @@ class _NotificationCard extends StatelessWidget {
   final String name;
   final String avatar;
   final String type;
+  final String? avatarId;
+  final String? backgroundId;
   final bool isRead;
   final VoidCallback? onTap;
   final Future<void> Function()? onAccept;
@@ -814,6 +810,8 @@ class _NotificationCard extends StatelessWidget {
     required this.timeText,
     this.onAccept,
     this.onDecline,
+    this.avatarId,
+    this.backgroundId,
   });
 
   @override
@@ -857,8 +855,8 @@ class _NotificationCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(23),
         onTap: onTap,
         child: Container(
-  margin: const EdgeInsets.only(bottom: 11),
-  padding: const EdgeInsets.all(14),
+          margin: const EdgeInsets.only(bottom: 11),
+          padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: isRead
                 ? Colors.white.withValues(alpha: 0.94)
@@ -888,13 +886,16 @@ class _NotificationCard extends StatelessWidget {
                     height: 62,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF3EBFA),
                       shape: BoxShape.circle,
                       border: Border.all(color: purple.withValues(alpha: 0.08)),
                     ),
-                    child: Text(avatar, style: const TextStyle(fontSize: 34)),
+                    child: StoreAvatarImage(
+                      avatar: avatar,
+                      avatarId: avatarId,
+                      backgroundId: backgroundId,
+                      size: 60,
+                    ),
                   ),
-
                   Positioned(
                     left: -3,
                     bottom: -2,

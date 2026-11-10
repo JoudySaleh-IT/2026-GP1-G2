@@ -8,6 +8,7 @@ import '../services/practice_together_service.dart';
 import 'style_constants.dart';
 import 'practice_lobby_screen.dart';
 import '../../services/notification_service.dart';
+import '../widgets/child_store_avatar.dart';
 
 class FriendsScreen extends StatelessWidget {
   final String childId;
@@ -22,7 +23,6 @@ class FriendsScreen extends StatelessWidget {
   // Standard app SnackBar
   // بدون تغيير
   // ─────────────────────────────────────────────
- 
 
   // ─────────────────────────────────────────────
   // Confirm + Remove Friend
@@ -100,24 +100,24 @@ class FriendsScreen extends StatelessWidget {
 
     if (confirmed != true) return;
 
-try {
-  await FriendService().removeFriend(
-    currentChildId: childId,
-    friendId: friendId,
-  );
+    try {
+      await FriendService().removeFriend(
+        currentChildId: childId,
+        friendId: friendId,
+      );
 
-  if (!context.mounted) return;
+      if (!context.mounted) return;
 
-  NotificationService.showSuccessSnackBar(
-    'تمت إزالة $friendName من قائمة أصدقائك',
-  );
-} catch (_) {
-  if (!context.mounted) return;
+      NotificationService.showSuccessSnackBar(
+        'تمت إزالة $friendName من قائمة أصدقائك',
+      );
+    } catch (_) {
+      if (!context.mounted) return;
 
-  NotificationService.showErrorSnackBar(
-    'تعذّرت إزالة الصديق. حاول مرة أخرى.',
-  );
-}
+      NotificationService.showErrorSnackBar(
+        'تعذّرت إزالة الصديق. حاول مرة أخرى.',
+      );
+    }
   }
 
   Future<void> _showPracticeTogetherDialog(
@@ -323,8 +323,8 @@ try {
                     onPressed: () {
                       if (selectedExercise == null) {
                         NotificationService.showErrorSnackBar(
-  'اختر تمرينك أولًا',
-);
+                          'اختر تمرينك أولًا',
+                        );
 
                         return;
                       }
@@ -379,8 +379,8 @@ try {
       if (!context.mounted) return;
 
       NotificationService.showErrorSnackBar(
-  'تعذّر إرسال الدعوة. حاول مرة أخرى.',
-);
+        'تعذّر إرسال الدعوة. حاول مرة أخرى.',
+      );
 
       debugPrint('Practice Together invitation error: $e');
     }
@@ -1036,7 +1036,7 @@ class _FriendProfileCardState extends State<_FriendProfileCard> {
         .timeout(const Duration(seconds: 8));
 
     if (!snapshot.exists) {
-        print('❌ MISSING PUBLIC PROFILE = ${widget.friendId}');
+      print('❌ MISSING PUBLIC PROFILE = ${widget.friendId}');
 
       return null;
     }
@@ -1053,38 +1053,41 @@ class _FriendProfileCardState extends State<_FriendProfileCard> {
           return const _FriendLoadingCard();
         }
 
-       if (snapshot.hasError || snapshot.data == null) {
-  return const SizedBox.shrink();
-}
+        if (snapshot.hasError || snapshot.data == null) {
+          return const SizedBox.shrink();
+        }
 
         final profile = snapshot.data!;
 
-final String firstName =
-    (profile['firstName'] ?? '').toString().trim();
+        final String firstName = (profile['firstName'] ?? '').toString().trim();
 
-final String lastName =
-    (profile['lastName'] ?? '').toString().trim();
+        final String lastName = (profile['lastName'] ?? '').toString().trim();
 
-final String legacyName =
-    (profile['name'] ?? '').toString().trim();
+        final String legacyName = (profile['name'] ?? '').toString().trim();
 
-final String fullName = [
-  firstName,
-  lastName,
-].where((part) => part.isNotEmpty).join(' ');
+        final String fullName = [
+          firstName,
+          lastName,
+        ].where((part) => part.isNotEmpty).join(' ');
 
-final String displayName = fullName.isNotEmpty
-    ? fullName
-    : legacyName.isNotEmpty
-        ? legacyName
-        : 'صديق';
+        final String displayName = fullName.isNotEmpty
+            ? fullName
+            : legacyName.isNotEmpty
+            ? legacyName
+            : 'صديق';
 
-final String avatar =
-    profile['avatar']?.toString() ?? '🌟';
+        final String avatar = profile['avatar']?.toString() ?? '🌟';
+
+        final String? avatarId = profile['equippedAvatarId']?.toString();
+
+        final String? backgroundId = profile['equippedBackgroundId']
+            ?.toString();
 
         return _FriendCard(
           name: displayName,
           avatar: avatar,
+          avatarId: avatarId,
+          backgroundId: backgroundId,
 
           onPracticeTogether: () {
             widget.onPracticeTogether(displayName);
@@ -1106,6 +1109,8 @@ final String avatar =
 class _FriendCard extends StatelessWidget {
   final String name;
   final String avatar;
+  final String? avatarId;
+  final String? backgroundId;
 
   final VoidCallback onPracticeTogether;
   final VoidCallback onRemove;
@@ -1113,6 +1118,8 @@ class _FriendCard extends StatelessWidget {
   const _FriendCard({
     required this.name,
     required this.avatar,
+    this.avatarId,
+    this.backgroundId,
     required this.onPracticeTogether,
     required this.onRemove,
   });
@@ -1144,13 +1151,16 @@ class _FriendCard extends StatelessWidget {
             height: 54,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: const Color(0xFFF3EBFA),
               shape: BoxShape.circle,
               border: Border.all(color: purple.withOpacity(0.07)),
             ),
-            child: Text(avatar, style: const TextStyle(fontSize: 30)),
+            child: StoreAvatarImage(
+              avatar: avatar,
+              avatarId: avatarId,
+              backgroundId: backgroundId,
+              size: 52,
+            ),
           ),
-
           const SizedBox(width: 12),
 
           Expanded(

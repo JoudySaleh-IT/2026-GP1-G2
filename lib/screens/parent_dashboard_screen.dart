@@ -6,6 +6,7 @@ import '../services/notification_service.dart';
 import 'style_constants.dart';
 import '../utils/arabic_numbers.dart';
 import '../services/fcm_service.dart';
+import '../widgets/child_store_avatar.dart';
 
 class ParentDashboardScreen extends StatelessWidget {
   const ParentDashboardScreen({super.key});
@@ -127,132 +128,123 @@ class ParentDashboardScreen extends StatelessWidget {
             ),
           ),
           Row(
-  children: [
-    // Notifications
-StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-  stream: FirebaseFirestore.instance
-      .collection('parent_notifications')
-      .where('parentId', isEqualTo: userId)
-      .where('isRead', isEqualTo: false)
-      .snapshots(),
-  builder: (context, snapshot) {
-    final unreadCount = snapshot.data?.docs.length ?? 0;
+            children: [
+              // Notifications
+              StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                stream: FirebaseFirestore.instance
+                    .collection('parent_notifications')
+                    .where('parentId', isEqualTo: userId)
+                    .where('isRead', isEqualTo: false)
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  final unreadCount = snapshot.data?.docs.length ?? 0;
 
-    return SizedBox(
-      width: 48,
-      height: 48,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Center(
-            child: IconButton(
-              icon: const Icon(
-                Icons.notifications_rounded,
-                color: Colors.white,
-                size: 26,
+                  return SizedBox(
+                    width: 48,
+                    height: 48,
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Center(
+                          child: IconButton(
+                            icon: const Icon(
+                              Icons.notifications_rounded,
+                              color: Colors.white,
+                              size: 26,
+                            ),
+                            onPressed: () {
+                              Navigator.pushNamed(
+                                context,
+                                '/parent/notifications',
+                              );
+                            },
+                          ),
+                        ),
+
+                        if (unreadCount > 0)
+                          Positioned(
+                            top: 4,
+                            right: 4,
+                            child: Container(
+                              constraints: const BoxConstraints(
+                                minWidth: 18,
+                                minHeight: 18,
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 5,
+                                vertical: 2,
+                              ),
+                              decoration: const BoxDecoration(
+                                color: Color(0xFFFF6969),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Center(
+                                child: Text(
+                                  unreadCount > 9 ? '9+' : '$unreadCount',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  );
+                },
               ),
-              onPressed: () {
-                Navigator.pushNamed(
-                  context,
-                  '/parent/notifications',
-                );
-              },
-            ),
-          ),
 
-          if (unreadCount > 0)
-            Positioned(
-              top: 4,
-              right: 4,
-              child: Container(
-                constraints: const BoxConstraints(
-                  minWidth: 18,
-                  minHeight: 18,
+              // Menu
+              PopupMenuButton<String>(
+                icon: const Icon(Icons.menu_rounded, color: Colors.white),
+                color: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
                 ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 5,
-                  vertical: 2,
-                ),
-                decoration: const BoxDecoration(
-                  color: Color(0xFFFF6969),
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: Text(
-                    unreadCount > 9 ? '9+' : '$unreadCount',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
+                onSelected: (value) {
+                  if (value == 'settings') {
+                    Navigator.pushNamed(context, '/parent/settings');
+                  } else if (value == 'logout') {
+                    _handleLogout(context);
+                  }
+                },
+                itemBuilder: (context) => [
+                  const PopupMenuItem<String>(
+                    value: 'settings',
+                    child: Row(
+                      children: [
+                        Icon(Icons.settings_outlined, color: Color(0xFF511281)),
+                        SizedBox(width: 10),
+                        Text(
+                          'الإعدادات',
+                          style: TextStyle(fontFamily: 'Tajawal'),
+                        ),
+                      ],
                     ),
                   ),
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  },
-),
-
-    // Menu
-    PopupMenuButton<String>(
-      icon: const Icon(
-        Icons.menu_rounded,
-        color: Colors.white,
-      ),
-      color: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-      ),
-      onSelected: (value) {
-        if (value == 'settings') {
-          Navigator.pushNamed(context, '/parent/settings');
-        } else if (value == 'logout') {
-          _handleLogout(context);
-        }
-      },
-      itemBuilder: (context) => [
-        const PopupMenuItem<String>(
-          value: 'settings',
-          child: Row(
-            children: [
-              Icon(
-                Icons.settings_outlined,
-                color: Color(0xFF511281),
-              ),
-              SizedBox(width: 10),
-              Text(
-                'الإعدادات',
-                style: TextStyle(fontFamily: 'Tajawal'),
+                  const PopupMenuItem<String>(
+                    value: 'logout',
+                    child: Row(
+                      children: [
+                        Icon(Icons.logout_rounded, color: Color(0xFFFF6969)),
+                        SizedBox(width: 10),
+                        Text(
+                          'تسجيل الخروج',
+                          style: TextStyle(
+                            color: Color(0xFFFF6969),
+                            fontFamily: 'Tajawal',
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-        ),
-        const PopupMenuItem<String>(
-          value: 'logout',
-          child: Row(
-            children: [
-              Icon(
-                Icons.logout_rounded,
-                color: Color(0xFFFF6969),
-              ),
-              SizedBox(width: 10),
-              Text(
-                'تسجيل الخروج',
-                style: TextStyle(
-                  color: Color(0xFFFF6969),
-                  fontFamily: 'Tajawal',
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    ),
-  ],
-),
         ],
       ),
     );
@@ -334,34 +326,29 @@ StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
     Map<String, dynamic> data,
   ) {
     final int progress = data['progress'] ?? 0;
-    
-    final String firstName =
-    (data['firstName'] ?? '').toString().trim();
 
-final String lastName =
-    (data['lastName'] ?? '').toString().trim();
+    final String firstName = (data['firstName'] ?? '').toString().trim();
 
-final String nickname =
-    (data['nickname'] ?? '').toString().trim();
+    final String lastName = (data['lastName'] ?? '').toString().trim();
 
-final String legacyName =
-    (data['name'] ?? '').toString().trim();
+    final String nickname = (data['nickname'] ?? '').toString().trim();
 
-final String fullName = [
-  firstName,
-  lastName,
-].where((part) => part.isNotEmpty).join(' ');
+    final String legacyName = (data['name'] ?? '').toString().trim();
 
-final String displayName = nickname.isNotEmpty
-    ? nickname
-    : firstName.isNotEmpty
+    final String fullName = [
+      firstName,
+      lastName,
+    ].where((part) => part.isNotEmpty).join(' ');
+
+    final String displayName = nickname.isNotEmpty
+        ? nickname
+        : firstName.isNotEmpty
         ? firstName
         : legacyName.isNotEmpty
-            ? legacyName
-            : 'بدون اسم';
+        ? legacyName
+        : 'بدون اسم';
 
-final String secondaryName =
-    fullName.isNotEmpty ? fullName : legacyName;
+    final String secondaryName = fullName.isNotEmpty ? fullName : legacyName;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -374,43 +361,40 @@ final String secondaryName =
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(
-  horizontal: 16,
-  vertical: 10,
-),
-        leading: CircleAvatar(
-          radius: 28,
-          backgroundColor: const Color(0xFFFCF9EA),
-          child: Text(
-            data['avatar'] ?? '👦',
-            style: const TextStyle(fontSize: 30),
+          horizontal: 16,
+          vertical: 10,
+        ),
+        leading: StoreAvatarImage(
+          avatar: (data['avatar'] ?? '👦').toString(),
+          avatarId: data['equippedAvatarId']?.toString(),
+          backgroundId: data['equippedBackgroundId']?.toString(),
+          size: 56,
+        ),
+        title: Text(
+          displayName,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontFamily: 'Tajawal',
+            color: nickname.isNotEmpty
+                ? const Color(0xFF511281)
+                : const Color(0xFF222222),
           ),
         ),
-  title: Text(
-  displayName,
-  style: TextStyle(
-    fontWeight: FontWeight.bold,
-    fontFamily: 'Tajawal',
-    color: nickname.isNotEmpty
-        ? const Color(0xFF511281)
-        : const Color(0xFF222222),
-  ),
-),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (secondaryName.isNotEmpty &&
-    secondaryName != displayName) ...[
-  const SizedBox(height: 2),
-  Text(
-    secondaryName,
-    style: const TextStyle(
-      fontSize: 11,
-      color: Colors.grey,
-      fontFamily: 'Tajawal',
-    ),
-  ),
-],
-   const SizedBox(height: 12),        
+            if (secondaryName.isNotEmpty && secondaryName != displayName) ...[
+              const SizedBox(height: 2),
+              Text(
+                secondaryName,
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: Colors.grey,
+                  fontFamily: 'Tajawal',
+                ),
+              ),
+            ],
+            const SizedBox(height: 12),
             ClipRRect(
               borderRadius: BorderRadius.circular(10),
               child: LinearProgressIndicator(

@@ -36,6 +36,7 @@ import 'screens/notifications_screen.dart';
 import 'screens/parent_notifications_screen.dart';
 import 'screens/practice_together_result_screen.dart';
 import 'screens/certificate_screen.dart';
+import 'screens/reward_store_screen.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 void main() async {
@@ -55,28 +56,27 @@ void _handleNotificationTap(RemoteMessage message) {
   final type = message.data['type'];
 
   // Parent notification while the app is open
-if (type == 'parent_new_friend') {
-  final currentChildId = ChildSession.currentChildId;
+  if (type == 'parent_new_friend') {
+    final currentChildId = ChildSession.currentChildId;
 
-  // Parent notifications must never appear inside a child profile.
-  if (currentChildId != null) {
-    debugPrint(
-      '🔕 Parent live notification ignored: device is in Child Mode',
+    // Parent notifications must never appear inside a child profile.
+    if (currentChildId != null) {
+      debugPrint(
+        '🔕 Parent live notification ignored: device is in Child Mode',
+      );
+      return;
+    }
+
+    NotificationService.showLiveNotification(
+      title: message.notification?.title ?? 'صديق جديد في فصيح 🌟',
+      message: message.notification?.body ?? 'تمت إضافة صديق جديد لأحد أطفالك',
+      onTap: () {
+        _handleNotificationTap(message);
+      },
     );
+
     return;
   }
-
-  NotificationService.showLiveNotification(
-    title: message.notification?.title ?? 'صديق جديد في فصيح 🌟',
-    message:
-        message.notification?.body ?? 'تمت إضافة صديق جديد لأحد أطفالك',
-    onTap: () {
-      _handleNotificationTap(message);
-    },
-  );
-
-  return;
-}
   // Child notification
   final receiverId = message.data['receiverId'];
 
@@ -88,16 +88,14 @@ if (type == 'parent_new_friend') {
   debugPrint('🔔 type = [$type]');
   debugPrint('✅ SAME CHILD = ${currentChildId == receiverId}');
   // The device is already in Parent Mode.
-// Do not ask for the parent's password again.
-if (currentChildId == null) {
-  debugPrint('👨‍👩‍👧 Already in Parent Mode → opening child selection');
+  // Do not ask for the parent's password again.
+  if (currentChildId == null) {
+    debugPrint('👨‍👩‍👧 Already in Parent Mode → opening child selection');
 
-  navigatorKey.currentState?.pushNamed(
-    '/parent/select-child',
-  );
+    navigatorKey.currentState?.pushNamed('/parent/select-child');
 
-  return;
-}
+    return;
+  }
   // The notification belongs to the child who is currently active.
   if (currentChildId == receiverId) {
     if (type == 'friend_request') {
@@ -114,19 +112,15 @@ if (currentChildId == null) {
 
     return;
   }
-// The device is already in Parent Mode.
-// No parent password verification is needed again.
-if (currentChildId == null) {
-  debugPrint(
-    '👨‍👩‍👧 Already in Parent Mode. Opening child selection.',
-  );
+  // The device is already in Parent Mode.
+  // No parent password verification is needed again.
+  if (currentChildId == null) {
+    debugPrint('👨‍👩‍👧 Already in Parent Mode. Opening child selection.');
 
-  navigatorKey.currentState?.pushNamed(
-    '/parent/select-child',
-  );
+    navigatorKey.currentState?.pushNamed('/parent/select-child');
 
-  return;
-}
+    return;
+  }
   // IMPORTANT:
   // Do not open another child's account directly.
   // Switching children must go through the parent verification flow.
@@ -274,7 +268,11 @@ class MyApp extends StatelessWidget {
         fontFamily: 'Tajawal',
       ),
       routes: {
-        // ─── مسارات ولي الأمر (Parent Routes) ───
+        '/reward-store': (context) {
+          final childId = ModalRoute.of(context)!.settings.arguments as String;
+
+          return RewardStoreScreen(childId: childId);
+        }, // ─── مسارات ولي الأمر (Parent Routes) ───
         '/parent/register': (context) => const ParentRegisterScreen(),
         '/parent/login': (context) => const ParentLoginScreen(),
         '/parent/forgot-password': (context) => const ForgotPasswordScreen(),
@@ -344,15 +342,12 @@ class MyApp extends StatelessWidget {
           return ExercisesScreen(childId: id ?? '');
         },
         '/child/certificate': (context) {
-  final args = ModalRoute.of(context)!.settings.arguments;
+          final args = ModalRoute.of(context)!.settings.arguments;
 
-  final String? id =
-      args is String ? args : (args as Map?)?['childId'];
+          final String? id = args is String ? args : (args as Map?)?['childId'];
 
-  return CertificateScreen(
-    childId: id ?? '',
-  );
-},
+          return CertificateScreen(childId: id ?? '');
+        },
 
         '/child/letter-levels': (context) {
           final args = ModalRoute.of(context)!.settings.arguments as Map?;

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../services/practice_together_service.dart';
 import 'style_constants.dart';
+import '../widgets/child_store_avatar.dart';
 
 class PracticeTogetherResultScreen extends StatefulWidget {
   final String sessionId;
@@ -663,6 +664,7 @@ class _PracticeTogetherResultScreenState
               child: _PodiumPlayer(
                 name: _getName(senderProfile),
                 avatar: _getAvatar(senderProfile),
+                profile: senderProfile,
                 score: senderCorrect,
                 label: 'تعادل',
                 podiumHeight: 105,
@@ -675,6 +677,7 @@ class _PracticeTogetherResultScreenState
               child: _PodiumPlayer(
                 name: _getName(receiverProfile),
                 avatar: _getAvatar(receiverProfile),
+                profile: receiverProfile,
                 score: receiverCorrect,
                 label: 'تعادل',
                 podiumHeight: 105,
@@ -713,6 +716,7 @@ class _PracticeTogetherResultScreenState
             child: _PodiumPlayer(
               name: _getName(secondProfile),
               avatar: _getAvatar(secondProfile),
+              profile: secondProfile,
               score: secondScore,
               label: 'المركز الثاني',
               podiumHeight: 90,
@@ -727,6 +731,7 @@ class _PracticeTogetherResultScreenState
             child: _PodiumPlayer(
               name: _getName(winnerProfile),
               avatar: _getAvatar(winnerProfile),
+              profile: winnerProfile,
               score: winnerScore,
               label: 'المركز الأول',
               podiumHeight: 130,
@@ -789,9 +794,12 @@ class _PracticeTogetherResultScreenState
               Expanded(
                 child: Column(
                   children: [
-                    Text(
-                      _getAvatar(myProfile),
-                      style: const TextStyle(fontSize: 30),
+                    StoreAvatarImage(
+                      avatar: _getAvatar(myProfile),
+                      avatarId: myProfile['equippedAvatarId']?.toString(),
+                      backgroundId: myProfile['equippedBackgroundId']
+                          ?.toString(),
+                      size: 44,
                     ),
                     const Text(
                       'أنت',
@@ -808,9 +816,12 @@ class _PracticeTogetherResultScreenState
               Expanded(
                 child: Column(
                   children: [
-                    Text(
-                      _getAvatar(friendProfile),
-                      style: const TextStyle(fontSize: 30),
+                    StoreAvatarImage(
+                      avatar: _getAvatar(friendProfile),
+                      avatarId: friendProfile['equippedAvatarId']?.toString(),
+                      backgroundId: friendProfile['equippedBackgroundId']
+                          ?.toString(),
+                      size: 44,
                     ),
                     Text(
                       _getName(friendProfile),
@@ -1088,6 +1099,7 @@ class _PodiumPlayer extends StatelessWidget {
   final double podiumHeight;
   final bool isMe;
   final bool isWinner;
+  final Map<String, dynamic> profile;
 
   const _PodiumPlayer({
     required this.name,
@@ -1097,6 +1109,7 @@ class _PodiumPlayer extends StatelessWidget {
     required this.podiumHeight,
     required this.isMe,
     required this.isWinner,
+    required this.profile,
   });
 
   @override
@@ -1113,8 +1126,12 @@ class _PodiumPlayer extends StatelessWidget {
       children: [
         if (isWinner) const Text('👑', style: TextStyle(fontSize: 27)),
 
-        Text(avatar, style: const TextStyle(fontSize: 53)),
-
+        StoreAvatarImage(
+          avatar: avatar,
+          avatarId: profile['equippedAvatarId']?.toString(),
+          backgroundId: profile['equippedBackgroundId']?.toString(),
+          size: 68,
+        ),
         const SizedBox(height: 5),
 
         Text(
@@ -1221,8 +1238,12 @@ class _WaitingPlayerCard extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Text(avatar, style: const TextStyle(fontSize: 50)),
-
+          StoreAvatarImage(
+            avatar: avatar,
+            avatarId: profile['equippedAvatarId']?.toString(),
+            backgroundId: profile['equippedBackgroundId']?.toString(),
+            size: 64,
+          ),
           const SizedBox(height: 8),
 
           Text(

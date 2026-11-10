@@ -74,6 +74,7 @@ class AuthService {
     required DateTime dob,
     required String gender,
     required String avatar,
+    required String equippedAvatarId,
   }) async {
     try {
       final String? currentParentId = _auth.currentUser?.uid;
@@ -128,6 +129,7 @@ class AuthService {
               'age': age,
               'gender': gender,
               'avatar': avatar,
+              'equippedAvatarId': equippedAvatarId,
               'progress': 0,
               'placementDone': false,
               'fasehId': fasehId,
@@ -151,6 +153,7 @@ class AuthService {
               'name': fullName,
 
               'avatar': avatar,
+              'equippedAvatarId': equippedAvatarId,
               'createdAt': FieldValue.serverTimestamp(),
             });
           });
@@ -380,6 +383,7 @@ class AuthService {
     String? nickname,
     required int age,
     required String avatar,
+    String? equippedAvatarId,
     required DateTime dob,
   }) async {
     try {
@@ -401,6 +405,10 @@ class AuthService {
           .doc(childId);
 
       await _db.runTransaction((transaction) async {
+        final avatarUpdates = <String, dynamic>{
+          if (equippedAvatarId != null) 'equippedAvatarId': equippedAvatarId,
+        };
+
         // ─── ALL READS FIRST ───
 
         final childSnapshot = await transaction.get(childRef);
@@ -430,6 +438,7 @@ class AuthService {
           'age': age,
           'dob': Timestamp.fromDate(dob),
           'avatar': avatar,
+          ...avatarUpdates,
           'updatedAt': FieldValue.serverTimestamp(),
         });
 
@@ -443,6 +452,7 @@ class AuthService {
             'name': fullName,
 
             'avatar': avatar,
+            ...avatarUpdates,
           });
         }
       });
