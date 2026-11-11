@@ -7,6 +7,7 @@ import 'style_constants.dart';
 import '../utils/arabic_numbers.dart';
 import '../widgets/child_bottom_nav.dart';
 import '../widgets/child_store_avatar.dart';
+import '../services/friend_service.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Filter
@@ -25,6 +26,7 @@ class _Player {
   final int streak;
   final String ageGroup;
   final bool isCurrent;
+  final bool isSibling;
 
   const _Player({
     required this.childId,
@@ -35,6 +37,7 @@ class _Player {
     required this.streak,
     required this.ageGroup,
     required this.isCurrent,
+    required this.isSibling,
   });
 
   _Player copyWithRank(int newRank) {
@@ -47,6 +50,21 @@ class _Player {
       streak: streak,
       ageGroup: ageGroup,
       isCurrent: isCurrent,
+      isSibling: isSibling,
+    );
+  }
+
+  _Player copyWithSibling(bool value) {
+    return _Player(
+      childId: childId,
+      rank: rank,
+      name: name,
+      avatar: avatar,
+      points: points,
+      streak: streak,
+      ageGroup: ageGroup,
+      isCurrent: isCurrent,
+      isSibling: value,
     );
   }
 }
@@ -75,6 +93,8 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
 
   final LeaderboardService _leaderboardService = LeaderboardService();
 
+  final FriendService _friendService = FriendService();
+
   String get _sectionTitle {
     switch (_selectedFilter) {
       case _LeaderboardFilter.friends:
@@ -100,6 +120,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
     super.initState();
 
     _ensureLeaderboardProfile();
+    _syncSiblingStatuses();
   }
 
   Future<void> _ensureLeaderboardProfile() async {
@@ -109,6 +130,16 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
       );
     } catch (e) {
       debugPrint('Leaderboard profile sync failed: $e');
+    }
+  }
+
+  Future<void> _syncSiblingStatuses() async {
+    try {
+      await _friendService.syncMissingSiblingStatuses(
+        currentChildId: widget.childId,
+      );
+    } catch (e) {
+      debugPrint('Sibling status sync failed: $e');
     }
   }
 
@@ -126,6 +157,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
       streak: (data['streak'] as num?)?.toInt() ?? 0,
       ageGroup: (data['ageGroup'] ?? '').toString(),
       isCurrent: document.id == widget.childId,
+      isSibling: false,
     );
   }
 
@@ -382,6 +414,8 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
 
                 final friendIds = <String>{widget.childId};
 
+                final siblingIds = <String>{};
+
                 for (final document in childASnapshot.data!.docs) {
                   final data = document.data();
 
@@ -389,6 +423,10 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
 
                   if (friendId.isNotEmpty) {
                     friendIds.add(friendId);
+
+                    if (data['isSibling'] == true) {
+                      siblingIds.add(friendId);
+                    }
                   }
                 }
 
@@ -399,11 +437,20 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
 
                   if (friendId.isNotEmpty) {
                     friendIds.add(friendId);
+
+                    if (data['isSibling'] == true) {
+                      siblingIds.add(friendId);
+                    }
                   }
                 }
 
                 final friendsPlayers = allPlayers
                     .where((player) => friendIds.contains(player.childId))
+                    .map(
+                      (player) => player.copyWithSibling(
+                        siblingIds.contains(player.childId),
+                      ),
+                    )
                     .toList();
 
                 return _buildRankedLeaderboard(friendsPlayers);
@@ -835,10 +882,36 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
 
           // Real child avatar
           // Real child avatar from public profile
-          _LeaderboardAvatar(
-            childId: player.childId,
-            fallbackAvatar: player.avatar,
-            size: 43,
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              _LeaderboardAvatar(
+                childId: player.childId,
+                fallbackAvatar: player.avatar,
+                size: 43,
+              ),
+
+              if (player.isSibling &&
+                  _selectedFilter == _LeaderboardFilter.friends)
+                Positioned(
+                  left: -3,
+                  bottom: -3,
+                  child: Container(
+                    width: 20,
+                    height: 20,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE5F3E9),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 1.5),
+                    ),
+                    child: const Icon(
+                      Icons.home_rounded,
+                      size: 12,
+                      color: Color(0xFF70A884),
+                    ),
+                  ),
+                ),
+            ],
           ),
           const SizedBox(width: 10),
 
@@ -881,6 +954,41 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                         fontWeight: FontWeight.w700,
                         fontFamily: 'Tajawal',
                       ),
+                    ),
+                  ),
+                ],
+                if (player.isSibling &&
+                    _selectedFilter == _LeaderboardFilter.friends) ...[
+                  const SizedBox(width: 6),
+
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 7,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEAF5ED),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.home_rounded,
+                          size: 11,
+                          color: Color(0xFF70A884),
+                        ),
+                        SizedBox(width: 3),
+                        Text(
+                          'العائلة',
+                          style: TextStyle(
+                            fontSize: 8,
+                            color: Color(0xFF66997A),
+                            fontWeight: FontWeight.w600,
+                            fontFamily: 'Tajawal',
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],

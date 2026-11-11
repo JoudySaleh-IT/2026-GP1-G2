@@ -308,6 +308,125 @@ exports.sendParentPushNotification = onCall(async (request) => {
     );
   }
 });
+
+exports.syncFriendshipSiblingStatus = onCall(async (request) => {
+  if (!request.auth) {
+    throw new HttpsError(
+        "unauthenticated",
+        "User must be authenticated.",
+    );
+  }
+
+  const pairId = String(request.data.pairId || "").trim();
+
+  if (!pairId) {
+    throw new HttpsError(
+        "invalid-argument",
+        "pairId is required.",
+    );
+  }
+
+  const db = admin.firestore();
+
+  const friendshipRef = db
+      .collection("friendships")
+      .doc(pairId);
+
+  const friendshipSnapshot =
+      await friendshipRef.get();
+
+  if (!friendshipSnapshot.exists) {
+    throw new HttpsError(
+        "not-found",
+        "Friendship not found.",
+    );
+  }
+
+  const friendshipData =
+      friendshipSnapshot.data();
+
+  const childA = friendshipData.childA;
+  const childB = friendshipData.childB;
+
+  if (!childA || !childB) {
+    throw new HttpsError(
+        "failed-precondition",
+        "Invalid friendship.",
+    );
+  }
+
+  const uid = request.auth.uid;
+
+  const [childASnapshot, childBSnapshot, deviceLinkSnapshot] =
+      await Promise.all([
+        db.collection("children").doc(childA).get(),
+        db.collection("children").doc(childB).get(),
+        db.collection("child_device_links").doc(uid).get(),
+      ]);
+
+  if (!childASnapshot.exists || !childBSnapshot.exists) {
+    throw new HttpsError(
+        "not-found",
+        "One or both children do not exist.",
+    );
+  }
+
+  const childAData = childASnapshot.data();
+  const childBData = childBSnapshot.data();
+
+  const parentOwnsA =
+      childAData.parentId === uid;
+
+  const parentOwnsB =
+      childBData.parentId === uid;
+
+  const deviceChildId =
+      deviceLinkSnapshot.exists
+          ? deviceLinkSnapshot.data().childId
+          : null;
+
+  const deviceActsAsA =
+      deviceChildId === childA;
+
+  const deviceActsAsB =
+      deviceChildId === childB;
+
+  const canAccessFriendship =
+      parentOwnsA ||
+      parentOwnsB ||
+      deviceActsAsA ||
+      deviceActsAsB;
+
+  if (!canAccessFriendship) {
+    throw new HttpsError(
+        "permission-denied",
+        "User is not a participant in this friendship.",
+    );
+  }
+
+  const parentA = childAData.parentId;
+  const parentB = childBData.parentId;
+
+  const isSibling =
+      typeof parentA === "string" &&
+      parentA.length > 0 &&
+      parentA === parentB;
+
+  await friendshipRef.update({
+    isSibling: isSibling,
+  });
+
+  logger.info("Sibling status synchronized", {
+    pairId,
+    isSibling,
+  });
+
+  return {
+    success: true,
+    isSibling: isSibling,
+  };
+});
+
 exports.cleanupOldNotifications = onSchedule(
     {
       schedule: "every day 00:00",
