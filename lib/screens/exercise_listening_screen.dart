@@ -9,6 +9,7 @@ import '../services/practice_together_service.dart';
 import '../services/motivation_service.dart';
 import '../widgets/practice_race_progress.dart';
 import '../services/notification_service.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Exercise Model
@@ -1130,6 +1131,28 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
             true,
       });
     }
+
+debugPrint('🧪 LISTENING TEST: score=$_score, passed=$passed');
+if (passed) {
+  try {
+    final callable = FirebaseFunctions.instanceFor(
+      region: 'us-central1',
+    ).httpsCallable('notifyFaseehProgress');
+
+   
+final result = await callable.call({
+  'childId': widget.childId,
+  'letter': widget.letter,
+  'level': _currentLevelKey!,
+});
+
+debugPrint('🔔 FASEEH MILESTONE RESULT: ${result.data}');
+
+  } catch (e) {
+    debugPrint('⚠️ Milestone notification failed: $e');
+  }
+}
+
 
     debugPrint(
       'Listening result saved: '

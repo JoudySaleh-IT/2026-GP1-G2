@@ -602,14 +602,18 @@ class NotificationsScreen extends StatelessWidget {
         final String? backgroundId = profile?['equippedBackgroundId']
             ?.toString();
 
-        return _NotificationCard(
-          name: displayName,
-          avatar: avatar,
-          avatarId: avatarId,
-          backgroundId: backgroundId,
-          type: type,
-          isRead: isRead,
-          timeText: timeText,
+        
+return _NotificationCard(
+  name: displayName,
+  avatar: avatar,
+  avatarId: avatarId,
+  backgroundId: backgroundId,
+  type: type,
+  isRead: isRead,
+  timeText: timeText,
+  titleOverride: notification.data()['title']?.toString(),
+  messageOverride: notification.data()['message']?.toString(),
+
 
           onTap: type == 'practice_invitation'
               ? null
@@ -803,16 +807,22 @@ class _NotificationCard extends StatelessWidget {
   final String? titleOverride;
 final String? messageOverride;
 
-  const _NotificationCard({
-    required this.name,
-    required this.avatar,
-    required this.type,
-    required this.isRead,
-    required this.onTap,
-    required this.timeText,
-    this.onAccept,
-    this.onDecline,
-  });
+ 
+const _NotificationCard({
+  required this.name,
+  required this.avatar,
+  required this.type,
+  required this.isRead,
+  required this.onTap,
+  required this.timeText,
+  this.onAccept,
+  this.onDecline,
+  this.avatarId,
+  this.backgroundId,
+  this.titleOverride,
+  this.messageOverride,
+});
+
 
   @override
   Widget build(BuildContext context) {

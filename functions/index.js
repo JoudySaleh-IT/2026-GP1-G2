@@ -576,81 +576,105 @@ async function sendMilestonePush({
   });
 }
 
-exports.notifyFaseehMilestones = onDocumentUpdated(
-  {
-    document: "children/{childId}",
-    region: "me-central2",
-  },
-  async (event) => {
-    const before = event.data?.before?.data();
-    const after = event.data?.after?.data();
 
-    if (!before || !after) return;
 
-    const childId = event.params.childId;
-    const parentId = after.parentId || null;
 
-    const oldProgress = before.exerciseProgress || {};
-    const newProgress = after.exerciseProgress || {};
+exports.notifyFaseehProgress = onCall(
+  {region: "us-central1"},
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError(
+          "unauthenticated",
+          "Authentication is required.",
+      );
+    }
+
+    const childId = request.data?.childId;
+    const letter = request.data?.letter;
+    const level = request.data?.level;
+
+    if (
+      typeof childId !== "string" ||
+      !childId.trim() ||
+      !MILESTONE_LETTERS.includes(letter) ||
+      !MILESTONE_LEVELS.includes(level)
+    ) {
+      throw new HttpsError(
+          "invalid-argument",
+          "Invalid childId, letter, or level.",
+      );
+    }
+
+    const db = admin.firestore();
+    const childDoc = await db.collection("children").doc(childId).get();
+
+    if (!childDoc.exists) {
+      throw new HttpsError("not-found", "Child not found.");
+    }
+
+    const child = childDoc.data();
+    const parentId = child.parentId;
+
+    if (!parentId || request.auth.uid !== parentId) {
+      throw new HttpsError(
+          "permission-denied",
+          "Not authorized for this child.",
+      );
+    }
+
+    const newProgress = child.exerciseProgress || {};
 
     const milestones = [];
 
-    for (const letter of MILESTONE_LETTERS) {
-      for (const level of MILESTONE_LEVELS) {
-        const levelName = MILESTONE_LEVEL_NAMES[level];
 
-        if (
-          !hasPassedListening(oldProgress, letter, level) &&
-          hasPassedListening(newProgress, letter, level)
-        ) {
-          milestones.push({
-            id: `listening_${letter}_${level}`,
-            type: "listening_completed",
-            childTitle: "أحسنت!",
-            childMessage:
-              `🎧 أحسنت! أكملت تمارين الاستماع لحرف ${letter} في المستوى ${levelName}!`,
-          });
-        }
+    const levelName = MILESTONE_LEVEL_NAMES[level];
 
-        if (
-          !hasCompletedLevel(oldProgress, letter, level) &&
-          hasCompletedLevel(newProgress, letter, level)
-        ) {
-          milestones.push({
-            id: `level_${letter}_${level}`,
-            type: "level_completed",
-            childTitle: "مبروك!",
-            childMessage:
-              `🎉 مبروك! أكملت المستوى ${levelName} لحرف ${letter}!`,
-            parentTitle: "إنجاز جديد لطفلك!",
-            parentMessage:
-              `🌟 أكمل طفلك المستوى ${levelName} لحرف ${letter} في مهارتي الاستماع والنطق!`,
-          });
-        }
-      }
-
-      if (
-        !hasCompletedLetter(oldProgress, letter) &&
-        hasCompletedLetter(newProgress, letter)
-      ) {
-        milestones.push({
-          id: `letter_${letter}`,
-          type: "letter_completed",
-          childTitle: "إنجاز رائع!",
-          childMessage:
-            `🏆 أتقنت حرف ${letter} بجميع مستوياته!`,
-          parentTitle: "إنجاز جديد لطفلك!",
-          parentMessage:
-            `🏆 أكمل طفلك جميع مستويات حرف ${letter} بنجاح!`,
-        });
-      }
+    // 1. Listening completed - child only
+    if (hasPassedListening(newProgress, letter, level)) {
+      milestones.push({
+        id: `listening_${letter}_${level}`,
+        type: "listening_completed",
+        childTitle: "أحسنت! 🎧",
+        childMessage:
+          `أكملت تمارين الاستماع لحرف ${letter} في المستوى ${levelName}! 🌟`,
+      });
     }
 
-    if (milestones.length === 0) return;
+    // 2. Level completed - child and parent
+    if (hasCompletedLevel(newProgress, letter, level)) {
+      milestones.push({
+        id: `level_${letter}_${level}`,
+        type: "level_completed",
+        childTitle: "مبروك! 🎉",
+        childMessage:
+          `أكملت المستوى ${levelName} لحرف ${letter}!`,
+        parentTitle: "إنجاز جديد لطفلك! 🌟",
+        parentMessage:
+          `أكمل طفلك المستوى ${levelName} لحرف ${letter} في مهارتي الاستماع والنطق!`,
+      });
+    }
 
-    const db = admin.firestore();
+    // 3. Letter completed - child and parent
+    if (hasCompletedLetter(newProgress, letter)) {
+      milestones.push({
+        id: `letter_${letter}`,
+        type: "letter_completed",
+        childTitle: "إنجاز رائع! 🏆",
+        childMessage:
+          `أتقنت حرف ${letter} بجميع مستوياته!`,
+        parentTitle: "إنجاز جديد لطفلك! 🏆",
+        parentMessage:
+          `أكمل طفلك جميع مستويات حرف ${letter} بنجاح!`,
+      });
+    }
+
+  
+    if (milestones.length === 0) {
+      return {success: true, count: 0};
+    }
 
     for (const milestone of milestones) {
+
       const achievementRef = db
         .collection("children")
         .doc(childId)
@@ -765,6 +789,12 @@ exports.notifyFaseehMilestones = onDocumentUpdated(
       childId,
       count: milestones.length,
     });
+
+    return {
+      success: true,
+      count: milestones.length,
+    };
+
   }
 );
 
