@@ -2,7 +2,11 @@ import 'package:flutter/material.dart';
 import '../services/certificate_service.dart';
 import 'exercise_recording_retry_screen.dart';
 
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+
+import 'package:cloud_functions/cloud_functions.dart';
+
 import '../services/notification_service.dart';
 import '../services/motivation_service.dart';
 // ---------------------------------------------------------------------------
@@ -182,6 +186,30 @@ class _ExerciseRecordingResultScreenState
           correctCount,
       'exerciseProgress.$_letter.$_level.pronunciationPassed': canAdvance,
     });
+
+
+    if (canAdvance) {
+      try {
+        final callable = FirebaseFunctions.instanceFor(
+          region: 'us-central1',
+        ).httpsCallable('notifyFaseehProgress');
+
+        await callable.call({
+          'childId': _childId,
+          'letter': _letter,
+          'level': _level.toLowerCase(),
+        });
+
+debugPrint(
+  '✅ Milestone checked: '
+  'letter=$_letter, '
+  'level=$_level, '
+  'canAdvance=$canAdvance',
+);      } catch (e) {
+        debugPrint('⚠️ Pronunciation milestone notification failed: $e');
+      }
+    }
+
 
     // -------------------------------------------------------------
     // Check if the child has completed the entire Faseh journey
