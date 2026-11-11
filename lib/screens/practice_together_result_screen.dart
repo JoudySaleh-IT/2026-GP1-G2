@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-
+import '../services/motivation_service.dart';
 import '../services/practice_together_service.dart';
 import 'style_constants.dart';
 import '../widgets/child_store_avatar.dart';
@@ -29,6 +29,27 @@ class _PracticeTogetherResultScreenState
   static const Color _gold = Color(0xFFE5A52F);
 
   final PracticeTogetherService _service = PracticeTogetherService();
+
+  final MotivationService _motivationService = MotivationService();
+
+  Future<MotivationAwardResult>? _motivationAwardFuture;
+
+  String? _motivationAwardSessionId;
+
+  Future<MotivationAwardResult> _getMotivationAward() {
+    if (_motivationAwardFuture == null ||
+        _motivationAwardSessionId != widget.sessionId) {
+      _motivationAwardSessionId = widget.sessionId;
+
+      _motivationAwardFuture = _motivationService
+          .recordPracticeTogetherCompletion(
+            childId: widget.childId,
+            sessionId: widget.sessionId,
+          );
+    }
+
+    return _motivationAwardFuture!;
+  }
 
   String? _profileKey;
   Future<List<Map<String, dynamic>?>>? _profilesFuture;
@@ -122,10 +143,9 @@ class _PracticeTogetherResultScreenState
   int _calculatePotentialPoints({
     required String exerciseType,
     required int correctCount,
-    required int averageScore,
   }) {
     if (exerciseType == 'speaking') {
-      return averageScore * 10;
+      return correctCount * 125;
     }
 
     return correctCount * 50;
@@ -200,15 +220,72 @@ class _PracticeTogetherResultScreenState
                     );
                   }
 
-                  return _buildCompletedView(
-                    data: data,
-                    senderProfile: senderProfile,
-                    receiverProfile: receiverProfile,
+                  return FutureBuilder<MotivationAwardResult>(
+                    future: _getMotivationAward(),
+                    builder: (context, motivationSnapshot) {
+                      if (motivationSnapshot.connectionState !=
+                          ConnectionState.done) {
+                        return const Center(
+                          child: CircularProgressIndicator(color: _purple),
+                        );
+                      }
+
+                      if (motivationSnapshot.hasError) {
+                        return _buildMotivationError();
+                      }
+
+                      return _buildCompletedView(
+                        data: data,
+                        senderProfile: senderProfile,
+                        receiverProfile: receiverProfile,
+                      );
+                    },
                   );
                 },
               );
             },
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMotivationError() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(30),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.error_outline_rounded, size: 48, color: _coral),
+
+            const SizedBox(height: 12),
+
+            const Text(
+              'تعذّر احتساب نقاط التحدي',
+              style: TextStyle(
+                fontFamily: 'Tajawal',
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: _purple,
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  _motivationAwardFuture = null;
+                  _motivationAwardSessionId = null;
+                });
+              },
+              child: const Text(
+                'إعادة المحاولة',
+                style: TextStyle(fontFamily: 'Tajawal'),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -398,7 +475,6 @@ class _PracticeTogetherResultScreenState
     final int potentialPoints = _calculatePotentialPoints(
       exerciseType: exerciseType,
       correctCount: myCorrect,
-      averageScore: myAverage,
     );
 
     String title;
@@ -983,8 +1059,8 @@ class _PracticeTogetherResultScreenState
     bool discarded = false;
 
     if (isTie) {
-      value = '—';
-      subtitle = 'لا يوجد فائز في حالة التعادل';
+      value = '+$potentialPoints نقطة';
+      subtitle = 'نقاط هذه المحاولة';
     } else if (currentWon) {
       value = '+$potentialPoints نقطة';
       subtitle = 'نقاط هذه المحاولة';
