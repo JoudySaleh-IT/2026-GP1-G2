@@ -5,6 +5,7 @@ import '../services/friend_service.dart';
 import 'style_constants.dart';
 import '../services/notification_service.dart';
 import 'friends_screen.dart';
+import '../widgets/child_store_avatar.dart';
 
 class FriendRequestsScreen extends StatefulWidget {
   final String childId;
@@ -28,13 +29,13 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
   // Standard App SnackBar
   // بدون تغيير
   // ─────────────────────────────────────────────
- void _showAppSnackBar(String message, {Color backgroundColor = _purple}) {
-  if (backgroundColor == _coral) {
-    NotificationService.showErrorSnackBar(message);
-  } else {
-    NotificationService.showSuccessSnackBar(message);
+  void _showAppSnackBar(String message, {Color backgroundColor = _purple}) {
+    if (backgroundColor == _coral) {
+      NotificationService.showErrorSnackBar(message);
+    } else {
+      NotificationService.showSuccessSnackBar(message);
+    }
   }
-}
 
   // ─────────────────────────────────────────────
   // Get Sender Profile
@@ -70,17 +71,18 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
 
       if (!mounted) return;
 
-_showAppSnackBar('أصبحتم أصدقاء الآن! 🎉');
+      _showAppSnackBar('أصبحتم أصدقاء الآن! 🎉');
 
-debugPrint('🚀 BEFORE POP');
-Navigator.pop(context);
-debugPrint('🚀 AFTER POP');
-Navigator.pushReplacement(
-  context,
-  MaterialPageRoute(
-    builder: (_) => FriendsScreen(childId: widget.childId),
-  ),
-);    } catch (e) {
+      debugPrint('🚀 BEFORE POP');
+      Navigator.pop(context);
+      debugPrint('🚀 AFTER POP');
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => FriendsScreen(childId: widget.childId),
+        ),
+      );
+    } catch (e) {
       if (!mounted) return;
 
       _showAppSnackBar(
@@ -290,27 +292,36 @@ Navigator.pushReplacement(
                               }
 
                               final String firstName =
-    (profile['firstName'] ?? '').toString().trim();
+                                  (profile['firstName'] ?? '')
+                                      .toString()
+                                      .trim();
 
-final String lastName =
-    (profile['lastName'] ?? '').toString().trim();
+                              final String lastName =
+                                  (profile['lastName'] ?? '').toString().trim();
 
-final String legacyName =
-    (profile['name'] ?? '').toString().trim();
+                              final String legacyName = (profile['name'] ?? '')
+                                  .toString()
+                                  .trim();
 
-final String fullName = [
-  firstName,
-  lastName,
-].where((part) => part.isNotEmpty).join(' ');
+                              final String fullName = [
+                                firstName,
+                                lastName,
+                              ].where((part) => part.isNotEmpty).join(' ');
 
-final String displayName = fullName.isNotEmpty
-    ? fullName
-    : legacyName.isNotEmpty
-        ? legacyName
-        : 'صديق جديد';
+                              final String displayName = fullName.isNotEmpty
+                                  ? fullName
+                                  : legacyName.isNotEmpty
+                                  ? legacyName
+                                  : 'صديق جديد';
 
                               final String avatar =
                                   profile['avatar']?.toString() ?? '🌟';
+
+                              final String? avatarId =
+                                  profile['equippedAvatarId']?.toString();
+
+                              final String? backgroundId =
+                                  profile['equippedBackgroundId']?.toString();
 
                               final bool processing =
                                   _processingPairId == request.id;
@@ -318,6 +329,8 @@ final String displayName = fullName.isNotEmpty
                               return _FriendRequestCard(
                                 name: displayName,
                                 avatar: avatar,
+                                avatarId: avatarId,
+                                backgroundId: backgroundId,
                                 processing: processing,
                                 onAccept: () => _acceptRequest(request.id),
                                 onDecline: () => _declineRequest(request.id),
@@ -476,12 +489,16 @@ class _FriendRequestCard extends StatelessWidget {
   final String name;
   final String avatar;
   final bool processing;
+  final String? avatarId;
+  final String? backgroundId;
   final VoidCallback onAccept;
   final VoidCallback onDecline;
 
   const _FriendRequestCard({
     required this.name,
     required this.avatar,
+    this.avatarId,
+    this.backgroundId,
     required this.processing,
     required this.onAccept,
     required this.onDecline,
@@ -522,13 +539,16 @@ class _FriendRequestCard extends StatelessWidget {
                     height: 62,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF3EBFA),
                       shape: BoxShape.circle,
                       border: Border.all(color: purple.withOpacity(0.08)),
                     ),
-                    child: Text(avatar, style: const TextStyle(fontSize: 34)),
+                    child: StoreAvatarImage(
+                      avatar: avatar,
+                      avatarId: avatarId,
+                      backgroundId: backgroundId,
+                      size: 60,
+                    ),
                   ),
-
                   // Small heart
                   Positioned(
                     left: -3,

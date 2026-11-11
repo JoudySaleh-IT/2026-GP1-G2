@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import '../services/practice_together_service.dart';
+import 'child_store_avatar.dart';
 
 class PracticeRaceProgress extends StatefulWidget {
   final String sessionId;
@@ -222,16 +223,17 @@ class _PracticeRaceProgressState extends State<PracticeRaceProgress> {
                   _RacePlayerRow(
                     name: _getName(senderProfile),
                     avatar: senderProfile['avatar']?.toString() ?? '🌟',
+                    profile: senderProfile,
                     progress: senderProgress,
                     isMe: widget.currentChildId == senderId,
                     trackColor: _coral,
                   ),
-
                   const SizedBox(height: 5),
 
                   _RacePlayerRow(
                     name: _getName(receiverProfile),
                     avatar: receiverProfile['avatar']?.toString() ?? '🌟',
+                    profile: receiverProfile,
                     progress: receiverProgress,
                     isMe: widget.currentChildId == receiverId,
                     trackColor: _green,
@@ -281,6 +283,7 @@ class _PracticeRaceProgressState extends State<PracticeRaceProgress> {
 class _RacePlayerRow extends StatelessWidget {
   final String name;
   final String avatar;
+  final Map<String, dynamic> profile;
   final int progress;
   final bool isMe;
   final Color trackColor;
@@ -288,6 +291,7 @@ class _RacePlayerRow extends StatelessWidget {
   const _RacePlayerRow({
     required this.name,
     required this.avatar,
+    required this.profile,
     required this.progress,
     required this.isMe,
     required this.trackColor,
@@ -303,8 +307,12 @@ class _RacePlayerRow extends StatelessWidget {
           width: 78,
           child: Row(
             children: [
-              Text(avatar, style: const TextStyle(fontSize: 20)),
-
+              StoreAvatarImage(
+                avatar: avatar,
+                avatarId: profile['equippedAvatarId']?.toString(),
+                backgroundId: profile['equippedBackgroundId']?.toString(),
+                size: 24,
+              ),
               const SizedBox(width: 4),
 
               Expanded(
@@ -329,11 +337,11 @@ class _RacePlayerRow extends StatelessWidget {
         Expanded(
           child: _RaceTrack(
             avatar: avatar,
+            profile: profile,
             progress: safeProgress,
             trackColor: trackColor,
           ),
         ),
-
         const SizedBox(width: 5),
 
         SizedBox(
@@ -356,11 +364,13 @@ class _RacePlayerRow extends StatelessWidget {
 
 class _RaceTrack extends StatelessWidget {
   final String avatar;
+  final Map<String, dynamic> profile;
   final int progress;
   final Color trackColor;
 
   const _RaceTrack({
     required this.avatar,
+    required this.profile,
     required this.progress,
     required this.trackColor,
   });
@@ -418,7 +428,15 @@ class _RaceTrack extends StatelessWidget {
                       shape: BoxShape.circle,
                       border: Border.all(color: trackColor, width: 1.5),
                     ),
-                    child: Text(avatar, style: const TextStyle(fontSize: 14)),
+                    child: ClipOval(
+                      child: StoreAvatarImage(
+                        avatar: avatar,
+                        avatarId: profile['equippedAvatarId']?.toString(),
+                        backgroundId: profile['equippedBackgroundId']
+                            ?.toString(),
+                        size: 19,
+                      ),
+                    ),
                   ),
                 ),
               ],

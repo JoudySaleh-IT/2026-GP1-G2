@@ -3,10 +3,19 @@ import '../services/auth_service.dart';
 import 'style_constants.dart';
 import '../services/notification_service.dart';
 import '../utils/arabic_numbers.dart';
+import '../data/store_catalog.dart';
 
 // ── القائمة المتاحة للصور الرمزية ──
-const _avatars = ['🦁', '🐯', '🐼', '🦊', '🐻', '🐨', '🦝', '🐰'];
-
+const Map<String, String> _avatars = {
+  '🦁': 'lion_basic',
+  '🐯': 'tiger_basic',
+  '🐼': 'panda_basic',
+  '🦊': 'fox_basic',
+  '🐻': 'bear_basic',
+  '🐨': 'koala_basic',
+  '🦝': 'raccoon_basic',
+  '🐰': 'rabbit_basic',
+};
 
 String _formatArabicDate(DateTime date) {
   const months = [
@@ -25,8 +34,8 @@ String _formatArabicDate(DateTime date) {
   ];
 
   return '${toArabicDigits(date.day)} '
-    '${months[date.month - 1]} '
-    '${toArabicDigits(date.year)}';
+      '${months[date.month - 1]} '
+      '${toArabicDigits(date.year)}';
 }
 
 // ── حساب العمر من تاريخ الميلاد ──
@@ -49,9 +58,9 @@ class CreateChildProfileScreen extends StatefulWidget {
 
 class _CreateChildProfileScreenState extends State<CreateChildProfileScreen> {
   final _formKey = GlobalKey<FormState>();
-final _firstNameController = TextEditingController();
-final _lastNameController = TextEditingController();
-final _nicknameController = TextEditingController();
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
+  final _nicknameController = TextEditingController();
 
   final AuthService _authService = AuthService();
 
@@ -63,12 +72,12 @@ final _nicknameController = TextEditingController();
   bool _dobError = false;
 
   @override
-void dispose() {
-  _firstNameController.dispose();
-  _lastNameController.dispose();
-  _nicknameController.dispose();
-  super.dispose();
-}
+  void dispose() {
+    _firstNameController.dispose();
+    _lastNameController.dispose();
+    _nicknameController.dispose();
+    super.dispose();
+  }
 
   void _handleSubmit() async {
     setState(() {
@@ -92,14 +101,15 @@ void dispose() {
       try {
         final age = _calcAge(_dob!);
         final success = await _authService.createChildProfile(
-  firstName: _firstNameController.text.trim(),
-  lastName: _lastNameController.text.trim(),
-  nickname: _nicknameController.text.trim(),
-  age: age,
-  dob: _dob!,
-  gender: _gender,
-  avatar: _selectedAvatar,
-);
+          firstName: _firstNameController.text.trim(),
+          lastName: _lastNameController.text.trim(),
+          nickname: _nicknameController.text.trim(),
+          age: age,
+          dob: _dob!,
+          gender: _gender,
+          avatar: _selectedAvatar,
+          equippedAvatarId: _avatars[_selectedAvatar]!,
+        );
 
         if (mounted) Navigator.pop(context); // إغلاق لودينج
 
@@ -136,8 +146,8 @@ void dispose() {
         if (mounted) Navigator.pop(context);
         String message = 'حدث خطأ أثناء حفظ البيانات، يرجى المحاولة لاحقاً';
         if (mounted) {
-  NotificationService.showErrorSnackBar(message);
-}
+          NotificationService.showErrorSnackBar(message);
+        }
       }
     }
   }
@@ -189,111 +199,112 @@ void dispose() {
                                     size: 52,
                                     color: Color(0xFF511281),
                                   )
-                                : Text(
-                                    _selectedAvatar,
-                                    style: const TextStyle(fontSize: 52),
+                                : Image.asset(
+                                    StoreCatalog.findById(
+                                      _avatars[_selectedAvatar]!,
+                                    )!.imagePath,
+                                    width: 80,
+                                    height: 80,
+                                    fit: BoxFit.contain,
                                   ),
                           ),
                         ),
                         const SizedBox(height: 24),
                         // ── الاسم الأول ──
-const _FieldLabel('الاسم الأول'),
-const SizedBox(height: 6),
-TextFormField(
-  controller: _firstNameController,
-  decoration: _inputDecoration('أدخل الاسم الأول'),
-  validator: (v) {
-    final val = v?.trim() ?? '';
+                        const _FieldLabel('الاسم الأول'),
+                        const SizedBox(height: 6),
+                        TextFormField(
+                          controller: _firstNameController,
+                          decoration: _inputDecoration('أدخل الاسم الأول'),
+                          validator: (v) {
+                            final val = v?.trim() ?? '';
 
-    if (val.isEmpty) {
-      return 'يرجى إدخال الاسم الأول';
-    }
+                            if (val.isEmpty) {
+                              return 'يرجى إدخال الاسم الأول';
+                            }
 
-    final nameRegExp = RegExp(
-     r'^[a-zA-Z\s\u0600-\u06FF]+$',
-    );
+                            final nameRegExp = RegExp(
+                              r'^[a-zA-Z\s\u0600-\u06FF]+$',
+                            );
 
-    if (!nameRegExp.hasMatch(val)) {
-      return 'يجب أن يحتوي الاسم على حروف فقط';
-    }
+                            if (!nameRegExp.hasMatch(val)) {
+                              return 'يجب أن يحتوي الاسم على حروف فقط';
+                            }
 
-    if (val.length < 2) {
-      return 'الاسم قصير جداً';
-    }
+                            if (val.length < 2) {
+                              return 'الاسم قصير جداً';
+                            }
 
-    return null;
-  },
-),
+                            return null;
+                          },
+                        ),
 
-const SizedBox(height: 16),
+                        const SizedBox(height: 16),
 
-// ── اسم العائلة ──
-const _FieldLabel('اسم العائلة'),
-const SizedBox(height: 6),
-TextFormField(
-  controller: _lastNameController,
-  decoration: _inputDecoration('أدخل اسم العائلة'),
-  validator: (v) {
-    final val = v?.trim() ?? '';
+                        // ── اسم العائلة ──
+                        const _FieldLabel('اسم العائلة'),
+                        const SizedBox(height: 6),
+                        TextFormField(
+                          controller: _lastNameController,
+                          decoration: _inputDecoration('أدخل اسم العائلة'),
+                          validator: (v) {
+                            final val = v?.trim() ?? '';
 
-    if (val.isEmpty) {
-      return 'يرجى إدخال اسم العائلة';
-    }
+                            if (val.isEmpty) {
+                              return 'يرجى إدخال اسم العائلة';
+                            }
 
-    final nameRegExp = RegExp(
-     r'^[a-zA-Z\s\u0600-\u06FF]+$',
-    );
+                            final nameRegExp = RegExp(
+                              r'^[a-zA-Z\s\u0600-\u06FF]+$',
+                            );
 
-    if (!nameRegExp.hasMatch(val)) {
-      return 'يجب أن يحتوي اسم العائلة على حروف فقط';
-    }
+                            if (!nameRegExp.hasMatch(val)) {
+                              return 'يجب أن يحتوي اسم العائلة على حروف فقط';
+                            }
 
-    if (val.length < 2) {
-      return 'اسم العائلة قصير جداً';
-    }
+                            if (val.length < 2) {
+                              return 'اسم العائلة قصير جداً';
+                            }
 
-    return null;
-  },
-),
+                            return null;
+                          },
+                        ),
 
-const SizedBox(height: 16),
+                        const SizedBox(height: 16),
 
-// ── الاسم المستعار ──
-const _FieldLabel('الاسم المستعار (اختياري)'),
-const SizedBox(height: 4),
+                        // ── الاسم المستعار ──
+                        const _FieldLabel('الاسم المستعار (اختياري)'),
+                        const SizedBox(height: 4),
 
-const Text(
-  'الاسم الذي تفضّل أن ننادي طفلك به داخل فصيح',
-  style: TextStyle(
-    fontSize: 12,
-    color: Colors.grey,
-  ),
-),
+                        const Text(
+                          'الاسم الذي تفضّل أن ننادي طفلك به داخل فصيح',
+                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                        ),
 
-const SizedBox(height: 6),
+                        const SizedBox(height: 6),
 
-TextFormField(
-  controller: _nicknameController,
-  decoration: _inputDecoration('مثال: جوجو'),
- validator: (v) {
-  final val = v?.trim() ?? '';
+                        TextFormField(
+                          controller: _nicknameController,
+                          decoration: _inputDecoration('مثال: جوجو'),
+                          validator: (v) {
+                            final val = v?.trim() ?? '';
 
-  // اختياري
-  if (val.isEmpty) return null;
+                            // اختياري
+                            if (val.isEmpty) return null;
 
-  final nicknameRegExp = RegExp(
-    r'^[a-zA-Z\s\u0600-\u06FF]+$',
-  );
+                            final nicknameRegExp = RegExp(
+                              r'^[a-zA-Z\s\u0600-\u06FF]+$',
+                            );
 
-  if (!nicknameRegExp.hasMatch(val)) {
-    return 'يجب أن يحتوي الاسم المستعار على حروف فقط';
-  }
+                            if (!nicknameRegExp.hasMatch(val)) {
+                              return 'يجب أن يحتوي الاسم المستعار على حروف فقط';
+                            }
 
-  return null;
-},
-),
+                            return null;
+                          },
+                        ),
 
-const SizedBox(height: 16),
+                        const SizedBox(height: 16),
                         const _FieldLabel('تاريخ الميلاد'),
                         const SizedBox(height: 6),
                         _DobPicker(
@@ -357,7 +368,9 @@ const SizedBox(height: 16),
                               ),
                           itemCount: _avatars.length,
                           itemBuilder: (_, i) {
-                            final emoji = _avatars[i];
+                            final emoji = _avatars.keys.elementAt(i);
+                            final avatarId = _avatars[emoji]!;
+                            final avatarItem = StoreCatalog.findById(avatarId);
                             final isSelected = _selectedAvatar == emoji;
                             return GestureDetector(
                               onTap: () => setState(() {
@@ -379,9 +392,19 @@ const SizedBox(height: 16),
                                   ),
                                 ),
                                 child: Center(
-                                  child: Text(
-                                    emoji,
-                                    style: const TextStyle(fontSize: 28),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(4),
+                                    child: avatarItem != null
+                                        ? Image.asset(
+                                            avatarItem.imagePath,
+                                            fit: BoxFit.contain,
+                                          )
+                                        : Text(
+                                            emoji,
+                                            style: const TextStyle(
+                                              fontSize: 28,
+                                            ),
+                                          ),
                                   ),
                                 ),
                               ),
@@ -507,7 +530,8 @@ class _DobPicker extends StatelessWidget {
             Expanded(
               child: Text(
                 hasDate
-? _formatArabicDate(selectedDate!)                    : 'اختر تاريخ الميلاد',
+                    ? _formatArabicDate(selectedDate!)
+                    : 'اختر تاريخ الميلاد',
                 style: TextStyle(
                   fontSize: 14,
                   color: hasDate ? const Color(0xFF1A1A1A) : Colors.grey,

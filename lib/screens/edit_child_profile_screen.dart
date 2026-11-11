@@ -4,7 +4,7 @@ import '../services/auth_service.dart';
 import '../services/notification_service.dart';
 import 'style_constants.dart';
 import '../utils/arabic_numbers.dart';
-
+import '../data/store_catalog.dart';
 
 String _formatArabicDate(DateTime date) {
   const months = [
@@ -23,8 +23,8 @@ String _formatArabicDate(DateTime date) {
   ];
 
   return '${toArabicDigits(date.day)} '
-    '${months[date.month - 1]} '
-    '${toArabicDigits(date.year)}';
+      '${months[date.month - 1]} '
+      '${toArabicDigits(date.year)}';
 }
 
 // ── حساب العمر من تاريخ الميلاد ──
@@ -49,37 +49,38 @@ class _EditChildProfileScreenState extends State<EditChildProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   final AuthService _authService = AuthService();
 
-late final TextEditingController _firstNameController =
-    TextEditingController();
+  late final TextEditingController _firstNameController =
+      TextEditingController();
 
-late final TextEditingController _lastNameController =
-    TextEditingController();
+  late final TextEditingController _lastNameController =
+      TextEditingController();
 
-late final TextEditingController _nicknameController =
-    TextEditingController();
+  late final TextEditingController _nicknameController =
+      TextEditingController();
   String _selectedAvatar = '🦁';
+  String _originalAvatar = '🦁';
   DateTime? _dob;
   bool _dobError = false;
 
   // ── متغيرات التحكم في ثبات اللون الأحمر ──
-bool _isFirstNameActive = false;
-bool _isLastNameActive = false;
-bool _isNicknameActive = false;
-bool _isDobActive = false; // هل تم لمس أو تعديل حقل التاريخ؟
+  bool _isFirstNameActive = false;
+  bool _isLastNameActive = false;
+  bool _isNicknameActive = false;
+  bool _isDobActive = false; // هل تم لمس أو تعديل حقل التاريخ؟
 
   bool _isSaving = false;
   bool _isLoadingData = true;
 
-  final List<String> _availableAvatars = [
-    '🦁',
-    '🐯',
-    '🐼',
-    '🦊',
-    '🐻',
-    '🐨',
-    '🦝',
-    '🐰',
-  ];
+  final Map<String, String> _availableAvatars = {
+    '🦁': 'lion_basic',
+    '🐯': 'tiger_basic',
+    '🐼': 'panda_basic',
+    '🦊': 'fox_basic',
+    '🐻': 'bear_basic',
+    '🐨': 'koala_basic',
+    '🦝': 'raccoon_basic',
+    '🐰': 'rabbit_basic',
+  };
 
   @override
   void initState() {
@@ -97,32 +98,29 @@ bool _isDobActive = false; // هل تم لمس أو تعديل حقل التار
       if (doc.exists) {
         final data = doc.data()!;
         setState(() {
-          final String oldName =
-    (data['name'] ?? '').toString().trim();
+          final String oldName = (data['name'] ?? '').toString().trim();
 
-final String firstName =
-    (data['firstName'] ?? '').toString().trim();
+          final String firstName = (data['firstName'] ?? '').toString().trim();
 
-final String lastName =
-    (data['lastName'] ?? '').toString().trim();
+          final String lastName = (data['lastName'] ?? '').toString().trim();
 
-final String nickname =
-    (data['nickname'] ?? '').toString().trim();
+          final String nickname = (data['nickname'] ?? '').toString().trim();
 
-// New profiles
-if (firstName.isNotEmpty || lastName.isNotEmpty) {
-  _firstNameController.text = firstName;
-  _lastNameController.text = lastName;
-} else {
-  // Old profiles: keep the old name visible
-  // until the parent updates it using the new fields.
-  _firstNameController.text = oldName;
-  _lastNameController.text = '';
-}
+          // New profiles
+          if (firstName.isNotEmpty || lastName.isNotEmpty) {
+            _firstNameController.text = firstName;
+            _lastNameController.text = lastName;
+          } else {
+            // Old profiles: keep the old name visible
+            // until the parent updates it using the new fields.
+            _firstNameController.text = oldName;
+            _lastNameController.text = '';
+          }
 
-_nicknameController.text = nickname;
+          _nicknameController.text = nickname;
 
-_selectedAvatar = data['avatar'] ?? '🦁';
+          _selectedAvatar = (data['avatar'] ?? '🦁').toString();
+          _originalAvatar = _selectedAvatar;
           if (data['dob'] != null) {
             _dob = (data['dob'] as Timestamp).toDate();
           }
@@ -132,20 +130,18 @@ _selectedAvatar = data['avatar'] ?? '🦁';
     } catch (e) {
       if (mounted) {
         // You can also change this one to your new NotificationService if you want!
-       NotificationService.showErrorSnackBar(
-  'خطأ في تحميل البيانات',
-);
+        NotificationService.showErrorSnackBar('خطأ في تحميل البيانات');
       }
     }
   }
 
- @override
-void dispose() {
-  _firstNameController.dispose();
-  _lastNameController.dispose();
-  _nicknameController.dispose();
-  super.dispose();
-}
+  @override
+  void dispose() {
+    _firstNameController.dispose();
+    _lastNameController.dispose();
+    _nicknameController.dispose();
+    super.dispose();
+  }
 
   Future<void> _handleSave() async {
     setState(() => _dobError = _dob == null);
@@ -155,21 +151,24 @@ void dispose() {
     try {
       final age = _calcAge(_dob!);
       await _authService.updateChildProfile(
-  childId: widget.childId,
-  firstName: _firstNameController.text.trim(),
-  lastName: _lastNameController.text.trim(),
-  nickname: _nicknameController.text.trim(),
-  age: age,
-  avatar: _selectedAvatar,
-  dob: _dob!,
-);
+        childId: widget.childId,
+        firstName: _firstNameController.text.trim(),
+        lastName: _lastNameController.text.trim(),
+        nickname: _nicknameController.text.trim(),
+        age: age,
+        avatar: _selectedAvatar,
+        equippedAvatarId: _selectedAvatar != _originalAvatar
+            ? _availableAvatars[_selectedAvatar]
+            : null,
+        dob: _dob!,
+      );
 
       if (mounted) {
         setState(() {
           _isSaving = false;
           _isFirstNameActive = false;
-_isLastNameActive = false;
-_isNicknameActive = false;
+          _isLastNameActive = false;
+          _isNicknameActive = false;
           _isDobActive = false;
         });
 
@@ -228,122 +227,125 @@ _isNicknameActive = false;
 
                               // ── حقل اسم الطفل ──
                               // ── الاسم الأول ──
-const _FieldLabel('الاسم الأول'),
-const SizedBox(height: 6),
+                              const _FieldLabel('الاسم الأول'),
+                              const SizedBox(height: 6),
 
-TextFormField(
-  controller: _firstNameController,
-  onChanged: (v) =>
-    setState(() => _isFirstNameActive = true),
-onTap: () =>
-    setState(() => _isFirstNameActive = true),
-decoration: _inputDecoration(
-  'أدخل الاسم الأول',
-  _isFirstNameActive,
-),
-  validator: (v) {
-    final val = v?.trim() ?? '';
+                              TextFormField(
+                                controller: _firstNameController,
+                                onChanged: (v) =>
+                                    setState(() => _isFirstNameActive = true),
+                                onTap: () =>
+                                    setState(() => _isFirstNameActive = true),
+                                decoration: _inputDecoration(
+                                  'أدخل الاسم الأول',
+                                  _isFirstNameActive,
+                                ),
+                                validator: (v) {
+                                  final val = v?.trim() ?? '';
 
-    if (val.isEmpty) {
-      return 'يرجى إدخال الاسم الأول';
-    }
+                                  if (val.isEmpty) {
+                                    return 'يرجى إدخال الاسم الأول';
+                                  }
 
-    final nameRegExp =
-        RegExp(r'^[a-zA-Z\s\u0600-\u06FF]+$');
+                                  final nameRegExp = RegExp(
+                                    r'^[a-zA-Z\s\u0600-\u06FF]+$',
+                                  );
 
-    if (!nameRegExp.hasMatch(val)) {
-      return 'يجب أن يحتوي الاسم على حروف فقط';
-    }
+                                  if (!nameRegExp.hasMatch(val)) {
+                                    return 'يجب أن يحتوي الاسم على حروف فقط';
+                                  }
 
-    if (val.length < 2) {
-      return 'الاسم قصير جداً';
-    }
+                                  if (val.length < 2) {
+                                    return 'الاسم قصير جداً';
+                                  }
 
-    return null;
-  },
-),
+                                  return null;
+                                },
+                              ),
 
-const SizedBox(height: 16),
+                              const SizedBox(height: 16),
 
-// ── اسم العائلة ──
-const _FieldLabel('اسم العائلة'),
-const SizedBox(height: 6),
+                              // ── اسم العائلة ──
+                              const _FieldLabel('اسم العائلة'),
+                              const SizedBox(height: 6),
 
-TextFormField(
-  controller: _lastNameController,
-  onChanged: (v) =>
-    setState(() => _isLastNameActive = true),
-onTap: () =>
-    setState(() => _isLastNameActive = true),
-decoration: _inputDecoration(
-  'أدخل اسم العائلة',
-  _isLastNameActive,
-),
-  validator: (v) {
-    final val = v?.trim() ?? '';
+                              TextFormField(
+                                controller: _lastNameController,
+                                onChanged: (v) =>
+                                    setState(() => _isLastNameActive = true),
+                                onTap: () =>
+                                    setState(() => _isLastNameActive = true),
+                                decoration: _inputDecoration(
+                                  'أدخل اسم العائلة',
+                                  _isLastNameActive,
+                                ),
+                                validator: (v) {
+                                  final val = v?.trim() ?? '';
 
-    if (val.isEmpty) {
-      return 'يرجى إدخال اسم العائلة';
-    }
+                                  if (val.isEmpty) {
+                                    return 'يرجى إدخال اسم العائلة';
+                                  }
 
-    final nameRegExp =
-        RegExp(r'^[a-zA-Z\s\u0600-\u06FF]+$');
+                                  final nameRegExp = RegExp(
+                                    r'^[a-zA-Z\s\u0600-\u06FF]+$',
+                                  );
 
-    if (!nameRegExp.hasMatch(val)) {
-      return 'يجب أن يحتوي اسم العائلة على حروف فقط';
-    }
+                                  if (!nameRegExp.hasMatch(val)) {
+                                    return 'يجب أن يحتوي اسم العائلة على حروف فقط';
+                                  }
 
-    if (val.length < 2) {
-      return 'اسم العائلة قصير جداً';
-    }
+                                  if (val.length < 2) {
+                                    return 'اسم العائلة قصير جداً';
+                                  }
 
-    return null;
-  },
-),
+                                  return null;
+                                },
+                              ),
 
-const SizedBox(height: 16),
+                              const SizedBox(height: 16),
 
-// ── الاسم المستعار ──
-const _FieldLabel('الاسم المستعار (اختياري)'),
-const SizedBox(height: 4),
+                              // ── الاسم المستعار ──
+                              const _FieldLabel('الاسم المستعار (اختياري)'),
+                              const SizedBox(height: 4),
 
-const Text(
-  'الاسم الذي تفضّل أن ننادي طفلك به داخل فصيح',
-  style: TextStyle(
-    fontSize: 12,
-    color: Colors.grey,
-  ),
-),
+                              const Text(
+                                'الاسم الذي تفضّل أن ننادي طفلك به داخل فصيح',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey,
+                                ),
+                              ),
 
-const SizedBox(height: 6),
+                              const SizedBox(height: 6),
 
-TextFormField(
-  controller: _nicknameController,
-  onChanged: (v) =>
-    setState(() => _isNicknameActive = true),
-onTap: () =>
-    setState(() => _isNicknameActive = true),
-decoration: _inputDecoration(
-  'مثال: جوجو',
-  _isNicknameActive,
-),
-  validator: (v) {
-    final val = v?.trim() ?? '';
+                              TextFormField(
+                                controller: _nicknameController,
+                                onChanged: (v) =>
+                                    setState(() => _isNicknameActive = true),
+                                onTap: () =>
+                                    setState(() => _isNicknameActive = true),
+                                decoration: _inputDecoration(
+                                  'مثال: جوجو',
+                                  _isNicknameActive,
+                                ),
+                                validator: (v) {
+                                  final val = v?.trim() ?? '';
 
-    if (val.isEmpty) return null;
+                                  if (val.isEmpty) return null;
 
-    final nicknameRegExp =
-        RegExp(r'^[a-zA-Z\s\u0600-\u06FF]+$');
+                                  final nicknameRegExp = RegExp(
+                                    r'^[a-zA-Z\s\u0600-\u06FF]+$',
+                                  );
 
-    if (!nicknameRegExp.hasMatch(val)) {
-      return 'يجب أن يحتوي الاسم المستعار على حروف فقط';
-    }
+                                  if (!nicknameRegExp.hasMatch(val)) {
+                                    return 'يجب أن يحتوي الاسم المستعار على حروف فقط';
+                                  }
 
-    return null;
-  },
-),
+                                  return null;
+                                },
+                              ),
 
-const SizedBox(height: 16),
+                              const SizedBox(height: 16),
 
                               // ── حقل تاريخ الميلاد ──
                               const _FieldLabel('تاريخ الميلاد'),
@@ -411,21 +413,30 @@ const SizedBox(height: 16),
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 6,
-        crossAxisSpacing: 8,
-        mainAxisSpacing: 8,
+        crossAxisCount: 4,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
       ),
       itemCount: _availableAvatars.length,
-      itemBuilder: (_, i) {
-        final emoji = _availableAvatars[i];
+      itemBuilder: (context, index) {
+        final emoji = _availableAvatars.keys.elementAt(index);
+        final avatarId = _availableAvatars[emoji]!;
+        final avatarItem = StoreCatalog.findById(avatarId);
+
         final isSelected = _selectedAvatar == emoji;
+
         return GestureDetector(
-          onTap: () => setState(() => _selectedAvatar = emoji),
-          child: Container(
+          onTap: () {
+            setState(() {
+              _selectedAvatar = emoji;
+            });
+          },
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
             decoration: BoxDecoration(
               color: isSelected
-                  ? const Color(0xFFFF6969).withOpacity(0.1)
-                  : Colors.white,
+                  ? const Color(0xFFFF6969).withValues(alpha: 0.1)
+                  : const Color(0xFFFCF9EA),
               borderRadius: BorderRadius.circular(10),
               border: Border.all(
                 color: isSelected
@@ -434,8 +445,24 @@ const SizedBox(height: 16),
                 width: 2,
               ),
             ),
-            child: Center(
-              child: Text(emoji, style: const TextStyle(fontSize: 24)),
+            child: Padding(
+              padding: const EdgeInsets.all(4),
+              child: avatarItem != null
+                  ? Image.asset(
+                      avatarItem.imagePath,
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, error, stackTrace) {
+                        return Center(
+                          child: Text(
+                            emoji,
+                            style: const TextStyle(fontSize: 28),
+                          ),
+                        );
+                      },
+                    )
+                  : Center(
+                      child: Text(emoji, style: const TextStyle(fontSize: 28)),
+                    ),
             ),
           ),
         );

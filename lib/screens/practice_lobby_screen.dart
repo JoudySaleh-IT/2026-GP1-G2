@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import '../services/practice_together_service.dart';
 import 'style_constants.dart';
 import '../services/notification_service.dart';
+import '../widgets/child_store_avatar.dart';
 
 class PracticeLobbyScreen extends StatefulWidget {
   final String sessionId;
@@ -85,14 +86,14 @@ class _PracticeLobbyScreenState extends State<PracticeLobbyScreen> {
   }
 
   void _showMessage(String message, {bool isError = false}) {
-  if (!mounted) return;
+    if (!mounted) return;
 
-  if (isError) {
-    NotificationService.showErrorSnackBar(message);
-  } else {
-    NotificationService.showSuccessSnackBar(message);
+    if (isError) {
+      NotificationService.showErrorSnackBar(message);
+    } else {
+      NotificationService.showSuccessSnackBar(message);
+    }
   }
-}
 
   Future<void> _markReady() async {
     if (_readyBusy) return;
@@ -130,37 +131,35 @@ class _PracticeLobbyScreenState extends State<PracticeLobbyScreen> {
 
   Future<void> _checkTimedActions(Map<String, dynamic> data) async {
     final status = data['status']?.toString() ?? '';
-// ----------------------------------------------------------
-// Pending invitation expiration
-// ----------------------------------------------------------
+    // ----------------------------------------------------------
+    // Pending invitation expiration
+    // ----------------------------------------------------------
 
-if (status == 'pending' && !_timeoutBusy) {
-  final createdAt = data['createdAt'] as Timestamp?;
+    if (status == 'pending' && !_timeoutBusy) {
+      final createdAt = data['createdAt'] as Timestamp?;
 
-  if (createdAt != null) {
-    final elapsed = DateTime.now().difference(
-      createdAt.toDate(),
-    );
+      if (createdAt != null) {
+        final elapsed = DateTime.now().difference(createdAt.toDate());
 
-    if (elapsed >= const Duration(minutes: 30)) {
-      _timeoutBusy = true;
+        if (elapsed >= const Duration(minutes: 30)) {
+          _timeoutBusy = true;
 
-      try {
-        await _service.cancelInvitation(
-          sessionId: widget.sessionId,
-          childId: widget.childId,
-        );
-      } catch (_) {
-        // The invitation may already have been accepted,
-        // declined, or cancelled on the other device.
-      } finally {
-        _timeoutBusy = false;
+          try {
+            await _service.cancelInvitation(
+              sessionId: widget.sessionId,
+              childId: widget.childId,
+            );
+          } catch (_) {
+            // The invitation may already have been accepted,
+            // declined, or cancelled on the other device.
+          } finally {
+            _timeoutBusy = false;
+          }
+
+          return;
+        }
       }
-
-      return;
     }
-  }
-}
     // ----------------------------------------------------------
     // 60-second lobby timeout
     // ----------------------------------------------------------
@@ -460,6 +459,11 @@ if (status == 'pending' && !_timeoutBusy) {
 
     final receiverAvatar = receiverProfile['avatar']?.toString() ?? '🌟';
 
+    final String? receiverAvatarId = receiverProfile['equippedAvatarId']
+        ?.toString();
+
+    final String? receiverBackgroundId = receiverProfile['equippedBackgroundId']
+        ?.toString();
     return Column(
       children: [
         FaseehStyle.buildLargeHeader(
@@ -482,8 +486,12 @@ if (status == 'pending' && !_timeoutBusy) {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(receiverAvatar, style: const TextStyle(fontSize: 72)),
-
+                  StoreAvatarImage(
+                    avatar: receiverAvatar,
+                    avatarId: receiverAvatarId,
+                    backgroundId: receiverBackgroundId,
+                    size: 100,
+                  ),
                   const SizedBox(height: 18),
 
                   Text(
@@ -767,8 +775,16 @@ class _PlayerCard extends StatelessWidget {
 
     final avatar = profile['avatar']?.toString() ?? '🌟';
 
-    Widget avatarWidget = Text(avatar, style: const TextStyle(fontSize: 58));
+    final String? avatarId = profile['equippedAvatarId']?.toString();
 
+    final String? backgroundId = profile['equippedBackgroundId']?.toString();
+
+    Widget avatarWidget = StoreAvatarImage(
+      avatar: avatar,
+      avatarId: avatarId,
+      backgroundId: backgroundId,
+      size: 76,
+    );
     // Grey out the avatar until this child presses ready.
     if (!ready) {
       avatarWidget = ColorFiltered(

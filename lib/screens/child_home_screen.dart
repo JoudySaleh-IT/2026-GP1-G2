@@ -10,6 +10,8 @@ import '../services/friend_service.dart';
 import '../services/fcm_service.dart';
 import '../widgets/child_bottom_nav.dart';
 import 'notifications_screen.dart';
+import 'reward_store_screen.dart';
+import '../widgets/child_store_avatar.dart';
 
 // ─── Mock Data ───────────────────────────────────────────────────────────────
 const _mockChild = (
@@ -180,65 +182,59 @@ class ChildHomeScreen extends StatelessWidget {
             ? legacyName
             : 'بطل فصيح';
 
-       // ─── Dynamic Daily Goal Logic ────────────────────────────────────────
+        // ─── Dynamic Daily Goal Logic ────────────────────────────────────────
 
-// عدد الحروف التي ما زال الطفل يحتاج إكمالها
-int assignedLettersCount = 0;
+        // عدد الحروف التي ما زال الطفل يحتاج إكمالها
+        int assignedLettersCount = 0;
 
-// عدد الحروف التي كانت مطلوبة من الطفل أصلًا بعد تحديد المستوى
-int requiredLettersCount = 0;
+        // عدد الحروف التي كانت مطلوبة من الطفل أصلًا بعد تحديد المستوى
+        int requiredLettersCount = 0;
 
-if (data['letterScores'] != null) {
-  final Map<dynamic, dynamic> scores =
-      data['letterScores'] as Map;
+        if (data['letterScores'] != null) {
+          final Map<dynamic, dynamic> scores = data['letterScores'] as Map;
 
-  for (final entry in scores.entries) {
-    final num scoreValue =
-        entry.value is num ? entry.value : 0;
+          for (final entry in scores.entries) {
+            final num scoreValue = entry.value is num ? entry.value : 0;
 
-    final String letter =
-        entry.key.toString();
+            final String letter = entry.key.toString();
 
-    // الحروف التي نتيجتها أقل من 80 هي الحروف المطلوبة من الطفل
-    if (scoreValue < 80) {
-      requiredLettersCount++;
+            // الحروف التي نتيجتها أقل من 80 هي الحروف المطلوبة من الطفل
+            if (scoreValue < 80) {
+              requiredLettersCount++;
 
-      // إذا لم يكمل Advanced بالكامل، ما زال الحرف متبقيًا
-      if (!isLetterCompleted(letter)) {
-        assignedLettersCount++;
-      }
-    }
-  }
-} else if (data['assignedLetters'] != null) {
-  final List assignedLetters =
-      data['assignedLetters'] as List;
+              // إذا لم يكمل Advanced بالكامل، ما زال الحرف متبقيًا
+              if (!isLetterCompleted(letter)) {
+                assignedLettersCount++;
+              }
+            }
+          }
+        } else if (data['assignedLetters'] != null) {
+          final List assignedLetters = data['assignedLetters'] as List;
 
-  assignedLettersCount = assignedLetters.length;
-  requiredLettersCount = assignedLetters.length;
-}
+          assignedLettersCount = assignedLetters.length;
+          requiredLettersCount = assignedLetters.length;
+        }
 
-// الطفل أنهى رحلته إذا:
-// 1) أخذ تحديد المستوى
-// 2) كان لديه حروف مطلوبة
-// 3) لم يعد هناك أي حرف متبقٍ
-final bool allTrainingCompleted =
-    hasCompletedPlacement &&
-    requiredLettersCount > 0 &&
-    assignedLettersCount == 0;
-// الطفل أخذ تحديد المستوى ولم يحتج أي حرف للتدريب من البداية
-final bool noTrainingNeeded =
-    hasCompletedPlacement &&
-    requiredLettersCount == 0;
+        // الطفل أنهى رحلته إذا:
+        // 1) أخذ تحديد المستوى
+        // 2) كان لديه حروف مطلوبة
+        // 3) لم يعد هناك أي حرف متبقٍ
+        final bool allTrainingCompleted =
+            hasCompletedPlacement &&
+            requiredLettersCount > 0 &&
+            assignedLettersCount == 0;
+        // الطفل أخذ تحديد المستوى ولم يحتج أي حرف للتدريب من البداية
+        final bool noTrainingNeeded =
+            hasCompletedPlacement && requiredLettersCount == 0;
 
-// إذا أنهى جميع حروفه، ما عاد عنده هدف تدريب متبقٍ
-final int dynamicTodayGoal =
-    !hasCompletedPlacement
-        ? 0
-        : allTrainingCompleted || noTrainingNeeded
+        // إذا أنهى جميع حروفه، ما عاد عنده هدف تدريب متبقٍ
+        final int dynamicTodayGoal = !hasCompletedPlacement
+            ? 0
+            : allTrainingCompleted || noTrainingNeeded
             ? 0
             : assignedLettersCount > 0
-                ? assignedLettersCount
-                : 0;
+            ? assignedLettersCount
+            : 0;
 
         final int todayCompleted = data['todayExercises'] ?? 0;
         final List<String> practiceLetters = [];
@@ -284,11 +280,13 @@ final int dynamicTodayGoal =
                 // لم يتم تغيير تصميمه أو وظيفته
                 // ============================================================
                 _ChildHeader(
-                  name: displayName,
                   childId: childId,
+                  name: data['name'] ?? 'بطل فصيح',
                   avatar: data['avatar'] ?? '🦁',
+                  level: hasCompletedPlacement
+                      ? (data['level'] ?? 'مبتدئ')
+                      : 'لم يُحدَّد المستوى بعد',
                 ),
-
                 Expanded(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
@@ -353,24 +351,99 @@ final int dynamicTodayGoal =
                         const SizedBox(height: 16),
 
                         // ====================================================
-                        // TODAY GOAL
+                        // REWARD STORE
                         // ====================================================
-_TodayGoalCard(
-  done: todayCompleted,
-  goal: dynamicTodayGoal,
-  allCompleted: allTrainingCompleted,
-  hasCompletedPlacement: hasCompletedPlacement,
-  noTrainingNeeded: noTrainingNeeded,
-),
+                        InkWell(
+                          borderRadius: BorderRadius.circular(22),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    RewardStoreScreen(childId: childId),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 16,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF0E4FA),
+                              borderRadius: BorderRadius.circular(22),
+                              border: Border.all(
+                                color: const Color(
+                                  0xFF511281,
+                                ).withOpacity(0.12),
+                              ),
+                            ),
+                            child: const Row(
+                              children: [
+                                Icon(
+                                  Icons.storefront_rounded,
+                                  color: Color(0xFF511281),
+                                  size: 34,
+                                ),
+                                SizedBox(width: 14),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'متجر المكافآت',
+                                        style: TextStyle(
+                                          fontFamily: 'Tajawal',
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFF511281),
+                                        ),
+                                      ),
+                                      SizedBox(height: 4),
+                                      Text(
+                                        'استبدل نقاطك بشخصيات وخلفيات مميزة!',
+                                        style: TextStyle(
+                                          fontFamily: 'Tajawal',
+                                          fontSize: 11,
+                                          color: Color(0xFF765A8E),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Icon(
+                                  Icons.arrow_forward_ios_rounded,
+                                  color: Color(0xFF511281),
+                                  size: 17,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
 
                         const SizedBox(height: 18),
 
-_PracticeLettersCard(
-  letters: practiceLetters,
-  allCompleted: allTrainingCompleted,
-  hasCompletedPlacement: hasCompletedPlacement,
-  noTrainingNeeded: noTrainingNeeded,
-),
+                        // ====================================================
+                        // TODAY GOAL
+                        // ====================================================
+                        _TodayGoalCard(
+                          done: todayCompleted,
+                          goal: dynamicTodayGoal,
+                          allCompleted: allTrainingCompleted,
+                          hasCompletedPlacement: hasCompletedPlacement,
+                          noTrainingNeeded: noTrainingNeeded,
+                        ),
+
+                        const SizedBox(height: 18),
+
+                        _PracticeLettersCard(
+                          letters: practiceLetters,
+                          allCompleted: allTrainingCompleted,
+                          hasCompletedPlacement: hasCompletedPlacement,
+                          noTrainingNeeded: noTrainingNeeded,
+                        ),
 
                         const SizedBox(height: 16),
                       ],
@@ -402,11 +475,13 @@ class _ChildHeader extends StatelessWidget {
   final String childId;
   final String name;
   final String avatar;
+  final String level;
 
   const _ChildHeader({
     required this.childId,
     required this.name,
     required this.avatar,
+    required this.level,
   });
 
   void _showLogoutDialog(BuildContext context) {
@@ -589,14 +664,12 @@ class _ChildHeader extends StatelessWidget {
       title: 'مرحبًا $name!',
       subtitle: 'هيا نبدأ التدريب!',
 
-      leading: SizedBox(
-        width: 48,
-        height: 48,
-        child: Center(
-          child: Text(avatar, style: const TextStyle(fontSize: 32)),
-        ),
+      leading: ChildStoreAvatar(
+        childId: childId,
+        fallbackAvatar: avatar,
+        size: 56,
+        backgroundColor: Colors.white.withOpacity(0.15),
       ),
-
       trailingActions: [
         StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
           stream: FirebaseFirestore.instance
@@ -1729,38 +1802,33 @@ class _TodayGoalCard extends StatelessWidget {
   final bool hasCompletedPlacement;
   final bool noTrainingNeeded;
 
- const _TodayGoalCard({
-  required this.done,
-  required this.goal,
-  required this.allCompleted,
-  required this.hasCompletedPlacement,
-  required this.noTrainingNeeded,
-});
+  const _TodayGoalCard({
+    required this.done,
+    required this.goal,
+    required this.allCompleted,
+    required this.hasCompletedPlacement,
+    required this.noTrainingNeeded,
+  });
 
   @override
   Widget build(BuildContext context) {
     final int safeGoal = goal <= 0 ? 1 : goal;
 
-    final int remaining =
-        allCompleted
-            ? 0
-            : (goal - done) < 0
-                ? 0
-                : goal - done;
+    final int remaining = allCompleted
+        ? 0
+        : (goal - done) < 0
+        ? 0
+        : goal - done;
 
-  final double progress =
-    !hasCompletedPlacement
+    final double progress = !hasCompletedPlacement
         ? 0.0
         : noTrainingNeeded
-            ? 1.0
-            : allCompleted
-                ? 1.0
-                : (done / safeGoal)
-                    .clamp(0.0, 1.0)
-                    .toDouble();
+        ? 1.0
+        : allCompleted
+        ? 1.0
+        : (done / safeGoal).clamp(0.0, 1.0).toDouble();
 
-    final bool completed =
-        allCompleted || remaining == 0;
+    final bool completed = allCompleted || remaining == 0;
 
     return Container(
       width: double.infinity,
@@ -1925,14 +1993,14 @@ class _TodayGoalCard extends StatelessWidget {
                           color: const Color(0xFFFF6969).withOpacity(0.10),
                           borderRadius: BorderRadius.circular(15),
                         ),
-child: Text(
-  !hasCompletedPlacement
-      ? 'ابدأ'
-      : noTrainingNeeded
-          ? 'متقن'
-          : allCompleted
-              ? 'مكتمل'
-              : toArabicDigits('$done/$goal'),
+                        child: Text(
+                          !hasCompletedPlacement
+                              ? 'ابدأ'
+                              : noTrainingNeeded
+                              ? 'متقن'
+                              : allCompleted
+                              ? 'مكتمل'
+                              : toArabicDigits('$done/$goal'),
                           style: const TextStyle(
                             fontSize: 13,
                             color: Color(0xFFFF6969),
@@ -1966,16 +2034,16 @@ child: Text(
 
                   Padding(
                     padding: const EdgeInsets.only(left: 82),
-child: Text(
-  !hasCompletedPlacement
-      ? 'ابدأ تحديد المستوى أولًا لنحدد لك الحروف المناسبة'
-      : noTrainingNeeded
-          ?  'رائع! أتقنت جميع الحروف'
-          : allCompleted
-              ? 'أحسنت! أنهيت جميع تدريباتك'
-              : completed
-                  ? 'أحسنت! حققت هدف اليوم'
-                  : 'باقي ${toArabicDigits(remaining)} تدريبات لتحقيق الهدف!',
+                    child: Text(
+                      !hasCompletedPlacement
+                          ? 'ابدأ تحديد المستوى أولًا لنحدد لك الحروف المناسبة'
+                          : noTrainingNeeded
+                          ? 'رائع! أتقنت جميع الحروف'
+                          : allCompleted
+                          ? 'أحسنت! أنهيت جميع تدريباتك'
+                          : completed
+                          ? 'أحسنت! حققت هدف اليوم'
+                          : 'باقي ${toArabicDigits(remaining)} تدريبات لتحقيق الهدف!',
                       style: const TextStyle(
                         fontSize: 11.5,
                         color: Color(0xFF666666),
@@ -2359,14 +2427,14 @@ class _PracticeLettersCard extends StatelessWidget {
 
                   const SizedBox(height: 5),
 
-Text(
-  noTrainingNeeded
-      ? 'رائع! لا تحتاج إلى تدريبات إضافية'
-      : allCompleted
-          ? 'أحسنت! أتقنت جميع الحروف المطلوبة'
-          : !hasCompletedPlacement
-              ? 'ابدأ تحديد المستوى لاكتشاف حروفك'
-              : 'تدرّب على هذه الحروف لتحسّن نطقك',
+                  Text(
+                    noTrainingNeeded
+                        ? 'رائع! لا تحتاج إلى تدريبات إضافية'
+                        : allCompleted
+                        ? 'أحسنت! أتقنت جميع الحروف المطلوبة'
+                        : !hasCompletedPlacement
+                        ? 'ابدأ تحديد المستوى لاكتشاف حروفك'
+                        : 'تدرّب على هذه الحروف لتحسّن نطقك',
                     style: const TextStyle(
                       fontSize: 11.5,
                       color: Color(0xFF777777),
@@ -2395,18 +2463,17 @@ Text(
                       ),
                     )
                   else
-                  
-Center(
-  child: Icon(
-    noTrainingNeeded || allCompleted
-        ? Icons.check_circle_rounded
-        : Icons.mic_rounded,
-    size: 45,
-    color: noTrainingNeeded || allCompleted
-        ? const Color(0xFF59B77B)
-        : const Color(0xFFDCC9EB),
-  ),
-),
+                    Center(
+                      child: Icon(
+                        noTrainingNeeded || allCompleted
+                            ? Icons.check_circle_rounded
+                            : Icons.mic_rounded,
+                        size: 45,
+                        color: noTrainingNeeded || allCompleted
+                            ? const Color(0xFF59B77B)
+                            : const Color(0xFFDCC9EB),
+                      ),
+                    ),
 
                   const SizedBox(height: 17),
 
@@ -2420,13 +2487,13 @@ Center(
                         color: const Color(0xFF511281).withOpacity(0.06),
                         borderRadius: BorderRadius.circular(20),
                       ),
-                  
-child: Text(
-  noTrainingNeeded
-      ? 'نتيجتك ممتازة في تحديد المستوى'
-      : allCompleted
-          ? 'رحلتك في التمارين مكتملة'
-          : 'كل تدريب يقربك من الإتقان',
+
+                      child: Text(
+                        noTrainingNeeded
+                            ? 'نتيجتك ممتازة في تحديد المستوى'
+                            : allCompleted
+                            ? 'رحلتك في التمارين مكتملة'
+                            : 'كل تدريب يقربك من الإتقان',
                         style: TextStyle(
                           fontSize: 10.5,
                           color: Color(0xFF6F2DA8),

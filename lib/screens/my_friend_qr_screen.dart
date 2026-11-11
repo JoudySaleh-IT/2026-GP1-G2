@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import 'style_constants.dart';
+import '../widgets/child_store_avatar.dart';
 
 class MyFriendQrScreen extends StatelessWidget {
   final String childId;
@@ -103,27 +104,35 @@ class MyFriendQrScreen extends StatelessWidget {
 
                       final String fasehId = data?['fasehId']?.toString() ?? '';
 
-                      final String firstName =
-    (data?['firstName'] ?? '').toString().trim();
+                      final String firstName = (data?['firstName'] ?? '')
+                          .toString()
+                          .trim();
 
-final String lastName =
-    (data?['lastName'] ?? '').toString().trim();
+                      final String lastName = (data?['lastName'] ?? '')
+                          .toString()
+                          .trim();
 
-final String legacyName =
-    (data?['name'] ?? '').toString().trim();
+                      final String legacyName = (data?['name'] ?? '')
+                          .toString()
+                          .trim();
 
-final String fullName = [
-  firstName,
-  lastName,
-].where((part) => part.isNotEmpty).join(' ');
+                      final String fullName = [
+                        firstName,
+                        lastName,
+                      ].where((part) => part.isNotEmpty).join(' ');
 
-final String displayName = fullName.isNotEmpty
-    ? fullName
-    : legacyName.isNotEmpty
-        ? legacyName
-        : 'بطل فصيح';
+                      final String displayName = fullName.isNotEmpty
+                          ? fullName
+                          : legacyName.isNotEmpty
+                          ? legacyName
+                          : 'بطل فصيح';
 
                       final String avatar = data?['avatar']?.toString() ?? '🌟';
+                      final String? avatarId = data?['equippedAvatarId']
+                          ?.toString();
+
+                      final String? backgroundId = data?['equippedBackgroundId']
+                          ?.toString();
 
                       if (fasehId.isEmpty) {
                         return const Center(
@@ -181,18 +190,11 @@ final String displayName = fullName.isNotEmpty
                                   // -----------------------------------------
                                   Row(
                                     children: [
-                                      Container(
-                                        width: 58,
-                                        height: 58,
-                                        alignment: Alignment.center,
-                                        decoration: const BoxDecoration(
-                                          color: Color(0xFFF6EFFB),
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: Text(
-                                          avatar,
-                                          style: const TextStyle(fontSize: 30),
-                                        ),
+                                      StoreAvatarImage(
+                                        avatar: avatar,
+                                        avatarId: avatarId,
+                                        backgroundId: backgroundId,
+                                        size: 58,
                                       ),
                                       const SizedBox(width: 11),
                                       Expanded(

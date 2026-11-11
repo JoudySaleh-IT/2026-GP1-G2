@@ -6,6 +6,7 @@ import '../services/auth_service.dart';
 import 'style_constants.dart';
 import '../utils/arabic_numbers.dart';
 import '../widgets/child_bottom_nav.dart';
+import '../widgets/child_store_avatar.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Filter
@@ -833,18 +834,12 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
           const SizedBox(width: 10),
 
           // Real child avatar
-          Container(
-            width: 43,
-            height: 43,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: _purple.withOpacity(0.08),
-              shape: BoxShape.circle,
-              border: Border.all(color: _purple.withOpacity(0.10)),
-            ),
-            child: Text(player.avatar, style: const TextStyle(fontSize: 25)),
+          // Real child avatar from public profile
+          _LeaderboardAvatar(
+            childId: player.childId,
+            fallbackAvatar: player.avatar,
+            size: 43,
           ),
-
           const SizedBox(width: 10),
 
           // Name
@@ -1482,6 +1477,38 @@ class _BackgroundLetter extends StatelessWidget {
           fontFamily: 'Tajawal',
         ),
       ),
+    );
+  }
+}
+
+class _LeaderboardAvatar extends StatelessWidget {
+  final String childId;
+  final String fallbackAvatar;
+  final double size;
+
+  const _LeaderboardAvatar({
+    required this.childId,
+    required this.fallbackAvatar,
+    this.size = 43,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      stream: FirebaseFirestore.instance
+          .collection('child_public_profiles')
+          .doc(childId)
+          .snapshots(),
+      builder: (context, snapshot) {
+        final data = snapshot.data?.data();
+
+        return StoreAvatarImage(
+          avatar: data?['avatar']?.toString() ?? fallbackAvatar,
+          avatarId: data?['equippedAvatarId']?.toString(),
+          backgroundId: data?['equippedBackgroundId']?.toString(),
+          size: size,
+        );
+      },
     );
   }
 }

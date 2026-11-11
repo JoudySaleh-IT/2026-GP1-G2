@@ -4,185 +4,167 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/childSession.dart';
 import '../services/notification_service.dart';
-import 'style_constants.dart'; 
+import 'style_constants.dart';
 import '../utils/arabic_numbers.dart';
 import '../services/auth_service.dart';
-
-
+import '../widgets/child_store_avatar.dart';
 
 class ChildSelectionScreen extends StatelessWidget {
   const ChildSelectionScreen({super.key});
 
   void _showPairingDialog(
-  BuildContext context,
-  String childId,
-  String childName,
-) async {
-  final String? userId = FirebaseAuth.instance.currentUser?.uid;
+    BuildContext context,
+    String childId,
+    String childName,
+  ) async {
+    final String? userId = FirebaseAuth.instance.currentUser?.uid;
 
-  try {
-    // Ensure the child has a Faseh ID first
-    await AuthService().ensureChildFasehIdentity(childId);
+    try {
+      // Ensure the child has a Faseh ID first
+      await AuthService().ensureChildFasehIdentity(childId);
 
-    String? pairingCode;
+      String? pairingCode;
 
-    const int maxAttempts = 10;
+      const int maxAttempts = 10;
 
-    for (int attempt = 0; attempt < maxAttempts; attempt++) {
-      final String candidate =
-          (Random().nextInt(900000) + 100000).toString();
+      for (int attempt = 0; attempt < maxAttempts; attempt++) {
+        final String candidate = (Random().nextInt(900000) + 100000).toString();
 
-      final codeRef = FirebaseFirestore.instance
-          .collection('pairing_codes')
-          .doc(candidate);
+        final codeRef = FirebaseFirestore.instance
+            .collection('pairing_codes')
+            .doc(candidate);
 
-      final bool created = await FirebaseFirestore.instance
-          .runTransaction<bool>((transaction) async {
-        final existing = await transaction.get(codeRef);
+        final bool created = await FirebaseFirestore.instance
+            .runTransaction<bool>((transaction) async {
+              final existing = await transaction.get(codeRef);
 
-        // If this code already exists, try another one
-        if (existing.exists) {
-          return false;
+              // If this code already exists, try another one
+              if (existing.exists) {
+                return false;
+              }
+
+              transaction.set(codeRef, {
+                'code': candidate,
+                'parentId': userId,
+                'childId': childId,
+                'childName': childName,
+                'createdAt': FieldValue.serverTimestamp(),
+                'expiresAt': Timestamp.fromDate(
+                  DateTime.now().add(const Duration(minutes: 10)),
+                ),
+              });
+
+              return true;
+            });
+
+        if (created) {
+          pairingCode = candidate;
+          break;
         }
-
-        transaction.set(codeRef, {
-          'code': candidate,
-          'parentId': userId,
-          'childId': childId,
-          'childName': childName,
-          'createdAt': FieldValue.serverTimestamp(),
-          'expiresAt': Timestamp.fromDate(
-            DateTime.now().add(
-              const Duration(minutes: 10),
-            ),
-          ),
-        });
-
-        return true;
-      });
-
-      if (created) {
-        pairingCode = candidate;
-        break;
       }
-    }
 
-    if (pairingCode == null) {
-      throw Exception('Could not generate pairing code');
-    }
+      if (pairingCode == null) {
+        throw Exception('Could not generate pairing code');
+      }
 
-    if (!context.mounted) return;
+      if (!context.mounted) return;
 
-    showDialog(
-      context: context,
-      builder: (context) => Directionality(
-        textDirection: TextDirection.rtl,
-        child: AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          title: const Text(
-            'ربط جهاز جديد',
-            textAlign: TextAlign.center,
-          ),
-          content: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 400),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'أدخل هذا الكود في جهاز $childName:',
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 20),
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF3E5F5),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: const Color(0xFF511281),
-                      width: 2,
-                    ),
-                  ),
-                  child: Text(
-                    toArabicDigits(pairingCode!),
-                    style: const TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 8,
-                      color: Color(0xFF511281),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 15),
-                const Text(
-                  'هذا الكود صالح لمدة ١٠ دقائق فقط',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey,
-                  ),
-                ),
-              ],
+      showDialog(
+        context: context,
+        builder: (context) => Directionality(
+          textDirection: TextDirection.rtl,
+          child: AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
             ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text(
-                'تم',
-                style: TextStyle(
-                  color: Color(0xFF511281),
-                ),
+            title: const Text('ربط جهاز جديد', textAlign: TextAlign.center),
+            content: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 400),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'أدخل هذا الكود في جهاز $childName:',
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 20),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF3E5F5),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: const Color(0xFF511281),
+                        width: 2,
+                      ),
+                    ),
+                    child: Text(
+                      toArabicDigits(pairingCode!),
+                      style: const TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 8,
+                        color: Color(0xFF511281),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 15),
+                  const Text(
+                    'هذا الكود صالح لمدة ١٠ دقائق فقط',
+                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                ],
               ),
             ),
-          ],
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text(
+                  'تم',
+                  style: TextStyle(color: Color(0xFF511281)),
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
-    );
-  } catch (e) {
-    if (!context.mounted) return;
+      );
+    } catch (e) {
+      if (!context.mounted) return;
 
-    NotificationService.showErrorSnackBar(
-  'حدث خطأ في إنشاء الكود',
-);
+      NotificationService.showErrorSnackBar('حدث خطأ في إنشاء الكود');
+    }
   }
-}
 
   Future<void> _onChildSelected(
-  BuildContext context,
-  String childId,
-  String childName,
-) async {
-  try {
-    // Give existing children a Faseh ID if they don't have one yet.
-    await AuthService().ensureChildFasehIdentity(childId);
+    BuildContext context,
+    String childId,
+    String childName,
+  ) async {
+    try {
+      // Give existing children a Faseh ID if they don't have one yet.
+      await AuthService().ensureChildFasehIdentity(childId);
 
-    if (!context.mounted) return;
+      if (!context.mounted) return;
 
-ChildSession.currentChildId = childId;
-ChildSession.currentParentId = FirebaseAuth.instance.currentUser?.uid;
+      ChildSession.currentChildId = childId;
+      ChildSession.currentParentId = FirebaseAuth.instance.currentUser?.uid;
 
-print('👶 SELECTED CHILD = [$childId]');
-print('👨 PARENT SESSION = [${ChildSession.currentParentId}]');
+      print('👶 SELECTED CHILD = [$childId]');
+      print('👨 PARENT SESSION = [${ChildSession.currentParentId}]');
 
-    Navigator.pushNamed(
-      context,
-      '/child/home',
-      arguments: childId,
-    );
+      Navigator.pushNamed(context, '/child/home', arguments: childId);
 
-    NotificationService.showSuccessSnackBar(
-      'أهلًا $childName! جاهز تكون فصيح؟',
-    );
-  } catch (e) {
-    if (!context.mounted) return;
+      NotificationService.showSuccessSnackBar(
+        'أهلًا $childName! جاهز تكون فصيح؟',
+      );
+    } catch (e) {
+      if (!context.mounted) return;
 
-  NotificationService.showErrorSnackBar(
-  'حدث خطأ أثناء تجهيز ملف الطفل. حاول مرة أخرى.',
-);
+      NotificationService.showErrorSnackBar(
+        'حدث خطأ أثناء تجهيز ملف الطفل. حاول مرة أخرى.',
+      );
+    }
   }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -232,49 +214,47 @@ print('👨 PARENT SESSION = [${ChildSession.currentParentId}]');
                     itemBuilder: (context, index) {
                       final data = docs[index].data() as Map<String, dynamic>;
                       final String docId = docs[index].id;
-                      final String firstName =
-    (data['firstName'] ?? '').toString().trim();
+                      final String firstName = (data['firstName'] ?? '')
+                          .toString()
+                          .trim();
 
-final String lastName =
-    (data['lastName'] ?? '').toString().trim();
+                      final String lastName = (data['lastName'] ?? '')
+                          .toString()
+                          .trim();
 
-final String nickname =
-    (data['nickname'] ?? '').toString().trim();
+                      final String nickname = (data['nickname'] ?? '')
+                          .toString()
+                          .trim();
 
-final String legacyName =
-    (data['name'] ?? '').toString().trim();
+                      final String legacyName = (data['name'] ?? '')
+                          .toString()
+                          .trim();
 
-final String fullName = [
-  firstName,
-  lastName,
-].where((part) => part.isNotEmpty).join(' ');
+                      final String fullName = [
+                        firstName,
+                        lastName,
+                      ].where((part) => part.isNotEmpty).join(' ');
 
-final String displayName = nickname.isNotEmpty
-    ? nickname
-    : firstName.isNotEmpty
-        ? firstName
-        : legacyName.isNotEmpty
-            ? legacyName
-            : 'بدون اسم';
-
-                     
+                      final String displayName = nickname.isNotEmpty
+                          ? nickname
+                          : firstName.isNotEmpty
+                          ? firstName
+                          : legacyName.isNotEmpty
+                          ? legacyName
+                          : 'بدون اسم';
 
                       return _ChildCard(
                         name: displayName,
                         fullName: fullName,
-                        avatar: data['avatar'] ?? '👦',
+                        avatar: (data['avatar'] ?? '👦').toString(),
+                        avatarId: data['equippedAvatarId']?.toString(),
+                        backgroundId: data['equippedBackgroundId']?.toString(),
                         age: data['age'] ?? 0,
-                        
 
-                 
-
-                        onTap: () => _onChildSelected(
-  context,
-  docId,
-  displayName,
-),
+                        onTap: () =>
+                            _onChildSelected(context, docId, displayName),
                         onPairingTap: () =>
-    _showPairingDialog(context, docId, displayName),
+                            _showPairingDialog(context, docId, displayName),
                       );
                     },
                   );
@@ -407,6 +387,8 @@ class _ChildCard extends StatefulWidget {
   final String fullName;
   final String avatar;
   final int age;
+  final String? avatarId;
+  final String? backgroundId;
   final VoidCallback onTap;
   final VoidCallback onPairingTap;
 
@@ -414,6 +396,8 @@ class _ChildCard extends StatefulWidget {
     required this.name,
     required this.fullName,
     required this.avatar,
+    this.avatarId,
+    this.backgroundId,
     required this.age,
     required this.onTap,
     required this.onPairingTap,
@@ -446,8 +430,6 @@ class _ChildCardState extends State<_ChildCard>
 
   @override
   Widget build(BuildContext context) {
-  
-
     return ScaleTransition(
       scale: _scaleAnim,
       child: GestureDetector(
@@ -478,9 +460,13 @@ class _ChildCardState extends State<_ChildCard>
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Flexible(
-                        child: Text(
-                          widget.avatar,
-                          style: const TextStyle(fontSize: 60),
+                        child: Center(
+                          child: StoreAvatarImage(
+                            avatar: widget.avatar,
+                            avatarId: widget.avatarId,
+                            backgroundId: widget.backgroundId,
+                            size: 90,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -497,20 +483,20 @@ class _ChildCardState extends State<_ChildCard>
                       ),
                       const SizedBox(height: 4),
                       if (widget.fullName.isNotEmpty &&
-    widget.fullName != widget.name) ...[
-  const SizedBox(height: 2),
-  Text(
-    widget.fullName,
-    style: const TextStyle(
-      fontSize: 11,
-      color: Colors.grey,
-      fontFamily: 'Tajawal',
-    ),
-    textAlign: TextAlign.center,
-    maxLines: 1,
-    overflow: TextOverflow.ellipsis,
-  ),
-],
+                          widget.fullName != widget.name) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          widget.fullName,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey,
+                            fontFamily: 'Tajawal',
+                          ),
+                          textAlign: TextAlign.center,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                       Text(
                         'العمر: ${toArabicDigits(widget.age)} ${widget.age >= 11 ? 'سنة' : 'سنوات'}',
                         style: const TextStyle(
@@ -518,8 +504,6 @@ class _ChildCardState extends State<_ChildCard>
                           color: Color(0xFFFF6969),
                         ),
                       ),
-                      
-                     
                     ],
                   ),
                 ),
