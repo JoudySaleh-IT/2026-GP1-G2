@@ -10,6 +10,7 @@ import '../services/motivation_service.dart';
 import '../widgets/practice_race_progress.dart';
 import '../services/notification_service.dart';
 import 'package:cloud_functions/cloud_functions.dart';
+import '../services/sound_service.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Exercise Model
@@ -1072,12 +1073,28 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
     _pulseCtrl.reset();
   }
 
+  Future<void> _handleAudioButtonTap() async {
+    // The child already used all 3 listening attempts.
+    if (_playCount >= _maxPlays) {
+      // Do not use the long guidance dialogue during
+      // Practice Together because the competition timer
+      // would continue running while it plays.
+      if (!widget.isPracticeTogether && !_showFeedback) {
+        await SoundService.playAttemptLimit();
+      }
+
+      return;
+    }
+
+    await _handlePlay();
+  }
+
   // ───────────────────────────────────────────────────────────────────────────
   // Answer
   //
   // Child cannot answer before listening at least once
   // ───────────────────────────────────────────────────────────────────────────
-  void _handleAnswer(String answer) {
+  Future<void> _handleAnswer(String answer) async {
     // Cannot answer:
     // - before listening
     // - after already answering
@@ -1088,6 +1105,10 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
       return;
     }
 
+    final bool isCorrect = answer == _exercise.correctAnswer;
+
+    // Practice Together timing must stop immediately
+    // when the answer is committed.
     if (widget.isPracticeTogether) {
       _resetInactivityTimer();
 
@@ -1095,14 +1116,46 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
 
       _stopQuestionTimer();
     }
+
+    // Commit the answer FIRST.
+    // Sound playback must never affect scoring.
     setState(() {
       _selectedAnswer = answer;
       _showFeedback = true;
 
-      if (answer == _exercise.correctAnswer) {
+      if (isCorrect) {
         _score++;
       }
     });
+
+    // If the reference word is still playing,
+    // stop it before playing feedback so the sounds
+    // do not overlap.
+    if (_isPlaying) {
+      try {
+        await _audioPlayer.stop();
+      } catch (e) {
+        debugPrint('Listening audio stop error: $e');
+      }
+
+      _pulseCtrl.stop();
+      _pulseCtrl.reset();
+
+      if (mounted) {
+        setState(() {
+          _isPlaying = false;
+        });
+      }
+    }
+
+    // Audio feedback is secondary.
+    // SoundService already catches playback errors,
+    // so an audio problem cannot break the exercise.
+    if (isCorrect) {
+      await SoundService.playCorrect();
+    } else {
+      await SoundService.playWrong();
+    }
   }
 
   Future<void> _saveListeningResult() async {
@@ -1132,27 +1185,24 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
       });
     }
 
-debugPrint('🧪 LISTENING TEST: score=$_score, passed=$passed');
-if (passed) {
-  try {
-    final callable = FirebaseFunctions.instanceFor(
-      region: 'us-central1',
-    ).httpsCallable('notifyFaseehProgress');
+    debugPrint('🧪 LISTENING TEST: score=$_score, passed=$passed');
+    if (passed) {
+      try {
+        final callable = FirebaseFunctions.instanceFor(
+          region: 'us-central1',
+        ).httpsCallable('notifyFaseehProgress');
 
-   
-final result = await callable.call({
-  'childId': widget.childId,
-  'letter': widget.letter,
-  'level': _currentLevelKey!,
-});
+        final result = await callable.call({
+          'childId': widget.childId,
+          'letter': widget.letter,
+          'level': _currentLevelKey!,
+        });
 
-debugPrint('🔔 FASEEH MILESTONE RESULT: ${result.data}');
-
-  } catch (e) {
-    debugPrint('⚠️ Milestone notification failed: $e');
-  }
-}
-
+        debugPrint('🔔 FASEEH MILESTONE RESULT: ${result.data}');
+      } catch (e) {
+        debugPrint('⚠️ Milestone notification failed: $e');
+      }
+    }
 
     debugPrint(
       'Listening result saved: '
@@ -1390,6 +1440,13 @@ debugPrint('🔔 FASEEH MILESTONE RESULT: ${result.data}');
       );
 
       return;
+    }
+
+    // Solo Listening result sound.
+    if (_score >= 6) {
+      unawaited(SoundService.playWin());
+    } else {
+      unawaited(SoundService.playLoss());
     }
 
     Navigator.pushNamed(
@@ -1882,7 +1939,7 @@ debugPrint('🔔 FASEEH MILESTONE RESULT: ${result.data}');
       mainAxisSize: MainAxisSize.min,
       children: [
         GestureDetector(
-          onTap: disabled ? null : _handlePlay,
+          onTap: _showFeedback ? null : _handleAudioButtonTap,
           child: AnimatedBuilder(
             animation: _pulseAnim,
             builder: (_, child) => Transform.scale(

@@ -50,6 +50,7 @@ flutter:
   uses-material-design: true
 
   assets:
+    - assets/soundeffects/
     - assets/images/
     - assets/images/certificates/
     - assets/images/articulation/
