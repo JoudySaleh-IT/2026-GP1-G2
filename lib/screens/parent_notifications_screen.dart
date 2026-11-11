@@ -101,7 +101,18 @@ class ParentNotificationsScreen extends StatelessWidget {
         );
       }
 
-      final notifications = snapshot.data?.docs.toList() ?? [];
+      final thirtyDaysAgo = DateTime.now().subtract(
+  const Duration(days: 30),
+);
+
+final notifications = (snapshot.data?.docs.toList() ?? [])
+    .where((notification) {
+  final createdAt = notification.data()['createdAt'] as Timestamp?;
+
+  if (createdAt == null) return false;
+
+  return createdAt.toDate().isAfter(thirtyDaysAgo);
+}).toList();
 
       // Newest first
       notifications.sort((a, b) {
@@ -174,6 +185,9 @@ class _ParentNotificationItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final data = notification.data();
+    final String type = data['type']?.toString() ?? '';
+final String? notificationTitle = data['title']?.toString();
+final String? notificationMessage = data['message']?.toString();
 
     final String childId = data['childId']?.toString() ?? '';
     final bool isRead = data['isRead'] == true;
@@ -219,11 +233,14 @@ class _ParentNotificationItem extends StatelessWidget {
             gender == 'girl' ? 'أضافت' : 'أضاف';
 
         return _ParentNotificationCard(
-          childName: displayName,
-          avatar: avatar,
-          action: action,
-          isRead: isRead,
-          timeText: _formatParentNotificationTime(createdAt),
+  childName: displayName,
+  avatar: avatar,
+  action: action,
+  type: type,
+  titleOverride: notificationTitle,
+  messageOverride: notificationMessage,
+  isRead: isRead,
+  timeText: _formatParentNotificationTime(createdAt),
           onTap: () async {
             if (!isRead) {
               await notification.reference.update({
@@ -241,6 +258,9 @@ class _ParentNotificationCard extends StatelessWidget {
   final String childName;
   final String avatar;
   final String action;
+  final String type;
+final String? titleOverride;
+final String? messageOverride;
   final bool isRead;
   final String timeText;
   final VoidCallback onTap;
@@ -249,6 +269,9 @@ class _ParentNotificationCard extends StatelessWidget {
     required this.childName,
     required this.avatar,
     required this.action,
+    required this.type,
+this.titleOverride,
+this.messageOverride,
     required this.isRead,
     required this.timeText,
     required this.onTap,
@@ -259,6 +282,29 @@ class _ParentNotificationCard extends StatelessWidget {
     const purple = Color(0xFF511281);
     const coral = Color(0xFFFF6969);
     const green = Color(0xFF70A884);
+    final bool isMilestone = const [
+  'level_completed',
+  'letter_completed',
+  'journey_completed',
+].contains(type);
+
+final String title = isMilestone
+    ? (titleOverride ?? 'إنجاز جديد')
+    : 'صديق جديد';
+
+final String message = isMilestone
+    ? (messageOverride ?? 'حقق طفلك إنجازًا جديدًا!')
+    : '$childName $action صديقًا جديدًا';
+
+final IconData typeIcon = type == 'level_completed'
+    ? Icons.stars_rounded
+    : type == 'letter_completed'
+        ? Icons.emoji_events_rounded
+        : type == 'journey_completed'
+            ? Icons.workspace_premium_rounded
+            : Icons.people_alt_rounded;
+
+final Color tagColor = isMilestone ? purple : green;
 
     return Material(
       color: Colors.transparent,
@@ -317,11 +363,11 @@ class _ParentNotificationCard extends StatelessWidget {
                         color: Color(0xFFE9F4EC),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
-                        Icons.people_alt_rounded,
-                        color: green,
-                        size: 13,
-                      ),
+                      child: Icon(
+  typeIcon,
+  color: tagColor,
+  size: 13,
+),
                     ),
                   ),
                 ],
@@ -335,9 +381,9 @@ class _ParentNotificationCard extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        const Expanded(
-                          child: Text(
-                            'صديق جديد',
+                        Expanded(
+  child: Text(
+    title,
                             textAlign: TextAlign.right,
                             style: TextStyle(
                               fontFamily: 'Tajawal',
@@ -363,7 +409,7 @@ class _ParentNotificationCard extends StatelessWidget {
                     const SizedBox(height: 4),
 
                     Text(
-                      '$childName $action صديقًا جديدًا',
+                      message,
                       textAlign: TextAlign.right,
                       style: const TextStyle(
                         fontFamily: 'Tajawal',
@@ -404,29 +450,31 @@ class _ParentNotificationCard extends StatelessWidget {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF1F8F3),
+                        color: isMilestone
+    ? const Color(0xFFF3EBFA)
+    : const Color(0xFFF1F8F3),
                         borderRadius: BorderRadius.circular(14),
                       ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.people_alt_rounded,
-                            size: 13,
-                            color: green,
-                          ),
-                          SizedBox(width: 4),
-                          Text(
-                            'نشاط الأصدقاء',
-                            style: TextStyle(
-                              fontFamily: 'Tajawal',
-                              fontSize: 9,
-                              fontWeight: FontWeight.w600,
-                              color: green,
-                            ),
-                          ),
-                        ],
-                      ),
+                      child: Row(
+  mainAxisSize: MainAxisSize.min,
+  children: [
+    Icon(
+      typeIcon,
+      size: 13,
+      color: tagColor,
+    ),
+    const SizedBox(width: 4),
+    Text(
+      isMilestone ? 'إنجاز' : 'نشاط الأصدقاء',
+      style: TextStyle(
+        fontFamily: 'Tajawal',
+        fontSize: 9,
+        fontWeight: FontWeight.w600,
+        color: tagColor,
+      ),
+    ),
+  ],
+),
                     ),
                   ],
                 ),
