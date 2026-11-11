@@ -3,6 +3,10 @@ const {onCall, HttpsError} = require("firebase-functions/v2/https");
 const {onSchedule} = require("firebase-functions/v2/scheduler");
 const logger = require("firebase-functions/logger");
 const admin = require("firebase-admin");
+const {
+  onDocumentUpdated,
+  onDocumentCreated,
+} = require("firebase-functions/v2/firestore");
 
 admin.initializeApp();
 
@@ -463,4 +467,488 @@ exports.cleanupOldNotifications = onSchedule(
           `Deleted ${snapshot.size} old notifications.`,
       );
     },
+);
+
+
+const MILESTONE_LEVELS = [
+  "beginner",
+  "intermediate",
+  "advanced",
+];
+
+const MILESTONE_LEVEL_NAMES = {
+  beginner: "المبتدئ",
+  intermediate: "المتوسط",
+  advanced: "المتقدم",
+};
+
+const MILESTONE_LETTERS = ["ض", "س", "ص", "غ", "خ", "ق"];
+
+function getMilestoneLevel(progress, letter, level) {
+  return progress?.[letter]?.[level] || {};
+}
+
+function hasPassedListening(progress, letter, level) {
+  return getMilestoneLevel(progress, letter, level).listeningPassed === true;
+}
+
+function hasCompletedLevel(progress, letter, level) {
+  const data = getMilestoneLevel(progress, letter, level);
+
+  return (
+    data.listeningPassed === true &&
+    data.pronunciationPassed === true
+  );
+}
+
+function hasCompletedLetter(progress, letter) {
+  return MILESTONE_LEVELS.every((level) =>
+    hasCompletedLevel(progress, letter, level)
+  );
+}
+
+
+async function sendMilestonePush({
+  parentId,
+  childId,
+  mode,
+  title,
+  message,
+  type,
+  referenceId,
+}) {
+  if (!parentId) return;
+
+  const db = admin.firestore();
+
+  const devices = await db
+    .collection("parent_fcm_tokens")
+    .doc(parentId)
+    .collection("devices")
+    .get();
+
+  const tokens = new Set();
+
+  devices.docs.forEach((doc) => {
+    const device = doc.data();
+
+    const correctMode =
+      mode === "parent"
+        ? device.activeMode === "parent"
+        : device.activeMode === "child" &&
+          device.activeChildId === childId;
+
+    if (correctMode && device.token) {
+      tokens.add(device.token);
+    }
+  });
+
+  if (tokens.size === 0) {
+    logger.info("No milestone push tokens", {
+      childId,
+      mode,
+    });
+    return;
+  }
+
+  const response = await admin.messaging().sendEachForMulticast({
+    tokens: Array.from(tokens),
+    notification: {
+      title,
+      body: message,
+    },
+    data: {
+      type: String(type),
+      referenceId: String(referenceId),
+      childId: String(childId),
+      receiverId: String(childId),
+    },
+    android: {
+      priority: "high",
+    },
+  });
+
+  logger.info("Milestone push result", {
+    childId,
+    mode,
+    successCount: response.successCount,
+    failureCount: response.failureCount,
+  });
+}
+
+exports.notifyFaseehMilestones = onDocumentUpdated(
+  {
+    document: "children/{childId}",
+    region: "me-central2",
+  },
+  async (event) => {
+    const before = event.data?.before?.data();
+    const after = event.data?.after?.data();
+
+    if (!before || !after) return;
+
+    const childId = event.params.childId;
+    const parentId = after.parentId || null;
+
+    const oldProgress = before.exerciseProgress || {};
+    const newProgress = after.exerciseProgress || {};
+
+    const milestones = [];
+
+    for (const letter of MILESTONE_LETTERS) {
+      for (const level of MILESTONE_LEVELS) {
+        const levelName = MILESTONE_LEVEL_NAMES[level];
+
+        if (
+          !hasPassedListening(oldProgress, letter, level) &&
+          hasPassedListening(newProgress, letter, level)
+        ) {
+          milestones.push({
+            id: `listening_${letter}_${level}`,
+            type: "listening_completed",
+            childTitle: "أحسنت!",
+            childMessage:
+              `🎧 أحسنت! أكملت تمارين الاستماع لحرف ${letter} في المستوى ${levelName}!`,
+          });
+        }
+
+        if (
+          !hasCompletedLevel(oldProgress, letter, level) &&
+          hasCompletedLevel(newProgress, letter, level)
+        ) {
+          milestones.push({
+            id: `level_${letter}_${level}`,
+            type: "level_completed",
+            childTitle: "مبروك!",
+            childMessage:
+              `🎉 مبروك! أكملت المستوى ${levelName} لحرف ${letter}!`,
+            parentTitle: "إنجاز جديد لطفلك!",
+            parentMessage:
+              `🌟 أكمل طفلك المستوى ${levelName} لحرف ${letter} في مهارتي الاستماع والنطق!`,
+          });
+        }
+      }
+
+      if (
+        !hasCompletedLetter(oldProgress, letter) &&
+        hasCompletedLetter(newProgress, letter)
+      ) {
+        milestones.push({
+          id: `letter_${letter}`,
+          type: "letter_completed",
+          childTitle: "إنجاز رائع!",
+          childMessage:
+            `🏆 أتقنت حرف ${letter} بجميع مستوياته!`,
+          parentTitle: "إنجاز جديد لطفلك!",
+          parentMessage:
+            `🏆 أكمل طفلك جميع مستويات حرف ${letter} بنجاح!`,
+        });
+      }
+    }
+
+    if (milestones.length === 0) return;
+
+    const db = admin.firestore();
+
+    for (const milestone of milestones) {
+      const achievementRef = db
+        .collection("children")
+        .doc(childId)
+        .collection("milestone_achievements")
+        .doc(milestone.id);
+
+      const notificationId =
+        `milestone_${childId}_${milestone.id}`;
+
+      const childNotificationRef = db
+        .collection("notifications")
+        .doc(notificationId);
+
+      const parentNotificationRef = parentId && milestone.parentMessage
+        ? db.collection("parent_notifications").doc(notificationId)
+        : null;
+
+      const created = await db.runTransaction(async (transaction) => {
+        const existingAchievement =
+          await transaction.get(achievementRef);
+
+        if (existingAchievement.exists) {
+          return false;
+        }
+
+        const now = Date.now();
+
+        const childExpiresAt =
+          admin.firestore.Timestamp.fromMillis(
+            now + 48 * 60 * 60 * 1000
+          );
+
+        const parentExpiresAt =
+          admin.firestore.Timestamp.fromMillis(
+            now + 30 * 24 * 60 * 60 * 1000
+          );
+
+        transaction.create(achievementRef, {
+          type: milestone.type,
+          letter: milestone.id.startsWith("letter_")
+            ? milestone.id.substring(7)
+            : null,
+          achievedAt:
+            admin.firestore.FieldValue.serverTimestamp(),
+        });
+
+        transaction.create(childNotificationRef, {
+          receiverId: childId,
+          senderId: "system",
+          type: milestone.type,
+          referenceId: milestone.id,
+          title: milestone.childTitle,
+          message: milestone.childMessage,
+          isRead: false,
+          createdAt:
+            admin.firestore.FieldValue.serverTimestamp(),
+          expiresAt: childExpiresAt,
+        });
+
+        if (parentNotificationRef) {
+          transaction.create(parentNotificationRef, {
+            parentId,
+            childId,
+            type: milestone.type,
+            referenceId: milestone.id,
+            title: milestone.parentTitle,
+            message: milestone.parentMessage,
+            isRead: false,
+            createdAt:
+              admin.firestore.FieldValue.serverTimestamp(),
+            expiresAt: parentExpiresAt,
+          });
+        }
+
+        return true;
+      });
+
+      if (!created) continue;
+
+      try {
+        await sendMilestonePush({
+          parentId,
+          childId,
+          mode: "child",
+          title: milestone.childTitle,
+          message: milestone.childMessage,
+          type: milestone.type,
+          referenceId: milestone.id,
+        });
+      } catch (error) {
+        logger.error("Child milestone push failed", error);
+      }
+
+      if (milestone.parentMessage && parentId) {
+        try {
+          await sendMilestonePush({
+            parentId,
+            childId,
+            mode: "parent",
+            title: milestone.parentTitle,
+            message: milestone.parentMessage,
+            type: milestone.type,
+            referenceId: milestone.id,
+          });
+        } catch (error) {
+          logger.error("Parent milestone push failed", error);
+        }
+      }
+    }
+
+    logger.info("Faseeh milestones processed", {
+      childId,
+      count: milestones.length,
+    });
+  }
+);
+
+// =============================================================
+// FASEEH CERTIFICATE ACHIEVEMENT NOTIFICATIONS
+// =============================================================
+
+
+exports.notifyFaseehCertificate = onCall(
+  {region: "us-central1"},
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError(
+          "unauthenticated",
+          "Authentication is required.",
+      );
+    }
+
+    const childId = request.data?.childId;
+
+    if (typeof childId !== "string" || !childId.trim()) {
+      throw new HttpsError(
+          "invalid-argument",
+          "A valid childId is required.",
+      );
+    }
+
+    const db = admin.firestore();
+    const childRef = db.collection("children").doc(childId);
+    const childDoc = await childRef.get();
+
+    if (!childDoc.exists) {
+      throw new HttpsError("not-found", "Child not found.");
+    }
+
+    const child = childDoc.data();
+    const parentId = child.parentId;
+
+    // IMPORTANT:
+    // This assumes parentId equals the Firebase Auth UID.
+    if (!parentId || request.auth.uid !== parentId) {
+      throw new HttpsError(
+          "permission-denied",
+          "Not authorized for this child.",
+      );
+    }
+
+    const letterScores = child.letterScores || {};
+    const progress = child.exerciseProgress || {};
+
+    const requiredLetters = Object.entries(letterScores)
+        .filter(([, score]) =>
+          typeof score === "number" && score < 80)
+        .map(([letter]) => letter);
+
+    if (requiredLetters.length === 0) {
+      throw new HttpsError(
+          "failed-precondition",
+          "No required exercises found.",
+      );
+    }
+
+    for (const letter of requiredLetters) {
+      const advanced = progress[letter]?.advanced;
+
+      if (
+        advanced?.listeningPassed !== true ||
+        advanced?.pronunciationPassed !== true
+      ) {
+        throw new HttpsError(
+            "failed-precondition",
+            "Journey is not completed.",
+        );
+      }
+    }
+
+    const certificateRef = childRef
+        .collection("certificates")
+        .doc("completion");
+
+    const certificateDoc = await certificateRef.get();
+
+    if (!certificateDoc.exists) {
+      throw new HttpsError(
+          "failed-precondition",
+          "Certificate has not been issued.",
+      );
+    }
+
+    const type = "journey_completed";
+    const referenceId = "certificate_completion";
+    const notificationId = `milestone_${childId}_${referenceId}`;
+
+    const childTitle = "شهادة فصيح 🎓";
+    const childMessage = "🎓 حصلت على شهادة فصيح!";
+    const parentTitle = "شهادة فصيح 🎓";
+    const parentMessage =
+      "🎓 أكمل طفلك رحلة فصيح وحصل على شهادته!";
+
+    const achievementRef = childRef
+        .collection("milestone_achievements")
+        .doc(referenceId);
+
+    const childNotificationRef = db
+        .collection("notifications")
+        .doc(notificationId);
+
+    const parentNotificationRef = db
+        .collection("parent_notifications")
+        .doc(notificationId);
+
+    const created = await db.runTransaction(async (transaction) => {
+      const existing = await transaction.get(achievementRef);
+
+      if (existing.exists) return false;
+
+      const now = Date.now();
+
+      transaction.create(achievementRef, {
+        type,
+        achievedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+      transaction.create(childNotificationRef, {
+        receiverId: childId,
+        senderId: "system",
+        type,
+        referenceId,
+        title: childTitle,
+        message: childMessage,
+        isRead: false,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        expiresAt: admin.firestore.Timestamp.fromMillis(
+            now + 48 * 60 * 60 * 1000),
+      });
+
+      transaction.create(parentNotificationRef, {
+        parentId,
+        childId,
+        type,
+        referenceId,
+        title: parentTitle,
+        message: parentMessage,
+        isRead: false,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        expiresAt: admin.firestore.Timestamp.fromMillis(
+            now + 30 * 24 * 60 * 60 * 1000),
+      });
+
+      return true;
+    });
+
+    if (!created) {
+      return {success: true, alreadyNotified: true};
+    }
+
+    try {
+      await sendMilestonePush({
+        parentId,
+        childId,
+        mode: "child",
+        title: childTitle,
+        message: childMessage,
+        type,
+        referenceId,
+      });
+    } catch (error) {
+      logger.error("Certificate child push failed", error);
+    }
+
+    try {
+      await sendMilestonePush({
+        parentId,
+        childId,
+        mode: "parent",
+        title: parentTitle,
+        message: parentMessage,
+        type,
+        referenceId,
+      });
+    } catch (error) {
+      logger.error("Certificate parent push failed", error);
+    }
+
+    return {success: true, alreadyNotified: false};
+  },
 );

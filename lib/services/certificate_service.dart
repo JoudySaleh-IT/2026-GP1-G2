@@ -1,7 +1,24 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 class CertificateService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+Future<void> notifyCertificate(String childId) async {
+  try {
+    final callable = FirebaseFunctions.instanceFor(
+      region: 'us-central1',
+    ).httpsCallable('notifyFaseehCertificate');
+
+    await callable.call({
+      'childId': childId,
+    });
+
+    debugPrint('Certificate notification processed');
+  } catch (e) {
+    debugPrint('Certificate notification failed: $e');
+  }
+}
 
   Future<bool> isJourneyCompleted(String childId) async {
     final doc = await _firestore
@@ -141,7 +158,10 @@ if (existingCertificate.exists) {
     'issuedAt': FieldValue.serverTimestamp(),
   });
 
-  debugPrint('✅ Certificate issued for $fullName');
-  return true;
+debugPrint('✅ Certificate issued for $fullName');
+
+await notifyCertificate(childId);
+
+return true;
 }
 }

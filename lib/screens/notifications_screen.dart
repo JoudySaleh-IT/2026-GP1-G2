@@ -494,12 +494,12 @@ class NotificationsScreen extends StatelessWidget {
   ) {
     final data = notification.data();
 
-    final senderId = data['senderId']?.toString() ?? '';
-    final type = data['type']?.toString() ?? '';
-    final referenceId = data['referenceId']?.toString() ?? '';
-    final isRead = data['isRead'] == true;
-    final createdAt = data['createdAt'] as Timestamp?;
-    final timeText = _formatNotificationTime(createdAt);
+  final senderId = data['senderId']?.toString() ?? '';
+  final type = data['type']?.toString() ?? '';
+  final referenceId = data['referenceId']?.toString() ?? '';
+  final isRead = data['isRead'] == true;
+  final createdAt = data['createdAt'] as Timestamp?;
+  final timeText = _formatNotificationTime(createdAt);
 
     // Practice Together invitation:
     // show it only while its session is still pending.
@@ -800,6 +800,8 @@ class _NotificationCard extends StatelessWidget {
   final Future<void> Function()? onAccept;
   final Future<void> Function()? onDecline;
   final String timeText;
+  final String? titleOverride;
+final String? messageOverride;
 
   const _NotificationCard({
     required this.name,
@@ -810,8 +812,6 @@ class _NotificationCard extends StatelessWidget {
     required this.timeText,
     this.onAccept,
     this.onDecline,
-    this.avatarId,
-    this.backgroundId,
   });
 
   @override
@@ -842,13 +842,24 @@ class _NotificationCard extends StatelessWidget {
       tagBackground = const Color(0xFFFFF1E8);
       tagColor = const Color(0xFFE59A61);
     } else {
-      title = 'إشعار جديد';
-      message = 'لديك إشعار جديد';
-      typeIcon = Icons.notifications_rounded;
-      tagBackground = const Color(0xFFF3EBFA);
-      tagColor = purple;
-    }
+  title = titleOverride ?? 'إشعار جديد';
+  message = messageOverride ?? 'لديك إشعار جديد';
 
+  if (type == 'listening_completed') {
+    typeIcon = Icons.headphones_rounded;
+  } else if (type == 'level_completed') {
+    typeIcon = Icons.stars_rounded;
+  } else if (type == 'letter_completed') {
+    typeIcon = Icons.emoji_events_rounded;
+  } else if (type == 'journey_completed') {
+    typeIcon = Icons.workspace_premium_rounded;
+  } else {
+    typeIcon = Icons.notifications_rounded;
+  }
+
+  tagBackground = const Color(0xFFF3EBFA);
+  tagColor = purple;
+}
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -1007,10 +1018,17 @@ class _NotificationCard extends StatelessWidget {
                           const SizedBox(width: 4),
                           Text(
                             isFriendRequest
-                                ? 'طلب صداقة'
-                                : isPracticeInvitation
-                                ? 'تدرّب معًا'
-                                : 'إشعار',
+    ? 'طلب صداقة'
+    : isPracticeInvitation
+        ? 'تدرّب معًا'
+        : const [
+            'listening_completed',
+            'level_completed',
+            'letter_completed',
+            'journey_completed',
+          ].contains(type)
+            ? 'إنجاز'
+            : 'إشعار',
                             style: TextStyle(
                               fontFamily: 'Tajawal',
                               fontSize: 9,
