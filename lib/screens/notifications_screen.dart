@@ -718,6 +718,16 @@ return _NotificationCard(
                   }
 
                   final allNotifications = snapshot.data?.docs.toList() ?? [];
+                  debugPrint('=== FASEEH NOTIFICATIONS ===');
+
+for (final doc in allNotifications) {
+  debugPrint(
+    'ID: ${doc.id} | '
+    'TYPE: ${doc.data()['type']} | '
+    'RECEIVER: ${doc.data()['receiverId']} | '
+    'CREATED: ${doc.data()['createdAt']}',
+  );
+}
 
                   final fortyEightHoursAgo = DateTime.now().subtract(
                     const Duration(hours: 48),
@@ -862,10 +872,16 @@ const _NotificationCard({
   } else if (type == 'letter_completed') {
     typeIcon = Icons.emoji_events_rounded;
   } else if (type == 'journey_completed') {
-    typeIcon = Icons.workspace_premium_rounded;
-  } else {
-    typeIcon = Icons.notifications_rounded;
-  }
+  typeIcon = Icons.workspace_premium_rounded;
+} else if (type == 'streak_completed') {
+  typeIcon = Icons.local_fire_department_rounded;
+} else if (type == 'practice_reminder') {
+  typeIcon = Icons.alarm_rounded;
+} else if (type == 'streak_reminder') {
+  typeIcon = Icons.local_fire_department_rounded;
+} else {
+  typeIcon = Icons.notifications_rounded;
+}
 
   tagBackground = const Color(0xFFF3EBFA);
   tagColor = purple;
@@ -1032,13 +1048,18 @@ const _NotificationCard({
     : isPracticeInvitation
         ? 'تدرّب معًا'
         : const [
-            'listening_completed',
-            'level_completed',
-            'letter_completed',
-            'journey_completed',
-          ].contains(type)
+  'listening_completed',
+  'level_completed',
+  'letter_completed',
+  'journey_completed',
+  'streak_completed',
+].contains(type)
             ? 'إنجاز'
-            : 'إشعار',
+           : type == 'practice_reminder'
+    ? 'تذكير بالتدريب'
+    : type == 'streak_reminder'
+        ? 'تذكير بالسلسلة'
+        : 'إشعار',
                             style: TextStyle(
                               fontFamily: 'Tajawal',
                               fontSize: 9,

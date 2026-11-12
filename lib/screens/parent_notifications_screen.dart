@@ -286,6 +286,7 @@ this.messageOverride,
   'level_completed',
   'letter_completed',
   'journey_completed',
+  'streak_completed',
 ].contains(type);
 
 final String title = isMilestone
@@ -302,7 +303,9 @@ final IconData typeIcon = type == 'level_completed'
         ? Icons.emoji_events_rounded
         : type == 'journey_completed'
             ? Icons.workspace_premium_rounded
-            : Icons.people_alt_rounded;
+            : type == 'streak_completed'
+                ? Icons.local_fire_department_rounded
+                : Icons.people_alt_rounded;
 
 final Color tagColor = isMilestone ? purple : green;
 

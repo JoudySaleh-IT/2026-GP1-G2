@@ -543,6 +543,24 @@ async function sendMilestonePush({
     }
   });
 
+
+  // Fallback: use the child's directly registered FCM token.
+  if (mode === "child" && tokens.size === 0) {
+    const childTokenDoc = await db
+      .collection("child_fcm_tokens")
+      .doc(childId)
+      .get();
+
+    if (childTokenDoc.exists) {
+      const childToken = childTokenDoc.data()?.token;
+
+      if (typeof childToken === "string" && childToken.length > 0) {
+        tokens.add(childToken);
+        logger.info("Child fallback FCM token found", {childId});
+      }
+    }
+  }
+
   if (tokens.size === 0) {
     logger.info("No milestone push tokens", {
       childId,
@@ -981,4 +999,422 @@ exports.notifyFaseehCertificate = onCall(
 
     return {success: true, alreadyNotified: false};
   },
+);
+
+// =============================================================
+// FASEEH STREAK ACHIEVEMENT NOTIFICATIONS
+// =============================================================
+
+
+ // =============================================================
+ // FASEEH STREAK ACHIEVEMENT NOTIFICATIONS (CALLABLE)
+ // =============================================================
+
+exports.notifyFaseehStreak = onCall(async (request) => {
+  if (!request.auth) {
+    throw new HttpsError("unauthenticated", "Authentication required.");
+  }
+
+  const childId = request.data?.childId;
+
+  if (typeof childId !== "string" || !childId.trim()) {
+    throw new HttpsError("invalid-argument", "Valid childId is required.");
+  }
+
+  const parentId = request.auth.uid;
+  const db = admin.firestore();
+
+  const childRef = db.collection("children").doc(childId);
+  const childSnapshot = await childRef.get();
+
+  if (!childSnapshot.exists) {
+    throw new HttpsError("not-found", "Child not found.");
+  }
+
+  const childData = childSnapshot.data();
+
+  if (childData.parentId !== parentId) {
+    throw new HttpsError("permission-denied", "Not authorized for this child.");
+  }
+
+  const streak = Number(childData.streak || 0);
+
+  if (streak < 3 || streak % 3 !== 0) {
+    return {success: true, notified: false, reason: "not_milestone"};
+  }
+
+  // Verify that the streak was updated for today's practice.
+  const today = new Date(
+    Date.now() + 3 * 60 * 60 * 1000
+  ).toISOString().slice(0, 10);
+
+  if (childData.lastPracticeDay !== today) {
+    return {success: true, notified: false, reason: "not_practiced_today"};
+  }
+
+  const referenceId = `streak_${streak}`;
+  const notificationId = `milestone_${childId}_${referenceId}`;
+
+  const achievementRef = childRef
+    .collection("milestone_achievements")
+    .doc(referenceId);
+
+  const childNotificationRef = db
+    .collection("notifications")
+    .doc(notificationId);
+
+  const parentNotificationRef = db
+    .collection("parent_notifications")
+    .doc(notificationId);
+
+  const childTitle = "سلسلة إنجازات رائعة! 🔥";
+  const childMessage =
+    `أحسنت! واصلت التدريب ${streak} أيام متتالية في فصيح! 🌟`;
+
+  const parentTitle = "طفلك يحافظ على تقدمه! 🌟";
+  const parentMessage =
+    `واصل طفلك التدريب لمدة ${streak} أيام متتالية في فصيح!`;
+
+  const created = await db.runTransaction(async (transaction) => {
+    const currentChild = await transaction.get(childRef);
+    const existing = await transaction.get(achievementRef);
+
+    if (!currentChild.exists) {
+      throw new HttpsError("not-found", "Child not found.");
+    }
+
+    const currentData = currentChild.data();
+
+    if (currentData.parentId !== parentId) {
+      throw new HttpsError("permission-denied", "Not authorized.");
+    }
+
+    const currentStreak = Number(currentData.streak || 0);
+
+    if (
+      existing.exists ||
+      currentStreak !== streak ||
+      currentStreak < 3 ||
+      currentStreak % 3 !== 0 ||
+      currentData.lastPracticeDay !== today
+    ) {
+      return false;
+    }
+
+    const now = Date.now();
+
+    transaction.create(achievementRef, {
+      type: "streak_completed",
+      streak,
+      achievedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    transaction.create(childNotificationRef, {
+      receiverId: childId,
+      senderId: "system",
+      type: "streak_completed",
+      referenceId,
+      title: childTitle,
+      message: childMessage,
+      isRead: false,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      expiresAt: admin.firestore.Timestamp.fromMillis(
+        now + 48 * 60 * 60 * 1000
+      ),
+    });
+
+    transaction.create(parentNotificationRef, {
+      parentId,
+      childId,
+      type: "streak_completed",
+      referenceId,
+      title: parentTitle,
+      message: parentMessage,
+      isRead: false,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      expiresAt: admin.firestore.Timestamp.fromMillis(
+        now + 30 * 24 * 60 * 60 * 1000
+      ),
+    });
+
+    return true;
+  });
+
+  if (!created) {
+    return {success: true, notified: false, reason: "already_sent_or_changed"};
+  }
+
+  try {
+    await sendMilestonePush({
+      parentId,
+      childId,
+      mode: "child",
+      title: childTitle,
+      message: childMessage,
+      type: "streak_completed",
+      referenceId,
+    });
+  } catch (error) {
+    logger.error("Streak child push failed", error);
+  }
+
+  try {
+    await sendMilestonePush({
+      parentId,
+      childId,
+      mode: "parent",
+      title: parentTitle,
+      message: parentMessage,
+      type: "streak_completed",
+      referenceId,
+    });
+  } catch (error) {
+    logger.error("Streak parent push failed", error);
+  }
+
+  return {success: true, notified: true, streak};
+});
+
+
+
+ // =============================================================
+ // FASEEH DAILY PRACTICE REMINDER
+ // Every day at 2:00 AM Saudi Arabia time
+ // =============================================================
+
+exports.sendDailyPracticeReminder = onSchedule(
+  {
+schedule: "0 12 * * *",
+    timeZone: "Asia/Riyadh",
+    region: "us-central1",
+  },
+  async () => {
+    const db = admin.firestore();
+
+    // Saudi calendar dates (UTC+3).
+    const saudiNow = new Date(Date.now() + 3 * 60 * 60 * 1000);
+    const today = saudiNow.toISOString().slice(0, 10);
+
+    const yesterdayDate = new Date(
+      saudiNow.getTime() - 24 * 60 * 60 * 1000
+    );
+    const yesterday = yesterdayDate.toISOString().slice(0, 10);
+
+    // Only children who practiced yesterday.
+    const childrenSnapshot = await db
+      .collection("children")
+      .where("lastPracticeDay", "==", yesterday)
+      .get();
+
+    if (childrenSnapshot.empty) {
+      logger.info("No children eligible for practice reminders.", {
+        today,
+        yesterday,
+      });
+      return;
+    }
+
+    let remindersCreated = 0;
+
+    for (const childDoc of childrenSnapshot.docs) {
+      const childId = childDoc.id;
+      const child = childDoc.data();
+      const parentId = child.parentId;
+
+      if (!parentId) continue;
+
+      const reminderId = `practice_reminder_${childId}_${today}`;
+
+      const notificationRef = db
+        .collection("notifications")
+        .doc(reminderId);
+
+      const title = "فصيح ينتظرك! 🌟";
+      const message =
+        "لا تنسَ تدريبك اليوم! واصل رحلتك في فصيح وحافظ على سلسلة إنجازاتك 🔥";
+
+      try {
+        // Transaction prevents duplicate reminders.
+        const created = await db.runTransaction(async (transaction) => {
+          const latestChild = await transaction.get(childDoc.ref);
+          const existing = await transaction.get(notificationRef);
+
+          if (!latestChild.exists || existing.exists) {
+            return false;
+          }
+
+          // Recheck the child's practice day.
+          if (latestChild.data().lastPracticeDay !== yesterday) {
+            return false;
+          }
+
+          transaction.create(notificationRef, {
+            receiverId: childId,
+            senderId: "system",
+            type: "practice_reminder",
+            referenceId: reminderId,
+            title,
+            message,
+            isRead: false,
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            expiresAt: admin.firestore.Timestamp.fromMillis(
+              Date.now() + 48 * 60 * 60 * 1000
+            ),
+          });
+
+          return true;
+        });
+
+if (!created) continue;
+        remindersCreated++;
+
+        try {
+          await sendMilestonePush({
+            parentId,
+            childId,
+            mode: "child",
+            title,
+            message,
+            type: "practice_reminder",
+            referenceId: reminderId,
+          });
+        } catch (error) {
+          logger.error("Practice reminder push failed", {
+            childId,
+            error,
+          });
+        }
+      } catch (error) {
+        logger.error("Failed to create practice reminder", {
+          childId,
+          error,
+        });
+      }
+    }
+
+    logger.info("Daily practice reminders completed", {
+      today,
+      yesterday,
+      remindersCreated,
+    });
+  }
+);
+
+
+// =============================================================
+// FASEEH STREAK REMINDER
+// Every day at 7:00 PM Saudi Arabia time
+// =============================================================
+
+exports.sendStreakReminder = onSchedule(
+  {
+    schedule: "0 19 * * *",
+    timeZone: "Asia/Riyadh",
+    region: "us-central1",
+  },
+  async () => {
+    const db = admin.firestore();
+
+    const saudiNow = new Date(Date.now() + 3 * 60 * 60 * 1000);
+    const today = saudiNow.toISOString().slice(0, 10);
+    const yesterday = new Date(
+      saudiNow.getTime() - 24 * 60 * 60 * 1000
+    ).toISOString().slice(0, 10);
+
+    const childrenSnapshot = await db
+      .collection("children")
+      .where("lastPracticeDay", "==", yesterday)
+      .get();
+
+    let remindersCreated = 0;
+
+    for (const childDoc of childrenSnapshot.docs) {
+      const childId = childDoc.id;
+      const child = childDoc.data();
+      const parentId = child.parentId;
+
+      if (!parentId || Number(child.streak || 0) < 2) {
+        continue;
+      }
+
+      const reminderId = `streak_reminder_${childId}_${today}`;
+      const notificationRef = db
+        .collection("notifications")
+        .doc(reminderId);
+
+      const title = "لا تخسر سلسلتك! 🔥";
+      const message =
+        `عندك سلسلة تدريب مستمرة لمدة ${child.streak} أيام! ` +
+        "تدرب اليوم عشان تحافظ عليها! 🌟";
+
+      try {
+        const created = await db.runTransaction(async (transaction) => {
+          const latestChild = await transaction.get(childDoc.ref);
+          const existing = await transaction.get(notificationRef);
+
+          if (!latestChild.exists || existing.exists) {
+            return false;
+          }
+
+          const latestData = latestChild.data();
+
+          if (
+            latestData.lastPracticeDay !== yesterday ||
+            Number(latestData.streak || 0) < 2 ||
+            !latestData.parentId
+          ) {
+            return false;
+          }
+
+          transaction.create(notificationRef, {
+            receiverId: childId,
+            senderId: "system",
+            type: "streak_reminder",
+            referenceId: reminderId,
+            title,
+            message,
+            isRead: false,
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            expiresAt: admin.firestore.Timestamp.fromMillis(
+              Date.now() + 48 * 60 * 60 * 1000
+            ),
+          });
+
+          return true;
+        });
+
+        if (!created) continue;
+
+        remindersCreated++;
+
+        try {
+          await sendMilestonePush({
+            parentId,
+            childId,
+            mode: "child",
+            title,
+            message,
+            type: "streak_reminder",
+            referenceId: reminderId,
+          });
+        } catch (error) {
+          logger.error("Streak reminder push failed", {
+            childId,
+            error,
+          });
+        }
+      } catch (error) {
+        logger.error("Failed to create streak reminder", {
+          childId,
+          error,
+        });
+      }
+    }
+
+    logger.info("Streak reminders completed", {
+      today,
+      yesterday,
+      remindersCreated,
+    });
+  }
 );

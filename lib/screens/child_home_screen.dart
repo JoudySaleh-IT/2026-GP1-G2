@@ -350,6 +350,9 @@ class ChildHomeScreen extends StatelessWidget {
 
                         const SizedBox(height: 16),
 
+  
+
+
                         // ====================================================
                         // REWARD STORE
                         // ====================================================
@@ -616,13 +619,18 @@ class _ChildHeader extends StatelessWidget {
         continue;
       }
 
+
 if (type == 'listening_completed' ||
     type == 'level_completed' ||
     type == 'letter_completed' ||
-    type == 'journey_completed') {
+    type == 'journey_completed' ||
+    type == 'streak_completed' ||
+    type == 'practice_reminder' ||
+    type == 'streak_reminder') {
   count++;
   continue;
 }
+
 
 
       if (type == 'practice_invitation') {

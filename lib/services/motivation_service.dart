@@ -1,7 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'leaderboard_service.dart';
-
+import 'package:cloud_functions/cloud_functions.dart';
+import 'package:flutter/foundation.dart';
 class MotivationAwardResult {
   final bool awarded;
   final int pointsAwarded;
@@ -20,6 +21,45 @@ class MotivationService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final LeaderboardService _leaderboardService = LeaderboardService();
+
+// Send streak achievement notifications after a successful practice.
+Future<void> _notifyStreakAchievement({
+  required String childId,
+  required MotivationAwardResult result,
+}) async {
+  if (!result.awarded ||
+      result.streak < 3 ||
+      result.streak % 3 != 0) {
+    return;
+  }
+
+  try {
+    final callable = FirebaseFunctions.instanceFor(
+      region: 'us-central1',
+    ).httpsCallable('notifyFaseehStreak');
+
+    await callable.call({
+      'childId': childId,
+    });
+  } catch (e) {
+    // Notification failure must never affect completed practice.
+    debugPrint('Streak notification failed: $e');
+  }
+}
+
+Future<void> testStreakAchievement(String childId) async {
+  try {
+    final result = await FirebaseFunctions.instanceFor(
+      region: 'us-central1',
+    ).httpsCallable('notifyFaseehStreak').call({
+      'childId': childId,
+    });
+
+    debugPrint('STREAK TEST RESULT: ${result.data}');
+  } catch (e) {
+    debugPrint('STREAK TEST ERROR: $e');
+  }
+}
 
   // ---------------------------------------------------------------------------
   // Create a unique ID for one exercise attempt.
@@ -161,8 +201,8 @@ class MotivationService {
 
     final String todayKey = _toDayKey(today);
 
-    return _db.runTransaction<MotivationAwardResult>((transaction) async {
-      // ---------------------------------------------------------
+final result = await _db.runTransaction<MotivationAwardResult>(
+  (transaction) async {      // ---------------------------------------------------------
       // Read everything before making writes.
       // ---------------------------------------------------------
 
@@ -272,7 +312,14 @@ class MotivationService {
         totalPoints: newPoints,
         streak: newStreak,
       );
-    });
+        });
+
+    await _notifyStreakAchievement(
+      childId: childId,
+      result: result,
+    );
+
+    return result;
   }
 
   Future<MotivationAwardResult> recordSpeakingCompletion({
@@ -319,8 +366,8 @@ class MotivationService {
 
     final String todayKey = _toDayKey(today);
 
-    return _db.runTransaction<MotivationAwardResult>((transaction) async {
-      // ---------------------------------------------------------
+final result = await _db.runTransaction<MotivationAwardResult>(
+  (transaction) async {      // ---------------------------------------------------------
       // Read child + event first
       // ---------------------------------------------------------
 
@@ -435,7 +482,14 @@ class MotivationService {
         totalPoints: newPoints,
         streak: newStreak,
       );
-    });
+     });
+
+    await _notifyStreakAchievement(
+      childId: childId,
+      result: result,
+    );
+
+    return result;
   }
 
   Future<MotivationAwardResult> recordPracticeTogetherCompletion({
@@ -470,8 +524,8 @@ class MotivationService {
     final DateTime today = _saudiToday();
     final String todayKey = _toDayKey(today);
 
-    return _db.runTransaction<MotivationAwardResult>((transaction) async {
-      // -------------------------------------------------------
+final result = await _db.runTransaction<MotivationAwardResult>(
+  (transaction) async {      // -------------------------------------------------------
       // ALL READS FIRST
       // -------------------------------------------------------
 
@@ -645,12 +699,19 @@ class MotivationService {
         'createdAt': FieldValue.serverTimestamp(),
       });
 
-      return MotivationAwardResult(
+         return MotivationAwardResult(
         awarded: true,
         pointsAwarded: pointsAwarded,
         totalPoints: newPoints,
         streak: newStreak,
       );
     });
+
+    await _notifyStreakAchievement(
+      childId: childId,
+      result: result,
+    );
+
+    return result;
   }
 }
