@@ -924,7 +924,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                     player.name,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 12.5,
                       color: const Color(0xFF222222),
                       fontWeight: player.isCurrent
                           ? FontWeight.w800
