@@ -444,6 +444,29 @@ exports.cleanupOldNotifications = onSchedule(
           new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
       );
 
+      // Parent notifications expire after 3 days.
+const threeDaysAgo = admin.firestore.Timestamp.fromDate(
+  new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+);
+// Delete parent notifications older than 3 days.
+const parentSnapshot = await db
+  .collection("parent_notifications")
+  .where("createdAt", "<=", threeDaysAgo)
+  .get();
+
+for (let i = 0; i < parentSnapshot.docs.length; i += 400) {
+  const batch = db.batch();
+
+  parentSnapshot.docs.slice(i, i + 400).forEach((doc) => {
+    batch.delete(doc.ref);
+  });
+
+  await batch.commit();
+}
+
+logger.info(
+  `Deleted ${parentSnapshot.size} old parent notifications.`
+);
       const snapshot = await db
           .collection("notifications")
           .where("isRead", "==", true)
@@ -455,13 +478,15 @@ exports.cleanupOldNotifications = onSchedule(
         return;
       }
 
-      const batch = db.batch();
+      for (let i = 0; i < snapshot.docs.length; i += 400) {
+  const batch = db.batch();
 
-      snapshot.docs.forEach((doc) => {
-        batch.delete(doc.ref);
-      });
+  snapshot.docs.slice(i, i + 400).forEach((doc) => {
+    batch.delete(doc.ref);
+  });
 
-      await batch.commit();
+  await batch.commit();
+}
 
       logger.info(
           `Deleted ${snapshot.size} old notifications.`,
@@ -633,6 +658,12 @@ exports.notifyFaseehProgress = onCall(
     const child = childDoc.data();
     const parentId = child.parentId;
 
+    const childName =
+  child.nickname ||
+  child.firstName ||
+  child.name ||
+  "طفلك";
+
     if (!parentId || request.auth.uid !== parentId) {
       throw new HttpsError(
           "permission-denied",
@@ -666,9 +697,9 @@ exports.notifyFaseehProgress = onCall(
         childTitle: "مبروك! 🎉",
         childMessage:
           `أكملت المستوى ${levelName} لحرف ${letter}!`,
-        parentTitle: "إنجاز جديد لطفلك! 🌟",
-        parentMessage:
-          `أكمل طفلك المستوى ${levelName} لحرف ${letter} في مهارتي الاستماع والنطق!`,
+        parentTitle: `إنجاز جديد لـ ${childName}! 🌟`,
+parentMessage:
+  `أكمل ${childName} المستوى ${levelName} لحرف ${letter} في مهارتي الاستماع والنطق!`,
       });
     }
 
@@ -680,9 +711,9 @@ exports.notifyFaseehProgress = onCall(
         childTitle: "إنجاز رائع! 🏆",
         childMessage:
           `أتقنت حرف ${letter} بجميع مستوياته!`,
-        parentTitle: "إنجاز جديد لطفلك! 🏆",
-        parentMessage:
-          `أكمل طفلك جميع مستويات حرف ${letter} بنجاح!`,
+        parentTitle: `إنجاز جديد لـ ${childName}! 🏆`,
+parentMessage:
+  `أكمل ${childName} جميع مستويات حرف ${letter} بنجاح!`,
       });
     }
 
@@ -727,7 +758,7 @@ exports.notifyFaseehProgress = onCall(
 
         const parentExpiresAt =
           admin.firestore.Timestamp.fromMillis(
-            now + 30 * 24 * 60 * 60 * 1000
+            now + 3 * 24 * 60 * 60 * 1000
           );
 
         transaction.create(achievementRef, {
@@ -851,6 +882,11 @@ exports.notifyFaseehCertificate = onCall(
     const child = childDoc.data();
     const parentId = child.parentId;
 
+    const childName =
+  child.nickname ||
+  child.firstName ||
+  child.name ||
+  "طفلك";
     // IMPORTANT:
     // This assumes parentId equals the Firebase Auth UID.
     if (!parentId || request.auth.uid !== parentId) {
@@ -908,9 +944,9 @@ exports.notifyFaseehCertificate = onCall(
 
     const childTitle = "شهادة فصيح 🎓";
     const childMessage = "🎓 حصلت على شهادة فصيح!";
-    const parentTitle = "شهادة فصيح 🎓";
-    const parentMessage =
-      "🎓 أكمل طفلك رحلة فصيح وحصل على شهادته!";
+  const parentTitle = `شهادة فصيح لـ ${childName} 🎓`;
+const parentMessage =
+  `🎓 أكمل ${childName} رحلة فصيح وحصل على شهادته!`;
 
     const achievementRef = childRef
         .collection("milestone_achievements")
@@ -959,7 +995,7 @@ exports.notifyFaseehCertificate = onCall(
         isRead: false,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
         expiresAt: admin.firestore.Timestamp.fromMillis(
-            now + 30 * 24 * 60 * 60 * 1000),
+            now +3 * 24 * 60 * 60 * 1000),
       });
 
       return true;
@@ -1032,6 +1068,11 @@ exports.notifyFaseehStreak = onCall(async (request) => {
   }
 
   const childData = childSnapshot.data();
+  const childName =
+  childData.nickname ||
+  childData.firstName ||
+  childData.name ||
+  "طفلك";
 
   if (childData.parentId !== parentId) {
     throw new HttpsError("permission-denied", "Not authorized for this child.");
@@ -1071,9 +1112,9 @@ exports.notifyFaseehStreak = onCall(async (request) => {
   const childMessage =
     `أحسنت! واصلت التدريب ${streak} أيام متتالية في فصيح! 🌟`;
 
-  const parentTitle = "طفلك يحافظ على تقدمه! 🌟";
-  const parentMessage =
-    `واصل طفلك التدريب لمدة ${streak} أيام متتالية في فصيح!`;
+const parentTitle = `${childName} يحافظ على تقدمه! 🌟`;
+const parentMessage =
+  `واصل ${childName} التدريب لمدة ${streak} أيام متتالية في فصيح!`;
 
   const created = await db.runTransaction(async (transaction) => {
     const currentChild = await transaction.get(childRef);
@@ -1133,7 +1174,7 @@ exports.notifyFaseehStreak = onCall(async (request) => {
       isRead: false,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       expiresAt: admin.firestore.Timestamp.fromMillis(
-        now + 30 * 24 * 60 * 60 * 1000
+        now + 3 * 24 * 60 * 60 * 1000
       ),
     });
 
@@ -1181,6 +1222,14 @@ exports.notifyFaseehStreak = onCall(async (request) => {
  // FASEEH DAILY PRACTICE REMINDER
  // Every day at 2:00 AM Saudi Arabia time
  // =============================================================
+async function hasCompletedFaseehJourney(childRef) {
+  const certificateDoc = await childRef
+    .collection("certificates")
+    .doc("completion")
+    .get();
+
+  return certificateDoc.exists;
+}
 
 exports.sendDailyPracticeReminder = onSchedule(
   {
@@ -1218,10 +1267,20 @@ schedule: "0 12 * * *",
 
     for (const childDoc of childrenSnapshot.docs) {
       const childId = childDoc.id;
-      const child = childDoc.data();
-      const parentId = child.parentId;
+const child = childDoc.data();
+const parentId = child.parentId;
 
-      if (!parentId) continue;
+if (!parentId) continue;
+
+// Stop reminders for children who completed Faseeh.
+const hasCompleted = await hasCompletedFaseehJourney(childDoc.ref);
+
+if (hasCompleted) {
+  logger.info("Skipping practice reminder: journey completed", {
+    childId,
+  });
+  continue;
+}
 
       const reminderId = `practice_reminder_${childId}_${today}`;
 
@@ -1236,8 +1295,17 @@ schedule: "0 12 * * *",
       try {
         // Transaction prevents duplicate reminders.
         const created = await db.runTransaction(async (transaction) => {
-          const latestChild = await transaction.get(childDoc.ref);
-          const existing = await transaction.get(notificationRef);
+  const certificateRef = childDoc.ref
+    .collection("certificates")
+    .doc("completion");
+
+  const latestChild = await transaction.get(childDoc.ref);
+  const existing = await transaction.get(notificationRef);
+  const certificateDoc = await transaction.get(certificateRef);
+
+  if (certificateDoc.exists) {
+    return false;
+  }
 
           if (!latestChild.exists || existing.exists) {
             return false;
@@ -1337,6 +1405,16 @@ exports.sendStreakReminder = onSchedule(
         continue;
       }
 
+      // Stop streak reminders for children who completed Faseeh.
+const hasCompleted = await hasCompletedFaseehJourney(childDoc.ref);
+
+if (hasCompleted) {
+  logger.info("Skipping streak reminder: journey completed", {
+    childId,
+  });
+  continue;
+}
+
       const reminderId = `streak_reminder_${childId}_${today}`;
       const notificationRef = db
         .collection("notifications")
@@ -1349,8 +1427,17 @@ exports.sendStreakReminder = onSchedule(
 
       try {
         const created = await db.runTransaction(async (transaction) => {
-          const latestChild = await transaction.get(childDoc.ref);
-          const existing = await transaction.get(notificationRef);
+  const certificateRef = childDoc.ref
+    .collection("certificates")
+    .doc("completion");
+
+  const latestChild = await transaction.get(childDoc.ref);
+  const existing = await transaction.get(notificationRef);
+  const certificateDoc = await transaction.get(certificateRef);
+
+  if (certificateDoc.exists) {
+    return false;
+  }
 
           if (!latestChild.exists || existing.exists) {
             return false;
