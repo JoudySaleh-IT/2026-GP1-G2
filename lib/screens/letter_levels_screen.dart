@@ -49,6 +49,7 @@ class _LetterLevelsScreenState extends State<LetterLevelsScreen> {
   bool _isLoading = true;
 
   String? _currentLevelKey;
+  String _journeyStartLevel = 'beginner';
 
   bool _listeningPassed = false;
   bool _pronunciationPassed = false;
@@ -202,7 +203,21 @@ Future<void> _completeRemainingLettersForTesting() async {
 
       final Map<String, dynamic> data = doc.data()!;
 
+// =============================================================
+// Original journey start based on Placement Test
+// =============================================================
+String journeyStartLevel = 'beginner';
 
+final dynamic rawLetterScores = data['letterScores'];
+
+if (rawLetterScores is Map) {
+  final dynamic rawScore = rawLetterScores[widget.letter];
+
+  if (rawScore is num) {
+    journeyStartLevel =
+        rawScore.toInt() < 50 ? 'beginner' : 'intermediate';
+  }
+}
 // =============================================================
 // Current level for this letter
 // =============================================================
@@ -283,13 +298,14 @@ if (rawExerciseProgress is Map) {
       if (!mounted) return;
 
       setState(() {
-        _currentLevelKey = currentLevel;
+  _currentLevelKey = currentLevel;
+  _journeyStartLevel = journeyStartLevel;
 
-        _listeningPassed = listeningPassed;
-        _pronunciationPassed = pronunciationPassed;
+  _listeningPassed = listeningPassed;
+  _pronunciationPassed = pronunciationPassed;
 
-        _isLoading = false;
-      });
+  _isLoading = false;
+});
 
       debugPrint('══════════════════════════════════════════');
 
@@ -427,86 +443,19 @@ if (rawExerciseProgress is Map) {
                           totalCount: levels.length,
                         ),
 
-                        const SizedBox(height: 14),
-
-                        const SizedBox(height: 14),
+                        const SizedBox(height: 10),
 
                         // =====================================================
-                        // Preview the REAL celebration popup
+                        // Mini game level path
                         // =====================================================
-                        ElevatedButton.icon(
-                          onPressed: () {
-                            Navigator.pushNamed(
-                              context,
-                              '/child/exercise/recording-result',
-                              arguments: {
-                                'childId': widget.childId,
-                                'letter': widget.letter,
-                                'level': 'advanced',
-                                'previewCelebration': true,
-                                'questions': [
-                                  {
-                                    'questionText': '١',
-                                    'score': 90,
-                                    'isInvalid': false,
-                                  },
-                                  {
-                                    'questionText': '٢',
-                                    'score': 92,
-                                    'isInvalid': false,
-                                  },
-                                  {
-                                    'questionText': '٣',
-                                    'score': 94,
-                                    'isInvalid': false,
-                                  },
-                                  {
-                                    'questionText': '٤',
-                                    'score': 91,
-                                    'isInvalid': false,
-                                  },
-                                  {
-                                    'questionText': '٥',
-                                    'score': 93,
-                                    'isInvalid': false,
-                                  },
-                                  {
-                                    'questionText': '٦',
-                                    'score': 90,
-                                    'isInvalid': false,
-                                  },
-                                  {
-                                    'questionText': '٧',
-                                    'score': 95,
-                                    'isInvalid': false,
-                                  },
-                                  {
-                                    'questionText': '٨',
-                                    'score': 92,
-                                    'isInvalid': false,
-                                  },
-                                ],
-                              },
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFE5A52F),
-                            foregroundColor: Colors.white,
-                          ),
-                          icon: const Icon(
-                            Icons.visibility_rounded,
-                            size: 19,
-                          ),
-                          label: const Text(
-                            'معاينة الاحتفال الحقيقي',
-                            style: TextStyle(
-                              fontFamily: 'Tajawal',
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
+                        _MiniGameLevelPath(
+                          journeyStartLevel: _journeyStartLevel,
+                          currentLevel: _currentLevelKey ?? 'beginner',
                         ),
 
-                        const SizedBox(height: 14),
+                        const SizedBox(height: 12),
+
+                      
 
                         // =====================================================
                         // Listening + Pronunciation
@@ -674,6 +623,825 @@ class _LetterLevelsHeader extends StatelessWidget {
     );
   }
 }
+// ─────────────────────────────────────────────────────────────────────────────
+// Mini Game Level Path
+// ─────────────────────────────────────────────────────────────────────────────
+class _MiniGameLevelPath extends StatelessWidget {
+  final String journeyStartLevel;
+  final String currentLevel;
+
+  const _MiniGameLevelPath({
+    required this.journeyStartLevel,
+    required this.currentLevel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final List<_GamePathLevel> levels;
+
+    if (journeyStartLevel == 'advanced') {
+      levels = const [
+        _GamePathLevel(
+          keyName: 'advanced',
+          label: 'صعب',
+          color: Color(0xFFFF6969),
+        ),
+      ];
+    } else if (journeyStartLevel == 'intermediate') {
+      levels = const [
+        _GamePathLevel(
+          keyName: 'intermediate',
+          label: 'متوسط',
+          color: Color(0xFFF1A340),
+        ),
+        _GamePathLevel(
+          keyName: 'advanced',
+          label: 'صعب',
+          color: Color(0xFFFF6969),
+        ),
+      ];
+    } else {
+      levels = const [
+        _GamePathLevel(
+          keyName: 'beginner',
+          label: 'سهل',
+          color: Color(0xFF65A97D),
+        ),
+        _GamePathLevel(
+          keyName: 'intermediate',
+          label: 'متوسط',
+          color: Color(0xFFF1A340),
+        ),
+        _GamePathLevel(
+          keyName: 'advanced',
+          label: 'صعب',
+          color: Color(0xFFFF6969),
+        ),
+      ];
+    }
+
+    int currentIndex = levels.indexWhere(
+      (level) => level.keyName == currentLevel,
+    );
+
+    if (currentIndex == -1) {
+      currentIndex = 0;
+    }
+
+    late final double pathHeight;
+
+    if (levels.length == 1) {
+      pathHeight = 170;
+    } else if (levels.length == 2) {
+      pathHeight = 235;
+    } else {
+      pathHeight = 305;
+    }
+
+    return SizedBox(
+      width: double.infinity,
+      height: pathHeight,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final double width = constraints.maxWidth;
+
+          final List<Offset> points;
+
+          if (levels.length == 1) {
+            points = [
+              Offset(width * 0.58, 92),
+            ];
+          } else if (levels.length == 2) {
+            points = [
+              Offset(width * 0.68, 70),
+              Offset(width * 0.32, 166),
+            ];
+          } else {
+            points = [
+              Offset(width * 0.69, 67),
+              Offset(width * 0.31, 148),
+              Offset(width * 0.68, 232),
+            ];
+          }
+
+          final Offset currentPoint = points[currentIndex];
+
+          double bunnyLeft;
+          if (currentPoint.dx > width / 2) {
+            bunnyLeft = currentPoint.dx - 108;
+          } else {
+            bunnyLeft = currentPoint.dx + 50;
+          }
+
+          bunnyLeft = bunnyLeft.clamp(6.0, width - 52).toDouble();
+
+          final double bunnyTop = (currentPoint.dy - 12)
+              .clamp(38.0, pathHeight - 68)
+              .toDouble();
+
+          return Stack(
+            clipBehavior: Clip.none,
+            children: [
+              // -----------------------------------------------------------------
+              // Soft scenery only — intentionally no outer "card".
+              // This lets the game path blend into the page instead of looking
+              // like another stacked card.
+              // -----------------------------------------------------------------
+              Positioned(
+                left: -65,
+                right: -65,
+                bottom: -116,
+                height: levels.length == 3 ? 250 : 205,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE7F5D8).withOpacity(0.84),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+              Positioned(
+                left: -40,
+                bottom: -72,
+                width: 165,
+                height: 130,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFCDECC2).withOpacity(0.48),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+              Positioned(
+                right: -35,
+                bottom: -65,
+                width: 160,
+                height: 118,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFD9EFC4).withOpacity(0.56),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+
+              // Clouds
+              Positioned(
+                left: 20,
+                top: 26,
+                child: Icon(
+                  Icons.cloud_rounded,
+                  size: 39,
+                  color: const Color(0xFFCFE8FF).withOpacity(0.76),
+                ),
+              ),
+              Positioned(
+                right: 10,
+                top: levels.length == 3 ? 126 : 103,
+                child: Icon(
+                  Icons.cloud_rounded,
+                  size: 31,
+                  color: const Color(0xFFD8E9FF).withOpacity(0.62),
+                ),
+              ),
+
+              // Flowers / small playful details
+              Positioned(
+                left: 23,
+                bottom: 13,
+                child: Icon(
+                  Icons.local_florist_rounded,
+                  size: 20,
+                  color: const Color(0xFFF3B43F).withOpacity(0.72),
+                ),
+              ),
+              Positioned(
+                right: 29,
+                bottom: 13,
+                child: Icon(
+                  Icons.local_florist_rounded,
+                  size: 18,
+                  color: const Color(0xFFFF8D9B).withOpacity(0.58),
+                ),
+              ),
+
+              // Small title floating on the page, not inside a card header
+              const Positioned(
+                top: 0,
+                right: 8,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.route_rounded,
+                      size: 16,
+                      color: Color(0xFF7B4AAD),
+                    ),
+                    SizedBox(width: 5),
+                    Text(
+                      'رحلة التمرين ',
+                      style: TextStyle(
+                        fontFamily: 'Tajawal',
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF6D3D92),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Curved dotted path
+              Positioned.fill(
+                child: CustomPaint(
+                  painter: _DottedGamePathPainter(points: points),
+                ),
+              ),
+
+              // Small static bunny studying beside the current level
+              Positioned(
+                left: bunnyLeft,
+                top: bunnyTop,
+                child: const SizedBox(
+                  width: 48,
+                  height: 62,
+                  child: _StudyPathBunny(),
+                ),
+              ),
+
+              // Level nodes
+              ...List.generate(levels.length, (index) {
+                final _GamePathLevel level = levels[index];
+                final bool isCompleted = index < currentIndex;
+                final bool isCurrent = index == currentIndex;
+
+                final Offset point = points[index];
+
+                return Positioned(
+                  left: (point.dx - 56).clamp(4.0, width - 116).toDouble(),
+                  top: point.dy - 35,
+                  width: 112,
+                  child: _GamePathNode(
+                    label: level.label,
+                    color: level.color,
+                    isCompleted: isCompleted,
+                    isCurrent: isCurrent,
+                  ),
+                );
+              }),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _GamePathLevel {
+  final String keyName;
+  final String label;
+  final Color color;
+
+  const _GamePathLevel({
+    required this.keyName,
+    required this.label,
+    required this.color,
+  });
+}
+
+class _GamePathNode extends StatelessWidget {
+  final String label;
+  final Color color;
+  final bool isCompleted;
+  final bool isCurrent;
+
+  const _GamePathNode({
+    required this.label,
+    required this.color,
+    required this.isCompleted,
+    required this.isCurrent,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bool isFuture = !isCompleted && !isCurrent;
+
+    final Color pedestalColor = isCompleted
+        ? const Color(0xFFCBCBCD)
+        : isCurrent
+            ? color.withOpacity(0.72)
+            : const Color(0xFFD9D6DC);
+
+    final Color circleColor = isCompleted
+        ? const Color(0xFFE9E9EA)
+        : isCurrent
+            ? Colors.white
+            : const Color(0xFFF3F2F5);
+
+    final Color borderColor = isCompleted
+        ? const Color(0xFFC8C8CA)
+        : isCurrent
+            ? color
+            : const Color(0xFFD6D3DA);
+
+    final String statusText = isCompleted
+        ? 'تم إكماله'
+        : isCurrent
+            ? 'المستوى الحالي'
+            : 'مغلق حاليًا';
+
+    final Color statusColor = isCompleted
+        ? const Color(0xFF8B8B8B)
+        : isCurrent
+            ? color
+            : const Color(0xFFAAA7AE);
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          width: 66,
+          height: 58,
+          child: Stack(
+            alignment: Alignment.topCenter,
+            clipBehavior: Clip.none,
+            children: [
+              Positioned(
+                bottom: 0,
+                child: Container(
+                  width: 58,
+                  height: 14,
+                  decoration: BoxDecoration(
+                    color: pedestalColor,
+                    borderRadius: BorderRadius.circular(18),
+                    boxShadow: isCurrent
+                        ? [
+                            BoxShadow(
+                              color: color.withOpacity(0.17),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                          ]
+                        : null,
+                  ),
+                ),
+              ),
+              Container(
+                width: isCurrent ? 52 : 48,
+                height: isCurrent ? 52 : 48,
+                decoration: BoxDecoration(
+                  color: circleColor,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: borderColor,
+                    width: isCurrent ? 2.2 : 1.5,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.045),
+                      blurRadius: 5,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Icon(
+                  isCompleted
+                      ? Icons.check_rounded
+                      : isCurrent
+                          ? Icons.star_rounded
+                          : Icons.lock_rounded,
+                  size: isCurrent ? 27 : 23,
+                  color: isCompleted
+                      ? const Color(0xFF6CB889)
+                      : isCurrent
+                          ? color
+                          : const Color(0xFFA9A6AD),
+                ),
+              ),
+              if (isCurrent)
+                Positioned(
+                  top: -7,
+                  right: -1,
+                  child: Icon(
+                    Icons.flag_rounded,
+                    size: 18,
+                    color: color,
+                  ),
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 2),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+          decoration: BoxDecoration(
+            color: isCurrent
+                ? Colors.white.withOpacity(0.92)
+                : isCompleted
+                    ? const Color(0xFFF2F2F2).withOpacity(0.88)
+                    : const Color(0xFFF7F6F8).withOpacity(0.88),
+            borderRadius: BorderRadius.circular(15),
+            border: Border.all(
+              color: isCurrent
+                  ? color.withOpacity(0.22)
+                  : const Color(0xFFD8D5DC).withOpacity(0.55),
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontFamily: 'Tajawal',
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w700,
+                  color: isCurrent
+                      ? color
+                      : isCompleted
+                          ? const Color(0xFF777777)
+                          : const Color(0xFF99969D),
+                ),
+              ),
+              const SizedBox(height: 1),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (isCompleted) ...[
+                    const Icon(
+                      Icons.check_circle_rounded,
+                      size: 9.5,
+                      color: Color(0xFF6CB889),
+                    ),
+                    const SizedBox(width: 2),
+                  ] else if (isFuture) ...[
+                    const Icon(
+                      Icons.lock_rounded,
+                      size: 8.5,
+                      color: Color(0xFFAAA7AE),
+                    ),
+                    const SizedBox(width: 2),
+                  ],
+                  Text(
+                    statusText,
+                    style: TextStyle(
+                      fontFamily: 'Tajawal',
+                      fontSize: 7.7,
+                      fontWeight:
+                          isCurrent ? FontWeight.w700 : FontWeight.w500,
+                      color: statusColor,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _StudyPathBunny extends StatelessWidget {
+  const _StudyPathBunny();
+
+  @override
+  Widget build(BuildContext context) {
+    const Color bunnyColor = Color(0xFFFFDCE7);
+    const Color innerEarColor = Color(0xFFFF9CB5);
+    const Color purple = Color(0xFF7B4AAD);
+    const Color faceDetails = Color(0xFF4D3855);
+
+    return Stack(
+      alignment: Alignment.center,
+      clipBehavior: Clip.none,
+      children: [
+        // Body
+        Positioned(
+          bottom: 7,
+          child: Container(
+            width: 29,
+            height: 25,
+            decoration: const BoxDecoration(
+              color: purple,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(15),
+                topRight: Radius.circular(15),
+                bottomLeft: Radius.circular(7),
+                bottomRight: Radius.circular(7),
+              ),
+            ),
+          ),
+        ),
+
+        // Ears
+        Positioned(
+          top: 2,
+          left: 11,
+          child: Container(
+            width: 8,
+            height: 23,
+            decoration: BoxDecoration(
+              color: bunnyColor,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Center(
+              child: Container(
+                width: 3,
+                height: 15,
+                decoration: BoxDecoration(
+                  color: innerEarColor.withOpacity(0.60),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+          ),
+        ),
+        Positioned(
+          top: 2,
+          right: 11,
+          child: Container(
+            width: 8,
+            height: 23,
+            decoration: BoxDecoration(
+              color: bunnyColor,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Center(
+              child: Container(
+                width: 3,
+                height: 15,
+                decoration: BoxDecoration(
+                  color: innerEarColor.withOpacity(0.60),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+          ),
+        ),
+
+        // Head
+        Positioned(
+          top: 17,
+          child: Container(
+            width: 33,
+            height: 31,
+            decoration: BoxDecoration(
+              color: bunnyColor,
+              borderRadius: BorderRadius.circular(17),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.035),
+                  blurRadius: 3,
+                  offset: const Offset(0, 1),
+                ),
+              ],
+            ),
+            child: Stack(
+              children: [
+                // Eyes
+                Positioned(
+                  top: 11,
+                  left: 8,
+                  child: Container(
+                    width: 4,
+                    height: 4.5,
+                    decoration: const BoxDecoration(
+                      color: faceDetails,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: 11,
+                  right: 8,
+                  child: Container(
+                    width: 4,
+                    height: 4.5,
+                    decoration: const BoxDecoration(
+                      color: faceDetails,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+
+                // Cheeks
+                Positioned(
+                  top: 18,
+                  left: 3,
+                  child: Container(
+                    width: 6,
+                    height: 3,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFF8EA6).withOpacity(0.55),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: 18,
+                  right: 3,
+                  child: Container(
+                    width: 6,
+                    height: 3,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFF8EA6).withOpacity(0.55),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                  ),
+                ),
+
+                // Nose
+                Positioned(
+                  top: 15,
+                  left: 14,
+                  child: Container(
+                    width: 5,
+                    height: 4,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFFF7890),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+
+                // Smile
+                Positioned(
+                  top: 20,
+                  left: 11,
+                  child: Container(
+                    width: 11,
+                    height: 5,
+                    decoration: const BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(
+                          color: faceDetails,
+                          width: 1.2,
+                        ),
+                      ),
+                      borderRadius: BorderRadius.only(
+                        bottomLeft: Radius.circular(7),
+                        bottomRight: Radius.circular(7),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        // Arms holding the book
+        Positioned(
+          bottom: 10,
+          left: 8,
+          child: Transform.rotate(
+            angle: -0.30,
+            child: Container(
+              width: 7,
+              height: 15,
+              decoration: BoxDecoration(
+                color: bunnyColor,
+                borderRadius: BorderRadius.circular(7),
+              ),
+            ),
+          ),
+        ),
+        Positioned(
+          bottom: 10,
+          right: 8,
+          child: Transform.rotate(
+            angle: 0.30,
+            child: Container(
+              width: 7,
+              height: 15,
+              decoration: BoxDecoration(
+                color: bunnyColor,
+                borderRadius: BorderRadius.circular(7),
+              ),
+            ),
+          ),
+        ),
+
+        // Open book
+        Positioned(
+          bottom: 0,
+          child: Container(
+            width: 34,
+            height: 18,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(
+                color: const Color(0xFFDCCFE5),
+                width: 1,
+              ),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x0A000000),
+                  blurRadius: 3,
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    margin: const EdgeInsets.fromLTRB(4, 3, 2, 3),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF7F0FF),
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  ),
+                ),
+                Container(
+                  width: 1,
+                  height: 13,
+                  color: const Color(0xFFE6DDEC),
+                ),
+                Expanded(
+                  child: Container(
+                    margin: const EdgeInsets.fromLTRB(2, 3, 4, 3),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF4F6),
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _DottedGamePathPainter extends CustomPainter {
+  final List<Offset> points;
+
+  _DottedGamePathPainter({required this.points});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (points.length < 2) return;
+
+    final Path path = Path()..moveTo(points.first.dx, points.first.dy);
+
+    for (int i = 1; i < points.length; i++) {
+      final Offset previous = points[i - 1];
+      final Offset next = points[i];
+
+      final double middleY = (previous.dy + next.dy) / 2;
+
+      path.cubicTo(
+        previous.dx,
+        middleY,
+        next.dx,
+        middleY,
+        next.dx,
+        next.dy,
+      );
+    }
+
+    final Paint softLinePaint = Paint()
+      ..color = const Color(0xFF8B55B3).withOpacity(0.06)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 6
+      ..strokeCap = StrokeCap.round;
+
+    canvas.drawPath(path, softLinePaint);
+
+    final Paint dotPaint = Paint()
+      ..color = const Color(0xFF8B55B3).withOpacity(0.43)
+      ..style = PaintingStyle.fill;
+
+    for (final metric in path.computeMetrics()) {
+      double distance = 0;
+
+      while (distance < metric.length) {
+        final tangent = metric.getTangentForOffset(distance);
+
+        if (tangent != null) {
+          canvas.drawCircle(tangent.position, 2.1, dotPaint);
+        }
+
+        distance += 11;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _DottedGamePathPainter oldDelegate) {
+    if (oldDelegate.points.length != points.length) return true;
+
+    for (int i = 0; i < points.length; i++) {
+      if (oldDelegate.points[i] != points[i]) return true;
+    }
+
+    return false;
+  }
+}
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Cute Intro Card
@@ -696,16 +1464,13 @@ class _LevelsIntroCard extends StatelessWidget {
     return Container(
       width: double.infinity,
       height: 145,
-
       decoration: BoxDecoration(
         color: const Color(0xFFF7F0FF),
         borderRadius: BorderRadius.circular(26),
-
         border: Border.all(
           color: const Color(0xFF511281).withOpacity(0.10),
           width: 1.4,
         ),
-
         boxShadow: const [
           BoxShadow(
             color: Color(0x0B000000),
@@ -714,10 +1479,8 @@ class _LevelsIntroCard extends StatelessWidget {
           ),
         ],
       ),
-
       child: ClipRRect(
         borderRadius: BorderRadius.circular(26),
-
         child: Stack(
           children: [
             Positioned(
@@ -726,39 +1489,32 @@ class _LevelsIntroCard extends StatelessWidget {
               child: Container(
                 width: 145,
                 height: 145,
-
                 decoration: BoxDecoration(
                   color: const Color(0xFFD8C2F0).withOpacity(0.32),
                   shape: BoxShape.circle,
                 ),
               ),
             ),
-
             Positioned(
               left: 45,
               bottom: -55,
               child: Container(
                 width: 135,
                 height: 105,
-
                 decoration: BoxDecoration(
                   color: const Color(0xFFFFD7E1).withOpacity(0.48),
                   shape: BoxShape.circle,
                 ),
               ),
             ),
-
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
-
               child: Row(
                 children: [
                   Expanded(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
-
                       crossAxisAlignment: CrossAxisAlignment.start,
-
                       children: [
                         const Text(
                           'اختر تمرينك وابدأ!',
@@ -769,9 +1525,7 @@ class _LevelsIntroCard extends StatelessWidget {
                             fontFamily: 'Tajawal',
                           ),
                         ),
-
                         const SizedBox(height: 4),
-
                         const Text(
                           'أكمل التمارين واحدًا بعد الآخر',
                           style: TextStyle(
@@ -780,29 +1534,22 @@ class _LevelsIntroCard extends StatelessWidget {
                             fontFamily: 'Tajawal',
                           ),
                         ),
-
                         const SizedBox(height: 12),
-
                         Row(
                           children: [
                             Container(
                               width: 43,
                               height: 43,
-
                               decoration: BoxDecoration(
                                 color: Colors.white.withOpacity(0.85),
-
                                 shape: BoxShape.circle,
-
                                 border: Border.all(
                                   color: const Color(
                                     0xFF511281,
                                   ).withOpacity(0.10),
                                 ),
                               ),
-
                               alignment: Alignment.center,
-
                               child: Text(
                                 letter,
                                 style: const TextStyle(
@@ -814,18 +1561,14 @@ class _LevelsIntroCard extends StatelessWidget {
                                 ),
                               ),
                             ),
-
                             const SizedBox(width: 9),
-
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
-
                                 children: [
                                   Row(
                                     mainAxisAlignment:
                                         MainAxisAlignment.spaceBetween,
-
                                     children: [
                                       const Text(
                                         'تقدّمك',
@@ -835,7 +1578,6 @@ class _LevelsIntroCard extends StatelessWidget {
                                           fontFamily: 'Tajawal',
                                         ),
                                       ),
-
                                       Text(
                                         '${toArabicDigits(completedCount)}/'
                                         '${toArabicDigits(totalCount)}',
@@ -848,24 +1590,18 @@ class _LevelsIntroCard extends StatelessWidget {
                                       ),
                                     ],
                                   ),
-
                                   const SizedBox(height: 5),
-
                                   ClipRRect(
                                     borderRadius: BorderRadius.circular(15),
-
                                     child: LinearProgressIndicator(
                                       value: progress,
                                       minHeight: 7,
-
-                                      backgroundColor: Colors.white.withOpacity(
-                                        0.85,
-                                      ),
-
+                                      backgroundColor:
+                                          Colors.white.withOpacity(0.85),
                                       valueColor:
                                           const AlwaysStoppedAnimation<Color>(
-                                            Color(0xFFFF6969),
-                                          ),
+                                        Color(0xFFFF6969),
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -876,9 +1612,7 @@ class _LevelsIntroCard extends StatelessWidget {
                       ],
                     ),
                   ),
-
                   const SizedBox(width: 8),
-
                   const SizedBox(
                     width: 82,
                     height: 110,
@@ -984,7 +1718,7 @@ class _LevelCardState extends State<_LevelCard>
           opacity: widget.level.isLocked ? 0.72 : 1.0,
 
           child: Container(
-            constraints: const BoxConstraints(minHeight: 112),
+            constraints: const BoxConstraints(minHeight: 100),
 
             decoration: BoxDecoration(
               color: _cardColor,
@@ -1148,34 +1882,6 @@ class _LevelCardState extends State<_LevelCard>
                                   fontFamily: 'Tajawal',
                                 ),
                               ),
-
-                              if (widget.level.completed) ...[
-                                const SizedBox(height: 6),
-
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 3,
-                                  ),
-
-                                  decoration: BoxDecoration(
-                                    color: const Color(
-                                      0xFF59B77B,
-                                    ).withOpacity(0.10),
-                                    borderRadius: BorderRadius.circular(14),
-                                  ),
-
-                                  child: const Text(
-                                    'تم إكماله',
-                                    style: TextStyle(
-                                      fontSize: 9,
-                                      color: Color(0xFF4E9F6C),
-                                      fontWeight: FontWeight.w600,
-                                      fontFamily: 'Tajawal',
-                                    ),
-                                  ),
-                                ),
-                              ],
                             ],
                           ),
                         ),

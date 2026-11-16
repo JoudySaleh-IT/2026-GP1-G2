@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
+import '../utils/arabic_numbers.dart';
 import 'style_constants.dart';
 import '../widgets/child_bottom_nav.dart';
 
@@ -333,7 +333,7 @@ if (letterCompleted) {
                                       mainAxisSpacing: 14,
 
                                       // تصميم أقصر قليلًا من السابق
-                                      childAspectRatio: isTablet ? 0.95 : 0.90,
+                                      childAspectRatio: isTablet ? 0.92 : 0.84,
                                     ),
                                 itemCount: _filteredLetters.length,
                                 itemBuilder: (context, i) {
@@ -364,18 +364,22 @@ if (letterCompleted) {
                                         cardColors[i % cardColors.length],
                                     accentColor:
                                         accentColors[i % accentColors.length],
-                                    onTap: () {
-                                      Navigator.pushNamed(
-                                        context,
-                                        '/child/letter-levels',
-                                        arguments: {
-  'letter': item.letter,
-  'currentProgress': item.completed,
-  'childId': widget.childId,
-  'startingLevel': item.level,
+                       onTap: () async {
+  await Navigator.pushNamed(
+    context,
+    '/child/letter-levels',
+    arguments: {
+      'letter': item.letter,
+      'currentProgress': item.completed,
+      'childId': widget.childId,
+      'startingLevel': item.level,
+    },
+  );
+
+  if (!mounted) return;
+
+  await _loadChildProgress();
 },
-                                      );
-                                    },
                                   );
                                 },
                               ),
@@ -720,13 +724,68 @@ class _LetterCardState extends State<_LetterCard>
   Widget build(BuildContext context) {
     final double percent = widget.item.completed / widget.item.total;
 
-final bool isCritical = widget.item.score < 50;
-    final Color statusColor = isCritical
-        ? const Color(0xFFFF6969)
-        : const Color(0xFFF1A340);
+final String currentLevel = widget.item.level.trim().toLowerCase();
 
-    final String statusLabel = isCritical ? 'تأسيس' : 'تطوير';
+late final String statusLabel;
+late final Color statusColor;
 
+switch (currentLevel) {
+  case 'مبتدئ':
+  case 'beginner':
+  case 'easy':
+    statusLabel = 'سهل';
+    statusColor = const Color(0xFF65A97D);
+    break;
+
+  case 'متوسط':
+  case 'intermediate':
+  case 'medium':
+  case 'moderate':
+    statusLabel = 'متوسط';
+    statusColor = const Color(0xFFF1A340);
+    break;
+
+  case 'متقدم':
+  case 'advanced':
+  case 'hard':
+    statusLabel = 'صعب';
+    statusColor = const Color(0xFFFF6969);
+    break;
+
+  default:
+    statusLabel = 'سهل';
+    statusColor = const Color(0xFF65A97D);
+}
+final bool startsFromEasy = widget.item.score < 50;
+
+late final int currentJourneyIndex;
+late final int totalJourneyLevels;
+
+if (startsFromEasy) {
+  totalJourneyLevels = 3;
+
+  if (currentLevel == 'متوسط' ||
+      currentLevel == 'intermediate' ||
+      currentLevel == 'medium') {
+    currentJourneyIndex = 1;
+  } else if (currentLevel == 'متقدم' ||
+      currentLevel == 'advanced' ||
+      currentLevel == 'hard') {
+    currentJourneyIndex = 2;
+  } else {
+    currentJourneyIndex = 0;
+  }
+} else {
+  totalJourneyLevels = 2;
+
+  if (currentLevel == 'متقدم' ||
+      currentLevel == 'advanced' ||
+      currentLevel == 'hard') {
+    currentJourneyIndex = 1;
+  } else {
+    currentJourneyIndex = 0;
+  }
+}
     return AnimatedBuilder(
       animation: _scale,
       builder: (_, child) => Transform.scale(scale: _scale.value, child: child),
@@ -837,7 +896,18 @@ final bool isCritical = widget.item.score < 50;
                           ),
                         ),
                       ),
+const SizedBox(height: 7),
 
+
+
+
+const SizedBox(height: 7),
+
+_MiniLevelDots(
+  currentIndex: currentJourneyIndex,
+  totalLevels: totalJourneyLevels,
+  currentColor: statusColor,
+),
                       const Spacer(),
 
                       // ─── Progress information
@@ -845,7 +915,7 @@ final bool isCritical = widget.item.score < 50;
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           const Text(
-                            'تقدّمك',
+                            'تمارين المستوى',
                             style: TextStyle(
                               fontSize: 9.5,
                               color: Color(0xFF888888),
@@ -853,19 +923,44 @@ final bool isCritical = widget.item.score < 50;
                             ),
                           ),
 
-                          Text(
-                            '${widget.item.completed}/${widget.item.total}',
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: widget.accentColor,
-                              fontWeight: FontWeight.w700,
-                              fontFamily: 'Tajawal',
-                            ),
-                          ),
+                 
+Row(
+  mainAxisSize: MainAxisSize.min,
+  textDirection: TextDirection.ltr,
+  children: [
+    Text(
+      toArabicDigits(widget.item.completed),
+      style: TextStyle(
+        fontSize: 10,
+        color: widget.accentColor,
+        fontWeight: FontWeight.w700,
+        fontFamily: 'Tajawal',
+      ),
+    ),
+    Text(
+      '/',
+      style: TextStyle(
+        fontSize: 10,
+        color: widget.accentColor,
+        fontWeight: FontWeight.w700,
+        fontFamily: 'Tajawal',
+      ),
+    ),
+    Text(
+      toArabicDigits(widget.item.total),
+      style: TextStyle(
+        fontSize: 10,
+        color: widget.accentColor,
+        fontWeight: FontWeight.w700,
+        fontFamily: 'Tajawal',
+      ),
+    ),
+  ],
+),
                         ],
                       ),
 
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 5),
 
                       ClipRRect(
                         borderRadius: BorderRadius.circular(10),
@@ -879,7 +974,7 @@ final bool isCritical = widget.item.score < 50;
                         ),
                       ),
 
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 2),
                     ],
                   ),
                 ),
@@ -891,7 +986,70 @@ final bool isCritical = widget.item.score < 50;
     );
   }
 }
+class _MiniLevelDots extends StatelessWidget {
+  final int currentIndex;
+  final int totalLevels;
+  final Color currentColor;
 
+  const _MiniLevelDots({
+    required this.currentIndex,
+    required this.totalLevels,
+    required this.currentColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+
+      // مهم: أول مستوى يظهر من اليمين
+      textDirection: TextDirection.rtl,
+
+      children: List.generate(totalLevels, (index) {
+        final bool isCompleted = index < currentIndex;
+        final bool isCurrent = index == currentIndex;
+
+     final List<Color> levelColors = totalLevels == 3
+    ? const [
+        Color(0xFF65A97D), // سهل
+        Color(0xFFF1A340), // متوسط
+        Color(0xFFFF6969), // صعب
+      ]
+    : totalLevels == 2
+        ? const [
+            Color(0xFFF1A340), // متوسط
+            Color(0xFFFF6969), // صعب
+          ]
+        : const [
+            Color(0xFFFF6969), // صعب فقط
+          ];
+
+final Color dotColor = levelColors[index];
+        return Container(
+          width: 11,
+          height: 11,
+          margin: const EdgeInsets.symmetric(horizontal: 4),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+
+          color: isCurrent
+    ? dotColor
+    : isCompleted
+        ? dotColor.withOpacity(0.55)
+        : Colors.transparent,
+
+    border: Border.all(
+  color: isCompleted || isCurrent
+      ? dotColor
+      : dotColor.withOpacity(0.35),
+  width: isCurrent ? 1.8 : 1.5,
+),
+          ),
+        );
+      }),
+    );
+  }
+}
 // ─────────────────────────────────────────────────────────────────────────────
 // Background
 // دوائر باستيل فقط، بدون حروف وبدون Emoji
