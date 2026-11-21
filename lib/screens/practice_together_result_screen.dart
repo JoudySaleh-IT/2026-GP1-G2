@@ -140,15 +140,8 @@ class _PracticeTogetherResultScreenState
         '${hundredths.toString().padLeft(2, '0')}';
   }
 
-  int _calculatePotentialPoints({
-    required String exerciseType,
-    required int correctCount,
-  }) {
-    if (exerciseType == 'speaking') {
-      return correctCount * 125;
-    }
-
-    return correctCount * 50;
+  int _calculatePotentialPoints({required int correctCount}) {
+    return correctCount * 5;
   }
 
   void _goHome() {
@@ -473,7 +466,6 @@ class _PracticeTogetherResultScreenState
     final friendProfile = currentIsSender ? receiverProfile : senderProfile;
 
     final int potentialPoints = _calculatePotentialPoints(
-      exerciseType: exerciseType,
       correctCount: myCorrect,
     );
 

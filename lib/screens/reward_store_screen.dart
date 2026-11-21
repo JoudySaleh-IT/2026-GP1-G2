@@ -68,9 +68,7 @@ class _RewardStoreScreenState extends State<RewardStoreScreen> {
   }
 
   int _balance(Map<String, dynamic> data) {
-    return (data['availablePoints'] as num?)?.toInt() ??
-        (data['points'] as num?)?.toInt() ??
-        0;
+    return (data['availablePoints'] as num?)?.toInt() ?? 0;
   }
 
   bool _isOwned(StoreItem item, Map<String, dynamic> data) {
@@ -1189,11 +1187,7 @@ class _RewardStoreScreenState extends State<RewardStoreScreen> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
-              onPressed:
-                  applyingOutfit ||
-                      avatarId == null ||
-                      backgroundId == null ||
-                      isCurrentOutfit
+              onPressed: applyingOutfit || avatarId == null || isCurrentOutfit
                   ? null
                   : () => _applyOutfit(avatarId, backgroundId),
               icon: Icon(
@@ -1227,17 +1221,32 @@ class _RewardStoreScreenState extends State<RewardStoreScreen> {
     );
   }
 
-  Future<void> _applyOutfit(String avatarId, String backgroundId) async {
+  Future<void> _applyOutfit(String avatarId, String? backgroundId) async {
     if (applyingOutfit) return;
 
     setState(() => applyingOutfit = true);
 
     try {
-      await _storeService.equipOutfit(
-        childId: widget.childId,
-        avatarId: avatarId,
-        backgroundId: backgroundId,
-      );
+      if (backgroundId != null) {
+        // Child owns both an avatar and a background.
+        await _storeService.equipOutfit(
+          childId: widget.childId,
+          avatarId: avatarId,
+          backgroundId: backgroundId,
+        );
+      } else {
+        // Child only wants to change the avatar.
+        final avatarItem = StoreCatalog.findById(avatarId);
+
+        if (avatarItem == null || avatarItem.type != StoreItemType.avatar) {
+          throw Exception('الشخصية المختارة غير موجودة');
+        }
+
+        await _storeService.equipOwnedItem(
+          childId: widget.childId,
+          item: avatarItem,
+        );
+      }
 
       _showMessage('تم تطبيق تنسيق شخصيتك بنجاح! ✨');
     } catch (e) {

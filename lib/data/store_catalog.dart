@@ -39,18 +39,29 @@ class StoreCatalog {
   };
 
   static const Map<String, int> backgroundPrices = {
-    'lavender_stars': 0,
-    'blue_clouds': 0,
-    'peach_dots': 0,
-    'pink_hearts': 50,
-    'mint_leaves': 50,
-    'aqua_waves': 50,
-    'blue_paws': 75,
-    'spring_flowers': 75,
-    'purple_sparkles': 100,
-    'pastel_rainbow': 100,
-    'space_planets': 125,
-    'golden_crowns': 150,
+    // Tier 1 — 100
+    'lavender_stars': 100,
+    'blue_clouds': 100,
+
+    // Tier 2 — 120
+    'pink_hearts': 120,
+    'aqua_waves': 120,
+
+    // Tier 3 — 140
+    'peach_dots': 140,
+    'mint_leaves': 140,
+
+    // Tier 4 — 160
+    'spring_flowers': 160,
+    'blue_paws': 160,
+
+    // Tier 5 — 180
+    'purple_sparkles': 180,
+    'space_planets': 180,
+
+    // Tier 6 — 200
+    'pastel_rainbow': 200,
+    'golden_crowns': 200,
   };
 
   static final List<StoreItem> avatars = [
@@ -66,14 +77,14 @@ class StoreCatalog {
         id: '${animal}_hat',
         name: '${animalNames[animal]} - قبعة',
         type: StoreItemType.avatar,
-        price: 150,
+        price: 80,
         imagePath: 'assets/store/avatars/${animal}_hat.png',
       ),
       StoreItem(
         id: '${animal}_glasses',
         name: '${animalNames[animal]} - نظارة',
         type: StoreItemType.avatar,
-        price: 120,
+        price: 40,
         imagePath: 'assets/store/avatars/${animal}_glasses.png',
       ),
     ],

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../services/certificate_service.dart';
 import 'exercise_recording_retry_screen.dart';
 
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'package:cloud_functions/cloud_functions.dart';
@@ -187,7 +186,6 @@ class _ExerciseRecordingResultScreenState
       'exerciseProgress.$_letter.$_level.pronunciationPassed': canAdvance,
     });
 
-
     if (canAdvance) {
       try {
         final callable = FirebaseFunctions.instanceFor(
@@ -200,16 +198,16 @@ class _ExerciseRecordingResultScreenState
           'level': _level.toLowerCase(),
         });
 
-debugPrint(
-  '✅ Milestone checked: '
-  'letter=$_letter, '
-  'level=$_level, '
-  'canAdvance=$canAdvance',
-);      } catch (e) {
+        debugPrint(
+          '✅ Milestone checked: '
+          'letter=$_letter, '
+          'level=$_level, '
+          'canAdvance=$canAdvance',
+        );
+      } catch (e) {
         debugPrint('⚠️ Pronunciation milestone notification failed: $e');
       }
     }
-
 
     // -------------------------------------------------------------
     // Check if the child has completed the entire Faseh journey
@@ -643,17 +641,16 @@ debugPrint(
 
     const int total = 100;
 
-  final int pct = ((score / total) * 100).round();
+    final int pct = ((score / total) * 100).round();
 
-final int correctCount = _countCorrectPronunciations();
+    final int correctCount = _countCorrectPronunciations();
 
-final bool canAdvance =
-    correctCount >= 6 && score >= 80;
+    final bool canAdvance = correctCount >= 6 && score >= 80;
 
-final int pts = score * 10;
-final int nextRetryIndex = _getNextRetryIndex();
+    final int pts = (score / 2.5).round();
+    final int nextRetryIndex = _getNextRetryIndex();
 
-final bool hasPendingRetry = nextRetryIndex != -1;
+    final bool hasPendingRetry = nextRetryIndex != -1;
 
     // نفس حساب النجوم
     final int stars = pct >= 90
@@ -779,39 +776,39 @@ final bool hasPendingRetry = nextRetryIndex != -1;
 
                                   // Normal case
                                   // Normal Speaking flow:
-// return to the letter levels screen just like Listening.
-Navigator.pushNamedAndRemoveUntil(
-  context,
-  '/child/letter-levels',
-  (route) => false,
-  arguments: {
-    'letter': _letter,
-    'childId': _childId,
-    'startingLevel': _level,
-  },
-);
+                                  // return to the letter levels screen just like Listening.
+                                  Navigator.pushNamedAndRemoveUntil(
+                                    context,
+                                    '/child/letter-levels',
+                                    (route) => false,
+                                    arguments: {
+                                      'letter': _letter,
+                                      'childId': _childId,
+                                      'startingLevel': _level,
+                                    },
+                                  );
                                 },
 
-                               icon: Icon(
-  hasPendingRetry
-      ? Icons.refresh_rounded
-      : canAdvance
-          ? Icons.arrow_forward_rounded
-          : Icons.replay_rounded,
-  size: 18,
-),
+                                icon: Icon(
+                                  hasPendingRetry
+                                      ? Icons.refresh_rounded
+                                      : canAdvance
+                                      ? Icons.arrow_forward_rounded
+                                      : Icons.replay_rounded,
+                                  size: 18,
+                                ),
 
-label: Text(
-  hasPendingRetry
-      ? 'أكمل المحاولات'
-      : canAdvance
-          ? 'متابعة التمارين'
-          : 'إعادة تمارين النطق',
-  style: const TextStyle(
-    fontFamily: 'Tajawal',
-    fontWeight: FontWeight.w600,
-  ),
-),
+                                label: Text(
+                                  hasPendingRetry
+                                      ? 'أكمل المحاولات'
+                                      : canAdvance
+                                      ? 'متابعة التمارين'
+                                      : 'إعادة تمارين النطق',
+                                  style: const TextStyle(
+                                    fontFamily: 'Tajawal',
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
 
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: const Color(0xFFFF6969),

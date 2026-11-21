@@ -38,10 +38,10 @@ class ExerciseListeningResultScreen extends StatelessWidget {
     final int total = args['total'] as int;
 
     final int pointsAwarded =
-        (args['pointsAwarded'] as num?)?.toInt() ?? (score * 50);
+        (args['pointsAwarded'] as num?)?.toInt() ?? (score * 5);
 
-    final int totalPoints =
-        (args['totalPoints'] as num?)?.toInt() ?? pointsAwarded;
+    final int availablePoints =
+        (args['availablePoints'] as num?)?.toInt() ?? pointsAwarded;
 
     final int streak = (args['streak'] as num?)?.toInt() ?? 0;
 
@@ -83,7 +83,7 @@ class ExerciseListeningResultScreen extends StatelessWidget {
                         // ─── Points
                         _PointsCard(
                           pointsAwarded: pointsAwarded,
-                          totalPoints: totalPoints,
+                          availablePoints: availablePoints,
                           streak: streak,
                         ),
 
@@ -359,16 +359,16 @@ class _ResultHeroCard extends StatelessWidget {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Points Card
-// كل إجابة صحيحة = 50 نقطة
+// كل إجابة صحيحة = 5 نقطة
 // ─────────────────────────────────────────────────────────────────────────────
 class _PointsCard extends StatelessWidget {
   final int pointsAwarded;
-  final int totalPoints;
+  final int availablePoints;
   final int streak;
 
   const _PointsCard({
     required this.pointsAwarded,
-    required this.totalPoints,
+    required this.availablePoints,
     required this.streak,
   });
 
@@ -428,7 +428,7 @@ class _PointsCard extends StatelessWidget {
                 const SizedBox(height: 2),
 
                 Text(
-                  'مجموع نقاطك: $totalPoints',
+                  'مجموع نقاطك: $availablePoints',
                   style: const TextStyle(
                     fontSize: 10.5,
                     color: Color(0xFF777777),
