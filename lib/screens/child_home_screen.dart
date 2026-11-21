@@ -350,9 +350,6 @@ class ChildHomeScreen extends StatelessWidget {
 
                         const SizedBox(height: 16),
 
-  
-
-
                         // ====================================================
                         // REWARD STORE
                         // ====================================================
@@ -619,19 +616,16 @@ class _ChildHeader extends StatelessWidget {
         continue;
       }
 
-
-if (type == 'listening_completed' ||
-    type == 'level_completed' ||
-    type == 'letter_completed' ||
-    type == 'journey_completed' ||
-    type == 'streak_completed' ||
-    type == 'practice_reminder' ||
-    type == 'streak_reminder') {
-  count++;
-  continue;
-}
-
-
+      if (type == 'listening_completed' ||
+          type == 'level_completed' ||
+          type == 'letter_completed' ||
+          type == 'journey_completed' ||
+          type == 'streak_completed' ||
+          type == 'practice_reminder' ||
+          type == 'streak_reminder') {
+        count++;
+        continue;
+      }
 
       if (type == 'practice_invitation') {
         final sessionId = data['referenceId']?.toString() ?? '';
@@ -950,8 +944,7 @@ class _ParentPasswordDialogState extends State<ParentPasswordDialog> {
                 prefixIcon: const Icon(Icons.lock_outline, size: 20),
                 suffixIcon: IconButton(
                   icon: Icon(
-                    _obscurePassword ? Icons.visibility : Icons.visibility_off,
-                    color: const Color(0xFF511281),
+                    _obscurePassword ? Icons.visibility_off : Icons.visibility,
                     size: 20,
                   ),
                   onPressed: () {
