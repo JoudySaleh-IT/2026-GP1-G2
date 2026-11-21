@@ -458,7 +458,311 @@ class _ExerciseRecordingResultScreenState
       await _finalizeSpeakingMotivation();
     }
   }
+Future<bool?> _showLevelCompletedDialog({
+  required String completedLevel,
+  required String nextLevel,
+}) {
+  return showDialog<bool>(
+    context: context,
+    barrierDismissible: false,
+    builder: (dialogContext) {
+      return Directionality(
+        textDirection: TextDirection.rtl,
+        child: Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 26),
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFFCF7),
+              borderRadius: BorderRadius.circular(30),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.10),
+                  blurRadius: 20,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: 170,
+                  height: 112,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    alignment: Alignment.center,
+                    children: [
+                      const Positioned(
+                        left: 20,
+                        top: 0,
+                        child: SizedBox(
+                          width: 90,
+                          height: 90,
+                          child: _CelebrationBunny(),
+                        ),
+                      ),
 
+                      // Badge: المستوى الجديد مفتوح
+                      Positioned(
+                        right: 12,
+                        top: 18,
+                        child: Container(
+                          width: 50,
+                          height: 50,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE5F4EA),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: const Color(0xFF79B990),
+                              width: 2,
+                            ),
+                          ),
+                          child: const Icon(
+                            Icons.lock_open_rounded,
+                            color: Color(0xFF65A97D),
+                            size: 27,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+
+                const Text(
+                  'أحسنت! 🎉',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'Tajawal',
+                    fontSize: 23,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF511281),
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+
+                Text(
+                  'أكملت المستوى $completedLevel!',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontFamily: 'Tajawal',
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF511281),
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+
+                Text(
+                  'تم فتح المستوى $nextLevel.\nهيا نكمل التدرّب!',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontFamily: 'Tajawal',
+                    fontSize: 14,
+                    height: 1.6,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF777777),
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+               SizedBox(
+  width: double.infinity,
+  child: ElevatedButton(
+    onPressed: () {
+      Navigator.pop(dialogContext, true);
+    },
+    style: ElevatedButton.styleFrom(
+      backgroundColor: const Color(0xFF65A97D),
+      foregroundColor: Colors.white,
+      elevation: 0,
+      shape: const StadiumBorder(),
+      padding: const EdgeInsets.symmetric(vertical: 14),
+    ),
+    child: Text(
+      'ابدأ المستوى $nextLevel',
+      style: const TextStyle(
+        fontFamily: 'Tajawal',
+        fontSize: 15,
+        fontWeight: FontWeight.w700,
+      ),
+    ),
+  ),
+),
+
+                const SizedBox(height: 9),
+
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: () {
+                      Navigator.pop(dialogContext, false);
+                    },
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF511281),
+                      side: const BorderSide(
+                        color: Color(0xFF511281),
+                        width: 1.3,
+                      ),
+                      shape: const StadiumBorder(),
+                      padding: const EdgeInsets.symmetric(vertical: 13),
+                    ),
+                    child: const Text(
+                      'العودة للتمارين',
+                      style: TextStyle(
+                        fontFamily: 'Tajawal',
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    },
+  );
+}
+Future<void> _showLetterCompletedDialog() {
+  return showDialog<void>(
+    context: context,
+    barrierDismissible: false,
+    builder: (dialogContext) {
+      return Directionality(
+        textDirection: TextDirection.rtl,
+        child: Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 26),
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFFCF7),
+              borderRadius: BorderRadius.circular(30),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.10),
+                  blurRadius: 20,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: 170,
+                  height: 112,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    alignment: Alignment.center,
+                    children: [
+                      const Positioned(
+                        left: 20,
+                        top: 0,
+                        child: SizedBox(
+                          width: 90,
+                          height: 90,
+                          child: _CelebrationBunny(),
+                        ),
+                      ),
+
+                      // Badge: mastered letter
+                      Positioned(
+                        right: 12,
+                        top: 18,
+                        child: Container(
+                          width: 50,
+                          height: 50,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFF1C7),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: const Color(0xFFE6B94A),
+                              width: 2,
+                            ),
+                          ),
+                          child: const Icon(
+                            Icons.verified_rounded,
+                            color: Color(0xFFE0A92F),
+                            size: 28,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+
+                Text(
+                  'أحسنت! أتقنت حرف «$_letter» 🎉',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontFamily: 'Tajawal',
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF511281),
+                  ),
+                ),
+
+                const SizedBox(height: 10),
+
+                const Text(
+                  'أكملت جميع تمارين الحرف',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'Tajawal',
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF511281),
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(dialogContext);
+                    },
+                    icon: const Icon(
+                      Icons.menu_book_rounded,
+                      size: 20,
+                    ),
+                    label: const Text(
+                      'العودة للتمارين',
+                      style: TextStyle(
+                        fontFamily: 'Tajawal',
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF65A97D),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: const StadiumBorder(),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    },
+  );
+}
   Future<bool?> _showJourneyCelebrationDialog() {
     return showDialog<bool>(
       context: context,
@@ -773,7 +1077,109 @@ class _ExerciseRecordingResultScreenState
 
                                     return;
                                   }
+// =============================================================
+// Beginner completed → unlock Intermediate
+// =============================================================
+if (canAdvance && _level.toLowerCase() == 'beginner') {
+  final bool? startIntermediate =
+      await _showLevelCompletedDialog(
+    completedLevel: 'السهل',
+    nextLevel: 'المتوسط',
+  );
 
+  if (!mounted) return;
+
+  // ابدأ المستوى المتوسط مباشرة
+  if (startIntermediate == true) {
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      '/child/exercise/listening',
+      (route) => false,
+      arguments: {
+        'letter': _letter,
+        'childId': _childId,
+        'level': 'intermediate',
+      },
+    );
+
+    return;
+  }
+
+  // العودة لشاشة المستويات
+  Navigator.pushNamedAndRemoveUntil(
+    context,
+    '/child/letter-levels',
+    (route) => false,
+    arguments: {
+      'letter': _letter,
+      'childId': _childId,
+      'startingLevel': 'intermediate',
+    },
+  );
+
+  return;
+}
+// =============================================================
+// Intermediate completed → unlock Advanced
+// =============================================================
+if (canAdvance && _level.toLowerCase() == 'intermediate') {
+  final bool? startAdvanced =
+      await _showLevelCompletedDialog(
+    completedLevel: 'المتوسط',
+    nextLevel: 'الصعب',
+  );
+
+  if (!mounted) return;
+
+  // يبدأ المستوى الصعب مباشرة
+  if (startAdvanced == true) {
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      '/child/exercise/listening',
+      (route) => false,
+      arguments: {
+        'letter': _letter,
+        'childId': _childId,
+        'level': 'advanced',
+      },
+    );
+
+    return;
+  }
+
+  // يرجع لشاشة مستويات الحرف
+  Navigator.pushNamedAndRemoveUntil(
+    context,
+    '/child/letter-levels',
+    (route) => false,
+    arguments: {
+      'letter': _letter,
+      'childId': _childId,
+      'startingLevel': 'advanced',
+    },
+  );
+
+  return;
+}
+
+
+// =============================================================
+// Advanced completed → letter mastered
+// =============================================================
+if (canAdvance && _level.toLowerCase() == 'advanced') {
+  await _showLetterCompletedDialog();
+
+  if (!mounted) return;
+
+  Navigator.pushNamedAndRemoveUntil(
+    context,
+    '/child/exercises',
+    (route) => false,
+    arguments: _childId,
+  );
+
+  return;
+}
                                   // Normal case
                                   // Normal Speaking flow:
                                   // return to the letter levels screen just like Listening.
