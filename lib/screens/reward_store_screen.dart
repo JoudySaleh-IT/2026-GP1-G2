@@ -57,6 +57,16 @@ class _RewardStoreScreenState extends State<RewardStoreScreen> {
   // Helpers
   // ============================================================
 
+  String _arabicNumber(num number) {
+    const english = '0123456789';
+    const arabic = '٠١٢٣٤٥٦٧٨٩';
+
+    return number.toString().split('').map((char) {
+      final index = english.indexOf(char);
+      return index == -1 ? char : arabic[index];
+    }).join();
+  }
+
   int _balance(Map<String, dynamic> data) {
     return (data['availablePoints'] as num?)?.toInt() ??
         (data['points'] as num?)?.toInt() ??
@@ -369,7 +379,7 @@ class _RewardStoreScreenState extends State<RewardStoreScreen> {
             ),
           ),
           Text(
-            '$balance',
+            _arabicNumber(balance),
             style: const TextStyle(
               color: purple,
               fontSize: 22,
@@ -817,7 +827,7 @@ class _RewardStoreScreenState extends State<RewardStoreScreen> {
             const SizedBox(width: 3),
           ],
           Text(
-            item.isFree ? 'مجاني' : '${item.price}',
+            item.isFree ? 'مجاني' : _arabicNumber(item.price),
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w800,
@@ -884,7 +894,7 @@ class _RewardStoreScreenState extends State<RewardStoreScreen> {
                   const SizedBox(height: 12),
 
                   Text(
-                    'رصيدك المتاح: $balance نقطة',
+                    'رصيدك المتاح: ${_arabicNumber(balance)} نقطة',
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                       color: purple,
@@ -896,7 +906,7 @@ class _RewardStoreScreenState extends State<RewardStoreScreen> {
 
                   if (!owned)
                     Text(
-                      'سعر العنصر: ${item.price} نقطة',
+                      'سعر العنصر: ${_arabicNumber(item.price)} نقطة',
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         color: Color(0xFF777777),
@@ -983,7 +993,7 @@ class _RewardStoreScreenState extends State<RewardStoreScreen> {
                         ? 'عرض في مقتنياتي'
                         : owned
                         ? 'اذهب لمقتنياتي'
-                        : 'شراء بـ ${item.price} نقطة',
+                        : 'شراء بـ ${_arabicNumber(item.price)} نقطة',
                     style: const TextStyle(fontFamily: 'Tajawal'),
                   ),
                 ),

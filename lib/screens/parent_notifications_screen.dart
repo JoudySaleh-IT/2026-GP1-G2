@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'style_constants.dart';
+import '../widgets/child_store_avatar.dart';
 
 class ParentNotificationsScreen extends StatelessWidget {
   const ParentNotificationsScreen({super.key});
@@ -63,189 +64,189 @@ class ParentNotificationsScreen extends StatelessWidget {
             // BODY
             // ===============================================================
             Expanded(
-  child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-    stream: FirebaseFirestore.instance
-        .collection('parent_notifications')
-        .where(
-          'parentId',
-          isEqualTo: FirebaseAuth.instance.currentUser!.uid,
-        )
-        .snapshots(),
-    builder: (context, snapshot) {
-      if (snapshot.connectionState == ConnectionState.waiting) {
-        return const Stack(
-          children: [
-            Positioned.fill(
-              child: _ParentNotificationsBackground(),
-            ),
-            Center(
-              child: CircularProgressIndicator(
-                color: _purple,
+              child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                stream: FirebaseFirestore.instance
+                    .collection('parent_notifications')
+                    .where(
+                      'parentId',
+                      isEqualTo: FirebaseAuth.instance.currentUser!.uid,
+                    )
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Stack(
+                      children: [
+                        Positioned.fill(
+                          child: _ParentNotificationsBackground(),
+                        ),
+                        Center(
+                          child: CircularProgressIndicator(color: _purple),
+                        ),
+                      ],
+                    );
+                  }
+
+                  if (snapshot.hasError) {
+                    return const Stack(
+                      children: [
+                        Positioned.fill(
+                          child: _ParentNotificationsBackground(),
+                        ),
+                        _ParentNotificationMessageView(
+                          title: 'تعذّر تحميل الإشعارات',
+                          message: 'حاول مرة أخرى بعد قليل',
+                        ),
+                      ],
+                    );
+                  }
+
+                  final thirtyDaysAgo = DateTime.now().subtract(
+                    const Duration(days: 30),
+                  );
+
+                  final notifications = (snapshot.data?.docs.toList() ?? [])
+                      .where((notification) {
+                        final createdAt =
+                            notification.data()['createdAt'] as Timestamp?;
+
+                        if (createdAt == null) return false;
+
+                        return createdAt.toDate().isAfter(thirtyDaysAgo);
+                      })
+                      .toList();
+
+                  // Newest first
+                  notifications.sort((a, b) {
+                    final aTime = a.data()['createdAt'] as Timestamp?;
+                    final bTime = b.data()['createdAt'] as Timestamp?;
+
+                    if (aTime == null && bTime == null) return 0;
+                    if (aTime == null) return 1;
+                    if (bTime == null) return -1;
+
+                    return bTime.compareTo(aTime);
+                  });
+
+                  if (notifications.isEmpty) {
+                    return const Stack(
+                      children: [
+                        Positioned.fill(
+                          child: IgnorePointer(
+                            child: _ParentNotificationsBackground(),
+                          ),
+                        ),
+                        _ParentNotificationMessageView(
+                          title: 'لا توجد إشعارات جديدة',
+                          message: 'ستظهر هنا آخر التحديثات المتعلقة بأطفالك',
+                        ),
+                      ],
+                    );
+                  }
+
+                  return Stack(
+                    children: [
+                      const Positioned.fill(
+                        child: IgnorePointer(
+                          child: _ParentNotificationsBackground(),
+                        ),
+                      ),
+
+                      ListView.separated(
+                        padding: const EdgeInsets.fromLTRB(18, 18, 18, 30),
+                        itemCount: notifications.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 11),
+                        itemBuilder: (context, index) {
+                          final notification = notifications[index];
+
+                          return _ParentNotificationItem(
+                            notification: notification,
+                          );
+                        },
+                      ),
+                    ],
+                  );
+                },
               ),
             ),
-          ],
-        );
-      }
-
-      if (snapshot.hasError) {
-        return const Stack(
-          children: [
-            Positioned.fill(
-              child: _ParentNotificationsBackground(),
-            ),
-            _ParentNotificationMessageView(
-              title: 'تعذّر تحميل الإشعارات',
-              message: 'حاول مرة أخرى بعد قليل',
-            ),
-          ],
-        );
-      }
-
-      final thirtyDaysAgo = DateTime.now().subtract(
-  const Duration(days: 30),
-);
-
-final notifications = (snapshot.data?.docs.toList() ?? [])
-    .where((notification) {
-  final createdAt = notification.data()['createdAt'] as Timestamp?;
-
-  if (createdAt == null) return false;
-
-  return createdAt.toDate().isAfter(thirtyDaysAgo);
-}).toList();
-
-      // Newest first
-      notifications.sort((a, b) {
-        final aTime = a.data()['createdAt'] as Timestamp?;
-        final bTime = b.data()['createdAt'] as Timestamp?;
-
-        if (aTime == null && bTime == null) return 0;
-        if (aTime == null) return 1;
-        if (bTime == null) return -1;
-
-        return bTime.compareTo(aTime);
-      });
-
-      if (notifications.isEmpty) {
-        return const Stack(
-          children: [
-            Positioned.fill(
-              child: IgnorePointer(
-                child: _ParentNotificationsBackground(),
-              ),
-            ),
-            _ParentNotificationMessageView(
-              title: 'لا توجد إشعارات جديدة',
-              message:
-                  'ستظهر هنا آخر التحديثات المتعلقة بأطفالك',
-            ),
-          ],
-        );
-      }
-
-      return Stack(
-        children: [
-          const Positioned.fill(
-            child: IgnorePointer(
-              child: _ParentNotificationsBackground(),
-            ),
-          ),
-
-          ListView.separated(
-            padding: const EdgeInsets.fromLTRB(18, 18, 18, 30),
-            itemCount: notifications.length,
-            separatorBuilder: (_, __) =>
-                const SizedBox(height: 11),
-            itemBuilder: (context, index) {
-              final notification = notifications[index];
-
-              return _ParentNotificationItem(
-                notification: notification,
-              );
-            },
-          ),
-        ],
-      );
-    },
-  ),
-),
           ],
         ),
       ),
     );
   }
 }
+
 class _ParentNotificationItem extends StatelessWidget {
   final QueryDocumentSnapshot<Map<String, dynamic>> notification;
 
-  const _ParentNotificationItem({
-    required this.notification,
-  });
+  const _ParentNotificationItem({required this.notification});
 
   @override
   Widget build(BuildContext context) {
     final data = notification.data();
     final String type = data['type']?.toString() ?? '';
-final String? notificationTitle = data['title']?.toString();
-final String? notificationMessage = data['message']?.toString();
+    final String? notificationTitle = data['title']?.toString();
+    final String? notificationMessage = data['message']?.toString();
 
     final String childId = data['childId']?.toString() ?? '';
     final bool isRead = data['isRead'] == true;
     final Timestamp? createdAt = data['createdAt'] as Timestamp?;
 
-    return FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-      future: FirebaseFirestore.instance
+    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      stream: FirebaseFirestore.instance
           .collection('children')
           .doc(childId)
-          .get(),
+          .snapshots(),
       builder: (context, childSnapshot) {
-        if (childSnapshot.connectionState ==
-            ConnectionState.waiting) {
+        if (childSnapshot.connectionState == ConnectionState.waiting) {
           return const _ParentNotificationLoadingCard();
         }
 
         final childData = childSnapshot.data?.data();
 
-        final String nickname =
-            (childData?['nickname'] ?? '').toString().trim();
+        final String nickname = (childData?['nickname'] ?? '')
+            .toString()
+            .trim();
 
-        final String firstName =
-            (childData?['firstName'] ?? '').toString().trim();
+        final String firstName = (childData?['firstName'] ?? '')
+            .toString()
+            .trim();
 
-        final String name =
-            (childData?['name'] ?? '').toString().trim();
+        final String name = (childData?['name'] ?? '').toString().trim();
 
-        final String gender =
-            (childData?['gender'] ?? '').toString().toLowerCase();
+        final String gender = (childData?['gender'] ?? '')
+            .toString()
+            .toLowerCase();
 
-        final String avatar =
-            (childData?['avatar'] ?? '🌟').toString();
+        final String avatar = (childData?['avatar'] ?? '🌟').toString();
+        final String? avatarId = childData?['equippedAvatarId']?.toString();
+
+        final String? backgroundId = childData?['equippedBackgroundId']
+            ?.toString();
 
         final String displayName = nickname.isNotEmpty
             ? nickname
             : firstName.isNotEmpty
-                ? firstName
-                : name.isNotEmpty
-                    ? name
-                    : 'طفلك';
+            ? firstName
+            : name.isNotEmpty
+            ? name
+            : 'طفلك';
 
-        final String action =
-            gender == 'girl' ? 'أضافت' : 'أضاف';
+        final String action = gender == 'girl' ? 'أضافت' : 'أضاف';
 
         return _ParentNotificationCard(
-  childName: displayName,
-  avatar: avatar,
-  action: action,
-  type: type,
-  titleOverride: notificationTitle,
-  messageOverride: notificationMessage,
-  isRead: isRead,
-  timeText: _formatParentNotificationTime(createdAt),
+          childName: displayName,
+          avatar: avatar,
+          avatarId: avatarId,
+          backgroundId: backgroundId,
+          action: action,
+          type: type,
+          titleOverride: notificationTitle,
+          messageOverride: notificationMessage,
+          isRead: isRead,
+          timeText: _formatParentNotificationTime(createdAt),
           onTap: () async {
             if (!isRead) {
-              await notification.reference.update({
-                'isRead': true,
-              });
+              await notification.reference.update({'isRead': true});
             }
           },
         );
@@ -259,22 +260,26 @@ class _ParentNotificationCard extends StatelessWidget {
   final String avatar;
   final String action;
   final String type;
-final String? titleOverride;
-final String? messageOverride;
+  final String? titleOverride;
+  final String? messageOverride;
   final bool isRead;
   final String timeText;
   final VoidCallback onTap;
+  final String? avatarId;
+  final String? backgroundId;
 
   const _ParentNotificationCard({
     required this.childName,
     required this.avatar,
     required this.action,
     required this.type,
-this.titleOverride,
-this.messageOverride,
+    this.titleOverride,
+    this.messageOverride,
     required this.isRead,
     required this.timeText,
     required this.onTap,
+    this.avatarId,
+    this.backgroundId,
   });
 
   @override
@@ -283,31 +288,31 @@ this.messageOverride,
     const coral = Color(0xFFFF6969);
     const green = Color(0xFF70A884);
     final bool isMilestone = const [
-  'level_completed',
-  'letter_completed',
-  'journey_completed',
-  'streak_completed',
-].contains(type);
+      'level_completed',
+      'letter_completed',
+      'journey_completed',
+      'streak_completed',
+    ].contains(type);
 
-final String title = isMilestone
-    ? (titleOverride ?? 'إنجاز جديد')
-    : 'صديق جديد';
+    final String title = isMilestone
+        ? (titleOverride ?? 'إنجاز جديد')
+        : 'صديق جديد';
 
-final String message = isMilestone
-    ? (messageOverride ?? 'حقق طفلك إنجازًا جديدًا!')
-    : '$childName $action صديقًا جديدًا';
+    final String message = isMilestone
+        ? (messageOverride ?? 'حقق طفلك إنجازًا جديدًا!')
+        : '$childName $action صديقًا جديدًا';
 
-final IconData typeIcon = type == 'level_completed'
-    ? Icons.stars_rounded
-    : type == 'letter_completed'
+    final IconData typeIcon = type == 'level_completed'
+        ? Icons.stars_rounded
+        : type == 'letter_completed'
         ? Icons.emoji_events_rounded
         : type == 'journey_completed'
-            ? Icons.workspace_premium_rounded
-            : type == 'streak_completed'
-                ? Icons.local_fire_department_rounded
-                : Icons.people_alt_rounded;
+        ? Icons.workspace_premium_rounded
+        : type == 'streak_completed'
+        ? Icons.local_fire_department_rounded
+        : Icons.people_alt_rounded;
 
-final Color tagColor = isMilestone ? purple : green;
+    final Color tagColor = isMilestone ? purple : green;
 
     return Material(
       color: Colors.transparent,
@@ -346,13 +351,13 @@ final Color tagColor = isMilestone ? purple : green;
                     decoration: BoxDecoration(
                       color: const Color(0xFFF3EBFA),
                       shape: BoxShape.circle,
-                      border: Border.all(
-                        color: purple.withValues(alpha: 0.08),
-                      ),
+                      border: Border.all(color: purple.withValues(alpha: 0.08)),
                     ),
-                    child: Text(
-                      avatar,
-                      style: const TextStyle(fontSize: 34),
+                    child: StoreAvatarImage(
+                      avatar: avatar,
+                      avatarId: avatarId,
+                      backgroundId: backgroundId,
+                      size: 60,
                     ),
                   ),
 
@@ -366,11 +371,7 @@ final Color tagColor = isMilestone ? purple : green;
                         color: Color(0xFFE9F4EC),
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(
-  typeIcon,
-  color: tagColor,
-  size: 13,
-),
+                      child: Icon(typeIcon, color: tagColor, size: 13),
                     ),
                   ),
                 ],
@@ -385,8 +386,8 @@ final Color tagColor = isMilestone ? purple : green;
                     Row(
                       children: [
                         Expanded(
-  child: Text(
-    title,
+                          child: Text(
+                            title,
                             textAlign: TextAlign.right,
                             style: TextStyle(
                               fontFamily: 'Tajawal',
@@ -454,30 +455,26 @@ final Color tagColor = isMilestone ? purple : green;
                       ),
                       decoration: BoxDecoration(
                         color: isMilestone
-    ? const Color(0xFFF3EBFA)
-    : const Color(0xFFF1F8F3),
+                            ? const Color(0xFFF3EBFA)
+                            : const Color(0xFFF1F8F3),
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: Row(
-  mainAxisSize: MainAxisSize.min,
-  children: [
-    Icon(
-      typeIcon,
-      size: 13,
-      color: tagColor,
-    ),
-    const SizedBox(width: 4),
-    Text(
-      isMilestone ? 'إنجاز' : 'نشاط الأصدقاء',
-      style: TextStyle(
-        fontFamily: 'Tajawal',
-        fontSize: 9,
-        fontWeight: FontWeight.w600,
-        color: tagColor,
-      ),
-    ),
-  ],
-),
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(typeIcon, size: 13, color: tagColor),
+                          const SizedBox(width: 4),
+                          Text(
+                            isMilestone ? 'إنجاز' : 'نشاط الأصدقاء',
+                            style: TextStyle(
+                              fontFamily: 'Tajawal',
+                              fontSize: 9,
+                              fontWeight: FontWeight.w600,
+                              color: tagColor,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -502,9 +499,7 @@ class _ParentNotificationLoadingCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(23),
       ),
       child: const Center(
-        child: CircularProgressIndicator(
-          color: Color(0xFF511281),
-        ),
+        child: CircularProgressIndicator(color: Color(0xFF511281)),
       ),
     );
   }
@@ -660,34 +655,22 @@ class _ParentNotificationsBackground extends StatelessWidget {
         Positioned(
           top: 45,
           right: -55,
-          child: _circle(
-            145,
-            const Color(0xFFDCC9F5).withValues(alpha: 0.18),
-          ),
+          child: _circle(145, const Color(0xFFDCC9F5).withValues(alpha: 0.18)),
         ),
         Positioned(
           top: 300,
           left: -65,
-          child: _circle(
-            155,
-            const Color(0xFFDDF2E3).withValues(alpha: 0.25),
-          ),
+          child: _circle(155, const Color(0xFFDDF2E3).withValues(alpha: 0.25)),
         ),
         Positioned(
           top: 575,
           right: -50,
-          child: _circle(
-            125,
-            const Color(0xFFFFDCE3).withValues(alpha: 0.23),
-          ),
+          child: _circle(125, const Color(0xFFFFDCE3).withValues(alpha: 0.23)),
         ),
         Positioned(
           bottom: 40,
           left: 38,
-          child: _circle(
-            20,
-            const Color(0xFFD5BFE9).withValues(alpha: 0.33),
-          ),
+          child: _circle(20, const Color(0xFFD5BFE9).withValues(alpha: 0.33)),
         ),
       ],
     );
@@ -697,10 +680,7 @@ class _ParentNotificationsBackground extends StatelessWidget {
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
-      ),
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
     );
   }
 }
@@ -871,9 +851,7 @@ class _ParentNotificationBunny extends StatelessWidget {
 class _ParentNotificationBunnyEar extends StatelessWidget {
   final Color color;
 
-  const _ParentNotificationBunnyEar({
-    required this.color,
-  });
+  const _ParentNotificationBunnyEar({required this.color});
 
   @override
   Widget build(BuildContext context) {
