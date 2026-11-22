@@ -70,10 +70,7 @@ class RewardStoreService {
         return;
       }
 
-      final int balance =
-          (data['availablePoints'] as num?)?.toInt() ??
-          (data['points'] as num?)?.toInt() ??
-          0;
+      final int balance = (data['availablePoints'] as num?)?.toInt() ?? 0;
 
       final int cost = catalogItem.price;
 

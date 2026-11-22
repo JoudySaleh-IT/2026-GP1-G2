@@ -3,16 +3,19 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'leaderboard_service.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/foundation.dart';
+
 class MotivationAwardResult {
   final bool awarded;
   final int pointsAwarded;
   final int totalPoints;
+  final int availablePoints;
   final int streak;
 
   const MotivationAwardResult({
     required this.awarded,
     required this.pointsAwarded,
     required this.totalPoints,
+    required this.availablePoints,
     required this.streak,
   });
 }
@@ -22,44 +25,38 @@ class MotivationService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final LeaderboardService _leaderboardService = LeaderboardService();
 
-// Send streak achievement notifications after a successful practice.
-Future<void> _notifyStreakAchievement({
-  required String childId,
-  required MotivationAwardResult result,
-}) async {
-  if (!result.awarded ||
-      result.streak < 3 ||
-      result.streak % 3 != 0) {
-    return;
+  // Send streak achievement notifications after a successful practice.
+  Future<void> _notifyStreakAchievement({
+    required String childId,
+    required MotivationAwardResult result,
+  }) async {
+    if (!result.awarded || result.streak < 3 || result.streak % 3 != 0) {
+      return;
+    }
+
+    try {
+      final callable = FirebaseFunctions.instanceFor(
+        region: 'us-central1',
+      ).httpsCallable('notifyFaseehStreak');
+
+      await callable.call({'childId': childId});
+    } catch (e) {
+      // Notification failure must never affect completed practice.
+      debugPrint('Streak notification failed: $e');
+    }
   }
 
-  try {
-    final callable = FirebaseFunctions.instanceFor(
-      region: 'us-central1',
-    ).httpsCallable('notifyFaseehStreak');
+  Future<void> testStreakAchievement(String childId) async {
+    try {
+      final result = await FirebaseFunctions.instanceFor(
+        region: 'us-central1',
+      ).httpsCallable('notifyFaseehStreak').call({'childId': childId});
 
-    await callable.call({
-      'childId': childId,
-    });
-  } catch (e) {
-    // Notification failure must never affect completed practice.
-    debugPrint('Streak notification failed: $e');
+      debugPrint('STREAK TEST RESULT: ${result.data}');
+    } catch (e) {
+      debugPrint('STREAK TEST ERROR: $e');
+    }
   }
-}
-
-Future<void> testStreakAchievement(String childId) async {
-  try {
-    final result = await FirebaseFunctions.instanceFor(
-      region: 'us-central1',
-    ).httpsCallable('notifyFaseehStreak').call({
-      'childId': childId,
-    });
-
-    debugPrint('STREAK TEST RESULT: ${result.data}');
-  } catch (e) {
-    debugPrint('STREAK TEST ERROR: $e');
-  }
-}
 
   // ---------------------------------------------------------------------------
   // Create a unique ID for one exercise attempt.
@@ -156,7 +153,8 @@ Future<void> testStreakAchievement(String childId) async {
   // SOLO LISTENING
   //
   // Rule:
-  // points = correct answers × 50
+  // points = correct answers × 5
+  // maximum = 40 points
   //
   // A fully completed attempt counts toward the streak even when the child
   // did not reach the Listening passing threshold.
@@ -183,7 +181,7 @@ Future<void> testStreakAchievement(String childId) async {
       throw Exception('INVALID_CORRECT_COUNT');
     }
 
-    const int pointsPerCorrectAnswer = 50;
+    const int pointsPerCorrectAnswer = 5;
 
     final int pointsAwarded = correctCount * pointsPerCorrectAnswer;
 
@@ -201,8 +199,10 @@ Future<void> testStreakAchievement(String childId) async {
 
     final String todayKey = _toDayKey(today);
 
-final result = await _db.runTransaction<MotivationAwardResult>(
-  (transaction) async {      // ---------------------------------------------------------
+    final result = await _db.runTransaction<MotivationAwardResult>((
+      transaction,
+    ) async {
+      // ---------------------------------------------------------
       // Read everything before making writes.
       // ---------------------------------------------------------
 
@@ -227,6 +227,9 @@ final result = await _db.runTransaction<MotivationAwardResult>(
 
       final int currentPoints = (data['points'] as num?)?.toInt() ?? 0;
 
+      final int currentAvailablePoints =
+          (data['availablePoints'] as num?)?.toInt() ?? currentPoints;
+
       final int currentStreak = (data['streak'] as num?)?.toInt() ?? 0;
 
       // ---------------------------------------------------------
@@ -243,6 +246,7 @@ final result = await _db.runTransaction<MotivationAwardResult>(
           awarded: false,
           pointsAwarded: (eventData?['pointsAwarded'] as num?)?.toInt() ?? 0,
           totalPoints: currentPoints,
+          availablePoints: currentAvailablePoints,
           streak: currentStreak,
         );
       }
@@ -252,6 +256,8 @@ final result = await _db.runTransaction<MotivationAwardResult>(
       // ---------------------------------------------------------
 
       final int newPoints = currentPoints + pointsAwarded;
+
+      final int newAvailablePoints = currentAvailablePoints + pointsAwarded;
 
       final int newStreak = _calculateStreak(
         currentStreak: currentStreak,
@@ -275,6 +281,7 @@ final result = await _db.runTransaction<MotivationAwardResult>(
 
       transaction.update(childRef, {
         'points': newPoints,
+        'availablePoints': newAvailablePoints,
         'streak': newStreak,
         'ageGroup': ageGroup,
         'lastPracticeDay': todayKey,
@@ -310,14 +317,12 @@ final result = await _db.runTransaction<MotivationAwardResult>(
         awarded: true,
         pointsAwarded: pointsAwarded,
         totalPoints: newPoints,
+        availablePoints: newAvailablePoints,
         streak: newStreak,
       );
-        });
+    });
 
-    await _notifyStreakAchievement(
-      childId: childId,
-      result: result,
-    );
+    await _notifyStreakAchievement(childId: childId, result: result);
 
     return result;
   }
@@ -348,10 +353,7 @@ final result = await _db.runTransaction<MotivationAwardResult>(
       throw Exception('INVALID_CORRECT_COUNT');
     }
 
-    const int pointsPerScore = 10;
-
-    final int pointsAwarded = averageScore * pointsPerScore;
-
+    final int pointsAwarded = (averageScore / 2.5).round();
     final childRef = _db.collection('children').doc(childId);
 
     final eventRef = childRef.collection('motivation_events').doc(attemptId);
@@ -366,8 +368,10 @@ final result = await _db.runTransaction<MotivationAwardResult>(
 
     final String todayKey = _toDayKey(today);
 
-final result = await _db.runTransaction<MotivationAwardResult>(
-  (transaction) async {      // ---------------------------------------------------------
+    final result = await _db.runTransaction<MotivationAwardResult>((
+      transaction,
+    ) async {
+      // ---------------------------------------------------------
       // Read child + event first
       // ---------------------------------------------------------
 
@@ -383,6 +387,9 @@ final result = await _db.runTransaction<MotivationAwardResult>(
 
       final int currentPoints = (data['points'] as num?)?.toInt() ?? 0;
 
+      final int currentAvailablePoints =
+          (data['availablePoints'] as num?)?.toInt() ?? currentPoints;
+
       final int currentStreak = (data['streak'] as num?)?.toInt() ?? 0;
 
       // ---------------------------------------------------------
@@ -396,6 +403,7 @@ final result = await _db.runTransaction<MotivationAwardResult>(
           awarded: false,
           pointsAwarded: (eventData?['pointsAwarded'] as num?)?.toInt() ?? 0,
           totalPoints: currentPoints,
+          availablePoints: currentAvailablePoints,
           streak: currentStreak,
         );
       }
@@ -419,6 +427,8 @@ final result = await _db.runTransaction<MotivationAwardResult>(
 
       final int newPoints = currentPoints + pointsAwarded;
 
+      final int newAvailablePoints = currentAvailablePoints + pointsAwarded;
+
       final int newStreak = _calculateStreak(
         currentStreak: currentStreak,
         lastPracticeDay: data['lastPracticeDay'],
@@ -441,6 +451,7 @@ final result = await _db.runTransaction<MotivationAwardResult>(
 
       transaction.update(childRef, {
         'points': newPoints,
+        'availablePoints': newAvailablePoints,
         'streak': newStreak,
         'ageGroup': ageGroup,
         'lastPracticeDay': todayKey,
@@ -480,14 +491,12 @@ final result = await _db.runTransaction<MotivationAwardResult>(
         awarded: true,
         pointsAwarded: pointsAwarded,
         totalPoints: newPoints,
+        availablePoints: newAvailablePoints,
         streak: newStreak,
       );
-     });
+    });
 
-    await _notifyStreakAchievement(
-      childId: childId,
-      result: result,
-    );
+    await _notifyStreakAchievement(childId: childId, result: result);
 
     return result;
   }
@@ -524,8 +533,10 @@ final result = await _db.runTransaction<MotivationAwardResult>(
     final DateTime today = _saudiToday();
     final String todayKey = _toDayKey(today);
 
-final result = await _db.runTransaction<MotivationAwardResult>(
-  (transaction) async {      // -------------------------------------------------------
+    final result = await _db.runTransaction<MotivationAwardResult>((
+      transaction,
+    ) async {
+      // -------------------------------------------------------
       // ALL READS FIRST
       // -------------------------------------------------------
 
@@ -545,6 +556,9 @@ final result = await _db.runTransaction<MotivationAwardResult>(
 
       final int currentPoints = (childData['points'] as num?)?.toInt() ?? 0;
 
+      final int currentAvailablePoints =
+          (childData['availablePoints'] as num?)?.toInt() ?? currentPoints;
+
       final int currentStreak = (childData['streak'] as num?)?.toInt() ?? 0;
 
       // -------------------------------------------------------
@@ -558,6 +572,7 @@ final result = await _db.runTransaction<MotivationAwardResult>(
           awarded: false,
           pointsAwarded: (eventData?['pointsAwarded'] as num?)?.toInt() ?? 0,
           totalPoints: currentPoints,
+          availablePoints: currentAvailablePoints,
           streak: currentStreak,
         );
       }
@@ -636,15 +651,15 @@ final result = await _db.runTransaction<MotivationAwardResult>(
       // COMPETITION POINT RULES
       // -------------------------------------------------------
 
-      final int potentialPoints = exerciseType == 'speaking'
-          ? correctCount * 125
-          : correctCount * 50;
+      final int potentialPoints = correctCount * 5;
 
       // Winner and exact tie receive points.
       // Loser receives 0.
       final int pointsAwarded = (won || isTie) ? potentialPoints : 0;
 
       final int newPoints = currentPoints + pointsAwarded;
+
+      final int newAvailablePoints = currentAvailablePoints + pointsAwarded;
 
       // ALL completed competitors get streak credit,
       // including the loser.
@@ -670,6 +685,7 @@ final result = await _db.runTransaction<MotivationAwardResult>(
 
       transaction.update(childRef, {
         'points': newPoints,
+        'availablePoints': newAvailablePoints,
         'streak': newStreak,
         'ageGroup': ageGroup,
         'lastPracticeDay': todayKey,
@@ -699,18 +715,16 @@ final result = await _db.runTransaction<MotivationAwardResult>(
         'createdAt': FieldValue.serverTimestamp(),
       });
 
-         return MotivationAwardResult(
+      return MotivationAwardResult(
         awarded: true,
         pointsAwarded: pointsAwarded,
         totalPoints: newPoints,
+        availablePoints: newAvailablePoints,
         streak: newStreak,
       );
     });
 
-    await _notifyStreakAchievement(
-      childId: childId,
-      result: result,
-    );
+    await _notifyStreakAchievement(childId: childId, result: result);
 
     return result;
   }

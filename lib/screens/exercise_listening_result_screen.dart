@@ -28,7 +28,181 @@ class ExerciseListeningResultScreen extends StatelessWidget {
 
     return 'أحسنت! اجتزت تمارين الاستماع';
   }
+Future<bool?> _showListeningCompletedDialog(
+  BuildContext context,
+) {
+  return showDialog<bool>(
+    context: context,
+    barrierDismissible: false,
+    builder: (dialogContext) {
+      return Directionality(
+        textDirection: TextDirection.rtl,
+        child: Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 26),
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFFCF7),
+              borderRadius: BorderRadius.circular(30),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.10),
+                  blurRadius: 20,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: 170,
+                  height: 112,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    alignment: Alignment.center,
+                    children: [
+                      const Positioned(
+                        left: 20,
+                        top: 0,
+                        child: SizedBox(
+                          width: 90,
+                          height: 90,
+                          child: _CelebrationBunny(),
+                        ),
+                      ),
 
+                      Positioned(
+                        right: 12,
+                        top: 18,
+                        child: Container(
+                          width: 50,
+                          height: 50,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE5F4EA),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: const Color(0xFF79B990),
+                              width: 2,
+                            ),
+                          ),
+                          child: const Icon(
+                            Icons.mic_rounded,
+                            color: Color(0xFF65A97D),
+                            size: 27,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+
+                const Text(
+                  'أحسنت! 🎉',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'Tajawal',
+                    fontSize: 23,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF511281),
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+
+                const Text(
+                  'أنهيت تمارين الاستماع',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'Tajawal',
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF511281),
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+
+                const Text(
+                  'هيا نجرّب نطق الكلمات!',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'Tajawal',
+                    fontSize: 14,
+                    height: 1.6,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF777777),
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(dialogContext, true);
+                    },
+                    icon: const Icon(
+                      Icons.mic_rounded,
+                      size: 20,
+                    ),
+                    label: const Text(
+                      'ابدأ تمارين النطق',
+                      style: TextStyle(
+                        fontFamily: 'Tajawal',
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF65A97D),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: const StadiumBorder(),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 9),
+
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: () {
+                      Navigator.pop(dialogContext, false);
+                    },
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF511281),
+                      side: const BorderSide(
+                        color: Color(0xFF511281),
+                        width: 1.3,
+                      ),
+                      shape: const StadiumBorder(),
+                      padding: const EdgeInsets.symmetric(vertical: 13),
+                    ),
+                    child: const Text(
+                      'العودة للتمارين',
+                      style: TextStyle(
+                        fontFamily: 'Tajawal',
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    },
+  );
+}
   @override
   Widget build(BuildContext context) {
     final args =
@@ -38,10 +212,10 @@ class ExerciseListeningResultScreen extends StatelessWidget {
     final int total = args['total'] as int;
 
     final int pointsAwarded =
-        (args['pointsAwarded'] as num?)?.toInt() ?? (score * 50);
+        (args['pointsAwarded'] as num?)?.toInt() ?? (score * 5);
 
-    final int totalPoints =
-        (args['totalPoints'] as num?)?.toInt() ?? pointsAwarded;
+    final int availablePoints =
+        (args['availablePoints'] as num?)?.toInt() ?? pointsAwarded;
 
     final int streak = (args['streak'] as num?)?.toInt() ?? 0;
 
@@ -83,7 +257,7 @@ class ExerciseListeningResultScreen extends StatelessWidget {
                         // ─── Points
                         _PointsCard(
                           pointsAwarded: pointsAwarded,
-                          totalPoints: totalPoints,
+                          availablePoints: availablePoints,
                           streak: streak,
                         ),
 
@@ -103,16 +277,57 @@ class ExerciseListeningResultScreen extends StatelessWidget {
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton.icon(
-                            onPressed: () => Navigator.pushNamedAndRemoveUntil(
-                              context,
-                              '/child/letter-levels',
-                              (route) => false,
-                              arguments: {
-                                'letter': args['letter'],
-                                'childId': args['childId'],
-                                'startingLevel': args['level'] ?? 'beginner',
-                              },
-                            ),
+                           onPressed: () async {
+  // نجح في الاستماع
+  if (score >= 6) {
+    final bool? startPronunciation =
+        await _showListeningCompletedDialog(context);
+
+    if (!context.mounted) return;
+
+    // اختار يبدأ النطق مباشرة
+    if (startPronunciation == true) {
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        '/child/letter-introduction',
+        (route) => false,
+        arguments: {
+          'letter': args['letter'],
+          'childId': args['childId'],
+          'level': args['level'] ?? 'beginner',
+        },
+      );
+
+      return;
+    }
+
+    // اختار العودة للتمارين
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      '/child/letter-levels',
+      (route) => false,
+      arguments: {
+        'letter': args['letter'],
+        'childId': args['childId'],
+        'startingLevel': args['level'] ?? 'beginner',
+      },
+    );
+
+    return;
+  }
+
+  // لم ينجح في الاستماع
+  Navigator.pushNamedAndRemoveUntil(
+    context,
+    '/child/letter-levels',
+    (route) => false,
+    arguments: {
+      'letter': args['letter'],
+      'childId': args['childId'],
+      'startingLevel': args['level'] ?? 'beginner',
+    },
+  );
+},
                             icon: Icon(
                               score >= 6
                                   ? Icons.arrow_forward_rounded
@@ -359,16 +574,16 @@ class _ResultHeroCard extends StatelessWidget {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Points Card
-// كل إجابة صحيحة = 50 نقطة
+// كل إجابة صحيحة = 5 نقطة
 // ─────────────────────────────────────────────────────────────────────────────
 class _PointsCard extends StatelessWidget {
   final int pointsAwarded;
-  final int totalPoints;
+  final int availablePoints;
   final int streak;
 
   const _PointsCard({
     required this.pointsAwarded,
-    required this.totalPoints,
+    required this.availablePoints,
     required this.streak,
   });
 
@@ -428,7 +643,7 @@ class _PointsCard extends StatelessWidget {
                 const SizedBox(height: 2),
 
                 Text(
-                  'مجموع نقاطك: $totalPoints',
+                  'مجموع نقاطك: $availablePoints',
                   style: const TextStyle(
                     fontSize: 10.5,
                     color: Color(0xFF777777),
@@ -916,7 +1131,207 @@ class _SimpleResultBackground extends StatelessWidget {
     );
   }
 }
+class _CelebrationBunny extends StatelessWidget {
+  const _CelebrationBunny();
 
+  @override
+  Widget build(BuildContext context) {
+    const Color faceColor = Color(0xFFFFDCE7);
+    const Color bodyColor = Color(0xFF8B55B3);
+    const Color darkColor = Color(0xFF4D3855);
+
+    return Stack(
+      alignment: Alignment.center,
+      clipBehavior: Clip.none,
+      children: [
+        // Right ear
+        Positioned(
+          top: 0,
+          right: 23,
+          child: Transform.rotate(
+            angle: 0.12,
+            child: Container(
+              width: 20,
+              height: 42,
+              decoration: BoxDecoration(
+                color: faceColor,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Center(
+                child: Container(
+                  width: 7,
+                  height: 27,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFA1B7).withOpacity(0.55),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+
+        // Left ear
+        Positioned(
+          top: 0,
+          left: 23,
+          child: Transform.rotate(
+            angle: -0.12,
+            child: Container(
+              width: 20,
+              height: 42,
+              decoration: BoxDecoration(
+                color: faceColor,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Center(
+                child: Container(
+                  width: 7,
+                  height: 27,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFA1B7).withOpacity(0.55),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+
+        // Body
+        Positioned(
+          top: 68,
+          child: Container(
+            width: 52,
+            height: 37,
+            decoration: const BoxDecoration(
+              color: bodyColor,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(26),
+                topRight: Radius.circular(26),
+                bottomLeft: Radius.circular(14),
+                bottomRight: Radius.circular(14),
+              ),
+            ),
+          ),
+        ),
+
+        // Head
+        Positioned(
+          top: 28,
+          child: Container(
+            width: 68,
+            height: 64,
+            decoration: BoxDecoration(
+              color: faceColor,
+              borderRadius: BorderRadius.circular(32),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Stack(
+              children: [
+                // Eyes
+                Positioned(
+                  top: 23,
+                  right: 17,
+                  child: Container(
+                    width: 7,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      color: darkColor,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+
+                Positioned(
+                  top: 23,
+                  left: 17,
+                  child: Container(
+                    width: 7,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      color: darkColor,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+
+                // Cheeks
+                Positioned(
+                  top: 39,
+                  right: 7,
+                  child: Container(
+                    width: 11,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFF96AC).withOpacity(0.50),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+
+                Positioned(
+                  top: 39,
+                  left: 7,
+                  child: Container(
+                    width: 11,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFF96AC).withOpacity(0.50),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+
+                // Nose
+                Positioned(
+                  top: 33,
+                  left: 30,
+                  child: Container(
+                    width: 8,
+                    height: 6,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFFF7890),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+
+                // Smile
+                Positioned(
+                  top: 40,
+                  left: 25,
+                  child: Container(
+                    width: 18,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(
+                          color: darkColor,
+                          width: 1.5,
+                        ),
+                      ),
+                      borderRadius: BorderRadius.only(
+                        bottomLeft: Radius.circular(10),
+                        bottomRight: Radius.circular(10),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
 // ─────────────────────────────────────────────────────────────────────────────
 // Simple Cute Bunny
 // ─────────────────────────────────────────────────────────────────────────────
@@ -933,54 +1348,64 @@ class _SimpleCuteBunny extends StatelessWidget {
       alignment: Alignment.center,
       clipBehavior: Clip.none,
       children: [
-        // ─── Right Ear
-        Positioned(
-          top: 0,
-          right: 11,
+     // ─── Ears
+Positioned(
+  top: 8,
+  child: SizedBox(
+    width: 44,
+    height: 32,
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        // Left Ear
+        Transform.rotate(
+          angle: -0.08,
           child: Container(
-            width: 18,
-            height: 34,
+            width: 14,
+            height: 30,
             decoration: BoxDecoration(
               color: faceColor,
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(14),
             ),
             child: Center(
               child: Container(
-                width: 7,
-                height: 22,
+                width: 5,
+                height: 19,
                 decoration: BoxDecoration(
                   color: const Color(0xFFFFA1B7).withOpacity(0.55),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(10),
                 ),
               ),
             ),
           ),
         ),
 
-        // ─── Left Ear
-        Positioned(
-          top: 0,
-          left: 11,
+        // Right Ear
+        Transform.rotate(
+          angle: 0.08,
           child: Container(
-            width: 18,
-            height: 34,
+            width: 14,
+            height: 30,
             decoration: BoxDecoration(
               color: faceColor,
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(14),
             ),
             child: Center(
               child: Container(
-                width: 7,
-                height: 22,
+                width: 5,
+                height: 19,
                 decoration: BoxDecoration(
                   color: const Color(0xFFFFA1B7).withOpacity(0.55),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(10),
                 ),
               ),
             ),
           ),
         ),
-
+      ],
+    ),
+  ),
+),
         // ─── Body
         Positioned(
           bottom: 0,

@@ -1463,7 +1463,7 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
 
         // Motivation
         'pointsAwarded': motivationResult?.pointsAwarded,
-        'totalPoints': motivationResult?.totalPoints,
+        'availablePoints': motivationResult?.availablePoints,
         'streak': motivationResult?.streak,
       },
     );

@@ -266,7 +266,10 @@ class ChildHomeScreen extends StatelessWidget {
 
         final String displayStreak = toArabicDigits(streak);
 
-        final String displayPoints = toArabicDigits(points);
+        final int availablePoints =
+            (data['availablePoints'] as num?)?.toInt() ?? 0;
+
+        final String displayPoints = toArabicDigits(availablePoints);
 
         return Directionality(
           textDirection: TextDirection.rtl,
