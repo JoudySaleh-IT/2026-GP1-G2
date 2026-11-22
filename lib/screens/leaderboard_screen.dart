@@ -93,6 +93,12 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
 
   final LeaderboardService _leaderboardService = LeaderboardService();
 
+  final ScrollController _pageScrollController = ScrollController();
+
+  final GlobalKey _currentPlayerRowKey = GlobalKey();
+
+  bool _showBackToTop = false;
+
   final FriendService _friendService = FriendService();
 
   String get _sectionTitle {
@@ -119,8 +125,52 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
   void initState() {
     super.initState();
 
+    _pageScrollController.addListener(_handlePageScroll);
+
     _ensureLeaderboardProfile();
-    _syncSiblingStatuses();
+  }
+
+  @override
+  void dispose() {
+    _pageScrollController.removeListener(_handlePageScroll);
+    _pageScrollController.dispose();
+
+    super.dispose();
+  }
+
+  void _handlePageScroll() {
+    if (!_pageScrollController.hasClients) return;
+
+    final shouldShow = _pageScrollController.offset > 300;
+
+    if (shouldShow != _showBackToTop && mounted) {
+      setState(() {
+        _showBackToTop = shouldShow;
+      });
+    }
+  }
+
+  Future<void> _scrollToCurrentPlayer() async {
+    final context = _currentPlayerRowKey.currentContext;
+
+    if (context == null) return;
+
+    await Scrollable.ensureVisible(
+      context,
+      duration: const Duration(milliseconds: 650),
+      curve: Curves.easeInOutCubic,
+      alignment: 0.20,
+    );
+  }
+
+  Future<void> _scrollBackToTop() async {
+    if (!_pageScrollController.hasClients) return;
+
+    await _pageScrollController.animateTo(
+      0,
+      duration: const Duration(milliseconds: 650),
+      curve: Curves.easeInOutCubic,
+    );
   }
 
   Future<void> _ensureLeaderboardProfile() async {
@@ -251,6 +301,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                   ),
 
                   SingleChildScrollView(
+                    controller: _pageScrollController,
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
                     child: Column(
                       children: [
@@ -286,6 +337,59 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                       ],
                     ),
                   ),
+                  if (_showBackToTop)
+                    Positioned(
+                      left: 16,
+                      bottom: 16,
+                      child: AnimatedOpacity(
+                        opacity: _showBackToTop ? 1 : 0,
+                        duration: const Duration(milliseconds: 200),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: _scrollBackToTop,
+                            borderRadius: BorderRadius.circular(22),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 10,
+                              ),
+                              decoration: BoxDecoration(
+                                color: _purple,
+                                borderRadius: BorderRadius.circular(22),
+                                boxShadow: const [
+                                  BoxShadow(
+                                    color: Color(0x22000000),
+                                    blurRadius: 8,
+                                    offset: Offset(0, 3),
+                                  ),
+                                ],
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.keyboard_arrow_up_rounded,
+                                    color: Colors.white,
+                                    size: 19,
+                                  ),
+                                  SizedBox(width: 5),
+                                  Text(
+                                    'العودة للأعلى',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontFamily: 'Tajawal',
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -346,18 +450,6 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
         }
 
         final currentPlayer = currentMatches.first;
-
-        // =====================================================
-        // COMMUNITY
-        // Same age group only
-        // =====================================================
-        if (_selectedFilter == _LeaderboardFilter.community) {
-          final communityPlayers = allPlayers
-              .where((player) => player.ageGroup == currentPlayer.ageGroup)
-              .toList();
-
-          return _buildRankedLeaderboard(communityPlayers);
-        }
 
         // =====================================================
         // FRIENDS
@@ -444,6 +536,21 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                   }
                 }
 
+                if (_selectedFilter == _LeaderboardFilter.community) {
+                  final communityPlayers = allPlayers
+                      .where(
+                        (player) => player.ageGroup == currentPlayer.ageGroup,
+                      )
+                      .map(
+                        (player) => player.copyWithSibling(
+                          siblingIds.contains(player.childId),
+                        ),
+                      )
+                      .toList();
+
+                  return _buildRankedLeaderboard(communityPlayers);
+                }
+
                 final friendsPlayers = allPlayers
                     .where((player) => friendIds.contains(player.childId))
                     .map(
@@ -486,6 +593,33 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
           points: currentPlayer.points,
           streak: currentPlayer.streak,
           rank: currentPlayer.rank,
+        ),
+
+        const SizedBox(height: 10),
+
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: _scrollToCurrentPlayer,
+            icon: const Icon(Icons.location_on_rounded, size: 18),
+            label: const Text(
+              'شاهد موقعي في القائمة',
+              style: TextStyle(
+                fontFamily: 'Tajawal',
+                fontWeight: FontWeight.w700,
+                fontSize: 12.5,
+              ),
+            ),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: _purple,
+              backgroundColor: _purple.withOpacity(0.045),
+              side: BorderSide(color: _purple.withOpacity(0.18), width: 1.3),
+              padding: const EdgeInsets.symmetric(vertical: 11),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+              ),
+            ),
+          ),
         ),
 
         const SizedBox(height: 18),
@@ -860,10 +994,11 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 10),
+      key: player.isCurrent ? _currentPlayerRowKey : null,
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 11),
       decoration: BoxDecoration(
         color: backgroundColor,
-        borderRadius: BorderRadius.circular(17),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: player.isCurrent
               ? _purple.withOpacity(0.35)
@@ -872,198 +1007,253 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
               : _purple.withOpacity(0.08),
           width: player.isCurrent ? 1.8 : 1.4,
         ),
-      ),
-      child: Row(
-        children: [
-          // Rank
-          _buildRankBadge(player.rank),
-
-          const SizedBox(width: 10),
-
-          // Real child avatar
-          // Real child avatar from public profile
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              _LeaderboardAvatar(
-                childId: player.childId,
-                fallbackAvatar: player.avatar,
-                size: 43,
-              ),
-
-              if (player.isSibling &&
-                  _selectedFilter == _LeaderboardFilter.friends)
-                Positioned(
-                  left: -3,
-                  bottom: -3,
-                  child: Container(
-                    width: 20,
-                    height: 20,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE5F3E9),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 1.5),
-                    ),
-                    child: const Icon(
-                      Icons.home_rounded,
-                      size: 12,
-                      color: Color(0xFF70A884),
-                    ),
-                  ),
-                ),
-            ],
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x08000000),
+            blurRadius: 5,
+            offset: Offset(0, 2),
           ),
-          const SizedBox(width: 10),
+        ],
+      ),
+      child: Column(
+        children: [
+          // ============================================================
+          // TOP ROW — rank + avatar + full name
+          // ============================================================
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              _buildRankBadge(player.rank),
 
-          // Name
-          Expanded(
-            child: Row(
-              children: [
-                Flexible(
-                  child: Text(
-                    player.name,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 12.5,
-                      color: const Color(0xFF222222),
-                      fontWeight: player.isCurrent
-                          ? FontWeight.w800
-                          : FontWeight.w600,
-                      fontFamily: 'Tajawal',
-                    ),
+              const SizedBox(width: 10),
+
+              // Avatar + sibling house symbol
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  _LeaderboardAvatar(
+                    childId: player.childId,
+                    fallbackAvatar: player.avatar,
+                    size: 46,
                   ),
-                ),
 
-                if (player.isCurrent) ...[
-                  const SizedBox(width: 6),
-
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 7,
-                      vertical: 3,
-                    ),
-                    decoration: BoxDecoration(
-                      color: _purple.withOpacity(0.10),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Text(
-                      'أنت',
-                      style: TextStyle(
-                        fontSize: 9,
-                        color: _purple,
-                        fontWeight: FontWeight.w700,
-                        fontFamily: 'Tajawal',
-                      ),
-                    ),
-                  ),
-                ],
-                if (player.isSibling &&
-                    _selectedFilter == _LeaderboardFilter.friends) ...[
-                  const SizedBox(width: 6),
-
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 7,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEAF5ED),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
+                  if (player.isSibling)
+                    Positioned(
+                      left: -3,
+                      bottom: -3,
+                      child: Container(
+                        width: 21,
+                        height: 21,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE5F3E9),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 1.5),
+                        ),
+                        child: const Icon(
                           Icons.home_rounded,
-                          size: 11,
+                          size: 12,
                           color: Color(0xFF70A884),
                         ),
-                        SizedBox(width: 3),
-                        Text(
-                          'العائلة',
-                          style: TextStyle(
-                            fontSize: 8,
-                            color: Color(0xFF66997A),
-                            fontWeight: FontWeight.w600,
-                            fontFamily: 'Tajawal',
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
                 ],
-              ],
-            ),
-          ),
+              ),
 
-          // Points
-          SizedBox(
-            width: 73,
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+              const SizedBox(width: 12),
+
+              // Name + labels
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.star_rounded, size: 14, color: _gold),
-                    const SizedBox(width: 3),
                     Text(
-                      toArabicDigits(player.points),
-                      style: const TextStyle(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF333333),
+                      player.name,
+                      maxLines: 2,
+                      softWrap: true,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 15,
+                        height: 1.35,
+                        color: const Color(0xFF222222),
+                        fontWeight: player.isCurrent
+                            ? FontWeight.w800
+                            : FontWeight.w700,
                         fontFamily: 'Tajawal',
                       ),
                     ),
+
+                    if (player.isCurrent ||
+                        (player.isSibling &&
+                            _selectedFilter == _LeaderboardFilter.friends)) ...[
+                      const SizedBox(height: 6),
+
+                      Wrap(
+                        spacing: 5,
+                        runSpacing: 4,
+                        children: [
+                          if (player.isCurrent)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 3,
+                              ),
+                              decoration: BoxDecoration(
+                                color: _purple.withOpacity(0.10),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Text(
+                                'أنت',
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  color: _purple,
+                                  fontWeight: FontWeight.w700,
+                                  fontFamily: 'Tajawal',
+                                ),
+                              ),
+                            ),
+
+                          if (player.isSibling)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 3,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFEAF5ED),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.home_rounded,
+                                    size: 11,
+                                    color: Color(0xFF70A884),
+                                  ),
+                                  SizedBox(width: 3),
+                                  Text(
+                                    'العائلة',
+                                    style: TextStyle(
+                                      fontSize: 9,
+                                      color: Color(0xFF66997A),
+                                      fontWeight: FontWeight.w700,
+                                      fontFamily: 'Tajawal',
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
-                const Text(
-                  'النقاط',
-                  style: TextStyle(
-                    fontSize: 9,
-                    color: Color(0xFF777777),
-                    fontFamily: 'Tajawal',
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
 
-          // Streak
-          SizedBox(
-            width: 68,
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.local_fire_department_rounded,
-                      size: 14,
-                      color: _coral,
-                    ),
-                    const SizedBox(width: 3),
-                    Text(
-                      toArabicDigits(player.streak),
-                      style: const TextStyle(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF333333),
-                        fontFamily: 'Tajawal',
+          const SizedBox(height: 10),
+
+          // Soft divider
+          Container(height: 1, color: _purple.withOpacity(0.06)),
+
+          const SizedBox(height: 9),
+
+          // ============================================================
+          // BOTTOM ROW — points + streak
+          // ============================================================
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 7,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF8E5),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.star_rounded, size: 17, color: _gold),
+
+                      const SizedBox(width: 5),
+
+                      Text(
+                        toArabicDigits(player.points),
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF333333),
+                          fontFamily: 'Tajawal',
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                const Text(
-                  'يوم',
-                  style: TextStyle(
-                    fontSize: 9,
-                    color: Color(0xFF777777),
-                    fontFamily: 'Tajawal',
+
+                      const SizedBox(width: 5),
+
+                      const Text(
+                        'نقطة',
+                        style: TextStyle(
+                          fontSize: 9.5,
+                          color: Color(0xFF777777),
+                          fontFamily: 'Tajawal',
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            ),
+              ),
+
+              const SizedBox(width: 8),
+
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 7,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFEEEE),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.local_fire_department_rounded,
+                        size: 17,
+                        color: _coral,
+                      ),
+
+                      const SizedBox(width: 5),
+
+                      Text(
+                        toArabicDigits(player.streak),
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF333333),
+                          fontFamily: 'Tajawal',
+                        ),
+                      ),
+
+                      const SizedBox(width: 5),
+
+                      const Text(
+                        'يوم',
+                        style: TextStyle(
+                          fontSize: 9.5,
+                          color: Color(0xFF777777),
+                          fontFamily: 'Tajawal',
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
