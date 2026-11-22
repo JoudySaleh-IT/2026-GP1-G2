@@ -163,7 +163,30 @@ class FriendService {
       print('❌ SIBLING STATUS SYNC ERROR: $e');
     }
   }
+// Remove the friend request notification after accept or decline.
+Future<void> _deleteFriendRequestNotification({
+  required String currentChildId,
+  required String pairId,
+}) async {
+  final snapshot = await _db
+      .collection('notifications')
+      .where('receiverId', isEqualTo: currentChildId)
+      .where('type', isEqualTo: 'friend_request')
+      .where('referenceId', isEqualTo: pairId)
+      .get();
 
+  if (snapshot.docs.isEmpty) return;
+
+  final batch = _db.batch();
+
+  for (final doc in snapshot.docs) {
+    batch.delete(doc.reference);
+  }
+
+  await batch.commit();
+
+  print('🗑️ Friend request notification deleted: $pairId');
+}
   Future<void> acceptFriendRequest({
     required String currentChildId,
     required String pairId,
@@ -216,10 +239,15 @@ class FriendService {
         'memberIds': [childA, childB],
         'createdAt': FieldValue.serverTimestamp(),
       });
-
       // Remove the pending request after acceptance.
       transaction.delete(requestRef);
     });
+
+    // Remove the friend request notification after acceptance.
+    await _deleteFriendRequestNotification(
+      currentChildId: currentChildId,
+      pairId: pairId,
+    );
 
     await _syncFriendshipSiblingStatus(pairId);
     // ---------------------------------------------------------------
@@ -368,8 +396,15 @@ class FriendService {
         throw Exception('NOT_REQUEST_RECEIVER');
       }
 
+           // Remove the pending request after declining.
       transaction.delete(requestRef);
     });
+
+    // Remove the friend request notification after declining.
+    await _deleteFriendRequestNotification(
+      currentChildId: currentChildId,
+      pairId: pairId,
+    );
   }
 
   Future<void> removeFriend({

@@ -1236,6 +1236,8 @@ exports.sendDailyPracticeReminder = onSchedule(
 schedule: "0 12 * * *",
     timeZone: "Asia/Riyadh",
     region: "us-central1",
+        timeoutSeconds: 300,
+
   },
   async () => {
     const db = admin.firestore();
@@ -1249,11 +1251,10 @@ schedule: "0 12 * * *",
     );
     const yesterday = yesterdayDate.toISOString().slice(0, 10);
 
-    // Only children who practiced yesterday.
-    const childrenSnapshot = await db
-      .collection("children")
-      .where("lastPracticeDay", "==", yesterday)
-      .get();
+    // Check all children for daily practice reminders.
+const childrenSnapshot = await db
+  .collection("children")
+  .get();
 
     if (childrenSnapshot.empty) {
       logger.info("No children eligible for practice reminders.", {
@@ -1269,6 +1270,11 @@ schedule: "0 12 * * *",
       const childId = childDoc.id;
 const child = childDoc.data();
 const parentId = child.parentId;
+
+// Skip children who already practiced today.
+if (child.lastPracticeDay === today) {
+  continue;
+}
 
 if (!parentId) continue;
 
@@ -1290,7 +1296,7 @@ if (hasCompleted) {
 
       const title = "فصيح ينتظرك! 🌟";
       const message =
-        "لا تنسَ تدريبك اليوم! واصل رحلتك في فصيح وحافظ على سلسلة إنجازاتك 🔥";
+  "لا تنسَ تدريبك اليوم! 🌟 افتح فصيح وواصل رحلتك لتتعلم وتنطق بثقة! 💜";
 
       try {
         // Transaction prevents duplicate reminders.
@@ -1311,10 +1317,10 @@ if (hasCompleted) {
             return false;
           }
 
-          // Recheck the child's practice day.
-          if (latestChild.data().lastPracticeDay !== yesterday) {
-            return false;
-          }
+          // Skip children who already practiced today.
+if (latestChild.data().lastPracticeDay === today) {
+  return false;
+}
 
           transaction.create(notificationRef, {
             receiverId: childId,

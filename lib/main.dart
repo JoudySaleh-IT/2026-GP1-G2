@@ -168,8 +168,13 @@ Future<void> _initializeFirebaseMessaging() async {
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       final type = message.data['type'];
       // Parent notification while the app is open
-      if (type == 'parent_new_friend') {
-        NotificationService.showLiveNotification(
+if (type == 'parent_new_friend') {
+  if (ChildSession.currentChildId != null) {
+    debugPrint('🔕 Parent notification ignored in Child Mode');
+    return;
+  }
+
+    NotificationService.showLiveNotification(
           title: message.notification?.title ?? 'صديق جديد في فصيح 🌟',
           message:
               message.notification?.body ?? 'تمت إضافة صديق جديد لأحد أطفالك',
