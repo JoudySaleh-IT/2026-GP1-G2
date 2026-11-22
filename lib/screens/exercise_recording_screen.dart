@@ -424,19 +424,22 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
 
   Future<void> _handlePracticeBack() async {
     // Preserve the original normal Speaking navigation.
-    if (!widget.isPracticeTogether) {
-      Navigator.pushNamed(
-        context,
-        '/child/letter-levels',
-        arguments: {
-          'letter': widget.letter,
-          'childId': widget.childId,
-          'startingLevel': widget.level,
-        },
-      );
+ if (!widget.isPracticeTogether) {
+  debugPrint('🔙 Leaving pronunciation exercise');
 
-      return;
-    }
+  Navigator.pushNamedAndRemoveUntil(
+    context,
+    '/child/letter-levels',
+    (route) => route.isFirst,
+    arguments: {
+      'letter': widget.letter,
+      'childId': widget.childId,
+      'startingLevel': widget.level,
+    },
+  );
+
+  return;
+}
 
     final bool shouldLeave = await _showLeaveCompetitionDialog();
 
@@ -1467,13 +1470,12 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: !widget.isPracticeTogether,
-
-      onPopInvokedWithResult: (didPop, result) {
-        if (!didPop && widget.isPracticeTogether) {
-          _handlePracticeBack();
-        }
-      },
+  canPop: false,
+  onPopInvokedWithResult: (didPop, result) {
+    if (!didPop) {
+      _handlePracticeBack();
+    }
+  },
 
       child: Directionality(
         textDirection: TextDirection.rtl,

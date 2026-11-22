@@ -360,10 +360,19 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
 
   Future<void> _handlePracticeBack() async {
     // Normal Listening exercise stays exactly as before.
-    if (!widget.isPracticeTogether) {
-      Navigator.pop(context);
-      return;
-    }
+   if (!widget.isPracticeTogether) {
+  Navigator.pushNamedAndRemoveUntil(
+    context,
+    '/child/letter-levels',
+    (route) => false,
+    arguments: {
+      'letter': widget.letter,
+      'childId': widget.childId,
+      'startingLevel': widget.level,
+    },
+  );
+  return;
+}
 
     final bool shouldLeave = await _showLeaveCompetitionDialog();
 
@@ -1512,17 +1521,17 @@ class _ExerciseListeningScreenState extends State<ExerciseListeningScreen>
     _questionTimeoutHandling = false;
   }
 
-  Widget _withPracticeExitGuard(Widget child) {
-    return PopScope(
-      canPop: !widget.isPracticeTogether,
-      onPopInvokedWithResult: (didPop, result) {
-        if (!didPop && widget.isPracticeTogether) {
-          _handlePracticeBack();
-        }
-      },
-      child: child,
-    );
-  }
+ Widget _withPracticeExitGuard(Widget child) {
+  return PopScope(
+    canPop: false,
+    onPopInvokedWithResult: (didPop, result) {
+      if (!didPop) {
+        _handlePracticeBack();
+      }
+    },
+    child: child,
+  );
+}
 
   // ───────────────────────────────────────────────────────────────────────────
   // Build

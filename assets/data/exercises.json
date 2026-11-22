@@ -398,7 +398,7 @@
             "options": [
               {
                 "word": "قائدين",
-                "imagePath": "assets/images/listening/qaf_listening/advanced/leader.png"
+                "imagePath": "assets/images/word_bank/qaf_a_02_qaedain.png"
               },
               {
                 "word": "لاعبين",
@@ -677,7 +677,7 @@
               },
               {
                 "word": "قارب",
-                "imagePath": "assets/images/listening/kha_listening/beginner/boat.png"
+                "imagePath": "assets/images/listening/qaf_listening/beginner/boat.png"
               },
               {
                 "word": "قطار",
@@ -1027,7 +1027,7 @@
               },
               {
                 "word": "مستشفيات",
-                "imagePath": "assets/images/listening/kha_listening/advanced/hospitals.png"
+                "imagePath": "assets/images/listening/kha_listening/advanced/hospitals.jpg"
               }
             ]
           },
@@ -2584,7 +2584,7 @@
               },
               {
                 "word": "مدينة",
-                "imagePath": "assets/images/listening/kha_listening/advanced/city.png"
+                "imagePath": "assets/images/listening/seen_listening/advanced/city.png"
               },
               {
                 "word": "مدرسة",
@@ -2680,7 +2680,7 @@
               },
               {
                 "word": "قوارب",
-                "imagePath": "assets/images/listening/seen_listening/advanced/boats.png"
+                "imagePath": "assets/images/word_bank/qaf_a_03_qawarib.png"
               }
             ]
           },
@@ -2738,7 +2738,7 @@
               },
               {
                 "word": "الأوراق",
-                "imagePath": "assets/images/listening/seen_listening/advanced/papers.png"
+                "imagePath": "assets/images/word_bank/qaf_a_07_awraq.png"
               },
               {
                 "word": "الكتب",
