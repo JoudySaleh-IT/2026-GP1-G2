@@ -8,6 +8,7 @@ import 'package:cloud_functions/cloud_functions.dart';
 
 import '../services/notification_service.dart';
 import '../services/motivation_service.dart';
+import '../services/sound_service.dart';
 // ---------------------------------------------------------------------------
 // Screen
 // ---------------------------------------------------------------------------
@@ -462,6 +463,8 @@ Future<bool?> _showLevelCompletedDialog({
   required String completedLevel,
   required String nextLevel,
 }) {
+  SoundService.playCompletion();
+
   return showDialog<bool>(
     context: context,
     barrierDismissible: false,
@@ -632,6 +635,8 @@ Future<bool?> _showLevelCompletedDialog({
   );
 }
 Future<void> _showLetterCompletedDialog() {
+  SoundService.playCompletion();
+
   return showDialog<void>(
     context: context,
     barrierDismissible: false,
@@ -763,10 +768,12 @@ Future<void> _showLetterCompletedDialog() {
     },
   );
 }
-  Future<bool?> _showJourneyCelebrationDialog() {
-    return showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
+ Future<bool?> _showJourneyCelebrationDialog() {
+  SoundService.playCompletion();
+
+  return showDialog<bool>(
+    context: context,
+    barrierDismissible: false,
       builder: (dialogContext) {
         return Directionality(
           textDirection: TextDirection.rtl,

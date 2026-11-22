@@ -31,6 +31,10 @@ class SoundService {
   static Future<void> playWin() {
     return _play('win.mp3');
   }
+// Sound played when a completion popup appears.
+static Future<void> playCompletion() {
+  return _play('completion.mp3');
+}
 
   static Future<void> playLoss() {
     return _play('loss.mp3');

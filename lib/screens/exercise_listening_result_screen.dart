@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import '../services/sound_service.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 // Screen
 // ─────────────────────────────────────────────────────────────────────────────
@@ -31,6 +31,12 @@ class ExerciseListeningResultScreen extends StatelessWidget {
 Future<bool?> _showListeningCompletedDialog(
   BuildContext context,
 ) {
+  debugPrint('🔊 LISTENING POPUP OPENED');
+
+  SoundService.playCompletion().then((_) {
+    debugPrint('🔊 COMPLETION PLAY REQUEST FINISHED');
+  });
+
   return showDialog<bool>(
     context: context,
     barrierDismissible: false,
