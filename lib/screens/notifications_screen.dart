@@ -668,17 +668,75 @@ return _NotificationCard(
 
                   const SizedBox(width: 8),
 
-                  const SizedBox(
-                    width: 48,
-                    height: 48,
-                    child: Center(
-                      child: Icon(
-                        Icons.notifications_rounded,
-                        color: Colors.white,
-                        size: 30,
-                      ),
-                    ),
+                  
+StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+  stream: FirebaseFirestore.instance
+      .collection('notifications')
+      .where('receiverId', isEqualTo: childId)
+      .snapshots(),
+  builder: (context, snapshot) {
+    final now = DateTime.now();
+
+    final unreadCount = snapshot.data?.docs.where((doc) {
+      final data = doc.data();
+      final createdAt = data['createdAt'] as Timestamp?;
+
+      if (data['isRead'] == true || createdAt == null) {
+        return false;
+      }
+
+      return now.difference(createdAt.toDate()) <
+          const Duration(hours: 48);
+    }).length ?? 0;
+
+    return SizedBox(
+      width: 48,
+      height: 48,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          const Center(
+            child: Icon(
+              Icons.notifications_rounded,
+              color: Colors.white,
+              size: 30,
+            ),
+          ),
+
+          if (unreadCount > 0)
+            Positioned(
+              top: 0,
+              right: 0,
+              child: Container(
+                constraints: const BoxConstraints(
+                  minWidth: 19,
+                  minHeight: 19,
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 4,
+                  vertical: 2,
+                ),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFF6969),
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  unreadCount > 9 ? '9+' : '$unreadCount',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
                   ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  },
+),
+
                 ],
               ),
             ),

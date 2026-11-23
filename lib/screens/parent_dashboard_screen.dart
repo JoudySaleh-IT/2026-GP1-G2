@@ -65,10 +65,23 @@ class ParentDashboardScreen extends StatelessWidget {
                       ),
 
                       // زر ثابت دائمًا بأسفل الصفحة
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                        child: _buildSwitchToChildButton(context),
-                      ),
+                      
+// أزرار أسفل الصفحة
+Padding(
+  padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+  child: Column(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+  
+
+      const SizedBox(height: 10),
+
+      // الزر الأساسي بدون تغيير
+      _buildSwitchToChildButton(context),
+    ],
+  ),
+),
+
                     ],
                   );
                 },
@@ -79,6 +92,8 @@ class ParentDashboardScreen extends StatelessWidget {
       ),
     );
   }
+
+
 
   Widget _buildHeader(BuildContext context) {
     final String? userId = FirebaseAuth.instance.currentUser?.uid;
