@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import '../services/recording_service.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:http/http.dart' as http;
@@ -14,13 +13,13 @@ class PlacementWord {
   final String wordId;
   final String text;
   final String targetLetter;
-  final String imageUrl;
+  final String imageAsset;
 
   const PlacementWord({
     required this.wordId,
     required this.text,
     required this.targetLetter,
-    required this.imageUrl,
+    required this.imageAsset,
   });
 }
 
@@ -39,6 +38,43 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
   static const _purple2 = Color(0xFF6A3A9E);
   static const _coral = Color(0xFFFF6969);
   static const _bgColor = Color(0xFFFCF9EA);
+  static const Map<String, String> _placementImages = {
+    // حرف القاف
+    'قلم': 'assets/images/listening/seen_listening/beginner/pen.png',
+    'عقل': 'assets/images/word_bank/ghain_i_02_brain.png',
+    'ورق': 'assets/images/listening/qaf_listening/advanced/papers.png',
+
+    // حرف الخاء
+    'خروف': 'assets/images/word_bank/kha_i_01_kharoof.png',
+    'نخلة': 'assets/images/word_bank/kha_i_05_nakhla.png',
+    'مطبخ': 'assets/images/word_bank/kha_i_07_matbakh.png',
+
+    // حرف الغين
+    'غزال': 'assets/images/word_bank/ghain_b_01_gazelle.png',
+    'كنغر': 'assets/images/placement_test/kangaroo.png',
+    'مبلغ': 'assets/images/placement_test/money.png',
+
+    // حرف الصاد
+    'صابون': 'assets/images/listening/sad_listening/intermediate/soap.png',
+    'بصل': 'assets/images/listening/seen_listening/beginner/onion.png',
+    'نص': 'assets/images/placement_test/text.png',
+
+    // حرف السين
+    'سمكة': 'assets/images/listening/seen_listening/beginner/fish.png',
+    'مسجد': 'assets/images/listening/seen_listening/intermediate/mosque.png',
+    'شمس': 'assets/images/placement_test/sun.png',
+
+    // حرف الضاد
+    'ضفدع': 'assets/images/word_bank/dad_i_02_difda.png',
+    'وضوء': 'assets/images/placement_test/wudu.png',
+    'بيض': 'assets/images/word_bank/dad_b_05_bayd.png',
+  };
+  String _normalizeWord(String word) {
+    return word
+        .replaceAll(RegExp(r'[\u064B-\u065F\u0670\u0640]'), '')
+        .replaceAll('ه', 'ة')
+        .trim();
+  }
 
   // --- State Variables ---
   List<PlacementWord> _placementWords = [];
@@ -48,10 +84,10 @@ class _PlacementTestScreenState extends State<PlacementTestScreen>
   bool _isRecording = false;
   bool _showNext = false;
   // Background evaluation queue
-final List<Map<String, String>> _evaluationQueue = [];
-bool _isProcessingQueue = false;
-int _pendingEvaluations = 0;
-bool _isCalculatingFinalScore = false;
+  final List<Map<String, String>> _evaluationQueue = [];
+  bool _isProcessingQueue = false;
+  int _pendingEvaluations = 0;
+  bool _isCalculatingFinalScore = false;
 
   double _totalAccumulatedScore = 0.0;
   List<Map<String, dynamic>> _individualScores = [];
@@ -86,32 +122,33 @@ bool _isCalculatingFinalScore = false;
 
       for (var doc in snapshot.docs) {
         final data = doc.data();
-        String rawImageUrl = data['image_url'] ?? '';
-        String downloadImageUrl = rawImageUrl;
 
-        if (rawImageUrl.startsWith('gs://')) {
-          downloadImageUrl = await FirebaseStorage.instance
-              .refFromURL(rawImageUrl)
-              .getDownloadURL();
+        final String wordText = data['text'] ?? '';
+        final String normalizedWord = _normalizeWord(wordText);
+
+        final String imageAsset = _placementImages[normalizedWord] ?? '';
+
+        if (imageAsset.isEmpty) {
+          debugPrint('⚠️ No image found for: $wordText');
         }
 
         fetchedWords.add(
           PlacementWord(
             wordId: data['word_id'] ?? doc.id,
-            text: data['text'] ?? '',
+            text: wordText,
             targetLetter: data['target_letter'] ?? '',
-            imageUrl: downloadImageUrl,
+            imageAsset: imageAsset,
           ),
         );
       }
 
       fetchedWords.shuffle();
 
-      if (mounted) {
-        for (var word in fetchedWords) {
-          if (word.imageUrl.isNotEmpty) {
-            precacheImage(NetworkImage(word.imageUrl), context);
-          }
+      if (!mounted) return;
+
+      for (var word in fetchedWords) {
+        if (word.imageAsset.isNotEmpty) {
+          precacheImage(AssetImage(word.imageAsset), context);
         }
       }
 
@@ -122,7 +159,10 @@ bool _isCalculatingFinalScore = false;
       });
     } catch (e) {
       debugPrint("Error fetching words: $e");
-      setState(() => _isLoading = false);
+
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -142,249 +182,230 @@ bool _isCalculatingFinalScore = false;
             _placementWords.length;
 
   void _handleRecordToggle() async {
-  if (_isRecording) {
-    final path = await _recordingService.stop();
+    if (_isRecording) {
+      final path = await _recordingService.stop();
 
-    final currentWordText = _currentWord.text;
-    final currentWordLetter = _currentWord.targetLetter;
+      final currentWordText = _currentWord.text;
+      final currentWordLetter = _currentWord.targetLetter;
 
-    _pulseController.stop();
-    _pulseController.reset();
+      _pulseController.stop();
+      _pulseController.reset();
 
-    if (path == null) {
-  setState(() {
-    _isRecording = false;
-  });
+      if (path == null) {
+        setState(() {
+          _isRecording = false;
+        });
 
-  NotificationService.showErrorSnackBar(
-    'تعذر حفظ التسجيل، حاول مرة أخرى',
-  );
-    
+        NotificationService.showErrorSnackBar(
+          'تعذر حفظ التسجيل، حاول مرة أخرى',
+        );
 
-  return;
-}
-
-
-setState(() {
-  _lastRecordedPath = path;
-  _isRecording = false;
-  _recorded[_currentIndex] = true;
-  _showNext = true;
-  _pendingEvaluations++;
-});
-
-_evaluationQueue.add({
-  'path': path,
-  'word': currentWordText,
-  'letter': currentWordLetter,
-});
-
-_processQueue();
-  } else {
-    final hasPermission = await _recordingService.checkPermission();
-
-    if (hasPermission) {
-      await _recordingService.start(
-        'child_${widget.childId}_word_${_currentWord.wordId}',
-      );
+        return;
+      }
 
       setState(() {
-        _isRecording = true;
+        _lastRecordedPath = path;
+        _isRecording = false;
+        _recorded[_currentIndex] = true;
+        _showNext = true;
+        _pendingEvaluations++;
       });
 
-      _pulseController.repeat(reverse: true);
+      _evaluationQueue.add({
+        'path': path,
+        'word': currentWordText,
+        'letter': currentWordLetter,
+      });
+
+      _processQueue();
     } else {
-      NotificationService.showErrorSnackBar(
-  'الرجاء السماح بالوصول للمايكروفون',
-);
-    }
-  }
-}
+      final hasPermission = await _recordingService.checkPermission();
 
-  
+      if (hasPermission) {
+        await _recordingService.start(
+          'child_${widget.childId}_word_${_currentWord.wordId}',
+        );
 
-  Future<void> _processQueue() async {
-  if (_isProcessingQueue) return;
+        setState(() {
+          _isRecording = true;
+        });
 
-  _isProcessingQueue = true;
-
-  while (_evaluationQueue.isNotEmpty) {
-    final item = _evaluationQueue.first;
-
-    await _startPreprocessing(
-      item['path']!,
-      item['word']!,
-      item['letter']!,
-    );
-
-    _evaluationQueue.removeAt(0);
-  }
-
-  _isProcessingQueue = false;
-}
-
-Future<void> _startPreprocessing(
-  String path,
-  String targetWord,
-  String targetLetter,
-) async {
-  const String baseUrl =
-      "https://faseeh-api-final-model-816737402071.me-central1.run.app";
-
-  final url = Uri.parse('$baseUrl/process-audio/');
-
-  debugPrint("🚀 جاري تقييم: $targetWord");
-
-  try {
-    var request = http.MultipartRequest('POST', url);
-
-    request.files.add(
-      await http.MultipartFile.fromPath('file', path),
-    );
-
-    request.fields['target_word'] = targetWord;
-    request.fields['target_letter'] = targetLetter;
-
-    var streamedResponse = await request.send();
-    var response = await http.Response.fromStream(streamedResponse);
-
-    debugPrint("Response code: ${response.statusCode}");
-    debugPrint("Response body: ${response.body}");
-
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      if (data['status'] == 'invalid_audio') {
-  if (mounted) {
-    setState(() {
-      _individualScores.add({
-        'letter': targetLetter,
-        'score': 0,
-      });
-    });
-  }
-
-  debugPrint("⚠️ تسجيل غير صالح لـ $targetWord → 0%");
-  return;
-}
-
-      if (data['status'] == 'success' &&
-          data.containsKey('score')) {
-        final double wordScore =
-            (data['score'] as num).toDouble();
-
-        if (mounted) {
-          setState(() {
-            _totalAccumulatedScore += wordScore;
-
-            _individualScores.add({
-              'letter': targetLetter,
-              'score': wordScore.round(),
-            });
-          });
-        }
-
-        debugPrint("⭐ نتيجة $targetWord: $wordScore%");
+        _pulseController.repeat(reverse: true);
+      } else {
+        NotificationService.showErrorSnackBar(
+          'الرجاء السماح بالوصول للمايكروفون',
+        );
       }
     }
-  } catch (e) {
-    debugPrint("⚠️ خطأ في الاتصال: $e");
-  } finally {
-    if (mounted) {
-      setState(() {
-        _pendingEvaluations--;
-      });
+  }
 
-      if (_isCalculatingFinalScore &&
-          _pendingEvaluations == 0) {
+  Future<void> _processQueue() async {
+    if (_isProcessingQueue) return;
+
+    _isProcessingQueue = true;
+
+    while (_evaluationQueue.isNotEmpty) {
+      final item = _evaluationQueue.first;
+
+      await _startPreprocessing(item['path']!, item['word']!, item['letter']!);
+
+      _evaluationQueue.removeAt(0);
+    }
+
+    _isProcessingQueue = false;
+  }
+
+  Future<void> _startPreprocessing(
+    String path,
+    String targetWord,
+    String targetLetter,
+  ) async {
+    const String baseUrl =
+        "https://faseeh-api-final-model-816737402071.me-central1.run.app";
+
+    final url = Uri.parse('$baseUrl/process-audio/');
+
+    debugPrint("🚀 جاري تقييم: $targetWord");
+
+    try {
+      var request = http.MultipartRequest('POST', url);
+
+      request.files.add(await http.MultipartFile.fromPath('file', path));
+
+      request.fields['target_word'] = targetWord;
+      request.fields['target_letter'] = targetLetter;
+
+      var streamedResponse = await request.send();
+      var response = await http.Response.fromStream(streamedResponse);
+
+      debugPrint("Response code: ${response.statusCode}");
+      debugPrint("Response body: ${response.body}");
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['status'] == 'invalid_audio') {
+          if (mounted) {
+            setState(() {
+              _individualScores.add({'letter': targetLetter, 'score': 0});
+            });
+          }
+
+          debugPrint("⚠️ تسجيل غير صالح لـ $targetWord → 0%");
+          return;
+        }
+
+        if (data['status'] == 'success' && data.containsKey('score')) {
+          final double wordScore = (data['score'] as num).toDouble();
+
+          if (mounted) {
+            setState(() {
+              _totalAccumulatedScore += wordScore;
+
+              _individualScores.add({
+                'letter': targetLetter,
+                'score': wordScore.round(),
+              });
+            });
+          }
+
+          debugPrint("⭐ نتيجة $targetWord: $wordScore%");
+        }
+      }
+    } catch (e) {
+      debugPrint("⚠️ خطأ في الاتصال: $e");
+    } finally {
+      if (mounted) {
+        setState(() {
+          _pendingEvaluations--;
+        });
+
+        if (_isCalculatingFinalScore && _pendingEvaluations == 0) {
+          _navigateToResults();
+        }
+      }
+    }
+  }
+
+  void _handleNext() {
+    if (_currentIndex < _placementWords.length - 1) {
+      setState(() {
+        _currentIndex++;
+        _showNext = false;
+        _isRecording = false;
+      });
+    } else {
+      if (_pendingEvaluations > 0) {
+        setState(() {
+          _isCalculatingFinalScore = true;
+        });
+      } else {
         _navigateToResults();
       }
     }
   }
-}
 
-  void _handleNext() {
-  if (_currentIndex < _placementWords.length - 1) {
-    setState(() {
-      _currentIndex++;
-      _showNext = false;
-      _isRecording = false;
-    });
-  } else {
-    if (_pendingEvaluations > 0) {
-      setState(() {
-        _isCalculatingFinalScore = true;
-      });
-    } else {
-      _navigateToResults();
-    }
+  Widget _buildFinalCalculatingScreen() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 28),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Faseh Bunny
+            SizedBox(
+              width: 145,
+              height: 165,
+              child: Center(
+                child: Transform.scale(
+                  scale: 1.25,
+                  child: const SizedBox(
+                    width: 105,
+                    height: 132,
+                    child: _PlacementBunny(bubbleText: 'لحظة!'),
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 22),
+
+            // Loading indicator
+            const SizedBox(
+              width: 38,
+              height: 38,
+              child: CircularProgressIndicator(color: _coral, strokeWidth: 4),
+            ),
+
+            const SizedBox(height: 20),
+
+            const Text(
+              'جاري إعداد نتيجتك يا بطل...',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: _purple,
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                fontFamily: 'Tajawal',
+              ),
+            ),
+
+            const SizedBox(height: 7),
+
+            const Text(
+              'لحظات قليلة ونجهز لك نتيجتك',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Color(0xFF777777),
+                fontSize: 13,
+                fontFamily: 'Tajawal',
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
-}
-Widget _buildFinalCalculatingScreen() {
-  return Center(
-    child: Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 28),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Faseh Bunny
-          SizedBox(
-  width: 145,
-  height: 165,
-  child: Center(
-    child: Transform.scale(
-      scale: 1.25,
-      child: const SizedBox(
-        width: 105,
-        height: 132,
-        child: _PlacementBunny(
-  bubbleText: 'لحظة!',
-),
-      ),
-    ),
-  ),
-),
 
-          const SizedBox(height: 22),
-
-          // Loading indicator
-          const SizedBox(
-            width: 38,
-            height: 38,
-            child: CircularProgressIndicator(
-              color: _coral,
-              strokeWidth: 4,
-            ),
-          ),
-
-          const SizedBox(height: 20),
-
-          const Text(
-            'جاري إعداد نتيجتك يا بطل...',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: _purple,
-              fontSize: 20,
-              fontWeight: FontWeight.w800,
-              fontFamily: 'Tajawal',
-            ),
-          ),
-
-          const SizedBox(height: 7),
-
-          const Text(
-            'لحظات قليلة ونجهز لك نتيجتك',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Color(0xFF777777),
-              fontSize: 13,
-              fontFamily: 'Tajawal',
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
-}
   void _navigateToResults() {
     double finalPlacementPercentage = _placementWords.isEmpty
         ? 0
@@ -417,54 +438,46 @@ Widget _buildFinalCalculatingScreen() {
       },
     );
   }
-@override
-Widget build(BuildContext context) {
-  return Directionality(
-    textDirection: TextDirection.rtl,
-    child: Scaffold(
-      backgroundColor: _bgColor,
-      body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(
-                color: _purple,
-              ),
-            )
-          : _isCalculatingFinalScore
-              ? _buildFinalCalculatingScreen()
-              : _placementWords.isEmpty
-                  ? const Center(
-                      child: Text(
-                        'لا توجد كلمات في قاعدة البيانات',
-                        style: TextStyle(
-                          fontFamily: 'Tajawal',
-                          fontSize: 18,
-                        ),
-                      ),
-                    )
-                  : Column(
+
+  @override
+  Widget build(BuildContext context) {
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        backgroundColor: _bgColor,
+        body: _isLoading
+            ? const Center(child: CircularProgressIndicator(color: _purple))
+            : _isCalculatingFinalScore
+            ? _buildFinalCalculatingScreen()
+            : _placementWords.isEmpty
+            ? const Center(
+                child: Text(
+                  'لا توجد كلمات في قاعدة البيانات',
+                  style: TextStyle(fontFamily: 'Tajawal', fontSize: 18),
+                ),
+              )
+            : Column(
+                children: [
+                  _buildHeader(),
+                  Expanded(
+                    child: Stack(
                       children: [
-                        _buildHeader(),
-                        Expanded(
-                          child: Stack(
-                            children: [
-                              const Positioned.fill(
-                                child: IgnorePointer(
-                                  child: _PlacementBackground(),
-                                ),
-                              ),
-                              SingleChildScrollView(
-                                padding:
-                                    const EdgeInsets.fromLTRB(16, 16, 16, 30),
-                                child: _buildCard(),
-                              ),
-                            ],
-                          ),
+                        const Positioned.fill(
+                          child: IgnorePointer(child: _PlacementBackground()),
+                        ),
+                        SingleChildScrollView(
+                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 30),
+                          child: _buildCard(),
                         ),
                       ],
                     ),
-    ),
-  );
-}
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
+
   Widget _buildHeader() {
     return FaseehStyle.buildLargeHeader(
       context: context,
@@ -810,33 +823,24 @@ Widget build(BuildContext context) {
   // نفس الوظيفة الأصلية
   // ===========================================================================
   Widget _buildWordImage() {
-    return Image.network(
-      _currentWord.imageUrl,
-      width: 130,
-      height: 130,
-      fit: BoxFit.contain,
-      errorBuilder: (context, error, stackTrace) => const Icon(
+    if (_currentWord.imageAsset.isEmpty) {
+      return const Icon(
         Icons.image_not_supported_rounded,
         size: 50,
         color: _purple,
-      ),
-      loadingBuilder: (context, child, loadingProgress) {
-        if (loadingProgress == null) {
-          return child;
-        }
+      );
+    }
 
-        return SizedBox(
-          width: 130,
-          height: 130,
-          child: Center(
-            child: CircularProgressIndicator(
-              color: _purple,
-              value: loadingProgress.expectedTotalBytes != null
-                  ? loadingProgress.cumulativeBytesLoaded /
-                        loadingProgress.expectedTotalBytes!
-                  : null,
-            ),
-          ),
+    return Image.asset(
+      _currentWord.imageAsset,
+      width: 130,
+      height: 130,
+      fit: BoxFit.contain,
+      errorBuilder: (context, error, stackTrace) {
+        return const Icon(
+          Icons.image_not_supported_rounded,
+          size: 50,
+          color: _purple,
         );
       },
     );
@@ -847,22 +851,17 @@ Widget build(BuildContext context) {
   // نفس المنطق
   // ===========================================================================
   Widget _buildRecordingSection() {
-  return Column(
-    children: [
-      if (!_recorded[_currentIndex])
-        _buildRecordButton()
-      else
-        _buildSuccessIndicator(),
+    return Column(
+      children: [
+        if (!_recorded[_currentIndex])
+          _buildRecordButton()
+        else
+          _buildSuccessIndicator(),
 
-      if (_showNext) ...[
-        const SizedBox(height: 12),
-        _buildNextButton(),
+        if (_showNext) ...[const SizedBox(height: 12), _buildNextButton()],
       ],
-    ],
-  );
-}
-
-
+    );
+  }
 
   // ===========================================================================
   // RECORD BUTTON
@@ -1249,9 +1248,7 @@ class _GuideStep extends StatelessWidget {
 class _PlacementBunny extends StatelessWidget {
   final String bubbleText;
 
-  const _PlacementBunny({
-    this.bubbleText = 'هيا!',
-  });
+  const _PlacementBunny({this.bubbleText = 'هيا!'});
 
   @override
   Widget build(BuildContext context) {
@@ -1277,7 +1274,7 @@ class _PlacementBunny extends StatelessWidget {
               borderRadius: BorderRadius.circular(14),
             ),
             child: Text(
-  bubbleText,
+              bubbleText,
               style: TextStyle(
                 color: Color(0xFF8B55B3),
                 fontSize: 10,

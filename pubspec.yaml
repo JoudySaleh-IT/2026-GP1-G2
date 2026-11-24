@@ -112,3 +112,4 @@ flutter:
       # Reward Store
     - assets/store/avatars/
     - assets/store/backgrounds/
+    - assets/images/placement_test/
