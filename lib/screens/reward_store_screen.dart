@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-
+import '../services/sound_service.dart';
 import '../data/store_catalog.dart';
 import '../models/store_item.dart';
 import '../services/reward_store_service.dart';
@@ -81,6 +81,22 @@ class _RewardStoreScreenState extends State<RewardStoreScreen> {
         : 'equippedBackgroundId';
 
     return data[field]?.toString() == item.id;
+  }
+
+  String _avatarVariantLabel(StoreItem item) {
+    if (item.id.endsWith('_basic')) {
+      return 'الأساسي';
+    }
+
+    if (item.id.endsWith('_glasses')) {
+      return 'النظارة';
+    }
+
+    if (item.id.endsWith('_hat')) {
+      return 'القبعة';
+    }
+
+    return item.name;
   }
 
   List<StoreItem> _ownedAvatars(Map<String, dynamic> data) {
@@ -962,6 +978,9 @@ class _RewardStoreScreenState extends State<RewardStoreScreen> {
                               item: item,
                             );
 
+                            // Purchase succeeded → play coin sound.
+                            await SoundService.playPurchase();
+
                             if (!mounted) return;
 
                             if (dialogContext.mounted) {
@@ -1042,10 +1061,181 @@ class _RewardStoreScreenState extends State<RewardStoreScreen> {
         const SizedBox(height: 16),
 
         if (selectedType == StoreItemType.avatar)
-          _buildClosetGrid(ownedAvatars, data, selectedId: avatarId)
+          _buildOwnedAvatarSections(ownedAvatars, data, selectedId: avatarId)
+        else if (ownedBackgrounds.isEmpty)
+          _buildEmptyOwnedItems()
         else
-          _buildClosetGrid(ownedBackgrounds, data, selectedId: backgroundId),
+          _buildBackgroundGrid(ownedBackgrounds, data, closetMode: true),
       ],
+    );
+  }
+
+  Widget _buildOwnedAvatarSections(
+    List<StoreItem> ownedAvatars,
+    Map<String, dynamic> data, {
+    required String? selectedId,
+  }) {
+    if (ownedAvatars.isEmpty) {
+      return _buildEmptyOwnedItems();
+    }
+
+    final Set<String> ownedIds = ownedAvatars.map((item) => item.id).toSet();
+
+    final List<Widget> sections = [];
+
+    for (int index = 0; index < StoreCatalog.animals.length; index++) {
+      final String animal = StoreCatalog.animals[index];
+
+      // Same order as the storefront:
+      // basic → glasses → hat
+      final List<StoreItem> animalItems =
+          [
+                StoreCatalog.findById('${animal}_basic'),
+                StoreCatalog.findById('${animal}_glasses'),
+                StoreCatalog.findById('${animal}_hat'),
+              ]
+              .whereType<StoreItem>()
+              .where((item) => ownedIds.contains(item.id))
+              .toList();
+
+      // Don't display animal sections where nothing is owned.
+      if (animalItems.isEmpty) {
+        continue;
+      }
+
+      sections.add(
+        _buildOwnedAnimalSection(
+          animal: animal,
+          index: index,
+          items: animalItems,
+          data: data,
+          selectedId: selectedId,
+        ),
+      );
+    }
+
+    return Column(children: sections);
+  }
+
+  Widget _buildOwnedAnimalSection({
+    required String animal,
+    required int index,
+    required List<StoreItem> items,
+    required Map<String, dynamic> data,
+    required String? selectedId,
+  }) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 13),
+      padding: const EdgeInsets.all(11),
+
+      // EXACT SAME SECTION STYLE AS THE STOREFRONT
+      decoration: BoxDecoration(
+        color: sectionColors[index % sectionColors.length],
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: purple.withValues(alpha: 0.07)),
+      ),
+
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // =========================================================
+          // Animal name
+          // =========================================================
+          Text(
+            StoreCatalog.animalNames[animal] ?? animal,
+            style: const TextStyle(
+              color: purple,
+              fontFamily: 'Tajawal',
+              fontSize: 15,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+
+          const SizedBox(height: 9),
+
+          // =========================================================
+          // Owned variants
+          // =========================================================
+          LayoutBuilder(
+            builder: (context, constraints) {
+              return GridView.builder(
+                padding: EdgeInsets.zero,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+
+                itemCount: items.length,
+
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  crossAxisSpacing: 6,
+                  mainAxisSpacing: 8,
+                  mainAxisExtent: 200,
+                ),
+
+                itemBuilder: (context, itemIndex) {
+                  final item = items[itemIndex];
+
+                  return _buildItemCard(
+                    item,
+                    data,
+
+                    // Same names used on the storefront
+                    label: _avatarVariantLabel(item),
+
+                    // Keep closet functionality
+                    closetMode: true,
+
+                    selected: item.id == selectedId,
+                  );
+                },
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyOwnedItems() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 28),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF7F0FF),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: purple.withValues(alpha: 0.08)),
+      ),
+      child: const Column(
+        children: [
+          Icon(Icons.shopping_bag_outlined, size: 38, color: Color(0xFFAA8FC0)),
+
+          SizedBox(height: 10),
+
+          Text(
+            'ما عندك عناصر في هذا القسم بعد',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontFamily: 'Tajawal',
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: purple,
+            ),
+          ),
+
+          SizedBox(height: 4),
+
+          Text(
+            'تقدر تحصل على عناصر جديدة من المتجر ✨',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontFamily: 'Tajawal',
+              fontSize: 10.5,
+              color: Color(0xFF857B89),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

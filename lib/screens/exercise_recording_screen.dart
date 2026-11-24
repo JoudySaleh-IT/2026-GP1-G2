@@ -7,7 +7,7 @@ import 'package:record/record.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:http/http.dart' as http;
-
+import '../services/sound_service.dart';
 import 'style_constants.dart';
 import '../services/notification_service.dart';
 // إذا exercise_recording_screen.dart موجود مباشرة داخل lib
@@ -424,22 +424,22 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
 
   Future<void> _handlePracticeBack() async {
     // Preserve the original normal Speaking navigation.
- if (!widget.isPracticeTogether) {
-  debugPrint('🔙 Leaving pronunciation exercise');
+    if (!widget.isPracticeTogether) {
+      debugPrint('🔙 Leaving pronunciation exercise');
 
-  Navigator.pushNamedAndRemoveUntil(
-    context,
-    '/child/letter-levels',
-    (route) => route.isFirst,
-    arguments: {
-      'letter': widget.letter,
-      'childId': widget.childId,
-      'startingLevel': widget.level,
-    },
-  );
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        '/child/letter-levels',
+        (route) => route.isFirst,
+        arguments: {
+          'letter': widget.letter,
+          'childId': widget.childId,
+          'startingLevel': widget.level,
+        },
+      );
 
-  return;
-}
+      return;
+    }
 
     final bool shouldLeave = await _showLeaveCompetitionDialog();
 
@@ -851,6 +851,24 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
         'تعذر تشغيل الصوت: ${_exercise.audioPath}',
       );
     }
+  }
+
+  Future<void> _handleExampleAudioButtonTap() async {
+    // The child already used all 3 listening attempts.
+    if (_audioPlayCount >= _maxAudioPlays) {
+      // Same behavior as Listening:
+      // play the attempt-limit guidance only in Solo mode.
+      //
+      // We avoid it during Practice Together because the
+      // competition timer is still running.
+      if (!widget.isPracticeTogether) {
+        await SoundService.playAttemptLimit();
+      }
+
+      return;
+    }
+
+    await _playExampleAudio();
   }
 
   // -------------------------------------------------------------------------
@@ -1470,12 +1488,12 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
   @override
   Widget build(BuildContext context) {
     return PopScope(
-  canPop: false,
-  onPopInvokedWithResult: (didPop, result) {
-    if (!didPop) {
-      _handlePracticeBack();
-    }
-  },
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          _handlePracticeBack();
+        }
+      },
 
       child: Directionality(
         textDirection: TextDirection.rtl,
@@ -2136,10 +2154,9 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
           // Audio comes from JSON
           OutlinedButton.icon(
             onPressed:
-                _audioPlayCount < _maxAudioPlays &&
-                    !_isExampleAudioPlaying &&
+                !_isExampleAudioPlaying &&
                     _recordingState == RecordingState.idle
-                ? _playExampleAudio
+                ? _handleExampleAudioButtonTap
                 : null,
 
             icon: const Icon(Icons.volume_up_rounded, color: _red, size: 17),
@@ -2147,6 +2164,8 @@ class _ExerciseRecordingScreenState extends State<ExerciseRecordingScreen>
             label: Text(
               _isExampleAudioPlaying
                   ? 'جاري الاستماع...'
+                  : _audioPlayCount >= _maxAudioPlays
+                  ? 'استخدمت جميع مرات الاستماع'
                   : _hasListenedToExample
                   ? 'استمع مرة أخرى'
                   : 'استمع إلى الكلمة',

@@ -49,7 +49,6 @@ class PlacementResultScreen extends StatefulWidget {
 }
 
 class _PlacementResultScreenState extends State<PlacementResultScreen> {
-
   // ─── Constants ──────────────────────────────────────────────────────────────
   static const _purple = Color(0xFF511281);
   static const _purple2 = Color(0xFF6A3A9E);
@@ -81,8 +80,6 @@ class _PlacementResultScreenState extends State<PlacementResultScreen> {
     _markPlacementDone();
   }
 
-
-
   // ─── Save Placement Result ──────────────────────────────────────────────────
   Future<void> _markPlacementDone() async {
     try {
@@ -90,34 +87,43 @@ class _PlacementResultScreenState extends State<PlacementResultScreen> {
         for (var item in widget.letterScores) item.letter: item.score,
       };
 
-    
+      final db = FirebaseFirestore.instance;
 
-      await FirebaseFirestore.instance
-          .collection('children')
-          .doc(widget.childId)
-          .update({
-            'placementDone': true,
-            'placementScore': widget.score,
-            'placementDate': FieldValue.serverTimestamp(),
-            'letterScores': scoresMap,
-            
-          });
+      final childRef = db.collection('children').doc(widget.childId);
 
-     debugPrint('✅ تم حفظ نتائج اختبار تحديد المستوى بنجاح');
+      final publicProfileRef = db
+          .collection('child_public_profiles')
+          .doc(widget.childId);
+
+      final batch = db.batch();
+
+      batch.update(childRef, {
+        'placementDone': true,
+        'placementScore': widget.score,
+        'placementDate': FieldValue.serverTimestamp(),
+        'letterScores': scoresMap,
+      });
+
+      batch.set(publicProfileRef, {
+        'placementDone': true,
+      }, SetOptions(merge: true));
+
+      await batch.commit();
+
+      debugPrint('✅ تم حفظ نتائج اختبار تحديد المستوى بنجاح');
     } catch (e) {
       debugPrint('❌ خطأ أثناء تحديث بيانات اختبار تحديد المستوى: $e');
     }
   }
 
+  String get _encouragementMessage {
+    if (_lettersToPractice.isEmpty) {
+      return 'رائع! أتقنت جميع الحروف 🎉';
+    }
 
-
- String get _encouragementMessage {
-  if (_lettersToPractice.isEmpty) {
-    return 'رائع! أتقنت جميع الحروف 🎉';
+    return 'هيا نبدأ التدريب!';
   }
 
-  return 'هيا نبدأ التدريب!';
-}
   // ─── Sorted Letter Scores ───────────────────────────────────────────────────
   List<LetterScore> get _sortedScores =>
       [...widget.letterScores]..sort((a, b) => a.score.compareTo(b.score));
@@ -152,8 +158,6 @@ class _PlacementResultScreenState extends State<PlacementResultScreen> {
                       _buildHeroCard(),
 
                       const SizedBox(height: 14),
-
-            
 
                       // ======================================================
                       // PRACTICE LETTERS
@@ -290,14 +294,14 @@ class _PlacementResultScreenState extends State<PlacementResultScreen> {
                         const SizedBox(height: 4),
 
                         const Text(
-  'أنهيت الاختبار! الآن نبدأ التدريب على حروفك',
-  style: TextStyle(
-    color: Color(0xFF777777),
-    fontSize: 11.5,
-    height: 1.4,
-    fontFamily: 'Tajawal',
-  ),
-),
+                          'أنهيت الاختبار! الآن نبدأ التدريب على حروفك',
+                          style: TextStyle(
+                            color: Color(0xFF777777),
+                            fontSize: 11.5,
+                            height: 1.4,
+                            fontFamily: 'Tajawal',
+                          ),
+                        ),
 
                         const SizedBox(height: 9),
 
@@ -335,7 +339,6 @@ class _PlacementResultScreenState extends State<PlacementResultScreen> {
   // ===========================================================================
   // SCORE CARD
   // ===========================================================================
-
 
   // ===========================================================================
   // LETTERS TO PRACTICE
@@ -500,8 +503,8 @@ class _PlacementResultScreenState extends State<PlacementResultScreen> {
 
         Color borderColor = const Color(0xFFCFE5D5);
 
-       // <50% = Beginner
-if (item.score < _beginnerMaxScore) {
+        // <50% = Beginner
+        if (item.score < _beginnerMaxScore) {
           badge = 'مبتدئ';
 
           cardColor = const Color(0xFFFFF4F4);
@@ -651,10 +654,10 @@ if (item.score < _beginnerMaxScore) {
   // ===========================================================================
   Widget _buildScoreRow(LetterScore item) {
     final String label = item.score >= _masteryMinScore
-    ? 'متقن'
-    : item.score < _beginnerMaxScore
-    ? 'مبتدئ'
-    : 'متوسط';
+        ? 'متقن'
+        : item.score < _beginnerMaxScore
+        ? 'مبتدئ'
+        : 'متوسط';
 
     Color badgeColor;
     Color badgeBackground;
@@ -768,82 +771,73 @@ if (item.score < _beginnerMaxScore) {
   // ACTION BUTTONS
   // نفس الـfunctionality الأصلية
   // ===========================================================================
- // ===========================================================================
-// ACTION BUTTONS
-// ===========================================================================
-Widget _buildActionButtons(BuildContext context) {
-  return Column(
-    children: [
-      if (_lettersToPractice.isNotEmpty) ...[
+  // ===========================================================================
+  // ACTION BUTTONS
+  // ===========================================================================
+  Widget _buildActionButtons(BuildContext context) {
+    return Column(
+      children: [
+        if (_lettersToPractice.isNotEmpty) ...[
+          SizedBox(
+            width: double.infinity,
+            height: 56,
+            child: ElevatedButton.icon(
+              onPressed: () => Navigator.pushNamed(
+                context,
+                '/child/exercises',
+                arguments: widget.childId,
+              ),
+              icon: const Icon(Icons.record_voice_over_rounded, size: 21),
+              label: const Text(
+                'هيا نتدرّب!',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  fontFamily: 'Tajawal',
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _coral,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: const StadiumBorder(),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 10),
+        ],
+
         SizedBox(
           width: double.infinity,
-          height: 56,
-          child: ElevatedButton.icon(
-            onPressed: () => Navigator.pushNamed(
+          height: 54,
+          child: OutlinedButton.icon(
+            onPressed: () => Navigator.pushNamedAndRemoveUntil(
               context,
-              '/child/exercises',
+              '/child/home',
+              (route) => false,
               arguments: widget.childId,
             ),
-            icon: const Icon(
-              Icons.record_voice_over_rounded,
-              size: 21,
+            icon: const Icon(Icons.home_rounded, size: 20),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: _purple,
+              backgroundColor: Colors.white.withOpacity(0.72),
+              side: BorderSide(color: _purple.withOpacity(0.14), width: 1.5),
+              shape: const StadiumBorder(),
             ),
             label: const Text(
-              'هيا نتدرّب!',
+              'العودة للرئيسية',
               style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
                 fontFamily: 'Tajawal',
               ),
             ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _coral,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: const StadiumBorder(),
-            ),
           ),
         ),
-
-        const SizedBox(height: 10),
       ],
-
-      SizedBox(
-        width: double.infinity,
-        height: 54,
-        child: OutlinedButton.icon(
-          onPressed: () => Navigator.pushNamedAndRemoveUntil(
-            context,
-            '/child/home',
-            (route) => false,
-            arguments: widget.childId,
-          ),
-          icon: const Icon(
-            Icons.home_rounded,
-            size: 20,
-          ),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: _purple,
-            backgroundColor: Colors.white.withOpacity(0.72),
-            side: BorderSide(
-              color: _purple.withOpacity(0.14),
-              width: 1.5,
-            ),
-            shape: const StadiumBorder(),
-          ),
-          label: const Text(
-            'العودة للرئيسية',
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              fontFamily: 'Tajawal',
-            ),
-          ),
-        ),
-      ),
-    ],
-  );
-}
+    );
+  }
 
   // ===========================================================================
   // EMPTY STATE

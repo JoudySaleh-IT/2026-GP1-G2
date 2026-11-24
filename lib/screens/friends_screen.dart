@@ -378,6 +378,14 @@ class FriendsScreen extends StatelessWidget {
     } catch (e) {
       if (!context.mounted) return;
 
+      if (e.toString().contains('RECEIVER_PLACEMENT_NOT_DONE')) {
+        NotificationService.showErrorSnackBar(
+          '$friendName يحتاج إلى إكمال اختبار تحديد المستوى أولًا',
+        );
+
+        return;
+      }
+
       NotificationService.showErrorSnackBar(
         'تعذّر إرسال الدعوة. حاول مرة أخرى.',
       );
@@ -974,7 +982,7 @@ class _FriendsSectionTitle extends StatelessWidget {
             SizedBox(height: 1),
 
             Text(
-              'أصدقاؤك في فصيح',
+              'اختَر صديقًا وابدأوا تحديًا ممتعًا',
               style: TextStyle(
                 fontSize: 10.5,
                 color: Color(0xFF888888),
@@ -993,10 +1001,11 @@ class _FriendsSectionTitle extends StatelessWidget {
 // نفس functionality
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _FriendProfileCard extends StatefulWidget {
+class _FriendProfileCard extends StatelessWidget {
   final String friendId;
 
   final void Function(String friendName) onPracticeTogether;
+
   final void Function(String friendName) onRemove;
 
   const _FriendProfileCard({
@@ -1007,57 +1016,36 @@ class _FriendProfileCard extends StatefulWidget {
   });
 
   @override
-  State<_FriendProfileCard> createState() => _FriendProfileCardState();
-}
-
-class _FriendProfileCardState extends State<_FriendProfileCard> {
-  late Future<Map<String, dynamic>?> _profileFuture;
-
-  @override
-  void initState() {
-    super.initState();
-    _profileFuture = _loadProfile();
-  }
-
-  @override
-  void didUpdateWidget(covariant _FriendProfileCard oldWidget) {
-    super.didUpdateWidget(oldWidget);
-
-    if (oldWidget.friendId != widget.friendId) {
-      _profileFuture = _loadProfile();
-    }
-  }
-
-  Future<Map<String, dynamic>?> _loadProfile() async {
-    final snapshot = await FirebaseFirestore.instance
-        .collection('child_public_profiles')
-        .doc(widget.friendId)
-        .get()
-        .timeout(const Duration(seconds: 8));
-
-    if (!snapshot.exists) {
-      print('❌ MISSING PUBLIC PROFILE = ${widget.friendId}');
-
-      return null;
-    }
-
-    return snapshot.data();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return FutureBuilder<Map<String, dynamic>?>(
-      future: _profileFuture,
+    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      stream: FirebaseFirestore.instance
+          .collection('child_public_profiles')
+          .doc(friendId)
+          .snapshots(),
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
+        if (snapshot.connectionState == ConnectionState.waiting &&
+            !snapshot.hasData) {
           return const _FriendLoadingCard();
         }
 
-        if (snapshot.hasError || snapshot.data == null) {
+        if (snapshot.hasError) {
+          debugPrint(
+            '❌ PUBLIC PROFILE ERROR '
+            '$friendId: ${snapshot.error}',
+          );
+
           return const SizedBox.shrink();
         }
 
-        final profile = snapshot.data!;
+        if (!snapshot.hasData ||
+            !snapshot.data!.exists ||
+            snapshot.data!.data() == null) {
+          debugPrint('❌ MISSING PUBLIC PROFILE = $friendId');
+
+          return const SizedBox.shrink();
+        }
+
+        final profile = snapshot.data!.data()!;
 
         final String firstName = (profile['firstName'] ?? '').toString().trim();
 
@@ -1078,6 +1066,17 @@ class _FriendProfileCardState extends State<_FriendProfileCard> {
 
         final String avatar = profile['avatar']?.toString() ?? '🌟';
 
+        final dynamic rawPlacementDone = profile['placementDone'];
+
+        final bool placementDone = rawPlacementDone == true;
+
+        debugPrint(
+          '👥 FRIEND $displayName '
+          '($friendId) → '
+          'placementDone=$rawPlacementDone '
+          'type=${rawPlacementDone.runtimeType}',
+        );
+
         final String? avatarId = profile['equippedAvatarId']?.toString();
 
         final String? backgroundId = profile['equippedBackgroundId']
@@ -1088,13 +1087,12 @@ class _FriendProfileCardState extends State<_FriendProfileCard> {
           avatar: avatar,
           avatarId: avatarId,
           backgroundId: backgroundId,
-
+          canPracticeTogether: placementDone,
           onPracticeTogether: () {
-            widget.onPracticeTogether(displayName);
+            onPracticeTogether(displayName);
           },
-
           onRemove: () {
-            widget.onRemove(displayName);
+            onRemove(displayName);
           },
         );
       },
@@ -1111,13 +1109,14 @@ class _FriendCard extends StatelessWidget {
   final String avatar;
   final String? avatarId;
   final String? backgroundId;
-
+  final bool canPracticeTogether;
   final VoidCallback onPracticeTogether;
   final VoidCallback onRemove;
 
   const _FriendCard({
     required this.name,
     required this.avatar,
+    required this.canPracticeTogether,
     this.avatarId,
     this.backgroundId,
     required this.onPracticeTogether,
@@ -1130,109 +1129,160 @@ class _FriendCard extends StatelessWidget {
     const coral = Color(0xFFFF6969);
 
     return Container(
-      constraints: const BoxConstraints(minHeight: 76),
-      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.92),
-        borderRadius: BorderRadius.circular(21),
-        border: Border.all(color: purple.withOpacity(0.07)),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(25),
+        border: Border.all(
+          color: canPracticeTogether
+              ? const Color(0xFFE5D8F1)
+              : const Color(0xFFE8E5E9),
+        ),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x07000000),
-            blurRadius: 6,
-            offset: Offset(0, 2),
+            color: Color(0x09000000),
+            blurRadius: 8,
+            offset: Offset(0, 3),
           ),
         ],
       ),
-      child: Row(
+      child: Column(
         children: [
-          Container(
-            width: 54,
-            height: 54,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: purple.withOpacity(0.07)),
-            ),
-            child: StoreAvatarImage(
-              avatar: avatar,
-              avatarId: avatarId,
-              backgroundId: backgroundId,
-              size: 52,
-            ),
-          ),
-          const SizedBox(width: 12),
-
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  textAlign: TextAlign.right,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: purple,
-                    fontFamily: 'Tajawal',
-                  ),
+          Row(
+            children: [
+              // ==================================
+              // AVATAR
+              // ==================================
+              Container(
+                width: 66,
+                height: 66,
+                padding: const EdgeInsets.all(3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF7F0FF),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: const Color(0xFFDCC9F5)),
                 ),
-                const SizedBox(height: 3),
-                const Text(
-                  'صديق في فصيح',
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: Color(0xFF999999),
-                    fontFamily: 'Tajawal',
-                  ),
+                child: StoreAvatarImage(
+                  avatar: avatar,
+                  avatarId: avatarId,
+                  backgroundId: backgroundId,
+                  size: 60,
                 ),
-              ],
-            ),
-          ),
-
-          // ─────────────────────────────────────
-          // Practice Together button
-          // ─────────────────────────────────────
-          ElevatedButton.icon(
-            onPressed: onPracticeTogether,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFF3EBFA),
-              foregroundColor: purple,
-              elevation: 0,
-              shape: const StadiumBorder(),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-            ),
-            icon: const Icon(Icons.sports_esports_rounded, size: 17),
-            label: const Text(
-              'تدرّب معي',
-              style: TextStyle(
-                fontFamily: 'Tajawal',
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
               ),
-            ),
+
+              const SizedBox(width: 13),
+
+              // ==================================
+              // NAME + STATUS
+              // ==================================
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name,
+                      textAlign: TextAlign.right,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontFamily: 'Tajawal',
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: purple,
+                      ),
+                    ),
+
+                    const SizedBox(height: 6),
+
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 9,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: canPracticeTogether
+                            ? const Color(0xFFEAF7EF)
+                            : const Color(0xFFF3F1F4),
+                        borderRadius: BorderRadius.circular(13),
+                      ),
+                      child: Text(
+                        canPracticeTogether
+                            ? 'جاهز يتدرّب معك! 🌟'
+                            : 'يكمل اختبار المستوى أولًا',
+                        style: TextStyle(
+                          fontFamily: 'Tajawal',
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w600,
+                          color: canPracticeTogether
+                              ? const Color(0xFF55936B)
+                              : const Color(0xFF8E8A91),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // ==================================
+              // REMOVE — LESS PROMINENT
+              // ==================================
+              Container(
+                width: 35,
+                height: 35,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFFF4F5),
+                  shape: BoxShape.circle,
+                ),
+                child: IconButton(
+                  tooltip: 'إزالة الصديق',
+                  padding: EdgeInsets.zero,
+                  onPressed: onRemove,
+                  icon: const Icon(
+                    Icons.person_remove_outlined,
+                    color: Color(0xFFD99A9A),
+                    size: 18,
+                  ),
+                ),
+              ),
+            ],
           ),
 
-          const SizedBox(width: 7),
+          const SizedBox(height: 13),
 
-          // ─────────────────────────────────────
-          // Remove friend button
-          // ─────────────────────────────────────
-          Container(
-            width: 38,
-            height: 38,
-            decoration: const BoxDecoration(
-              color: Color(0xFFFFF0F2),
-              shape: BoxShape.circle,
-            ),
-            child: IconButton(
-              tooltip: 'إزالة الصديق',
-              padding: EdgeInsets.zero,
-              onPressed: onRemove,
-              icon: const Icon(
-                Icons.person_remove_rounded,
-                color: coral,
-                size: 20,
+          // ====================================
+          // MAIN FUN ACTION
+          // ====================================
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: canPracticeTogether ? onPracticeTogether : null,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFF1E7FA),
+                foregroundColor: purple,
+
+                disabledBackgroundColor: const Color(0xFFF2F0F3),
+                disabledForegroundColor: const Color(0xFFA8A5AA),
+
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(vertical: 11),
+                shape: const StadiumBorder(),
+              ),
+              icon: Icon(
+                canPracticeTogether
+                    ? Icons.sports_esports_rounded
+                    : Icons.lock_outline_rounded,
+                size: 18,
+              ),
+              label: Text(
+                canPracticeTogether
+                    ? 'جاهز يتدرّب معك! 🌟'
+                    : 'لم يكمل اختبار تحديد المستوى',
+                style: const TextStyle(
+                  fontFamily: 'Tajawal',
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           ),

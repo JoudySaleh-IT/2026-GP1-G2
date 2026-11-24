@@ -187,6 +187,14 @@ class PracticeTogetherService {
       throw Exception('CANNOT_INVITE_SELF');
     }
 
+    final bool receiverPlacementDone = await hasCompletedPlacement(
+      receiverChildId,
+    );
+
+    if (!receiverPlacementDone) {
+      throw Exception('RECEIVER_PLACEMENT_NOT_DONE');
+    }
+
     final availableExercises = await getAvailableExercises(
       childId: senderChildId,
       exerciseType: exerciseType,
@@ -1124,5 +1132,18 @@ class PracticeTogetherService {
         'respondedAt': FieldValue.serverTimestamp(),
       });
     });
+  }
+
+  Future<bool> hasCompletedPlacement(String childId) async {
+    final snapshot = await _db
+        .collection('child_public_profiles')
+        .doc(childId)
+        .get();
+
+    if (!snapshot.exists || snapshot.data() == null) {
+      return false;
+    }
+
+    return snapshot.data()!['placementDone'] == true;
   }
 }

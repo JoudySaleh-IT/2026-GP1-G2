@@ -153,6 +153,7 @@ class AuthService {
               'name': fullName,
 
               'avatar': avatar,
+              'placementDone': false,
               'equippedAvatarId': equippedAvatarId,
               'createdAt': FieldValue.serverTimestamp(),
             });
@@ -292,6 +293,7 @@ class AuthService {
               'name': childName,
 
               'avatar': childAvatar,
+              'placementDone': latestChildData['placementDone'] == true,
               'createdAt': FieldValue.serverTimestamp(),
             });
 

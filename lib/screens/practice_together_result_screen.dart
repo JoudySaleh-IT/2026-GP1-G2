@@ -4,6 +4,7 @@ import '../services/motivation_service.dart';
 import '../services/practice_together_service.dart';
 import 'style_constants.dart';
 import '../widgets/child_store_avatar.dart';
+import '../services/sound_service.dart';
 
 class PracticeTogetherResultScreen extends StatefulWidget {
   final String sessionId;
@@ -29,6 +30,8 @@ class _PracticeTogetherResultScreenState
   static const Color _gold = Color(0xFFE5A52F);
 
   final PracticeTogetherService _service = PracticeTogetherService();
+
+  bool _resultSoundPlayed = false;
 
   final MotivationService _motivationService = MotivationService();
 
@@ -122,6 +125,29 @@ class _PracticeTogetherResultScreenState
   // Helpers
   // ---------------------------------------------------------------------------
 
+  Future<void> _playPracticeResultSoundOnce({
+    required bool isTie,
+    required bool currentWon,
+  }) async {
+    if (_resultSoundPlayed) {
+      return;
+    }
+
+    _resultSoundPlayed = true;
+
+    // You only requested win/loss sounds.
+    // A tie does not play either sound.
+    if (isTie) {
+      return;
+    }
+
+    if (currentWon) {
+      await SoundService.playWin();
+    } else {
+      await SoundService.playLoss();
+    }
+  }
+
   int _getInt(Map<String, dynamic> data, String key) {
     return (data[key] as num?)?.toInt() ?? 0;
   }
@@ -205,6 +231,18 @@ class _PracticeTogetherResultScreenState
 
                   final String status = data['status']?.toString() ?? '';
 
+                  // The competition ended because someone left
+                  // or became inactive.
+                  if (status == 'cancelled') {
+                    return _buildCancelledView(
+                      data: data,
+                      senderProfile: senderProfile,
+                      receiverProfile: receiverProfile,
+                    );
+                  }
+
+                  // Current child finished first and is
+                  // genuinely waiting for the opponent.
                   if (status != 'completed') {
                     return _buildWaitingView(
                       data: data,
@@ -402,6 +440,118 @@ class _PracticeTogetherResultScreenState
     );
   }
 
+  Widget _buildCancelledView({
+    required Map<String, dynamic> data,
+    required Map<String, dynamic> senderProfile,
+    required Map<String, dynamic> receiverProfile,
+  }) {
+    final String cancelledBy = data['cancelledBy']?.toString() ?? '';
+
+    final String reason = data['cancelReason']?.toString() ?? '';
+
+    final String senderId = data['senderId']?.toString() ?? '';
+
+    final bool currentIsSender = widget.childId == senderId;
+
+    final Map<String, dynamic> friendProfile = currentIsSender
+        ? receiverProfile
+        : senderProfile;
+
+    final String friendName = _getName(friendProfile);
+
+    final bool friendCancelled =
+        cancelledBy.isNotEmpty && cancelledBy != widget.childId;
+
+    String title;
+    String message;
+    IconData icon;
+
+    if (reason == 'inactivity') {
+      icon = Icons.timer_off_rounded;
+
+      title = 'انتهى التحدي';
+
+      message = friendCancelled
+          ? 'تم إنهاء التحدي لأن $friendName لم يتفاعل.'
+          : 'تم إنهاء التحدي بسبب عدم التفاعل.';
+    } else {
+      icon = Icons.exit_to_app_rounded;
+
+      title = 'انتهى التحدي';
+
+      message = friendCancelled
+          ? 'غادر $friendName التحدي قبل اكتماله.'
+          : 'تم إنهاء التحدي قبل اكتماله.';
+    }
+
+    return Column(
+      children: [
+        FaseehStyle.buildLargeHeader(
+          context: context,
+          title: title,
+          subtitle: 'يمكنك بدء تحدٍ جديد في أي وقت',
+          leading: SizedBox(
+            width: 48,
+            height: 48,
+            child: Center(child: Icon(icon, color: Colors.white, size: 29)),
+          ),
+        ),
+
+        Expanded(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(28),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('🐰', style: TextStyle(fontSize: 58)),
+
+                  const SizedBox(height: 18),
+
+                  Text(
+                    message,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontFamily: 'Tajawal',
+                      fontSize: 17,
+                      height: 1.6,
+                      fontWeight: FontWeight.w700,
+                      color: _purple,
+                    ),
+                  ),
+
+                  const SizedBox(height: 28),
+
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: _goHome,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _purple,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: const StadiumBorder(),
+                      ),
+                      icon: const Icon(Icons.home_rounded),
+                      label: const Text(
+                        'العودة للرئيسية',
+                        style: TextStyle(
+                          fontFamily: 'Tajawal',
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   // ---------------------------------------------------------------------------
   // Completed result
   // ---------------------------------------------------------------------------
@@ -422,6 +572,12 @@ class _PracticeTogetherResultScreenState
     final bool isTie = result == 'tie';
 
     final bool currentWon = !isTie && winnerId == widget.childId;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+
+      _playPracticeResultSoundOnce(isTie: isTie, currentWon: currentWon);
+    });
 
     final bool currentIsSender = widget.childId == senderId;
 
