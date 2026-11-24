@@ -619,16 +619,19 @@ class _ChildHeader extends StatelessWidget {
         continue;
       }
 
-      if (type == 'listening_completed' ||
-          type == 'level_completed' ||
-          type == 'letter_completed' ||
-          type == 'journey_completed' ||
-          type == 'streak_completed' ||
-          type == 'practice_reminder' ||
-          type == 'streak_reminder') {
-        count++;
-        continue;
-      }
+     
+if (type == 'listening_completed' ||
+    type == 'level_completed' ||
+    type == 'letter_completed' ||
+    type == 'journey_completed' ||
+    type == 'streak_completed' ||
+    type == 'practice_reminder' ||
+    type == 'placement_reminder' ||
+    type == 'streak_reminder') {
+  count++;
+  continue;
+}
+
 
       if (type == 'practice_invitation') {
         final sessionId = data['referenceId']?.toString() ?? '';

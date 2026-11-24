@@ -1231,145 +1231,168 @@ async function hasCompletedFaseehJourney(childRef) {
   return certificateDoc.exists;
 }
 
+
 exports.sendDailyPracticeReminder = onSchedule(
   {
-schedule: "0 12 * * *",
+    schedule: "0 12 * * *",
     timeZone: "Asia/Riyadh",
     region: "us-central1",
-        timeoutSeconds: 300,
-
+    timeoutSeconds: 300,
   },
   async () => {
     const db = admin.firestore();
 
-    // Saudi calendar dates (UTC+3).
-    const saudiNow = new Date(Date.now() + 3 * 60 * 60 * 1000);
-    const today = saudiNow.toISOString().slice(0, 10);
+    const today = new Date(
+      Date.now() + 3 * 60 * 60 * 1000
+    ).toISOString().slice(0, 10);
 
-    const yesterdayDate = new Date(
-      saudiNow.getTime() - 24 * 60 * 60 * 1000
-    );
-    const yesterday = yesterdayDate.toISOString().slice(0, 10);
-
-    // Check all children for daily practice reminders.
-const childrenSnapshot = await db
-  .collection("children")
-  .get();
-
-    if (childrenSnapshot.empty) {
-      logger.info("No children eligible for practice reminders.", {
-        today,
-        yesterday,
-      });
-      return;
-    }
+    const childrenSnapshot = await db
+      .collection("children")
+      .get();
 
     let remindersCreated = 0;
+    let placementReminders = 0;
+    let practiceReminders = 0;
 
     for (const childDoc of childrenSnapshot.docs) {
       const childId = childDoc.id;
-const child = childDoc.data();
-const parentId = child.parentId;
+      const child = childDoc.data();
 
-// Skip children who already practiced today.
-if (child.lastPracticeDay === today) {
-  continue;
-}
+      if (!child.parentId) continue;
 
-if (!parentId) continue;
+      // Skip children who completed Faseeh.
+      if (await hasCompletedFaseehJourney(childDoc.ref)) {
+        continue;
+      }
 
-// Stop reminders for children who completed Faseeh.
-const hasCompleted = await hasCompletedFaseehJourney(childDoc.ref);
-
-if (hasCompleted) {
-  logger.info("Skipping practice reminder: journey completed", {
-    childId,
-  });
-  continue;
-}
-
-      const reminderId = `practice_reminder_${childId}_${today}`;
+      // Keep one reminder per child per day.
+      // Reuse the original ID for compatibility.
+      const reminderId =
+        `practice_reminder_${childId}_${today}`;
 
       const notificationRef = db
         .collection("notifications")
         .doc(reminderId);
 
-      const title = "فصيح ينتظرك! 🌟";
-      const message =
-  "لا تنسَ تدريبك اليوم! 🌟 افتح فصيح وواصل رحلتك لتتعلم وتنطق بثقة! 💜";
-
       try {
-        // Transaction prevents duplicate reminders.
-        const created = await db.runTransaction(async (transaction) => {
-  const certificateRef = childDoc.ref
-    .collection("certificates")
-    .doc("completion");
+        const result = await db.runTransaction(
+          async (transaction) => {
+            const certificateRef = childDoc.ref
+              .collection("certificates")
+              .doc("completion");
 
-  const latestChild = await transaction.get(childDoc.ref);
-  const existing = await transaction.get(notificationRef);
-  const certificateDoc = await transaction.get(certificateRef);
+            const latestChild = await transaction.get(
+              childDoc.ref
+            );
 
-  if (certificateDoc.exists) {
-    return false;
-  }
+            const existing = await transaction.get(
+              notificationRef
+            );
 
-          if (!latestChild.exists || existing.exists) {
-            return false;
+            const certificate = await transaction.get(
+              certificateRef
+            );
+
+            if (
+              !latestChild.exists ||
+              existing.exists ||
+              certificate.exists
+            ) {
+              return null;
+            }
+
+            const latestData = latestChild.data();
+
+            if (!latestData.parentId) return null;
+
+            const placementDone =
+              latestData.placementDone === true;
+
+            // Practice reminders only apply after
+            // the placement test is completed.
+            if (
+              placementDone &&
+              latestData.lastPracticeDay === today
+            ) {
+              return null;
+            }
+
+            const reminderType = placementDone
+              ? "practice_reminder"
+              : "placement_reminder";
+
+            const title = placementDone
+              ? "فصيح ينتظرك! 🌟"
+              : "جاهز تبدأ رحلتك مع فصيح؟ 🌟";
+
+            const message = placementDone
+              ? "لا تنسَ تدريبك اليوم! 🌟 افتح فصيح وواصل رحلتك لتتعلم وتنطق بثقة! 💜"
+              : "حان وقت اكتشاف مستواك! 🎯 أكمل اختبار تحديد المستوى عشان نجهز لك تمارين تناسبك! 💜";
+
+            transaction.create(notificationRef, {
+              receiverId: childId,
+              senderId: "system",
+              type: reminderType,
+              referenceId: reminderId,
+              title,
+              message,
+              isRead: false,
+              createdAt:
+                admin.firestore.FieldValue.serverTimestamp(),
+              expiresAt:
+                admin.firestore.Timestamp.fromMillis(
+                  Date.now() + 48 * 60 * 60 * 1000
+                ),
+            });
+
+            return {
+              parentId: latestData.parentId,
+              reminderType,
+              title,
+              message,
+            };
           }
+        );
 
-          // Skip children who already practiced today.
-if (latestChild.data().lastPracticeDay === today) {
-  return false;
-}
+        if (!result) continue;
 
-          transaction.create(notificationRef, {
-            receiverId: childId,
-            senderId: "system",
-            type: "practice_reminder",
-            referenceId: reminderId,
-            title,
-            message,
-            isRead: false,
-            createdAt: admin.firestore.FieldValue.serverTimestamp(),
-            expiresAt: admin.firestore.Timestamp.fromMillis(
-              Date.now() + 48 * 60 * 60 * 1000
-            ),
-          });
-
-          return true;
-        });
-
-if (!created) continue;
         remindersCreated++;
+
+        if (result.reminderType === "placement_reminder") {
+          placementReminders++;
+        } else {
+          practiceReminders++;
+        }
 
         try {
           await sendMilestonePush({
-            parentId,
+            parentId: result.parentId,
             childId,
             mode: "child",
-            title,
-            message,
-            type: "practice_reminder",
+            title: result.title,
+            message: result.message,
+            type: result.reminderType,
             referenceId: reminderId,
           });
         } catch (error) {
-          logger.error("Practice reminder push failed", {
+          logger.error("Daily reminder push failed", {
             childId,
             error,
           });
         }
       } catch (error) {
-        logger.error("Failed to create practice reminder", {
+        logger.error("Failed to create daily reminder", {
           childId,
           error,
         });
       }
     }
 
-    logger.info("Daily practice reminders completed", {
+    logger.info("Daily reminders completed", {
       today,
-      yesterday,
       remindersCreated,
+      placementReminders,
+      practiceReminders,
     });
   }
 );
