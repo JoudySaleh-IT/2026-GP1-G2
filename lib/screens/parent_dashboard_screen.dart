@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/ChildSession.dart';
 import '../services/notification_service.dart';
+import '../services/parent_child_progress_service.dart';
 import 'style_constants.dart';
 import '../utils/arabic_numbers.dart';
 import '../services/fcm_service.dart';
@@ -65,23 +66,20 @@ class ParentDashboardScreen extends StatelessWidget {
                       ),
 
                       // زر ثابت دائمًا بأسفل الصفحة
-                      
-// أزرار أسفل الصفحة
-Padding(
-  padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-  child: Column(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-  
 
-      const SizedBox(height: 10),
+                      // أزرار أسفل الصفحة
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const SizedBox(height: 10),
 
-      // الزر الأساسي بدون تغيير
-      _buildSwitchToChildButton(context),
-    ],
-  ),
-),
-
+                            // الزر الأساسي بدون تغيير
+                            _buildSwitchToChildButton(context),
+                          ],
+                        ),
+                      ),
                     ],
                   );
                 },
@@ -92,8 +90,6 @@ Padding(
       ),
     );
   }
-
-
 
   Widget _buildHeader(BuildContext context) {
     final String? userId = FirebaseAuth.instance.currentUser?.uid;
@@ -340,7 +336,7 @@ Padding(
     String docId,
     Map<String, dynamic> data,
   ) {
-    final int progress = data['progress'] ?? 0;
+    final progressSummary = ParentChildProgressService().buildSummary(data);
 
     final String firstName = (data['firstName'] ?? '').toString().trim();
 
@@ -409,27 +405,91 @@ Padding(
                 ),
               ),
             ],
-            const SizedBox(height: 12),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: LinearProgressIndicator(
-                value: progress / 100,
-                backgroundColor: const Color(0xFF511281).withOpacity(0.1),
-                valueColor: const AlwaysStoppedAnimation<Color>(
-                  Color(0xFF511281),
-                ),
-                minHeight: 8,
-              ),
-            ),
+            const SizedBox(height: 8),
+            _buildMasteryProgress(progressSummary),
           ],
         ),
-        trailing: Text('${toArabicDigits(progress)}٪'),
+        trailing: const Icon(
+          Icons.chevron_left_rounded,
+          color: Color(0xFFAAA0B1),
+          size: 23,
+        ),
         onTap: () => Navigator.pushNamed(
           context,
           '/parent/child-profile',
           arguments: {'childId': docId},
         ),
       ),
+    );
+  }
+
+  Widget _buildMasteryProgress(ParentChildProgressSummary summary) {
+    const Color green = Color(0xFF70A884);
+    const Color inactiveColor = Color(0xFFEDE8F1);
+
+    final int totalLetters = ParentChildProgressService.targetLetters.length;
+
+    final int masteredLetters = summary.masteredLetters;
+
+    final bool allMastered = masteredLetters == totalLetters;
+
+    // Placement has not been completed.
+    if (!summary.placementDone) {
+      return const Text(
+        'بانتظار إكمال اختبار تحديد المستوى',
+        style: TextStyle(
+          fontFamily: 'Tajawal',
+          fontSize: 10.5,
+          fontWeight: FontWeight.w500,
+          color: Color(0xFFB58B45),
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Mastery count
+        Text(
+          allMastered
+              ? 'جميع الحروف متقنة'
+              : 'الحروف المتقنة: '
+                    '${toArabicDigits(masteredLetters)} '
+                    'من ${toArabicDigits(totalLetters)}',
+          style: TextStyle(
+            fontFamily: 'Tajawal',
+            fontSize: 11,
+            fontWeight: allMastered ? FontWeight.w700 : FontWeight.w500,
+            color: allMastered ? green : const Color(0xFF777777),
+          ),
+        ),
+
+        const SizedBox(height: 6),
+
+        // Segmented mastery progress bar
+        Row(
+          textDirection: TextDirection.rtl,
+          children: List.generate(totalLetters, (index) {
+            final bool isMastered = index < masteredLetters;
+
+            return Expanded(
+              child: Padding(
+                padding: EdgeInsetsDirectional.only(
+                  end: index == totalLetters - 1 ? 0 : 4,
+                ),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: isMastered ? green : inactiveColor,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+            );
+          }),
+        ),
+      ],
     );
   }
 

@@ -1,30 +1,26 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:cloud_functions/cloud_functions.dart';
+
 class CertificateService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-Future<void> notifyCertificate(String childId) async {
-  try {
-    final callable = FirebaseFunctions.instanceFor(
-      region: 'us-central1',
-    ).httpsCallable('notifyFaseehCertificate');
+  Future<void> notifyCertificate(String childId) async {
+    try {
+      final callable = FirebaseFunctions.instanceFor(
+        region: 'us-central1',
+      ).httpsCallable('notifyFaseehCertificate');
 
-    await callable.call({
-      'childId': childId,
-    });
+      await callable.call({'childId': childId});
 
-    debugPrint('Certificate notification processed');
-  } catch (e) {
-    debugPrint('Certificate notification failed: $e');
+      debugPrint('Certificate notification processed');
+    } catch (e) {
+      debugPrint('Certificate notification failed: $e');
+    }
   }
-}
 
   Future<bool> isJourneyCompleted(String childId) async {
-    final doc = await _firestore
-        .collection('children')
-        .doc(childId)
-        .get();
+    final doc = await _firestore.collection('children').doc(childId).get();
 
     if (!doc.exists || doc.data() == null) {
       return false;
@@ -32,11 +28,13 @@ Future<void> notifyCertificate(String childId) async {
 
     final data = doc.data()!;
 
-    final Map<String, dynamic> letterScores =
-        Map<String, dynamic>.from(data['letterScores'] ?? {});
+    final Map<String, dynamic> letterScores = Map<String, dynamic>.from(
+      data['letterScores'] ?? {},
+    );
 
-    final Map<String, dynamic> exerciseProgress =
-        Map<String, dynamic>.from(data['exerciseProgress'] ?? {});
+    final Map<String, dynamic> exerciseProgress = Map<String, dynamic>.from(
+      data['exerciseProgress'] ?? {},
+    );
 
     // الحروف التي احتاج الطفل التدريب عليها من الـAssessment
     final List<String> requiredLetters = letterScores.entries
@@ -57,8 +55,7 @@ Future<void> notifyCertificate(String childId) async {
         return false;
       }
 
-      final letterProgress =
-          Map<String, dynamic>.from(rawLetterProgress);
+      final letterProgress = Map<String, dynamic>.from(rawLetterProgress);
 
       final dynamic rawAdvanced = letterProgress['advanced'];
 
@@ -66,14 +63,11 @@ Future<void> notifyCertificate(String childId) async {
         return false;
       }
 
-      final advanced =
-          Map<String, dynamic>.from(rawAdvanced);
+      final advanced = Map<String, dynamic>.from(rawAdvanced);
 
-      final bool listeningPassed =
-          advanced['listeningPassed'] == true;
+      final bool listeningPassed = advanced['listeningPassed'] == true;
 
-      final bool pronunciationPassed =
-          advanced['pronunciationPassed'] == true;
+      final bool pronunciationPassed = advanced['pronunciationPassed'] == true;
 
       if (!listeningPassed || !pronunciationPassed) {
         return false;
@@ -82,86 +76,107 @@ Future<void> notifyCertificate(String childId) async {
 
     return true;
   }
-Future<bool> issueCertificate(String childId) async {
-  // 1. نتأكد أولًا أن رحلة الطفل انتهت فعلًا
-  final bool completed = await isJourneyCompleted(childId);
 
-  if (!completed) {
-    throw Exception('رحلة الطفل لم تكتمل بعد');
+  Future<void> syncJourneyCompletion(String childId) async {
+    try {
+      await _firestore.collection('child_public_profiles').doc(childId).update({
+        'journeyCompleted': true,
+      });
+
+      debugPrint('Journey completion status synchronized');
+    } catch (e) {
+      debugPrint('Journey completion sync failed: $e');
+    }
   }
 
-  // 2. نقرأ بيانات الطفل
-  final childRef = _firestore.collection('children').doc(childId);
-  final childDoc = await childRef.get();
+  Future<bool> issueCertificate(String childId) async {
+    // 1. نتأكد أولًا أن رحلة الطفل انتهت فعلًا
+    final bool completed = await isJourneyCompleted(childId);
 
-  if (!childDoc.exists || childDoc.data() == null) {
-    throw Exception('لم يتم العثور على بيانات الطفل');
+    if (!completed) {
+      throw Exception('رحلة الطفل لم تكتمل بعد');
+    }
+
+    // 2. نقرأ بيانات الطفل
+    final childRef = _firestore.collection('children').doc(childId);
+    final childDoc = await childRef.get();
+
+    if (!childDoc.exists || childDoc.data() == null) {
+      throw Exception('لم يتم العثور على بيانات الطفل');
+    }
+
+    final data = childDoc.data()!;
+
+    // 3. الاسم بالشكل المطلوب: First Name + Last Name
+    final String firstName = data['firstName']?.toString().trim() ?? '';
+    final String lastName = data['lastName']?.toString().trim() ?? '';
+
+    final String fullName = '$firstName $lastName'.trim();
+
+    // 4. الحروف التي كانت مطلوبة للتدريب
+    final Map<String, dynamic> letterScores = Map<String, dynamic>.from(
+      data['letterScores'] ?? {},
+    );
+
+    final List<String> completedLetters = letterScores.entries
+        .where((entry) => (entry.value as num) < 80)
+        .map((entry) => entry.key)
+        .toList();
+
+    // 5. نحسب العمر من تاريخ الميلاد
+    final Timestamp? dobTimestamp = data['dob'] as Timestamp?;
+
+    if (dobTimestamp == null) {
+      throw Exception('تاريخ ميلاد الطفل غير موجود');
+    }
+
+    final DateTime dob = dobTimestamp.toDate();
+    final DateTime now = DateTime.now();
+
+    int age = now.year - dob.year;
+
+    if (now.month < dob.month ||
+        (now.month == dob.month && now.day < dob.day)) {
+      age--;
+    }
+
+    // 6. نحدد تصميم الشهادة
+    final String templateType = age <= 8 ? 'young' : 'older';
+
+    // 7. مكان تخزين الشهادة
+    final certificateRef = childRef
+        .collection('certificates')
+        .doc('completion');
+
+    // 8. ما نصدرها مرتين
+    final existingCertificate = await certificateRef.get();
+
+    if (existingCertificate.exists) {
+      await syncJourneyCompletion(childId);
+
+      debugPrint('Certificate already exists for child: $childId');
+
+      return false;
+    }
+
+    // 9. إنشاء سجل الشهادة
+    await certificateRef.set({
+      'fullNameAtIssue': fullName,
+      'completedLetters': completedLetters,
+      'ageAtIssue': age,
+      'templateType': templateType,
+      'completionDate': FieldValue.serverTimestamp(),
+      'issuedAt': FieldValue.serverTimestamp(),
+    });
+
+    debugPrint('✅ Certificate issued for $fullName');
+
+    // Let friends know that this child has graduated.
+    await syncJourneyCompletion(childId);
+
+    // Keep the existing notification functionality.
+    await notifyCertificate(childId);
+
+    return true;
   }
-
-  final data = childDoc.data()!;
-
-  // 3. الاسم بالشكل المطلوب: First Name + Last Name
-  final String firstName = data['firstName']?.toString().trim() ?? '';
-  final String lastName = data['lastName']?.toString().trim() ?? '';
-
-  final String fullName = '$firstName $lastName'.trim();
-
-  // 4. الحروف التي كانت مطلوبة للتدريب
-  final Map<String, dynamic> letterScores =
-      Map<String, dynamic>.from(data['letterScores'] ?? {});
-
-  final List<String> completedLetters = letterScores.entries
-      .where((entry) => (entry.value as num) < 80)
-      .map((entry) => entry.key)
-      .toList();
-
-  // 5. نحسب العمر من تاريخ الميلاد
-  final Timestamp? dobTimestamp = data['dob'] as Timestamp?;
-
-  if (dobTimestamp == null) {
-    throw Exception('تاريخ ميلاد الطفل غير موجود');
-  }
-
-  final DateTime dob = dobTimestamp.toDate();
-  final DateTime now = DateTime.now();
-
-  int age = now.year - dob.year;
-
-  if (now.month < dob.month ||
-      (now.month == dob.month && now.day < dob.day)) {
-    age--;
-  }
-
-  // 6. نحدد تصميم الشهادة
-  final String templateType = age <= 8 ? 'young' : 'older';
-
-  // 7. مكان تخزين الشهادة
-  final certificateRef = childRef
-      .collection('certificates')
-      .doc('completion');
-
-  // 8. ما نصدرها مرتين
-  final existingCertificate = await certificateRef.get();
-
-if (existingCertificate.exists) {
-  debugPrint('Certificate already exists for child: $childId');
-  return false;
-}
-
-  // 9. إنشاء سجل الشهادة
-  await certificateRef.set({
-    'fullNameAtIssue': fullName,
-    'completedLetters': completedLetters,
-    'ageAtIssue': age,
-    'templateType': templateType,
-    'completionDate': FieldValue.serverTimestamp(),
-    'issuedAt': FieldValue.serverTimestamp(),
-  });
-
-debugPrint('✅ Certificate issued for $fullName');
-
-await notifyCertificate(childId);
-
-return true;
-}
 }

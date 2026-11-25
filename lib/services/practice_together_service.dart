@@ -27,11 +27,14 @@ class PracticeAvailableExercise {
   String get arabicLevel {
     switch (level) {
       case 'beginner':
-        return 'مبتدئ';
+        return 'سهل';
+
       case 'intermediate':
         return 'متوسط';
+
       case 'advanced':
-        return 'متقدم';
+        return 'صعب';
+
       default:
         return level;
     }
@@ -49,36 +52,6 @@ class PracticeTogetherService {
     return '${ids[0]}__${ids[1]}';
   }
 
-  String _normalizeLevel(dynamic rawLevel) {
-    final level = rawLevel?.toString().trim().toLowerCase() ?? '';
-
-    switch (level) {
-      case 'beginner':
-      case 'foundational':
-      case 'easy':
-      case 'مبتدئ':
-      case 'تأسيسي':
-        return 'beginner';
-
-      case 'intermediate':
-      case 'developing':
-      case 'moderate':
-      case 'متوسط':
-        return 'intermediate';
-
-      case 'advanced':
-      case 'master':
-      case 'mastered':
-      case 'hard':
-      case 'متقدم':
-      case 'متقن':
-        return 'advanced';
-
-      default:
-        return 'beginner';
-    }
-  }
-
   Future<List<PracticeAvailableExercise>> getAvailableExercises({
     required String childId,
     required PracticeExerciseType exerciseType,
@@ -89,7 +62,11 @@ class PracticeTogetherService {
       throw Exception('NOT_AUTHENTICATED');
     }
 
-    final childSnapshot = await _db.collection('children').doc(childId).get();
+    // Fetch the latest progress instead of relying on cached data.
+    final childSnapshot = await _db
+        .collection('children')
+        .doc(childId)
+        .get(const GetOptions(source: Source.server));
 
     if (!childSnapshot.exists || childSnapshot.data() == null) {
       throw Exception('CHILD_NOT_FOUND');
@@ -97,12 +74,15 @@ class PracticeTogetherService {
 
     final data = childSnapshot.data()!;
 
-    // Child must complete placement before exercises are available.
+    // Placement must be completed first.
     if (data['placementDone'] != true) {
       return [];
     }
 
-    final currentLevel = _normalizeLevel(data['level']);
+    // A completed Faseh journey has no available exercises.
+    if (await hasCompletionCertificate(childId)) {
+      return [];
+    }
 
     final rawScores = data['letterScores'];
     final rawExerciseProgress = data['exerciseProgress'];
@@ -113,6 +93,8 @@ class PracticeTogetherService {
 
     const supportedLetters = ['ض', 'س', 'ص', 'غ', 'خ', 'ق'];
 
+    const levelOrder = ['beginner', 'intermediate', 'advanced'];
+
     final List<PracticeAvailableExercise> available = [];
 
     for (final letter in supportedLetters) {
@@ -122,42 +104,91 @@ class PracticeTogetherService {
         continue;
       }
 
-      // Same rule used by the normal Exercises screen:
-      // only letters that still need training.
+      // =========================================================
+      // 1. Determine the starting level of THIS letter
+      // =========================================================
+
+      // Already mastered during placement.
       if (rawScore >= 80) {
         continue;
       }
 
-      // Listening is always available for the child's current level.
-      if (exerciseType == PracticeExerciseType.listening) {
-        available.add(
-          PracticeAvailableExercise(letter: letter, level: currentLevel),
-        );
+      final int startIndex = rawScore < 50 ? 0 : 1;
 
+      // =========================================================
+      // 2. Retrieve THIS letter's exercise progress
+      // =========================================================
+
+      final rawLetterProgress = rawExerciseProgress is Map
+          ? rawExerciseProgress[letter]
+          : null;
+
+      // A letter that has completed its advanced level
+      // is considered fully mastered.
+      final rawAdvancedProgress = rawLetterProgress is Map
+          ? rawLetterProgress['advanced']
+          : null;
+
+      final bool letterMastered =
+          rawAdvancedProgress is Map &&
+          rawAdvancedProgress['listeningPassed'] == true &&
+          rawAdvancedProgress['pronunciationPassed'] == true;
+
+      if (letterMastered) {
         continue;
       }
 
-      // Speaking requires Listening to have already been passed
-      // for this letter and current level.
-      bool listeningPassed = false;
+      // =========================================================
+      // 3. Find the first unfinished required level
+      // =========================================================
 
-      if (rawExerciseProgress is Map) {
-        final rawLetterProgress = rawExerciseProgress[letter];
+      for (int i = startIndex; i < levelOrder.length; i++) {
+        final String level = levelOrder[i];
 
-        if (rawLetterProgress is Map) {
-          final rawLevelProgress = rawLetterProgress[currentLevel];
+        final rawLevelProgress = rawLetterProgress is Map
+            ? rawLetterProgress[level]
+            : null;
 
-          if (rawLevelProgress is Map) {
-            listeningPassed = rawLevelProgress['listeningPassed'] == true;
+        final bool listeningPassed =
+            rawLevelProgress is Map &&
+            rawLevelProgress['listeningPassed'] == true;
+
+        final bool pronunciationPassed =
+            rawLevelProgress is Map &&
+            rawLevelProgress['pronunciationPassed'] == true;
+
+        // Both exercises passed.
+        // Move to the next level.
+        if (listeningPassed && pronunciationPassed) {
+          continue;
+        }
+
+        // =======================================================
+        // 4. Determine exercise availability at the CURRENT level
+        // =======================================================
+
+        if (exerciseType == PracticeExerciseType.listening) {
+          // Listening remains available at the current level.
+          available.add(
+            PracticeAvailableExercise(letter: letter, level: level),
+          );
+        } else if (exerciseType == PracticeExerciseType.speaking) {
+          // Speaking is unlocked only after passing Listening
+          // at the same letter and level.
+          if (listeningPassed) {
+            available.add(
+              PracticeAvailableExercise(letter: letter, level: level),
+            );
           }
         }
+
+        // Never check higher levels until the current one
+        // has been fully completed.
+        break;
       }
 
-      if (listeningPassed) {
-        available.add(
-          PracticeAvailableExercise(letter: letter, level: currentLevel),
-        );
-      }
+      // If every required level was completed, no exercise
+      // was added for this letter.
     }
 
     return available;
@@ -187,12 +218,32 @@ class PracticeTogetherService {
       throw Exception('CANNOT_INVITE_SELF');
     }
 
+    // Verify that the sender has completed placement.
+    final senderSnapshot = await _db
+        .collection('children')
+        .doc(senderChildId)
+        .get(const GetOptions(source: Source.server));
+
+    if (!senderSnapshot.exists ||
+        senderSnapshot.data()?['placementDone'] != true) {
+      throw Exception('SENDER_PLACEMENT_NOT_DONE');
+    }
+
+    // The sender must not have completed their Faseh journey.
+    if (await hasCompletionCertificate(senderChildId)) {
+      throw Exception('SENDER_JOURNEY_COMPLETED');
+    }
+
     final bool receiverPlacementDone = await hasCompletedPlacement(
       receiverChildId,
     );
 
     if (!receiverPlacementDone) {
       throw Exception('RECEIVER_PLACEMENT_NOT_DONE');
+    }
+
+    if (await hasPublicJourneyCompleted(receiverChildId)) {
+      throw Exception('RECEIVER_JOURNEY_COMPLETED');
     }
 
     final availableExercises = await getAvailableExercises(
@@ -1080,8 +1131,8 @@ class PracticeTogetherService {
         throw Exception('NOT_INVITATION_RECEIVER');
       }
 
-      if (data['status'] != 'pending') {
-        throw Exception('INVITATION_NOT_PENDING');
+      if (data['status'] != 'pending' && data['status'] != 'accepted') {
+        throw Exception('INVITATION_NOT_AVAILABLE');
       }
 
       transaction.update(sessionRef, {
@@ -1145,5 +1196,25 @@ class PracticeTogetherService {
     }
 
     return snapshot.data()!['placementDone'] == true;
+  }
+
+  Future<bool> hasCompletionCertificate(String childId) async {
+    final snapshot = await _db
+        .collection('children')
+        .doc(childId)
+        .collection('certificates')
+        .doc('completion')
+        .get(const GetOptions(source: Source.server));
+
+    return snapshot.exists;
+  }
+
+  Future<bool> hasPublicJourneyCompleted(String childId) async {
+    final snapshot = await _db
+        .collection('child_public_profiles')
+        .doc(childId)
+        .get(const GetOptions(source: Source.server));
+
+    return snapshot.data()?['journeyCompleted'] == true;
   }
 }

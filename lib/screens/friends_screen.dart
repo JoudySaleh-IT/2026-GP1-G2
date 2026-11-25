@@ -120,12 +120,81 @@ class FriendsScreen extends StatelessWidget {
     }
   }
 
+  Color _exerciseLevelColor(String level) {
+    switch (level) {
+      case 'beginner':
+        return const Color(0xFF65A97D);
+
+      case 'intermediate':
+        return const Color(0xFFF1A340);
+
+      case 'advanced':
+        return const Color(0xFFFF6969);
+
+      default:
+        return _purple;
+    }
+  }
+
+  Color _exerciseLevelBackground(String level) {
+    switch (level) {
+      case 'beginner':
+        return const Color(0xFFEAF7EF);
+
+      case 'intermediate':
+        return const Color(0xFFFFF3DB);
+
+      case 'advanced':
+        return const Color(0xFFFFF0F1);
+
+      default:
+        return const Color(0xFFF7F0FF);
+    }
+  }
+
   Future<void> _showPracticeTogetherDialog(
     BuildContext context, {
     required String friendId,
     required String friendName,
   }) async {
     final service = PracticeTogetherService();
+
+    // Check whether the child is eligible to invite friends.
+    try {
+      final bool placementDone = await service.hasCompletedPlacement(childId);
+
+      if (!context.mounted) return;
+
+      if (!placementDone) {
+        NotificationService.showErrorSnackBar(
+          'أكمل اختبار تحديد المستوى أولًا لتتمكن من التدرّب مع أصدقائك',
+        );
+
+        return;
+      }
+
+      final bool journeyCompleted = await service.hasCompletionCertificate(
+        childId,
+      );
+
+      if (!context.mounted) return;
+
+      if (journeyCompleted) {
+        NotificationService.showSuccessSnackBar(
+          'أحسنت! لقد أكملت رحلتك في فصيح وأتقنت جميع حروفك 🎉',
+        );
+
+        return;
+      }
+    } catch (e) {
+      if (!context.mounted) return;
+
+      NotificationService.showErrorSnackBar(
+        'تعذّر التحقق من إمكانية التدريب مع الأصدقاء، حاول مرة أخرى',
+      );
+
+      return;
+    }
 
     PracticeExerciseType selectedType = PracticeExerciseType.listening;
 
@@ -142,8 +211,10 @@ class FriendsScreen extends StatelessWidget {
             return Directionality(
               textDirection: TextDirection.rtl,
               child: AlertDialog(
+                backgroundColor: _background,
+                surfaceTintColor: Colors.transparent,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(24),
+                  borderRadius: BorderRadius.circular(28),
                 ),
 
                 title: Text(
@@ -173,6 +244,55 @@ class FriendsScreen extends StatelessWidget {
                       const SizedBox(height: 8),
 
                       SegmentedButton<PracticeExerciseType>(
+                        showSelectedIcon: false,
+
+                        style: ButtonStyle(
+                          padding: const WidgetStatePropertyAll(
+                            EdgeInsets.symmetric(horizontal: 6, vertical: 12),
+                          ),
+
+                          textStyle: const WidgetStatePropertyAll(
+                            TextStyle(
+                              fontFamily: 'Tajawal',
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+
+                          backgroundColor:
+                              WidgetStateProperty.resolveWith<Color>((states) {
+                                if (states.contains(WidgetState.selected)) {
+                                  return selectedType ==
+                                          PracticeExerciseType.listening
+                                      ? const Color(0xFFE9D8F5)
+                                      : const Color(0xFFE1F3E7);
+                                }
+
+                                return Colors.white;
+                              }),
+
+                          foregroundColor:
+                              WidgetStateProperty.resolveWith<Color>((states) {
+                                if (states.contains(WidgetState.selected)) {
+                                  return selectedType ==
+                                          PracticeExerciseType.listening
+                                      ? _purple
+                                      : const Color(0xFF55936B);
+                                }
+
+                                return const Color(0xFF777777);
+                              }),
+
+                          side: const WidgetStatePropertyAll(
+                            BorderSide(color: Color(0xFFE5D8F1)),
+                          ),
+
+                          shape: WidgetStatePropertyAll(
+                            RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(18),
+                            ),
+                          ),
+                        ),
                         segments: const [
                           ButtonSegment(
                             value: PracticeExerciseType.listening,
@@ -269,26 +389,137 @@ class FriendsScreen extends StatelessWidget {
                           }
 
                           return DropdownButtonFormField<String>(
+                            key: ValueKey(selectedType),
+
                             value: selectedExercise?.id,
+
+                            isExpanded: true,
+
+                            menuMaxHeight: 350,
+
+                            dropdownColor: Colors.white,
+
+                            borderRadius: BorderRadius.circular(20),
+
+                            icon: const Icon(
+                              Icons.keyboard_arrow_down_rounded,
+                              color: _purple,
+                            ),
+
                             decoration: InputDecoration(
+                              filled: true,
+                              fillColor: const Color(0xFFF7F0FF),
+
                               hintText: 'اختر حرفًا',
+
+                              hintStyle: const TextStyle(
+                                fontFamily: 'Tajawal',
+                                fontSize: 13,
+                                color: Color(0xFF9A8BA5),
+                              ),
+
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 10,
+                              ),
+
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(18),
+                                borderSide: const BorderSide(
+                                  color: Color(0xFFDCC9F5),
+                                ),
+                              ),
+
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(18),
+                                borderSide: const BorderSide(
+                                  color: _purple,
+                                  width: 1.5,
+                                ),
+                              ),
+
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(14),
+                                borderRadius: BorderRadius.circular(18),
                               ),
                             ),
+
                             items: exercises.map((exercise) {
+                              final color = _exerciseLevelColor(exercise.level);
+
+                              final background = _exerciseLevelBackground(
+                                exercise.level,
+                              );
+
                               return DropdownMenuItem<String>(
                                 value: exercise.id,
-                                child: Text(
-                                  '${exercise.letter} — ${exercise.arabicLevel}',
-                                  style: const TextStyle(fontFamily: 'Tajawal'),
+
+                                child: Row(
+                                  children: [
+                                    // Letter bubble
+                                    Container(
+                                      width: 35,
+                                      height: 35,
+                                      alignment: Alignment.center,
+                                      decoration: BoxDecoration(
+                                        color: background,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        exercise.letter,
+                                        style: const TextStyle(
+                                          fontFamily: 'Tajawal',
+                                          fontSize: 23,
+                                          fontWeight: FontWeight.w800,
+                                          color: _purple,
+                                          height: 1,
+                                        ),
+                                      ),
+                                    ),
+
+                                    const SizedBox(width: 8),
+
+                                    Expanded(
+                                      child: Text(
+                                        'حرف ${exercise.letter}',
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          fontFamily: 'Tajawal',
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w700,
+                                          color: _purple,
+                                        ),
+                                      ),
+                                    ),
+
+                                    const SizedBox(width: 4),
+
+                                    // Difficulty indicator
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 9,
+                                        vertical: 5,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: background,
+                                        borderRadius: BorderRadius.circular(13),
+                                      ),
+                                      child: Text(
+                                        exercise.arabicLevel,
+                                        style: TextStyle(
+                                          fontFamily: 'Tajawal',
+                                          fontSize: 10.5,
+                                          fontWeight: FontWeight.w800,
+                                          color: color,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               );
                             }).toList(),
+
                             onChanged: (value) {
-                              if (value == null) {
-                                return;
-                              }
+                              if (value == null) return;
 
                               final exercise = exercises.firstWhere(
                                 (item) => item.id == value,
@@ -378,10 +609,34 @@ class FriendsScreen extends StatelessWidget {
     } catch (e) {
       if (!context.mounted) return;
 
+      if (e.toString().contains('RECEIVER_JOURNEY_COMPLETED')) {
+        NotificationService.showSuccessSnackBar(
+          'لقد أكمل $friendName رحلته في فصيح وأتقن حروفه! 🎓',
+        );
+
+        return;
+      }
+
       if (e.toString().contains('RECEIVER_PLACEMENT_NOT_DONE')) {
         NotificationService.showErrorSnackBar(
           '$friendName يحتاج إلى إكمال اختبار تحديد المستوى أولًا',
         );
+
+        if (e.toString().contains('EXERCISE_NOT_AVAILABLE')) {
+          NotificationService.showErrorSnackBar(
+            'تغيّرت تمارينك المتاحة، اختر تمرينك مرة أخرى',
+          );
+
+          if (e.toString().contains('SENDER_JOURNEY_COMPLETED')) {
+            NotificationService.showSuccessSnackBar(
+              'لقد أكملت رحلتك في فصيح بنجاح! 🎓',
+            );
+
+            return;
+          }
+
+          return;
+        }
 
         return;
       }
@@ -1070,6 +1325,8 @@ class _FriendProfileCard extends StatelessWidget {
 
         final bool placementDone = rawPlacementDone == true;
 
+        final bool journeyCompleted = profile['journeyCompleted'] == true;
+
         debugPrint(
           '👥 FRIEND $displayName '
           '($friendId) → '
@@ -1087,7 +1344,8 @@ class _FriendProfileCard extends StatelessWidget {
           avatar: avatar,
           avatarId: avatarId,
           backgroundId: backgroundId,
-          canPracticeTogether: placementDone,
+          canPracticeTogether: placementDone && !journeyCompleted,
+          journeyCompleted: journeyCompleted,
           onPracticeTogether: () {
             onPracticeTogether(displayName);
           },
@@ -1110,6 +1368,7 @@ class _FriendCard extends StatelessWidget {
   final String? avatarId;
   final String? backgroundId;
   final bool canPracticeTogether;
+  final bool journeyCompleted;
   final VoidCallback onPracticeTogether;
   final VoidCallback onRemove;
 
@@ -1117,6 +1376,7 @@ class _FriendCard extends StatelessWidget {
     required this.name,
     required this.avatar,
     required this.canPracticeTogether,
+    this.journeyCompleted = false,
     this.avatarId,
     this.backgroundId,
     required this.onPracticeTogether,
@@ -1201,20 +1461,26 @@ class _FriendCard extends StatelessWidget {
                         vertical: 5,
                       ),
                       decoration: BoxDecoration(
-                        color: canPracticeTogether
+                        color: journeyCompleted
+                            ? const Color(0xFFFFF3D5)
+                            : canPracticeTogether
                             ? const Color(0xFFEAF7EF)
                             : const Color(0xFFF3F1F4),
                         borderRadius: BorderRadius.circular(13),
                       ),
                       child: Text(
-                        canPracticeTogether
+                        journeyCompleted
+                            ? 'أكمل رحلة فصيح! 🎓'
+                            : canPracticeTogether
                             ? 'جاهز يتدرّب معك! 🌟'
                             : 'يكمل اختبار المستوى أولًا',
                         style: TextStyle(
                           fontFamily: 'Tajawal',
                           fontSize: 9.5,
                           fontWeight: FontWeight.w600,
-                          color: canPracticeTogether
+                          color: journeyCompleted
+                              ? const Color(0xFFA97919)
+                              : canPracticeTogether
                               ? const Color(0xFF55936B)
                               : const Color(0xFF8E8A91),
                         ),
@@ -1261,22 +1527,31 @@ class _FriendCard extends StatelessWidget {
                 backgroundColor: const Color(0xFFF1E7FA),
                 foregroundColor: purple,
 
-                disabledBackgroundColor: const Color(0xFFF2F0F3),
-                disabledForegroundColor: const Color(0xFFA8A5AA),
+                disabledBackgroundColor: journeyCompleted
+                    ? const Color(0xFFFFF5E0)
+                    : const Color(0xFFF2F0F3),
+
+                disabledForegroundColor: journeyCompleted
+                    ? const Color(0xFFA97919)
+                    : const Color(0xFFA8A5AA),
 
                 elevation: 0,
                 padding: const EdgeInsets.symmetric(vertical: 11),
                 shape: const StadiumBorder(),
               ),
               icon: Icon(
-                canPracticeTogether
+                journeyCompleted
+                    ? Icons.workspace_premium_rounded
+                    : canPracticeTogether
                     ? Icons.sports_esports_rounded
                     : Icons.lock_outline_rounded,
                 size: 18,
               ),
               label: Text(
-                canPracticeTogether
-                    ? 'جاهز يتدرّب معك! 🌟'
+                journeyCompleted
+                    ? 'أتمّ رحلته بنجاح'
+                    : canPracticeTogether
+                    ? 'تدرّب معًا 🌟'
                     : 'لم يكمل اختبار تحديد المستوى',
                 style: const TextStyle(
                   fontFamily: 'Tajawal',
