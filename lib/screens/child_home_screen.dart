@@ -12,6 +12,7 @@ import '../widgets/child_bottom_nav.dart';
 import 'notifications_screen.dart';
 import 'reward_store_screen.dart';
 import '../widgets/child_store_avatar.dart';
+import '../services/motivation_service.dart';
 
 // ─── Mock Data ───────────────────────────────────────────────────────────────
 const _mockChild = (
@@ -260,7 +261,10 @@ class ChildHomeScreen extends StatelessWidget {
         }
 
         // ─── Stats ───────────────────────────────────────────────────────────
-        final int streak = (data['streak'] as num?)?.toInt() ?? 0;
+        final int streak = MotivationService().getActiveStreak(
+          storedStreak: (data['streak'] as num?)?.toInt() ?? 0,
+          lastPracticeDay: data['lastPracticeDay'],
+        );
 
         final int points = (data['points'] as num?)?.toInt() ?? 0;
 
@@ -619,19 +623,17 @@ class _ChildHeader extends StatelessWidget {
         continue;
       }
 
-     
-if (type == 'listening_completed' ||
-    type == 'level_completed' ||
-    type == 'letter_completed' ||
-    type == 'journey_completed' ||
-    type == 'streak_completed' ||
-    type == 'practice_reminder' ||
-    type == 'placement_reminder' ||
-    type == 'streak_reminder') {
-  count++;
-  continue;
-}
-
+      if (type == 'listening_completed' ||
+          type == 'level_completed' ||
+          type == 'letter_completed' ||
+          type == 'journey_completed' ||
+          type == 'streak_completed' ||
+          type == 'practice_reminder' ||
+          type == 'placement_reminder' ||
+          type == 'streak_reminder') {
+        count++;
+        continue;
+      }
 
       if (type == 'practice_invitation') {
         final sessionId = data['referenceId']?.toString() ?? '';

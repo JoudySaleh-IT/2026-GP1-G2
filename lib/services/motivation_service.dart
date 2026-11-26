@@ -150,6 +150,39 @@ class MotivationService {
   }
 
   // ---------------------------------------------------------------------------
+  // Calculate the currently active streak for display purposes.
+  // Does not award streak credit or modify Firestore.
+  // ---------------------------------------------------------------------------
+
+  int getActiveStreak({
+    required int storedStreak,
+    required dynamic lastPracticeDay,
+  }) {
+    if (storedStreak <= 0) {
+      return 0;
+    }
+
+    final lastDay = _parseDayKey(lastPracticeDay);
+
+    if (lastDay == null) {
+      return 0;
+    }
+
+    final today = _saudiToday();
+
+    final yesterday = today.subtract(const Duration(days: 1));
+
+    // The streak is still active if the child practiced
+    // today or yesterday.
+    if (lastDay == today || lastDay == yesterday) {
+      return storedStreak;
+    }
+
+    // At least one full practice day has been missed.
+    return 0;
+  }
+
+  // ---------------------------------------------------------------------------
   // SOLO LISTENING
   //
   // Rule:
