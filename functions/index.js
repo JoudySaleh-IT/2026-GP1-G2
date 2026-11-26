@@ -502,9 +502,9 @@ const MILESTONE_LEVELS = [
 ];
 
 const MILESTONE_LEVEL_NAMES = {
-  beginner: "المبتدئ",
+  beginner: "السهل",
   intermediate: "المتوسط",
-  advanced: "المتقدم",
+  advanced: "الصعب",
 };
 
 const MILESTONE_LETTERS = ["ض", "س", "ص", "غ", "خ", "ق"];
