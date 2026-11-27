@@ -383,12 +383,10 @@ class ParentDashboardScreen extends StatelessWidget {
         ),
         title: Text(
           displayName,
-          style: TextStyle(
+          style: const TextStyle(
             fontWeight: FontWeight.bold,
             fontFamily: 'Tajawal',
-            color: nickname.isNotEmpty
-                ? const Color(0xFF511281)
-                : const Color(0xFF222222),
+            color: Color(0xFF511281),
           ),
         ),
         subtitle: Column(
