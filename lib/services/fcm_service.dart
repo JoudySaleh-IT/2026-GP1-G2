@@ -10,49 +10,43 @@ class FcmService {
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
 
   Future<String> _getDeviceId() async {
-  final prefs = await SharedPreferences.getInstance();
+    final prefs = await SharedPreferences.getInstance();
 
-  String? deviceId = prefs.getString('faseh_device_id');
+    String? deviceId = prefs.getString('faseh_device_id');
 
-  if (deviceId != null && deviceId.isNotEmpty) {
+    if (deviceId != null && deviceId.isNotEmpty) {
+      return deviceId;
+    }
+
+    final random = Random.secure();
+
+    final randomPart = List.generate(
+      16,
+      (_) => random.nextInt(256).toRadixString(16).padLeft(2, '0'),
+    ).join();
+
+    deviceId = 'device_${DateTime.now().microsecondsSinceEpoch}_$randomPart';
+
+    await prefs.setString('faseh_device_id', deviceId);
+
+    print('📱 NEW FASEH DEVICE ID CREATED: $deviceId');
+
     return deviceId;
   }
 
-  final random = Random.secure();
-
-  final randomPart = List.generate(
-    16,
-    (_) => random.nextInt(256)
-        .toRadixString(16)
-        .padLeft(2, '0'),
-  ).join();
-
-  deviceId =
-      'device_${DateTime.now().microsecondsSinceEpoch}_$randomPart';
-
-  await prefs.setString(
-    'faseh_device_id',
-    deviceId,
-  );
-
-  print('📱 NEW FASEH DEVICE ID CREATED: $deviceId');
-
-  return deviceId;
-}
-
   Future<void> saveTokenForChild(String childId) async {
-  if (childId.isEmpty) return;
+    if (childId.isEmpty) return;
 
-  // Do not switch this device back to child mode
-  // if the child session is no longer active.
-  if (ChildSession.currentChildId != childId) {
-    print('🔕 SKIPPED saveTokenForChild');
-    print('🔕 requested childId = $childId');
-    print('🔕 current session = ${ChildSession.currentChildId}');
-    return;
-  }
+    // Do not switch this device back to child mode
+    // if the child session is no longer active.
+    if (ChildSession.currentChildId != childId) {
+      print('🔕 SKIPPED saveTokenForChild');
+      print('🔕 requested childId = $childId');
+      print('🔕 current session = ${ChildSession.currentChildId}');
+      return;
+    }
 
-    final String? token = await _messaging.getToken();
+    final String? token = await _getTokenSafely();
 
     if (token == null || token.isEmpty) {
       print('❌ FCM token is null');
@@ -77,7 +71,7 @@ class FcmService {
 
     final String deviceId = await _getDeviceId();
 
-print('📱 CHILD DEVICE ID = $deviceId');
+    print('📱 CHILD DEVICE ID = $deviceId');
 
     String? parentId;
 
@@ -93,8 +87,7 @@ print('📱 CHILD DEVICE ID = $deviceId');
       // This works when the child enters using the 6-digit pairing code.
       final deviceLink = await _db
           .collection('child_device_links')
-    .doc(currentUid)
-
+          .doc(currentUid)
           .get();
 
       if (deviceLink.exists) {
@@ -115,71 +108,78 @@ print('📱 CHILD DEVICE ID = $deviceId');
 
     // 5. Register this device for the family
     await _db
-    .collection('parent_fcm_tokens')
-    .doc(parentId)
-    .collection('devices')
-.doc(deviceId)
-    .set({
-  'token': token,
+        .collection('parent_fcm_tokens')
+        .doc(parentId)
+        .collection('devices')
+        .doc(deviceId)
+        .set({
+          'token': token,
 
-  // This device is currently being used in child mode.
-  'activeMode': 'child',
+          // This device is currently being used in child mode.
+          'activeMode': 'child',
 
-  // Which child is currently using the device.
-  'activeChildId': childId,
+          // Which child is currently using the device.
+          'activeChildId': childId,
 
-  'updatedAt': FieldValue.serverTimestamp(),
-}, SetOptions(merge: true));
+          'updatedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
 
-
-print('🔥 DEVICE MODE SAVED');
-print('🔥 activeMode = child');
-print('🔥 activeChildId = $childId');
-print('🔥 deviceUid = $currentUid');
-print('🔥 parentId = $parentId');
-  print('✅ FAMILY FCM TOKEN SAVED');
-print('👨‍👩‍👧 Parent: $parentId');
-print('📱 DEVICE ID: $deviceId');
-}
-
-// 👇👇👇 حطيها هنا
-Future<void> saveTokenForParent() async {
-  final String? token = await _messaging.getToken();
-
-  if (token == null || token.isEmpty) {
-    print('❌ Parent FCM token is null');
-    return;
+    print('🔥 DEVICE MODE SAVED');
+    print('🔥 activeMode = child');
+    print('🔥 activeChildId = $childId');
+    print('🔥 deviceUid = $currentUid');
+    print('🔥 parentId = $parentId');
+    print('✅ FAMILY FCM TOKEN SAVED');
+    print('👨‍👩‍👧 Parent: $parentId');
+    print('📱 DEVICE ID: $deviceId');
   }
 
-  final user = FirebaseAuth.instance.currentUser;
+  // 👇👇👇 حطيها هنا
+  Future<void> saveTokenForParent() async {
+    final String? token = await _getTokenSafely();
 
-  if (user == null) {
-    print('❌ Parent user is not signed in');
-    return;
+    if (token == null || token.isEmpty) {
+      print('❌ Parent FCM token is null');
+      return;
+    }
+
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      print('❌ Parent user is not signed in');
+      return;
+    }
+
+    final String parentId = user.uid;
+    final String deviceId = await _getDeviceId();
+
+    print('📱 PARENT DEVICE ID = $deviceId');
+
+    await _db
+        .collection('parent_fcm_tokens')
+        .doc(parentId)
+        .collection('devices')
+        .doc(deviceId)
+        .set({
+          'token': token,
+          'activeMode': 'parent',
+          'activeChildId': null,
+          'updatedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+
+    print('👨‍👩‍👧 PARENT DEVICE MODE SAVED');
+    print('🔥 activeMode = parent');
+    print('🔥 activeChildId = null');
+    print('📱 deviceId = $deviceId');
   }
 
-  final String parentId = user.uid;
-  final String deviceId = await _getDeviceId();
-
-print('📱 PARENT DEVICE ID = $deviceId');
-
-  await _db
-      .collection('parent_fcm_tokens')
-      .doc(parentId)
-      .collection('devices')
-      .doc(deviceId)
-      .set({
-    'token': token,
-    'activeMode': 'parent',
-    'activeChildId': null,
-    'updatedAt': FieldValue.serverTimestamp(),
-  }, SetOptions(merge: true));
-
-  print('👨‍👩‍👧 PARENT DEVICE MODE SAVED');
-  print('🔥 activeMode = parent');
-  print('🔥 activeChildId = null');
-print('📱 deviceId = $deviceId');
-}
-
-
+  Future<String?> _getTokenSafely() async {
+    try {
+      return await _messaging.getToken();
+    } catch (e) {
+      print('⚠️ FCM token unavailable: $e');
+      print('🔕 Continuing without push notifications');
+      return null;
+    }
+  }
 }
